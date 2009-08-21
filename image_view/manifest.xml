@@ -1,0 +1,12 @@
+<package>
+  <description>
+  An opencv based viewer for monocular camera images
+  </description>
+  <author>Patrick Mihelich</author>
+  <license>BSD</license>
+  <review status="proposal cleared" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/image_view</url>
+  <depend package="opencv_latest"/>
+  <depend package="sensor_msgs"/>
+  <depend package="roscpp"/>
+</package>

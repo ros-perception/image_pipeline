@@ -1,0 +1,41 @@
+/**
+@mainpage image_view
+
+@htmlinclude manifest.html
+
+@b image_view is a simple utility for viewing an image topic.
+
+@section usage Usage
+
+Command line:
+@verbatim
+$ rosrun image_view image_view image:=/forearm/image_raw
+@endverbatim
+
+Launch file:
+@verbatim
+<launch>
+  <node name="forearm_view" pkg="image_view" type="image_view">
+    <remap from="image" to="/forearm/image_raw"/>
+  </node>
+</launch>
+@endverbatim
+
+You may save the current image by left-clicking on the display window. By default, images
+will be saved as frame0000.jpg, frame0001.jpg, ....
+
+@section topic ROS topics
+
+Subscribes to (name/type):
+- @b "image"/Image : the image topic. Must be remapped to the name of the real image topic.
+
+@section parameters ROS parameters
+
+Uses parameters (name/type):
+- @b "window_name"/string : the name of the display window. Defaults to the name of the image topic.
+- @b "autosize"/bool : whether the window should autosize itself to the image or be resizeable by
+  the user. Defaults to false.
+- @b "filename_format"/string: printf-style format for saved image names. Can be used to control
+  name, location and format of saved images. Defaults to "frame%04i.jpg".
+
+*/
