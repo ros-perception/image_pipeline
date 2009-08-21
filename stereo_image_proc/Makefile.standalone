@@ -1,0 +1,63 @@
+#
+# Makefile for stereo image API
+#
+
+CC = g++
+CXX = g++
+LD = g++
+#CPPFLAGS = -Wall -g -O3 -Iinclude -I/usr/local/include -I/usr/local/include/opencv
+CPPFLAGS = -Wall -g -O3 -Iinclude -I/usr/local/include -I$(shell rospack find opencv_latest)/opencv/include/opencv -I$(shell rospack find opencv_latest)/opencv/include/ -I$(shell rospack find libdc1394v2)/libdc1394v2/include
+CFLAGS = -DGCC -msse2 -g -O3 -mpreferred-stack-boundary=4 -Wall -Iinclude -I/usr/local/include
+GCC = g++
+#LDFLAGS = -Lbin -ldcam -ldc1394 -lcv -lhighgui -lfltk
+LDFLAGS = -Llib -ldcam -ldc1394 -lcv -lhighgui -lfltk -lfltk_gl -lglut -lboost_thread -Wl,-rpath,$(shell rospack find opencv_latest)/opencv/lib -L$(shell rospack find opencv_latest)/opencv/lib -L$(shell rospack find libdc1394v2)/libdc1394v2/lib -Wl,-rpath,$(shell rospack find libdc1394v2)/libdc1394v2/lib -Wl,-rpath,$(shell rospack find dcam)/lib
+
+SHAREDFLAGS = -shared -Wl,-soname,
+
+STOBJECTS = stereocal stereogui imwin im3Dwin calwin stereolib
+DCAMOBJECTS = dcam stereocam image stereolib
+
+
+all:	lib/libdcam.so bin/stereocal bin/acquire bin/stacquire
+
+bin/stereocal: $(STOBJECTS:%=obj/%.o) 
+	$(LD) $(LDFLAGS) -o $@ $(STOBJECTS:%=obj/%.o)
+
+bin/acquire: obj/acquire.o
+	$(LD) $(LDFLAGS) -o $@ obj/acquire.o
+
+bin/stacquire: obj/stacquire.o obj/imwin.o obj/im3Dwin.o
+	$(LD) $(LDFLAGS) -o $@ obj/stacquire.o obj/imwin.o obj/im3Dwin.o
+
+lib/libdcam.so: $(DCAMOBJECTS:%=obj/%.o) 
+	$(LD) $(SHAREDFLAGS)libdcam.so -o $@ $(DCAMOBJECTS:%=obj/%.o)
+
+# general cpp command from src->obj
+obj/%.o:src/%.cpp
+	$(GCC) $(CPPFLAGS) -c $< -o $@
+
+# general c command from src->obj
+obj/%.o:src/%.c
+	$(GCC) $(CFLAGS) -c $< -o $@
+
+
+obj/stereocal.o: include/stereolib.h 
+obj/stereolib.o: include/stereolib.h
+obj/dcam.o:      include/dcam.h include/image.h
+obj/stereocam.o: include/dcam.h include/stereocam.h include/image.h
+obj/image.o: 	 include/dcam.h include/image.h
+obj/acquire.o:	 include/dcam.h src/dcam.cpp include/image.h
+obj/stacquire.o: include/dcam.h src/dcam.cpp include/image.h
+
+test:	$(OBJECTS) test.o
+	$(LD) -o test $(OBJECTS) test.o -lyaml
+
+clean:
+	- rm obj/*.o
+	- rm bin/*
+	- rm lib/*.so
+
+dist:
+	tar -cvzf ost.tgz *.c *.cpp *.h *.yaml src/*.c src/*.cpp src/*.fl include/*.h *.vcproj *.sln Makefile data/*.bmp
+
+

@@ -1,0 +1,94 @@
+/**
+
+@mainpage
+
+@htmlinclude manifest.html
+
+@b stereo_image_proc contains nodes for stereo and single image
+debayering, rectification and disparity processing.
+
+Nodes:
+- \ref imageproc : Monocular image processing
+- \ref stereoproc : Stereo image processing
+
+@todo API documentation
+
+*/
+
+/**
+@defgroup imageproc imageproc
+
+@b imageproc is a node for processing raw monocular camera images.
+
+@section usage Usage
+
+@todo WRITE
+
+@section topic ROS topics
+
+imageproc subscribes to topics in namespace "camera", which should be remapped
+to the appropriate camera namespace.
+
+Subscribes to (name/type):
+- @b "camera/cam_info"/CamInfo : camera calibration parameters.
+- @b "camera/raw_image"/Image : raw image data from the camera driver node.
+
+Publishes to (name/type):
+- @b "camera/image"/Image : grayscale image
+- @b "camera/image_color"/Image : color image
+- @b "camera/image_rect"/Image : grayscale rectified image
+- @b "camera/image_color_rect"/Image : color rectified image
+
+@section parameters ROS parameters
+
+Reads parameters (name/type):
+- @b "camera/do_colorize"/bool : if true, enables color debayering in addition to
+  grayscale debayering. Defaults to false.
+- @b "camera/do_rectify"/bool : enables rectification (undistortion). Defaults to false.
+
+*/
+
+/**
+@defgroup stereoproc stereoproc
+
+@b stereoproc is a node for processing raw stereo camera data.
+
+@section usage Usage
+
+@todo WRITE
+
+@section topic ROS topics
+
+stereoproc subscribes to topics in namespace "stereo", which should be remapped
+to the appropriate camera namespace.
+
+Subscribes to (name/type):
+- @b "stereo/raw_stereo"/RawStereo : raw stereo data from the camera driver node.
+
+stereoproc publishes topics for both the left and right cameras. In the list below,
+"<side>" may be either "left" or "right". Publishes to (name/type):
+- Single camera data:
+  - @b "stereo/<side>/cam_info"/CamInfo : camera calibration parameters.
+  - @b "stereo/<side>/image_raw"/Image : raw data from sensor.
+  - @b "stereo/<side>/image"/Image : grayscale image
+  - @b "stereo/<side>/image_color"/Image : color image
+  - @b "stereo/<side>/image_rect"/Image : grayscale rectified image
+  - @b "stereo/<side>/image_color_rect"/Image : color rectified image
+- @b "stereo/stereo_info"/StereoInfo : 
+- @b "stereo/disparity_info"/DisparityInfo : 
+- @b "stereo/disparity"/Image : 
+- @b "stereo/cloud"/PointCloud : 
+
+@section parameters ROS parameters
+
+Reads parameters (name/type):
+- @b "stereo/do_colorize"/bool : if true, enables color debayering in addition to
+  grayscale debayering. Defaults to false.
+- @b "stereo/do_rectify"/bool : enables rectification (undistortion). Defaults to false.
+- @b "stereo/do_stereo"/bool : 
+- @b "stereo/do_calc_points"/bool : 
+- @b "stereo/do_keep_coords"/bool : 
+
+@todo several more stereo-related parameters
+
+*/
