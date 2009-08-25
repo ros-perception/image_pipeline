@@ -10,6 +10,5 @@
   <depend stack="diagnostics"/> <!-- diagnostic_updater --> 
   <depend stack="ros"/> <!-- roscpp, rostest, rosrecord, roscpp --> 
   <depend stack="common_msgs"/> <!-- sensor_msgs --> 
-  <depend stack="camera_drivers"/> <!-- libdc1394v2 --> 
 
 </stack>
