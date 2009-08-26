@@ -1,0 +1,13 @@
+<package>
+  <description>Single image rectification and color processing.</description>
+  <author>Kurt Konolige, Jeremy Leibs</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/image_proc</url>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags=""/>
+  </export>
+  <depend package="roscpp"/>
+  <depend package="opencv_latest"/>
+  <depend package="sensor_msgs"/>
+</package>
