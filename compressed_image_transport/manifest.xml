@@ -1,0 +1,19 @@
+<package>
+  <description brief="compressed_image_transport">
+
+     compressed_image_transport
+
+  </description>
+  <author>Patrick Mihelich</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/compressed_image_transport</url>
+  <depend package="image_transport"/>
+  <depend package="opencv_latest"/>
+
+  <export>
+    <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcompressed_image_transport" cflags="-I${prefix}/include"/>
+    <image_transport plugin="${prefix}/compressed_plugins.xml" />
+  </export>
+
+</package>
