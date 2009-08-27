@@ -38,6 +38,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <opencv_latest/CvBridge.h>
+#include <image_transport/image_subscriber.h>
 
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
@@ -46,7 +47,7 @@ class ImageView
 {
 private:
   ros::NodeHandle node_handle_;
-  ros::V_Subscriber subs_;
+  image_transport::ImageSubscriber sub_;
   
   sensor_msgs::ImageConstPtr last_msg_;
   sensor_msgs::CvBridge img_bridge_;
@@ -73,7 +74,8 @@ public:
     cvSetMouseCallback(window_name_.c_str(), &ImageView::mouse_cb, this);
     cvStartWindowThread();
 
-    subs_.push_back( node_handle_.subscribe("image", 1, &ImageView::image_cb, this) );
+    sub_.subscribe(node_handle_, "image", 1, &ImageView::image_cb, this);
+    //subs_.push_back( node_handle_.subscribe("image", 1, &ImageView::image_cb, this) );
   }
 
   ~ImageView()
