@@ -1,5 +1,5 @@
 <package>
-  <description>Single image rectification and color processing.</description>
+  <description>Image geometry functions.</description>
   <author>Kurt Konolige, Jeremy Leibs</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
@@ -10,5 +10,4 @@
   <depend package="roscpp"/>
   <depend package="opencv_latest"/>
   <depend package="sensor_msgs"/>
-  <depend package="image_publisher" />
 </package>

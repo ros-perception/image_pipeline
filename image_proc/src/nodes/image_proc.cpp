@@ -38,6 +38,8 @@
 #include <sensor_msgs/Image.h>
 #include <opencv_latest/CvBridge.h>
 
+#include <image_publisher/image_publisher.h>
+
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 
@@ -53,17 +55,30 @@ private:
   ros::NodeHandle node_handle_;
   ros::V_Subscriber subs_;
   
-  sensor_msgs::ImageConstPtr last_msg_;
+  sensor_msgs::Image msg2;
   sensor_msgs::CvBridge img_bridge_;
   
+  ImagePublisher img_pub_;
+
   int count_;
 
 public:
   ImageProc(const ros::NodeHandle& node_handle)
-    : node_handle_(node_handle), count_(0)
+    : node_handle_(node_handle),       
+      img_pub_(node_handle),
+      count_(0)
   {
     // subscribe to the input image
     subs_.push_back( node_handle_.subscribe("image", 1, &ImageProc::image_cb, this) );
+
+    // advertise that we send out images
+    img_pub_.advertise("~image_copy");
+
+    // set up a dummy msg to copy to
+    msg2.data = std::vector<uint8_t>(0);
+    msg2.height = 0;
+    msg2.width = 0;
+    msg2.step = 0;
   }
 
   ~ImageProc()
@@ -72,12 +87,26 @@ public:
 
   void image_cb(const sensor_msgs::ImageConstPtr& msg)
   {
-    sensor_msgs::Image msg2;
     count_++;
-    ROS_INFO("[image_proc] Got message %d with encoding %s", 
-	     count_, msg->encoding.c_str());
+
+    // copy the image, just a test
+    if (msg2.height != msg->height ||
+	msg2.step != msg->step)
+      {
+	msg2.data.resize(msg->height * msg->step);
+	msg2.height = msg->height;
+	msg2.width = msg->width;
+	msg2.step = msg->step;
+      }
+    memcpy(&msg2.data[0],&msg->data[0],msg->step*msg->height);
+
+
+    ROS_INFO("[image_proc] Got message %d with encoding %s and %d bytes", 
+	     count_, msg->encoding.c_str(), msg->step*msg->height);
 
     // processing here, then send out image
+    img_pub_.publish(msg2);
+
 #if 0
     // May want to view raw bayer data
     if (msg->encoding.find("bayer") != std::string::npos)
