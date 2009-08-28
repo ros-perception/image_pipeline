@@ -34,7 +34,7 @@
       <param name="do_calc_points" type="bool" value="True"/>
       <param name="do_keep_coords" type="bool" value="True"/>
       <param name="num_disp" type="int" value="128"/>
-      <param name="corr_size" type="int" value="7"/>
+      <param name="corr_size" type="int" value="15"/>
     </node>
   </group>
 </launch>
