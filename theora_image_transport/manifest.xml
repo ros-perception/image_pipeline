@@ -1,0 +1,21 @@
+<package>
+  <description brief="theora_image_transport">
+
+     theora_image_transport
+
+  </description>
+  <author>Ethan Dreyfuss</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/theora_image_transport</url>
+  <depend package="image_transport"/>
+  <depend package="opencv_latest"/>
+  <depend package="libtheora"/>
+  <depend package="pluginlib"/>
+
+  <export>
+    <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltheora_image_transport" cflags="-I${prefix}/include"/>
+    <image_transport plugin="${prefix}/compressed_plugins.xml" />
+  </export>
+
+</package>
