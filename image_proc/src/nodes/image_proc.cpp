@@ -37,6 +37,7 @@
 #include <message_filters/time_synchronizer.h>
 
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/fill_image.h>
 #include <sensor_msgs/CameraInfo.h>
 
@@ -44,7 +45,6 @@
 #include <image_transport/image_publisher.h>
 
 #include "image.h"
-#include "cam_bridge.h"
 
 #include <boost/thread.hpp>
 
@@ -100,7 +100,7 @@ public:
 
   void imageCb(const sensor_msgs::ImageConstPtr& raw_image, const sensor_msgs::CameraInfoConstPtr& cam_info)
   {
-    cam_bridge::RawStereoToCamData(*raw_image, *cam_info, stereo_msgs::RawStereo::IMAGE_RAW, &img_data_);
+    cam_bridge::RawToCamData(*raw_image, *cam_info, cam::IMAGE_RAW, &img_data_);
 
     // @todo: only do processing if topics have subscribers
     // @todo: parameter for bayer interpolation to use

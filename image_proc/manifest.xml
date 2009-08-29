@@ -12,5 +12,4 @@
   <depend package="sensor_msgs"/>
   <depend package="image_transport" />
   <depend package="message_filters" />
-  <depend package="stereo_image_proc" />
 </package>
