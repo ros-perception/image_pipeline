@@ -201,6 +201,7 @@ namespace cam
 
     // calibration parameters
     // row major order
+    bool initRect;		// whether arrays are initialized or not
     double D[5];		// distortion: k1, k2, t1, t2, k3
     double K[9];		// original camera matrix
     double R[9];		// rectification matrix
@@ -216,7 +217,7 @@ namespace cam
     bool hasRectification;	// true if valid rectification present
     bool doRectify();		// try to rectify images
     bool initRectify(bool force=false);	// initializes the rectification internals from the
-                                //   calibration parameters
+                                // calibration parameters
 
     // color conversion
     color_conversion_t colorConvertType; // BILINEAR or EDGE conversion
@@ -226,7 +227,6 @@ namespace cam
 
   protected:
     // rectification arrays from OpenCV
-    bool initRect;		// whether arrays are initialized or not
     CvMat *rK;
     CvMat *rD;
     CvMat *rR;

@@ -82,8 +82,8 @@ public:
   {
     std::string cam_name = nh_.resolveName("camera") + "/";
     // we check camera node to see if we can do these
-    //    nh_.param(cam_name + "do_colorize", do_colorize_, false);
-    //    nh_.param(cam_name + "do_rectify", do_rectify_, false);
+    nh_.param("~do_colorize", do_colorize_, true);
+    nh_.param("~do_rectify", do_rectify_, true);
 
     // Advertise outputs
     pub_mono_.advertise(nh_, cam_name+"image_mono", 1);
@@ -104,13 +104,18 @@ public:
 
     // @todo: only do processing if topics have subscribers
     // @todo: parameter for bayer interpolation to use
-    if (do_colorize_) {
-      //img_data_.colorConvertType = COLOR_CONVERSION_EDGE;
-      img_data_.doBayerColorRGB();
-      //img_data_.doBayerMono();
-    }
+    if (do_colorize_ &&
+	(pub_color_.getNumSubscribers() > 0 ||
+	 pub_rect_color_.getNumSubscribers() > 0))
+      {
+	//img_data_.colorConvertType = COLOR_CONVERSION_EDGE;
+	img_data_.doBayerColorRGB();
+	//img_data_.doBayerMono();
+      }
 
-    if (do_rectify_)
+    if (do_rectify_ && 
+	(pub_rect_.getNumSubscribers() > 0 ||
+	 pub_rect_color_.getNumSubscribers() > 0))
       img_data_.doRectify();
 
     // Publish images
@@ -133,60 +138,6 @@ public:
               dataSize / img_data_.imHeight /*step*/, data);
     pub.publish(img_);
   }
-
-
-#if 0
-  ImageProc(const ros::NodeHandle& node_handle)
-    : node_handle_(node_handle),       
-      img_pub_(node_handle),
-      count_(0)
-  {
-    // subscribe to the input image
-    subs_.push_back( node_handle_.subscribe("image", 1, &ImageProc::image_cb, this) );
-
-    // advertise that we send out images
-    img_pub_.advertise("~image_copy");
-
-    // set up a dummy msg to copy to
-    msg2.data = std::vector<uint8_t>(0);
-    msg2.height = 0;
-    msg2.width = 0;
-    msg2.step = 0;
-  }
-
-  ~ImageProc()
-  {
-  }
-
-  void image_cb(const sensor_msgs::ImageConstPtr& msg)
-  {
-    count_++;
-
-    // copy the image, just a test
-    if (msg2.height != msg->height ||
-	msg2.step != msg->step)
-      {
-	msg2.data.resize(msg->height * msg->step);
-	msg2.height = msg->height;
-	msg2.width = msg->width;
-	msg2.step = msg->step;
-      }
-    memcpy(&msg2.data[0],&msg->data[0],msg->step*msg->height);
-
-
-    ROS_INFO("[image_proc] Got message %d with encoding %s and %d bytes", 
-	     count_, msg->encoding.c_str(), msg->step*msg->height);
-
-    // processing here, then send out image
-    img_pub_.publish(msg2);
-
-#if 0
-    // May want to view raw bayer data
-    if (msg->encoding.find("bayer") != std::string::npos)
-      msg->encoding = "mono";
-#endif
-  }
-#endif
 
 };
 
