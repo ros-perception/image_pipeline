@@ -1,4 +1,4 @@
-<stack name="imaging_pipeline" version="0.1.0">
+<stack name="image_pipeline" version="0.1.0">
   <description brief="pipeline for processing monocular and stereo images">
 
     pipeline for processing monocular and stereo images
@@ -7,7 +7,7 @@
   <author>Kurt Konolige</author>
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/imaging_pipeline</url>
+  <url>http://ros.org/wiki/image_pipeline</url>
   <depend stack="opencv"/> <!-- opencv_latest --> 
   <depend stack="diagnostics"/> <!-- diagnostic_updater --> 
   <depend stack="ros"/> <!-- rosbagmigration, message_filters, roscpp --> 
