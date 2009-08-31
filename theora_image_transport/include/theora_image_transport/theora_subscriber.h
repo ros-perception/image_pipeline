@@ -8,11 +8,11 @@
 
 namespace theora_image_transport {
 
-class CompressedSubscriber : public image_transport::SubscriberPlugin
+class TheoraSubscriber : public image_transport::SubscriberPlugin
 {
 public:
-  CompressedSubscriber();
-  virtual ~CompressedSubscriber();
+  TheoraSubscriber();
+  virtual ~TheoraSubscriber();
 
   virtual void subscribe(ros::NodeHandle& nh, const std::string& base_topic, uint32_t queue_size,
                          const Callback& callback, const ros::VoidPtr& tracked_object,
@@ -37,4 +37,4 @@ private:
   void decompress(const theora_image_transport::packetConstPtr& message, const Callback& callback);
 };
 
-} //namespace image_transport
+} //namespace theora_image_transport

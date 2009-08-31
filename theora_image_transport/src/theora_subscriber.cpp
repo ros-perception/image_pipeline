@@ -1,4 +1,4 @@
-#include "theora_image_transport/compressed_subscriber.h"
+#include "theora_image_transport/theora_subscriber.h"
 #include <sensor_msgs/image_encodings.h>
 #include <opencv/cvwimage.h>
 #include <opencv/highgui.h>
@@ -11,7 +11,7 @@ using namespace std;
 
 namespace theora_image_transport {
 
-CompressedSubscriber::CompressedSubscriber()
+TheoraSubscriber::TheoraSubscriber()
 {
   decoding_context_ = null;
   received_header_ = false;
@@ -19,32 +19,32 @@ CompressedSubscriber::CompressedSubscriber()
   th_info_init(&header_info_);
 }
 
-CompressedSubscriber::~CompressedSubscriber()
+TheoraSubscriber::~TheoraSubscriber()
 {
 }
 
 
-void CompressedSubscriber::subscribe(ros::NodeHandle& nh, const std::string& base_topic, uint32_t queue_size,
+void TheoraSubscriber::subscribe(ros::NodeHandle& nh, const std::string& base_topic, uint32_t queue_size,
                                      const Callback& callback, const ros::VoidPtr& tracked_object,
                                      const ros::TransportHints& transport_hints)
 {
   typedef boost::function<void(const theora_image_transport::packetConstPtr&)> InternalCallback;
-  InternalCallback decompress_fn = boost::bind(&CompressedSubscriber::decompress, this, _1, callback);
+  InternalCallback decompress_fn = boost::bind(&TheoraSubscriber::decompress, this, _1, callback);
   sub_ = nh.subscribe<>(base_topic, queue_size, decompress_fn, tracked_object, transport_hints);
 }
 
-std::string CompressedSubscriber::getTopic() const
+std::string TheoraSubscriber::getTopic() const
 {
   return sub_.getTopic();
 }
 
-void CompressedSubscriber::shutdown()
+void TheoraSubscriber::shutdown()
 {
   sub_.shutdown();
 }
 
 //When using this caller is responsible for deleting oggpacket.packet!!
-void CompressedSubscriber::msgToOggPacket(const theora_image_transport::packet &msg, ogg_packet &oggpacketOutput)
+void TheoraSubscriber::msgToOggPacket(const theora_image_transport::packet &msg, ogg_packet &oggpacketOutput)
 {
   oggpacketOutput.bytes = msg.bytes;
   oggpacketOutput.b_o_s = msg.b_o_s;
@@ -61,7 +61,7 @@ void CompressedSubscriber::msgToOggPacket(const theora_image_transport::packet &
   ROS_DEBUG("Checksum is: %d", i);*/
 }
 
-void CompressedSubscriber::decompress(const theora_image_transport::packetConstPtr& message, const Callback& callback)
+void TheoraSubscriber::decompress(const theora_image_transport::packetConstPtr& message, const Callback& callback)
 {
   const theora_image_transport::packet &pkt = *message;
   ogg_packet oggpacket;
@@ -165,4 +165,4 @@ void CompressedSubscriber::decompress(const theora_image_transport::packetConstP
   callback(image_ptr);
 }
 
-} //namespace compressed_image_transport
+} //namespace theora_image_transport

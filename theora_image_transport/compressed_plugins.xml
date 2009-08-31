@@ -1,11 +1,11 @@
 <library path="lib/libtheora_image_transport">
-  <class name="theora_pub" type="theora_image_transport::CompressedPublisher" base_class_type="image_transport::PublisherPlugin">
+  <class name="theora_pub" type="theora_image_transport::TheoraPublisher" base_class_type="image_transport::PublisherPlugin">
     <description>
       This plugin publishes a video packet stream encoded using Theora.
     </description>
   </class>
 
-  <class name="theora_sub" type="theora_image_transport::CompressedSubscriber" base_class_type="image_transport::SubscriberPlugin">
+  <class name="theora_sub" type="theora_image_transport::TheoraSubscriber" base_class_type="image_transport::SubscriberPlugin">
     <description>
       This plugin decodes a video packet stream encoded using Theora.
     </description>

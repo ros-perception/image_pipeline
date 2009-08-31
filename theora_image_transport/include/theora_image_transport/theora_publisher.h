@@ -10,11 +10,11 @@
 
 namespace theora_image_transport {
 
-class CompressedPublisher : public image_transport::PublisherPlugin
+class TheoraPublisher : public image_transport::PublisherPlugin
 {
 public:
-  CompressedPublisher();
-  virtual ~CompressedPublisher();
+  TheoraPublisher();
+  virtual ~TheoraPublisher();
 
   virtual std::string getTransportType() const;
 

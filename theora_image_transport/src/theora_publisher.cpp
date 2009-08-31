@@ -1,4 +1,4 @@
-#include "theora_image_transport/compressed_publisher.h"
+#include "theora_image_transport/theora_publisher.h"
 #include <sensor_msgs/image_encodings.h>
 #include <opencv/highgui.h>
 
@@ -11,41 +11,41 @@ using namespace std;
 namespace theora_image_transport
 {
 
-CompressedPublisher::CompressedPublisher()
+TheoraPublisher::TheoraPublisher()
 {
   encoding_context_ = null;
 }
 
-CompressedPublisher::~CompressedPublisher()
+TheoraPublisher::~TheoraPublisher()
 {
   if (encoding_context_ != null)
     th_encode_free(encoding_context_);
 }
 
-std::string CompressedPublisher::getTransportType() const
+std::string TheoraPublisher::getTransportType() const
 {
   return "theora";
 }
 
-void CompressedPublisher::advertise(ros::NodeHandle& nh, const std::string& topic, uint32_t queue_size, bool latch)
+void TheoraPublisher::advertise(ros::NodeHandle& nh, const std::string& topic, uint32_t queue_size, bool latch)
 {
   nh_ = nh;
-  pub_ = nh_.advertise<theora_image_transport::packet> (topic, queue_size, boost::bind(&CompressedPublisher::sendHeader, this, _1),
+  pub_ = nh_.advertise<theora_image_transport::packet> (topic, queue_size, boost::bind(&TheoraPublisher::sendHeader, this, _1),
                                                                      ros::SubscriberStatusCallback(), ros::VoidPtr(), latch);
 }
 
-uint32_t CompressedPublisher::getNumSubscribers() const
+uint32_t TheoraPublisher::getNumSubscribers() const
 {
   return pub_.getNumSubscribers();
 }
 
-std::string CompressedPublisher::getTopic() const
+std::string TheoraPublisher::getTopic() const
 {
   return pub_.getTopic();
 }
 
 //Sends the header packets to new subscribers (unless there are no header packets to send yet)
-void CompressedPublisher::sendHeader(const ros::SingleSubscriberPublisher& pub) const
+void TheoraPublisher::sendHeader(const ros::SingleSubscriberPublisher& pub) const
 {
   theora_image_transport::packet msg;
   for (unsigned int i = 0; i < stream_header_.size(); i++)
@@ -58,7 +58,7 @@ void CompressedPublisher::sendHeader(const ros::SingleSubscriberPublisher& pub) 
   }
 }
 
-void CompressedPublisher::publish(const sensor_msgs::Image& message) const
+void TheoraPublisher::publish(const sensor_msgs::Image& message) const
 {
   if (img_bridge_.fromImage(message, "bgr8"))
   {
@@ -153,12 +153,12 @@ void CompressedPublisher::publish(const sensor_msgs::Image& message) const
     ROS_ERROR("Unable to convert from %s to bgr", message.encoding.c_str());
 }
 
-void CompressedPublisher::shutdown()
+void TheoraPublisher::shutdown()
 {
   pub_.shutdown();
 }
 
-void CompressedPublisher::ensure_encoding_context(const CvSize &size) const
+void TheoraPublisher::ensure_encoding_context(const CvSize &size) const
 {
   if (encoding_context_ == null)
   {
@@ -237,7 +237,7 @@ void CompressedPublisher::ensure_encoding_context(const CvSize &size) const
   }
 }
 
-void CompressedPublisher::oggPacketToMsg(const ogg_packet &oggpacket, theora_image_transport::packet &msgOutput) const
+void TheoraPublisher::oggPacketToMsg(const ogg_packet &oggpacket, theora_image_transport::packet &msgOutput) const
 {
   msgOutput.blob.resize(oggpacket.bytes);
   memcpy(&msgOutput.blob[0], oggpacket.packet, oggpacket.bytes);
@@ -253,4 +253,4 @@ void CompressedPublisher::oggPacketToMsg(const ogg_packet &oggpacket, theora_ima
   ROS_DEBUG("Checksum is: %d", i);*/
 }
 
-} //namespace compressed_image_transport
+} //namespace theora_image_transport
