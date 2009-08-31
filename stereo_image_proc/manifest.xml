@@ -5,7 +5,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/stereo_image_proc</url>
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib" />
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lstereoproc" />
   </export>
   <depend package="roscpp"/>
   <depend package="diagnostic_updater"/>
