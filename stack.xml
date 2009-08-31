@@ -10,5 +10,9 @@
   <depend stack="diagnostics"/> <!-- diagnostic_updater --> 
   <depend stack="ros"/> <!-- roscpp, rostest, rosrecord, roscpp --> 
   <depend stack="common_msgs"/> <!-- sensor_msgs --> 
+  <depend stack="image_transport"/> 
+  <depend package="message_filters" />
+  <depend package="rosbagmigration"/>
+  <depend package="pluginlib"/>
 
 </stack>
