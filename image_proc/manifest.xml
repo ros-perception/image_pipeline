@@ -5,7 +5,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/image_proc</url>
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib"/>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -limageproc" />
   </export>
   <depend package="roscpp"/>
   <depend package="opencv_latest"/>
