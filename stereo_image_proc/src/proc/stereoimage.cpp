@@ -34,11 +34,11 @@
 
 
 //
-// image.cpp
-// classes for monocular and stereo image
+// stereoimage.cpp
+// classes for stereo images
 //
 
-#include "image.h"
+#include "stereoimage.h"
 
 #include <sstream>
 #include <iostream>
@@ -46,219 +46,6 @@
 #define PRINTF(a...) printf(a)
 
 using namespace cam;
-
-// image class fns
-
-ImageData::ImageData()
-{
-  imWidth = imHeight = 0;
-
-  // buffers
-  im = NULL;
-  imColor = NULL;
-  imRect = NULL;
-  imRectColor = NULL;
-  imRaw = NULL;
-  imRawType = COLOR_CODING_NONE;
-  imRawSize = 0;
-  imType = COLOR_CODING_NONE;
-  imSize = 0;
-  imColorType = COLOR_CODING_NONE;
-  imColorSize = 0;
-  imRectType = COLOR_CODING_NONE;
-  imRectSize = 0;
-  imRectColorType = COLOR_CODING_NONE;
-  imRectColorSize = 0;
-  params = NULL;
-
-  // color conversion
-  colorConvertType = COLOR_CONVERSION_BILINEAR;
-  //  colorConvertType = COLOR_CONVERSION_EDGE;
-
-  // rectification mapping
-  hasRectification = false;
-  initRect = false;
-  rMapxy = NULL;
-  rMapa = NULL;
-
-  // calibration matrices
-  rD = cvCreateMat(5,1,CV_64F);
-  rK = cvCreateMat(3,3,CV_64F);
-  rR = cvCreateMat(3,3,CV_64F);
-  rKp = cvCreateMat(3,3,CV_64F);
-
-  // temp images, these will be changed when used
-  srcIm = cvCreateImageHeader(cvSize(640,480), IPL_DEPTH_8U, 1);
-  dstIm = cvCreateImageHeader(cvSize(640,480), IPL_DEPTH_8U, 1);
-}
-
-ImageData::~ImageData()
-{
-  releaseBuffers();
-  cvReleaseImageHeader(&srcIm);
-  cvReleaseImageHeader(&dstIm);
-}
-
-// storage
-
-void
-ImageData::releaseBuffers()
-{
-  // should we release im_raw???
-  MEMFREE(im);
-  MEMFREE(imColor);
-  MEMFREE(imRect);
-  MEMFREE(imRectColor);
-  im = NULL;
-  imColor = NULL;
-  imRect = NULL;
-  imRectColor = NULL;
-  imRaw = NULL;
-
-  imRawType = COLOR_CODING_NONE;
-  imRawSize = 0;
-  imType = COLOR_CODING_NONE;
-  imSize = 0;
-  imColorType = COLOR_CODING_NONE;
-  imColorSize = 0;
-  imRectType = COLOR_CODING_NONE;
-  imRectSize = 0;
-  imRectColorType = COLOR_CODING_NONE;
-  imRectColorSize = 0;
-
-  initRect = false;
-  if (rMapxy)
-    cvReleaseMat(&rMapxy);
-  if (rMapa)
-    cvReleaseMat(&rMapa);
-  rMapxy = NULL;
-  rMapa = NULL;
-}
-
-
-
-// rectification
-
-bool
-ImageData::initRectify(bool force)
-{
-  if (force)
-    hasRectification = true;
-
-  if (!hasRectification || imWidth == 0 || imHeight == 0)
-    return false;
-
-  if (initRect && !force && rMapxy != NULL && rMapa != NULL)
-    return true;		// already done
-
-  // set values of cal matrices
-  for (int i=0; i<3; i++)
-    for (int j=0; j<3; j++)
-      CV_MAT_ELEM(*rK, double, i, j) = K[i*3+j];
-
-  // rectified K matrix, from projection matrix
-  for (int i=0; i<3; i++)
-    for (int j=0; j<3; j++)
-      CV_MAT_ELEM(*rKp, double, i, j) = P[i*4+j];
-
-  for (int i=0; i<3; i++)
-    for (int j=0; j<3; j++)
-      CV_MAT_ELEM(*rR, double, i, j) = R[i*3+j];
-
-  for (int i=0; i<5; i++)
-    CV_MAT_ELEM(*rD, double, i, 0) = D[i];
-
-  // Set up rectification mapping
-  rMapxy = cvCreateMat(imHeight, imWidth, CV_16SC2);
-  rMapa  = cvCreateMat(imHeight, imWidth, CV_16UC1);//CV_16SC1);
-  mx = cvCreateMat(imHeight, imWidth, CV_32FC1);
-  my = cvCreateMat(imHeight, imWidth, CV_32FC1);
-  cvInitUndistortRectifyMap(rK,rD,rR,rKp,mx,my);
-  cvConvertMaps(mx,my,rMapxy,rMapa);
-
-  initRect = true;
-  return true;
-}
-
-
-bool
-ImageData::doRectify()
-{
-  if (!hasRectification)
-  {
-    return false;		// has no rectification
-  }
-
-  if (imWidth == 0 || imHeight == 0)
-  {
-    return false;
-  }
-
-  doBayerMono();
-
-  if (imType == COLOR_CODING_NONE && imColorType == COLOR_CODING_NONE)
-  {
-    return false;		// nothing to rectify
-  }
-
-  if (!((imType != COLOR_CODING_NONE && imRectType == COLOR_CODING_NONE) ||
-	(imColorType != COLOR_CODING_NONE && imRectColorType == COLOR_CODING_NONE)))
-  {
-    return true;		// already done
-  }
-
-  initRectify();		// ok to call multiple times
-
-  CvSize size = cvSize(imWidth,imHeight);
-
-  // rectify grayscale image
-  if (imType != COLOR_CODING_NONE)
-    {
-      // set up rectified data buffer
-      if (imRectSize < imSize)
-	{
-	  MEMFREE(imRect);
-	  imRectSize = imWidth*imHeight;
-	  imRect = (uint8_t *)MEMALIGN(imSize);
-	}
-
-      // set up images
-      imRectType = imType;
-      cvInitImageHeader(srcIm, size, IPL_DEPTH_8U, 1);
-      cvInitImageHeader(dstIm, size, IPL_DEPTH_8U, 1);
-      cvSetData(srcIm, im, imWidth);
-      cvSetData(dstIm, imRect, imWidth);
-
-      cvRemap(srcIm,dstIm,rMapxy,rMapa);
-      //cvRemap(srcIm,dstIm,mx,my);
-    }
-
-  // rectify color image
-  // assumes RGB
-  if (imColorType != COLOR_CODING_NONE)
-    {
-      // set up rectified data buffer
-      if (imRectColorSize < imColorSize)
-	{
-	  MEMFREE(imRectColor);
-	  imRectColorSize = imWidth*imHeight*3;
-	  imRectColor = (uint8_t *)MEMALIGN(imRectColorSize);
-	}
-
-      // set up images
-      imRectColorType = imColorType;
-      cvInitImageHeader(srcIm, size, IPL_DEPTH_8U, 3);
-      cvInitImageHeader(dstIm, size, IPL_DEPTH_8U, 3);
-      cvSetData(srcIm, imColor, imWidth*3);
-      cvSetData(dstIm, imRectColor, imWidth*3);
-
-      cvRemap(srcIm,dstIm,rMapxy,rMapa);
-      //cvRemap(srcIm,dstIm,mx,my);
-    }
-  return true;
-}
-
-#if 0
 
 // stereo class fns
 
@@ -1295,7 +1082,7 @@ StereoData::createParams(bool store)
   return str;
 }
 
-#endif
+
 
 //
 // color processing
@@ -1987,5 +1774,3 @@ ImageData::convertBayerBGGRMono(uint8_t *src, uint8_t *dstm,
     }
 
 }
-
-

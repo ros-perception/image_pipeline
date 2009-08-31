@@ -39,12 +39,12 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/fill_image.h>
-#include <sensor_msgs/CameraInfo.h>
 
 #include <opencv_latest/CvBridge.h>
 #include <image_transport/image_publisher.h>
 
 #include "image.h"
+#include "cam_bridge.h"
 
 #include <boost/thread.hpp>
 

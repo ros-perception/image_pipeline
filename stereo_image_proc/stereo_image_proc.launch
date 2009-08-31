@@ -1,0 +1,32 @@
+<launch>
+  <!-- stereo processing parameters
+       texture_thresh:  Threshold for removing bad disparities based on texture
+                        Default value: 30
+       unique_thresh:   Threshold for removing bad disparities based on ambiguity
+                        Default value: 36
+       speckle_diff:    Threshold for region-growing (1/16 pixel disparity)
+                        Default value: 10
+       speckle_size:    Threshold for disparity region size (pixels)
+                        Default value: 100
+       horopter:        X offset for close-in stereo (pixels)
+                        Default value: 0
+       corr_size:       Correlation window size (pixels)
+                        Default value: 15
+       num_disp:        Number of disparities (pixels)
+                        Default value: 64
+       -->
+  <group ns="stereo">
+    <node pkg="stereo_image_proc" type="stereo_image_proc" respawn="false" output="screen" name="stereo_image_proc">
+      <remap from="camera_left" to="/cam1/left" />
+      <remap from="camera_right" to="/cam1/right" />
+      <remap from="stereo" to="/cam1/stereo" />
+      <param name="do_colorize" type="bool" value="True"/>
+      <param name="do_rectify" type="bool" value="True"/>
+      <param name="do_stereo" type="bool" value="True"/>
+      <param name="do_calc_points" type="bool" value="True"/>
+      <param name="do_keep_coords" type="bool" value="True"/>
+      <param name="num_disp" type="int" value="128"/>
+    </node>
+  </group>
+</launch>
+

@@ -34,17 +34,17 @@
 
 #include <cstdio>
 
-#include "image.h"
-
 #include "ros/node.h"
 #include "stereo_msgs/RawStereo.h"
-#include "cam_bridge.h"
 
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/fill_image.h"
 #include "sensor_msgs/CameraInfo.h"
 #include "stereo_msgs/StereoInfo.h"
 #include "sensor_msgs/PointCloud.h"
+
+#include "image.h"
+#include "cam_bridge_old.h"
 
 #include "diagnostic_updater/diagnostic_updater.h"
 #include "diagnostic_updater/update_functions.h"
@@ -97,7 +97,7 @@ public:
     param("~do_keep_coords", do_keep_coords_, false);
 
     if (do_keep_coords_) {
-    	ROS_INFO("I'm keeping the image coordonate in the point cloud\n");
+    	ROS_INFO("I'm keeping the image coordinate in the point cloud\n");
     }
     // Must do stereo if calculating points
     do_stereo_ = do_stereo_ || do_calc_points_;

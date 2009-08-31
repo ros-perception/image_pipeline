@@ -10,14 +10,13 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_boost_directories()
 
-rospack_add_library(stereoproc src/image.cpp src/stereolib.c src/stereolib2.cpp src/findplane.cpp)
+rospack_add_library(stereoproc src/proc/stereoimage.cpp src/proc/stereolib.c src/proc/stereolib2.cpp)
 rospack_add_compile_flags(stereoproc "-msse2 -mpreferred-stack-boundary=4")
 
-rospack_add_executable(stereoproc_exe src/stereoproc.cpp)
-rospack_add_compile_flags(stereoproc_exe "-msse2 -mpreferred-stack-boundary=4")
-target_link_libraries(stereoproc_exe stereoproc)
+rospack_add_executable(stereoproc_exe src/nodes/stereoproc.cpp)
+target_link_libraries(stereoproc_exe stereoproc imageproc)
 SET_TARGET_PROPERTIES(stereoproc_exe PROPERTIES OUTPUT_NAME stereoproc)
 
-rospack_add_executable(imageproc src/imageproc.cpp)
-rospack_add_compile_flags(imageproc "-msse2 -mpreferred-stack-boundary=4")
-target_link_libraries(imageproc stereoproc)
+rospack_add_executable(stereoimageproc_exe src/nodes/stereo_image_proc.cpp)
+target_link_libraries(stereoimageproc_exe stereoproc imageproc)
+SET_TARGET_PROPERTIES(stereoimageproc_exe PROPERTIES OUTPUT_NAME stereo_image_proc)

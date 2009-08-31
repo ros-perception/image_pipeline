@@ -5,12 +5,13 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/stereo_image_proc</url>
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lstereoproc"/>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib" />
   </export>
   <depend package="roscpp"/>
+  <depend package="diagnostic_updater"/>
+  <depend package="message_filters"/>
   <depend package="opencv_latest"/>
   <depend package="sensor_msgs"/>
   <depend package="stereo_msgs"/>
-  <depend package="diagnostic_updater"/>
-  <depend package="message_filters"/>
+  <depend package="image_proc"/>
 </package>

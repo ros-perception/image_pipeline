@@ -38,10 +38,11 @@
 #include "stereo_msgs/RawStereo.h"
 #include "sensor_msgs/fill_image.h"
 #include "sensor_msgs/image_encodings.h"
-#include "image.h"
+#include "stereoimage.h"
 
 namespace cam_bridge
 {
+
   color_coding_t GetColorCoding(const sensor_msgs::Image& msg)
   {
     using namespace sensor_msgs::image_encodings;
@@ -75,6 +76,82 @@ namespace cam_bridge
     ROS_WARN("cam_bridge: Don't know image encoding string for color coding %i", coding);
     return "";
   }
+
+  void extractImage(std::vector<uint8_t> data, size_t* sz, uint8_t **d)
+  {
+    size_t new_size = data.size();
+
+    if (*sz < new_size)
+    {
+      MEMFREE(*d);
+      *d = (uint8_t *)MEMALIGN(new_size);
+      *sz = new_size;
+    }
+    memcpy((char*)(*d), (char*)(&data[0]), new_size);
+  }
+  void extractImage(std::vector<uint8_t> data, size_t* sz, int16_t **d)
+  {
+    size_t new_size = data.size();
+
+    if (*sz < new_size)
+    {
+      MEMFREE(*d);
+      *d = (int16_t *)MEMALIGN(new_size);
+      *sz = new_size;
+    }
+    memcpy((char*)(*d), (char*)(&data[0]), new_size);
+  }
+
+
+  void RawToCamData(const sensor_msgs::Image& im_msg, 
+                    const sensor_msgs::CameraInfo& info_msg, 
+		    uint8_t type, cam::ImageData* im)
+  {
+
+    im->imRawType = COLOR_CODING_NONE;
+    im->imType = COLOR_CODING_NONE;
+    im->imColorType = COLOR_CODING_NONE;
+    im->imRectType = COLOR_CODING_NONE;
+    im->imRectColorType = COLOR_CODING_NONE;
+
+    if (type == cam::IMAGE_RAW)
+    {
+      extractImage(im_msg.data, &im->imRawSize, &im->imRaw);
+      im->imRawType = GetColorCoding(im_msg);
+    }
+    else if (type == cam::IMAGE)
+    {
+      extractImage(im_msg.data, &im->imSize, &im->im);
+      im->imType = COLOR_CODING_MONO8;
+    }
+    else if (type == cam::IMAGE_COLOR)
+    {
+      extractImage(im_msg.data, &im->imColorSize, &im->imColor);
+      im->imColorType = GetColorCoding(im_msg);
+    }
+    else if (type == cam::IMAGE_RECT)
+    {
+      extractImage(im_msg.data, &im->imRectSize, &im->imRect);
+      im->imRectType = GetColorCoding(im_msg);
+    }
+    else if (type == cam::IMAGE_RECT_COLOR)
+    {
+      extractImage(im_msg.data, &im->imRectColorSize, &im->imRectColor);
+      im->imRectColorType = GetColorCoding(im_msg);
+    }
+
+    // @todo: this OK when right image empty (disparity image requested instead)?
+    im->imHeight = im_msg.height;
+    im->imWidth  = im_msg.width;
+
+    // @todo: possible to NOT have rectification?
+    memcpy((char*)(im->D), (char*)(&info_msg.D[0]),  5*sizeof(double));
+    memcpy((char*)(im->K), (char*)(&info_msg.K[0]),  9*sizeof(double));
+    memcpy((char*)(im->R), (char*)(&info_msg.R[0]),  9*sizeof(double));
+    memcpy((char*)(im->P), (char*)(&info_msg.P[0]),  12*sizeof(double));
+    im->hasRectification = true;
+  }
+
 
   void CamDataToRawStereo(cam::ImageData* im, sensor_msgs::Image& im_msg, sensor_msgs::CameraInfo& info_msg, uint8_t& type)
   {
@@ -174,31 +251,6 @@ namespace cam_bridge
     CamDataToRawStereo(stIm->imRight, raw_stereo.right_image, raw_stereo.right_info, raw_stereo.right_type);
   }
 
-
-  void extractImage(std::vector<uint8_t> data, size_t* sz, uint8_t **d)
-  {
-    size_t new_size = data.size();
-
-    if (*sz < new_size)
-    {
-      MEMFREE(*d);
-      *d = (uint8_t *)MEMALIGN(new_size);
-      *sz = new_size;
-    }
-    memcpy((char*)(*d), (char*)(&data[0]), new_size);
-  }
-  void extractImage(std::vector<uint8_t> data, size_t* sz, int16_t **d)
-  {
-    size_t new_size = data.size();
-
-    if (*sz < new_size)
-    {
-      MEMFREE(*d);
-      *d = (int16_t *)MEMALIGN(new_size);
-      *sz = new_size;
-    }
-    memcpy((char*)(*d), (char*)(&data[0]), new_size);
-  }
 
   void RawStereoToCamData(const sensor_msgs::Image& im_msg, const sensor_msgs::CameraInfo& info_msg, uint8_t type, cam::ImageData* im)
   {
