@@ -38,6 +38,7 @@
 //
 
 #include "stereolib.h"
+#include <emmintrin.h>
 #include <stdio.h>
 
 // algorithm requires larger buffers to be passed in
