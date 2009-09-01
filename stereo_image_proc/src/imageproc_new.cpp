@@ -40,8 +40,8 @@
 #include <sensor_msgs/fill_image.h>
 #include <sensor_msgs/CameraInfo.h>
 
-#include "image.h"
-#include "cam_bridge.h"
+#include "image_proc/image.h"
+#include "image_proc/cam_bridge.h"
 
 #include <boost/thread.hpp>
 

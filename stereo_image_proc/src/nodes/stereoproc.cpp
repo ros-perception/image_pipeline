@@ -43,8 +43,8 @@
 #include "stereo_msgs/StereoInfo.h"
 #include "sensor_msgs/PointCloud.h"
 
-#include "image.h"
-#include "cam_bridge_old.h"
+#include "image_proc/image.h"
+#include "stereo_image_proc/cam_bridge_old.h"
 
 #include "diagnostic_updater/diagnostic_updater.h"
 #include "diagnostic_updater/update_functions.h"

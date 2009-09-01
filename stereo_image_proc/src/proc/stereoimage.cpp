@@ -38,7 +38,7 @@
 // classes for stereo images
 //
 
-#include "stereoimage.h"
+#include "stereo_image_proc/stereoimage.h"
 
 #include <sstream>
 #include <iostream>

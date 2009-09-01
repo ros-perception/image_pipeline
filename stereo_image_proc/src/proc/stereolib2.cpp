@@ -41,7 +41,7 @@ CVLab - University of Bologna
 email: federico.tombari@unibo.it
 */
 
-#include "stereolib.h"
+#include "stereo_image_proc/stereolib.h"
 #define inline			// use this for Intel Compiler Debug mode
 #include <stdio.h>
 

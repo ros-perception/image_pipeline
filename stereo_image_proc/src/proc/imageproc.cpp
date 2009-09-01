@@ -34,8 +34,8 @@
 
 #include "ros/node.h"
 
-#include "image.h"
-#include "cam_bridge.h"
+#include "image_proc/image.h"
+#include "image_proc/cam_bridge.h"
 
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/fill_image.h"

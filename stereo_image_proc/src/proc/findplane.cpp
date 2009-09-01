@@ -40,7 +40,7 @@ email: konolige@willowgarage.com
 */
 
 
-#include "image.h"
+#include "image_proc/image.h"
 
 
 //

@@ -38,7 +38,7 @@
 // classes for monocular and stereo image
 //
 
-#include "image.h"
+#include "image_proc/image.h"
 
 
 #include <sstream>

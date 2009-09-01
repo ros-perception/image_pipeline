@@ -15,5 +15,6 @@ set(ROSPACK_MAKEDIST true)
 # properly.  CMake 2.4 seems to have unpredictable scoping rules for such
 # variables.
 #list(APPEND CPACK_SOURCE_IGNORE_FILES /core/experimental)
+list(APPEND CPACK_SOURCE_IGNORE_FILES /image_geometry)
 
 rosbuild_make_distribution(0.1.0)
