@@ -11,7 +11,7 @@
   <depend stack="opencv"/> <!-- opencv_latest --> 
   <depend stack="diagnostics"/> <!-- diagnostic_updater --> 
   <depend stack="ros"/> <!-- rosbagmigration, message_filters, roscpp --> 
-  <depend stack="common"/> <!-- image_transport --> 
+  <depend stack="image_common"/> <!-- image_transport --> 
   <depend stack="common_msgs"/> <!-- sensor_msgs --> 
 
 </stack>
