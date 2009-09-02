@@ -1,0 +1,23 @@
+<package>
+  <description brief="camera_calibration">
+
+     camera_calibration
+
+  </description>
+  <author>Patrick Mihelich/ mihelich@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/camera_calibration</url>
+  <depend package="opencv_latest"/>
+  <depend package="roscpp"/>
+  <depend package="geometry_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="camera_calibration_parsers"/>
+  <!--depend package="topic_synchronizer2"/-->
+
+  <export>
+    <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcamera_calibration" cflags="-I${prefix}/include -I${prefix}/msg/cpp"/>
+  </export>
+
+</package>
