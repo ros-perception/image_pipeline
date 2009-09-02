@@ -44,8 +44,8 @@
 #include <opencv_latest/CvBridge.h>
 #include <image_transport/image_publisher.h>
 
-#include "stereoimage.h"
-#include "cam_bridge.h"
+#include "stereo_image_proc/stereoimage.h"
+#include "image_proc/cam_bridge.h"
 
 #include <boost/thread.hpp>
 

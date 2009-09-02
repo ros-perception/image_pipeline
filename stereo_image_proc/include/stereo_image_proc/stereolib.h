@@ -60,7 +60,6 @@ extern "C" {
 #endif
 #include <math.h>
 #include <string.h>
-#include <emmintrin.h>
 #include <stdlib.h>
 
 // kernel size is fixed

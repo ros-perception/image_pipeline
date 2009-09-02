@@ -38,7 +38,7 @@
 #include "stereo_msgs/RawStereo.h"
 #include "sensor_msgs/fill_image.h"
 #include "sensor_msgs/image_encodings.h"
-#include "stereoimage.h"
+#include "stereo_image_proc/stereoimage.h"
 
 namespace cam_bridge
 {

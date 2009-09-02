@@ -35,8 +35,8 @@
 #ifndef STEREOIMAGE_H
 #define STEREOIMAGE_H
 
-#include "image.h"
-#include "stereolib.h"
+#include "image_proc/image.h"
+#include "stereo_image_proc/stereolib.h"
 
 // version of parameter files
 #define OST_MAJORVERSION 5

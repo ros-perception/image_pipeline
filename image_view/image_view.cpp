@@ -75,7 +75,6 @@ public:
     cvStartWindowThread();
 
     sub_.subscribe(node_handle_, "image", 1, &ImageView::image_cb, this);
-    //subs_.push_back( node_handle_.subscribe("image", 1, &ImageView::image_cb, this) );
   }
 
   ~ImageView()

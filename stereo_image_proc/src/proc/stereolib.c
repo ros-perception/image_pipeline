@@ -37,7 +37,8 @@
 // Basic column-oriented library
 //
 
-#include "stereolib.h"
+#include "stereo_image_proc/stereolib.h"
+#include <emmintrin.h>
 #include <stdio.h>
 
 // algorithm requires larger buffers to be passed in
