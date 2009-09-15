@@ -96,6 +96,9 @@ public:
     info_sub_.subscribe(nh_, cam_name + "camera_info", 1);
     sync_.connectInput(image_sub_, info_sub_);
     sync_.registerCallback(boost::bind(&ImageProc::imageCb, this, _1, _2));
+
+    ROS_INFO("%s: starting with rectification %s and colorization %s.",
+        ros::this_node::getName().c_str(), do_rectify_ ? "on" : "off", do_colorize_ ? "on" : "off");
   }
 
   void imageCb(const sensor_msgs::ImageConstPtr& raw_image, const sensor_msgs::CameraInfoConstPtr& cam_info)
@@ -146,8 +149,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "image_proc", ros::init_options::AnonymousName);
   ros::NodeHandle nh;
   if (nh.resolveName("camera") == "/camera") {
-    ROS_WARN("image_view: source image has not been remapped! Example command-line usage:\n"
-             "\t$ rosrun image_proc image_proc source:=/forearm-r");
+    ROS_WARN("image_proc: source image has not been remapped! Example command-line usage:\n"
+             "\t$ rosrun image_proc image_proc camera:=forearm_r");
   }
   
   ImageProc proc(nh);
