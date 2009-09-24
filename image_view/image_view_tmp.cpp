@@ -38,7 +38,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <opencv_latest/CvBridge.h>
-#include <image_transport/image_transport.h>
+#include <image_transport/image_subscriber.h>
 
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
@@ -46,8 +46,8 @@
 class ImageView
 {
 private:
-  ros::NodeHandle nh_;
-  image_transport::Subscriber sub_;
+  ros::NodeHandle node_handle_;
+  image_transport::ImageSubscriber sub_;
   
   sensor_msgs::ImageConstPtr last_msg_;
   sensor_msgs::CvBridge img_bridge_;
@@ -58,24 +58,23 @@ private:
   int count_;
 
 public:
-  ImageView(const ros::NodeHandle& nh)
-    : nh_(nh), filename_format_(""), count_(0)
+  ImageView(const ros::NodeHandle& node_handle)
+    : node_handle_(node_handle), filename_format_(""), count_(0)
   {
-    nh_.param("~window_name", window_name_, nh_.resolveName("image"));
+    node_handle_.param("~window_name", window_name_, node_handle_.resolveName("image"));
 
     bool autosize;
-    nh_.param("~autosize", autosize, false);
+    node_handle_.param("~autosize", autosize, false);
     
     std::string format_string;
-    nh_.param("~filename_format", format_string, std::string("frame%04i.jpg"));
+    node_handle_.param("~filename_format", format_string, std::string("frame%04i.jpg"));
     filename_format_.parse(format_string);
     
     cvNamedWindow(window_name_.c_str(), autosize ? CV_WINDOW_AUTOSIZE : 0);
     cvSetMouseCallback(window_name_.c_str(), &ImageView::mouse_cb, this);
     cvStartWindowThread();
 
-    image_transport::ImageTransport it(nh);
-    sub_ = it.subscribe("image", 1, &ImageView::image_cb, this);
+    sub_.subscribe(node_handle_, "image", 1, &ImageView::image_cb, this);
   }
 
   ~ImageView()
@@ -90,9 +89,12 @@ public:
     // Hang on to message pointer for sake of mouse_cb
     last_msg_ = msg;
 
+    /** @todo: restore raw bayer display, ideally without copying the whole msg... */
+#if 0
     // May want to view raw bayer data
     if (msg->encoding.find("bayer") != std::string::npos)
-      boost::const_pointer_cast<sensor_msgs::Image>(msg)->encoding = "mono";
+      msg->encoding = "mono";
+#endif
 
     if (img_bridge_.fromImage(*msg, "bgr8"))
       cvShowImage(window_name_.c_str(), img_bridge_.toIpl());
