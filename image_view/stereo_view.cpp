@@ -107,14 +107,20 @@ public:
 
   void imageCB(const sensor_msgs::ImageConstPtr& left, const sensor_msgs::ImageConstPtr& right)
   {
-    boost::lock_guard<boost::mutex> guard(image_mutex_);
+    ROS_INFO("imageCB1");
+    {
+      boost::lock_guard<boost::mutex> guard(image_mutex_);
+      ROS_INFO("imageCB2");
     
-    // Hang on to message pointers for sake of mouse_cb
-    last_left_ = left;
-    last_right_ = right;
+      // Hang on to message pointers for sake of mouse_cb
+      last_left_ = left;
+      last_right_ = right;
+      ROS_INFO("imageCB3");
+    }
 
     showImage("left", left, left_bridge_);
     showImage("right", right, right_bridge_);
+    ROS_INFO("imageCB4");
   }
 
   void saveImage(const char* prefix, const IplImage* image)
@@ -130,15 +136,21 @@ public:
   
   static void mouseCB(int event, int x, int y, int flags, void* param)
   {
+    ROS_INFO("mouseCB1");
     if (event != CV_EVENT_LBUTTONDOWN)
       return;
     
     StereoView *sv = (StereoView*)param;
+    ROS_INFO("mouseCB2");
     boost::lock_guard<boost::mutex> guard(sv->image_mutex_);
 
+    ROS_INFO("mouseCB3");
     sv->saveImage("left", sv->left_bridge_.toIpl());
+    ROS_INFO("mouseCB4");
     sv->saveImage("right", sv->right_bridge_.toIpl());
+    ROS_INFO("mouseCB5");
     sv->count_++;
+    ROS_INFO("mouseCB6");
   }
 };
 
