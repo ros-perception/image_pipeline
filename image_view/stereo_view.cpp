@@ -69,7 +69,7 @@ public:
     nh_.param("~autosize", autosize, true);
     
     std::string format_string;
-    nh_.param("~filename_format", format_string, std::string("%s%04i.jpg"));
+    nh_.param("~filename_format", format_string, std::string("%s%04i.pgm"));
     filename_format_.parse(format_string);
     
     cvNamedWindow("left", autosize ? CV_WINDOW_AUTOSIZE : 0);
@@ -99,7 +99,10 @@ public:
     if (img->encoding.find("bayer") != std::string::npos)
       boost::const_pointer_cast<sensor_msgs::Image>(img)->encoding = "mono";
 
-    if (bridge.fromImage(*img, "bgr8"))
+    if (boost::const_pointer_cast<sensor_msgs::Image>(img)->encoding == "mono" &&
+        bridge.fromImage(*img, "mono"))
+      cvShowImage(window, bridge.toIpl());
+    else if (bridge.fromImage(*img, "bgr8"))
       cvShowImage(window, bridge.toIpl());
     else
       ROS_ERROR("Unable to convert %s image to bgr8", img->encoding.c_str());
