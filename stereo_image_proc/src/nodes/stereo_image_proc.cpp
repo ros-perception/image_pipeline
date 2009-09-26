@@ -170,7 +170,7 @@ public:
     if (do_stereo_)
       {
 	pub_disparity_image_.advertise(nh_, cam_name_s+"image_disparity", 1);
-	//	pub_disparity_.advertise(nh_, cam_name_s+"disparity", 1);
+	pub_disparity_ = nh_.advertise<stereo_msgs::DisparityImage>(cam_name_s+"disparity", 1);
       }
 
     // Subscribe to synchronized Image & CameraInfo topics
