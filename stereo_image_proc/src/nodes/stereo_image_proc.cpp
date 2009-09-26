@@ -82,7 +82,9 @@ private:
   image_transport::ImagePublisher pub_rect_r_;
   image_transport::ImagePublisher pub_color_r_;
   image_transport::ImagePublisher pub_rect_color_r_;
-  image_transport::ImagePublisher pub_disparity_;
+  image_transport::ImagePublisher pub_disparity_image_;
+  ros::Publisher pub_disparity_;
+
 
   // @todo: maybe these should not be members?
   sensor_msgs::Image img_;
@@ -166,7 +168,10 @@ public:
 	  }
       }
     if (do_stereo_)
-      pub_disparity_.advertise(nh_, cam_name_s+"image_disparity", 1);
+      {
+	pub_disparity_image_.advertise(nh_, cam_name_s+"image_disparity", 1);
+	pub_disparity_.advertise(nh_, cam_name_s+"disparity", 1);
+      }
 
     // Subscribe to synchronized Image & CameraInfo topics
     image_sub_l.subscribe(nh_, cam_name_l + "image_raw", 1);
@@ -247,15 +252,7 @@ public:
     publishImage(img_data_l->imColorType, img_data_l->imColor, img_data_l->imColorSize, pub_color_l_);
     publishImage(img_data_l->imRectType, img_data_l->imRect, img_data_l->imRectSize, pub_rect_l_);
     publishImage(img_data_l->imRectColorType, img_data_l->imRectColor, img_data_l->imRectColorSize, pub_rect_color_l_);
-    publishImage(img_data_l->imType, img_data_l->im, img_data_l->imSize, pub_mono_r_);
-    publishImage(img_data_l->imColorType, img_data_l->imColor, img_data_l->imColorSize, pub_color_r_);
-    publishImage(img_data_l->imRectType, img_data_l->imRect, img_data_l->imRectSize, pub_rect_r_);
-    publishImage(img_data_l->imRectColorType, img_data_l->imRectColor, img_data_l->imRectColorSize, pub_rect_color_r_);
     // right
-    publishImage(img_data_r->imType, img_data_r->im, img_data_r->imSize, pub_mono_r_);
-    publishImage(img_data_r->imColorType, img_data_r->imColor, img_data_r->imColorSize, pub_color_r_);
-    publishImage(img_data_r->imRectType, img_data_r->imRect, img_data_r->imRectSize, pub_rect_r_);
-    publishImage(img_data_r->imRectColorType, img_data_r->imRectColor, img_data_r->imRectColorSize, pub_rect_color_r_);
     publishImage(img_data_r->imType, img_data_r->im, img_data_r->imSize, pub_mono_r_);
     publishImage(img_data_r->imColorType, img_data_r->imColor, img_data_r->imColorSize, pub_color_r_);
     publishImage(img_data_r->imRectType, img_data_r->imRect, img_data_r->imRectSize, pub_rect_r_);
@@ -272,7 +269,7 @@ public:
 	dimg_.im_Dleft = stdata_->imDleft;
 	dimg_.im_Dwidth = stdata_->imDwidth;
 	dimg_.im_Dheight = stdata_->imDheight;
-	publishImageDisparity(stdata_->imDisp, stdata_->imDispSize, pub_disparity_);
+	publishImageDisparity(stdata_->imDisp, stdata_->imDispSize);
       }
 
   }
@@ -308,13 +305,17 @@ public:
     return true;
   }
 
-  void publishImageDisparity(void* data, size_t dataSize, const image_transport::ImagePublisher& pub)
+  void publishImageDisparity(void* data, size_t dataSize)
   {
     // @todo: step calculation is a little hacky
     fillImageDisparity(dimg_, sensor_msgs::image_encodings::MONO16,
               stdata_->imHeight, stdata_->imWidth,
               dataSize / stdata_->imHeight /*step*/, data);
-    pub.publish(img_);
+    fillImage(img_, sensor_msgs::image_encodings::MONO16,
+              stdata_->imHeight, stdata_->imWidth,
+              dataSize / stdata_->imHeight /*step*/, data);
+    pub_disparity_image_.publish(img_);
+    pub_disparity_.publish(dimg_);
   }
 
 
