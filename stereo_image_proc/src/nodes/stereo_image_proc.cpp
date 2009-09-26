@@ -235,7 +235,7 @@ public:
 
     if (do_stereo_)
       {
-	ROS_INFO("[stereo_image_proc] Disparity calc");
+	//	ROS_INFO("[stereo_image_proc] Disparity calc");
 	stdata_->doDisparity();
       }
 
@@ -323,7 +323,6 @@ public:
 
   void publishImageDisparity(void* data, size_t dataSize)
   {
-    printf("Datasize: %d\n", dataSize);
     // @todo: step calculation is a little hacky
     fillImageDisparity(dimg_, img_, sensor_msgs::image_encodings::MONO16,
               stdata_->imHeight, stdata_->imWidth,
