@@ -319,8 +319,12 @@ StereoData::doDisparity(stereo_algorithm_t alg)
 
   // allocate buffers
   // TODO: make these consistent with current values
-  if (!imDisp)
-    imDisp = (int16_t *)MEMALIGN(xim*yim*2);
+  if (imDispSize < xim*yim*2)
+    {
+      MEMFREE(imDisp);
+      imDispSize = xim*yim*2;
+      imDisp = (int16_t *)MEMALIGN(xim*yim*2);
+    }
 
   if (!buf || yim*dlen*(corr+5) > maxyim*maxdlen*(maxcorr+5))
     buf  = (uint8_t *)MEMALIGN(yim*2*dlen*(corr+5)); // local storage for the algorithm

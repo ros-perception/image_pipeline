@@ -235,7 +235,7 @@ public:
 
     if (do_stereo_)
       {
-	//	ROS_INFO("[stereo_image_proc] Disparity calc");
+	ROS_INFO("[stereo_image_proc] Disparity calc");
 	stdata_->doDisparity();
       }
 
@@ -286,32 +286,46 @@ public:
     pub.publish(img_);
   }
 
-  bool fillImageDisparity(stereo_msgs::DisparityImage& image,
-                 std::string encoding_arg,
-                 uint32_t rows_arg,
-                 uint32_t cols_arg,
-                 uint32_t step_arg,
-                 void* data_arg)
+  bool fillImageDisparity(stereo_msgs::DisparityImage& dimage,
+			  sensor_msgs::Image& image,
+			  std::string encoding_arg,
+			  uint32_t rows_arg,
+			  uint32_t cols_arg,
+			  uint32_t step_arg,
+			  void* data_arg)
   {
-    image.encoding = encoding_arg;
-    image.height   = rows_arg;
-    image.width    = cols_arg;
-    image.step     = step_arg;
+    // first do disparity image
+    dimage.encoding = encoding_arg;
+    dimage.height   = rows_arg;
+    dimage.width    = cols_arg;
+    dimage.step     = step_arg;
     size_t st0 = (step_arg * rows_arg);
-    image.data.resize(st0);
-    memcpy((char*)(&image.data[0]), (char*)(data_arg), st0);
+    dimage.data.resize(st0);
+    memcpy((char*)(&dimage.data[0]), (char*)(data_arg), st0);
+    dimage.is_bigendian = 0;
 
-    image.is_bigendian = 0;
+    // now do regular image
+    if (1)			// should check if we're subscribed
+      {
+	step_arg = step_arg/2;
+	image.encoding = sensor_msgs::image_encodings::MONO8,
+	image.height   = rows_arg;
+	image.width    = cols_arg;
+	image.step     = step_arg;
+	size_t st0 = (step_arg * rows_arg);
+	image.data.resize(st0);
+	memcpy((char*)(&image.data[0]), (char*)(data_arg), st0);
+	image.is_bigendian = 0;
+      }
+
     return true;
   }
 
   void publishImageDisparity(void* data, size_t dataSize)
   {
+    printf("Datasize: %d\n", dataSize);
     // @todo: step calculation is a little hacky
-    fillImageDisparity(dimg_, sensor_msgs::image_encodings::MONO16,
-              stdata_->imHeight, stdata_->imWidth,
-              dataSize / stdata_->imHeight /*step*/, data);
-    fillImage(img_, sensor_msgs::image_encodings::MONO16,
+    fillImageDisparity(dimg_, img_, sensor_msgs::image_encodings::MONO16,
               stdata_->imHeight, stdata_->imWidth,
               dataSize / stdata_->imHeight /*step*/, data);
     pub_disparity_image_.publish(img_);
