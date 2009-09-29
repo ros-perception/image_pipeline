@@ -61,13 +61,14 @@ public:
   ImageView(const ros::NodeHandle& nh)
     : nh_(nh), filename_format_(""), count_(0)
   {
-    nh_.param("~window_name", window_name_, nh_.resolveName("image"));
+    ros::NodeHandle local_nh("~");
+    local_nh.param("window_name", window_name_, nh_.resolveName("image"));
 
     bool autosize;
-    nh_.param("~autosize", autosize, false);
+    local_nh.param("autosize", autosize, false);
     
     std::string format_string;
-    nh_.param("~filename_format", format_string, std::string("frame%04i.jpg"));
+    local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
     filename_format_.parse(format_string);
     
     cvNamedWindow(window_name_.c_str(), autosize ? CV_WINDOW_AUTOSIZE : 0);
