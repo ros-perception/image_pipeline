@@ -46,7 +46,6 @@
 class ImageView
 {
 private:
-  ros::NodeHandle nh_;
   image_transport::Subscriber sub_;
   
   sensor_msgs::ImageConstPtr last_msg_;
@@ -58,11 +57,12 @@ private:
   int count_;
 
 public:
-  ImageView(const ros::NodeHandle& nh)
-    : nh_(nh), filename_format_(""), count_(0)
+  ImageView(const ros::NodeHandle& nh, const std::string& transport)
+    : filename_format_(""), count_(0)
   {
+    std::string topic = nh.resolveName("image");
     ros::NodeHandle local_nh("~");
-    local_nh.param("window_name", window_name_, nh_.resolveName("image"));
+    local_nh.param("window_name", window_name_, topic);
 
     bool autosize;
     local_nh.param("autosize", autosize, false);
@@ -76,7 +76,7 @@ public:
     cvStartWindowThread();
 
     image_transport::ImageTransport it(nh);
-    sub_ = it.subscribe("image", 1, &ImageView::image_cb, this);
+    sub_ = it.subscribe(topic, 1, &ImageView::image_cb, this, transport);
   }
 
   ~ImageView()
@@ -92,6 +92,7 @@ public:
     last_msg_ = msg;
 
     // May want to view raw bayer data
+    // NB: This is hacky, but should be OK since we have only one image CB.
     if (msg->encoding.find("bayer") != std::string::npos)
       boost::const_pointer_cast<sensor_msgs::Image>(msg)->encoding = "mono";
 
@@ -126,11 +127,11 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "image_view", ros::init_options::AnonymousName);
   ros::NodeHandle n;
   if (n.resolveName("image") == "/image") {
-    ROS_WARN("image_view: image has not been remapped! Example command-line usage:\n"
-             "\t$ rosrun image_view image_view image:=/forearm/image_color");
+    ROS_WARN("image_view: image has not been remapped! Typical command-line usage:\n"
+             "\t$ ./image_view image:=<image topic> [transport]");
   }
-  
-  ImageView view(n);
+
+  ImageView view(n, (argc > 1) ? argv[1] : "raw");
 
   ros::spin();
   
