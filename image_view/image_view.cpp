@@ -94,7 +94,7 @@ public:
     // May want to view raw bayer data
     // NB: This is hacky, but should be OK since we have only one image CB.
     if (msg->encoding.find("bayer") != std::string::npos)
-      boost::const_pointer_cast<sensor_msgs::Image>(msg)->encoding = "mono";
+      boost::const_pointer_cast<sensor_msgs::Image>(msg)->encoding = "mono8";
 
     if (img_bridge_.fromImage(*msg, "bgr8"))
       cvShowImage(window_name_.c_str(), img_bridge_.toIpl());
