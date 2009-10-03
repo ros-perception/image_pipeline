@@ -291,7 +291,7 @@ public:
 			  std::string encoding_arg,
 			  uint32_t rows_arg,
 			  uint32_t cols_arg,
-			  uint32_t step_arg,
+			  uint32_t step_arg, // row size in bytes
 			  void* data_arg)
   {
     // first do disparity image
@@ -307,14 +307,22 @@ public:
     // now do regular image
     if (1)			// should check if we're subscribed
       {
-	step_arg = step_arg/2;
+	int nd = dimg_.num_disp;
+	int dpp = dimg_.dpp;
+	nd = nd*dpp;		// total number of sub-disparities
+	int sh = 0;
+	while (nd > 256)
+	  { sh++; nd = nd>>1; }
+	step_arg = cols_arg;
 	image.encoding = sensor_msgs::image_encodings::MONO8,
 	image.height   = rows_arg;
 	image.width    = cols_arg;
 	image.step     = step_arg;
 	size_t st0 = (step_arg * rows_arg);
 	image.data.resize(st0);
-	memcpy((char*)(&image.data[0]), (char*)(data_arg), st0);
+	uint16_t *ddata = (uint16_t *)data_arg;
+	for (int i=0; i<st0; i++, ddata++)
+	  image.data[i] = (char)((*ddata)>>sh);
 	image.is_bigendian = 0;
       }
 
