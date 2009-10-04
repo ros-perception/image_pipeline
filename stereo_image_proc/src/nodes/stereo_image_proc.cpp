@@ -404,9 +404,21 @@ public:
 
     // resolve names, advertise and subscribe
 
-    std::string cam_name_l = nh_.resolveName("camera_left") + "/";
-    std::string cam_name_r = nh_.resolveName("camera_right") + "/";
-    std::string cam_name_s = nh_.resolveName("stereo") + "/";
+    std::string cam_name_l;
+    std::string cam_name_r;
+    std::string cam_name_s;
+    if (nh.resolveName("image") != "/image") // we're looking at a stereo cam
+      {
+	cam_name_l = nh_.resolveName("image") + "/left/";
+	cam_name_r = nh_.resolveName("image") + "/right/";
+	cam_name_s = nh_.resolveName("image") + "/";
+      }
+    else
+      {
+	cam_name_l = nh_.resolveName("image_left") + "/";
+	cam_name_r = nh_.resolveName("image_right") + "/";
+	cam_name_s = nh_.resolveName("image_left") + "/";
+      }
 
     // Advertise outputs
     // @TODO parameters can change, we don't check
@@ -581,7 +593,8 @@ public:
 	size_t st0 = (step_arg * rows_arg);
 	image.data.resize(st0);
 	uint16_t *ddata = (uint16_t *)data_arg;
-	for (int i=0; i<st0; i+=3, ddata++)
+
+	for (size_t i=0; i<st0; i+=3, ddata++)
 	  {
 	    int k = 3 * (0xff & (*ddata)>>sh);
 	    image.data[i] = dmap[k];
@@ -611,11 +624,12 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "image_proc", ros::init_options::AnonymousName);
   ros::NodeHandle nh;
-  if (nh.resolveName("camera_left") == "/camera_left" ||
-      nh.resolveName("camera_right") == "/camera_right")
+  // resolve either <image> for both cams, or individual stereo cams
+  if (nh.resolveName("image") == "/image" && 
+      (nh.resolveName("image_left") == "/image_left" ||
+       nh.resolveName("image_right") == "/image_right"))
     {
-      ROS_WARN("image_view: source image has not been remapped! Example command-line usage:\n"
-	       "\t$ rosrun stere_image_proc stereo_image_proc camera_left:=/forearm-l camera_right:=/forearm-r");
+      ROS_WARN("[stereo_image_proc] Remap either <image> or <image_left> and <image_right>");
     }
   
   StereoProc proc(nh);
