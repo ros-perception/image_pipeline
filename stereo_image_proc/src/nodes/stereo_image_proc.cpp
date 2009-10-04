@@ -359,11 +359,12 @@ public:
   {
     // get standard parameters
     // @TODO use nodehandle with "~" as namespace
-    nh_.param("~do_colorize", do_colorize_, false);
-    nh_.param("~do_rectify", do_rectify_, false);
-    nh_.param("~do_stereo", do_stereo_, true);
-    nh_.param("~do_calc_points", do_calc_points_, false);
-    nh_.param("~do_keep_coords", do_keep_coords_, false);
+    ros::NodeHandle lnh("~");
+    lnh.param("do_colorize", do_colorize_, false);
+    lnh.param("do_rectify", do_rectify_, false);
+    lnh.param("do_stereo", do_stereo_, true);
+    lnh.param("do_calc_points", do_calc_points_, false);
+    lnh.param("do_keep_coords", do_keep_coords_, false);
 
     // set up stereo structures
     if (do_keep_coords_) {
