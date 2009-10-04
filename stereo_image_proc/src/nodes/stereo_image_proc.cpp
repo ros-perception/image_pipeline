@@ -378,28 +378,28 @@ public:
     stdata_ = new cam::StereoData;
 
     int unique_thresh;
-    nh_.param("~unique_thresh", unique_thresh, 36);
+    lnh.param("unique_thresh", unique_thresh, 36);
     stdata_->setTextureThresh(unique_thresh);
     int texture_thresh;
-    nh_.param("~texture_thresh", texture_thresh, 30);
+    lnh.param("texture_thresh", texture_thresh, 30);
     stdata_->setUniqueThresh(texture_thresh);
     int speckle_size;
-    nh_.param("~speckle_size", speckle_size, 100);
+    lnh.param("speckle_size", speckle_size, 100);
     stdata_->setSpeckleRegionSize(speckle_size);
     int speckle_diff;
-    nh_.param("~speckle_diff", speckle_diff, 10);
+    lnh.param("speckle_diff", speckle_diff, 10);
     stdata_->setSpeckleDiff(speckle_diff);
     int smoothness_thresh;
-    if (nh_.getParam("~smoothness_thresh", smoothness_thresh))
+    if (lnh.getParam("smoothness_thresh", smoothness_thresh))
       stdata_->setSmoothnessThresh(smoothness_thresh);
     int horopter;
-    if (nh_.getParam("~horopter", horopter))
+    if (lnh.getParam("horopter", horopter))
       stdata_->setHoropter(horopter);
     int corr_size;
-    if (nh_.getParam("~corr_size", corr_size))
+    if (lnh.getParam("corr_size", corr_size))
       stdata_->setCorrSize(corr_size);
     int num_disp;
-    if (nh_.getParam("~num_disp", num_disp))
+    if (lnh.getParam("num_disp", num_disp))
       stdata_->setNumDisp(num_disp);
 
 
