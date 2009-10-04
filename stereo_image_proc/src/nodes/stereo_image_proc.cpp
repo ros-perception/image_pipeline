@@ -420,6 +420,11 @@ public:
 	cam_name_s = nh_.resolveName("image_left") + "/";
       }
 
+    if (nh.resolveName("output") != "/output") // remap of output
+      {
+	cam_name_s = nh_.resolveName("output") + "/";	
+      }
+
     // Advertise outputs
     // @TODO parameters can change, we don't check
     pub_mono_l_.advertise(nh_, cam_name_l+"image_mono", 1);
@@ -632,6 +637,15 @@ int main(int argc, char **argv)
       ROS_WARN("[stereo_image_proc] Remap either <image> or <image_left> and <image_right>");
     }
   
+  // resolve either <image> for both cams, or individual stereo cams
+  if (nh.resolveName("image") != "/image" && 
+      nh.resolveName("output") == "/output")
+    {
+      std::string name = nh.resolveName("image_left");
+      ROS_WARN("[stereo_image_proc] Output will be %s, remap <output> to change", 
+	       name.c_str());
+    }
+
   StereoProc proc(nh);
 
   ros::spin();
