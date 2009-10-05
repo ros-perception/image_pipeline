@@ -16,6 +16,14 @@ uint32 height         # image height, that is, number of rows
 uint32 width          # image width, that is, number of columns
 
 # specifics for disparity
+
+# stereo geometry
+# focal length, lens center, horizontal baseline
+float32 f	# in pixels
+float32 cx	# in pixels
+float32 cy	# in pixels
+float32 Tx	# in meters
+
 # dpp is the interpolation factor, e.g., dpp=16 means each disparity increment
 #   is 1/16 of a pixel
 uint32 dpp

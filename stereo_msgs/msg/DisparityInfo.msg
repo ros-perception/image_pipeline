@@ -5,12 +5,6 @@ Header header
 uint32 height
 uint32 width
 
-# stereo geometry
-float32 f
-float32 cx
-float32 cy
-float32 Tx
-
 # stereo parameters
 int32 dpp
 int32 num_disp
