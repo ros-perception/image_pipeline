@@ -38,6 +38,7 @@
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/PointCloud.h>
 #include <stereo_msgs/DisparityImage.h>
 #include <sensor_msgs/fill_image.h>
 
@@ -344,6 +345,7 @@ private:
   image_transport::ImagePublisher pub_rect_color_r_;
   image_transport::ImagePublisher pub_disparity_image_;
   ros::Publisher pub_disparity_;
+  ros::Publisher pub_pts_;
 
 
   // @todo: maybe these should not be members?
@@ -451,6 +453,12 @@ public:
 	pub_disparity_ = nh_.advertise<stereo_msgs::DisparityImage>(cam_name_s+"disparity", 1);
       }
 
+    if (do_calc_points_)
+      {
+	pub_pts_ = nh_.advertise<sensor_msgs::PointCloud>(cam_name_s+"points", 1);
+      }
+
+
     // Subscribe to synchronized Image & CameraInfo topics
     image_sub_l.subscribe(nh_, cam_name_l + "image_raw", 1);
     info_sub_l.subscribe(nh_, cam_name_l + "camera_info", 1);
@@ -469,8 +477,10 @@ public:
 
   // callback
   // gets 2 images and 2 parameter sets, computes disparity
-  void imageCb(const sensor_msgs::ImageConstPtr& raw_image_l, const sensor_msgs::CameraInfoConstPtr& cam_info_l,
-	       const sensor_msgs::ImageConstPtr& raw_image_r, const sensor_msgs::CameraInfoConstPtr& cam_info_r)
+  void imageCb(const sensor_msgs::ImageConstPtr& raw_image_l, 
+	       const sensor_msgs::CameraInfoConstPtr& cam_info_l,
+	       const sensor_msgs::ImageConstPtr& raw_image_r, 
+	       const sensor_msgs::CameraInfoConstPtr& cam_info_r)
   {
     // @TODO: check image sizes for compatibility
     cam::ImageData *img_data_l, *img_data_r;
@@ -488,9 +498,11 @@ public:
     // RP can be computed from CameraInfo's
     // T and Om aren't needed
 
+
     // copy data
     cam_bridge::RawToCamData(*raw_image_l, *cam_info_l, cam::IMAGE_RAW, img_data_l);
     cam_bridge::RawToCamData(*raw_image_r, *cam_info_r, cam::IMAGE_RAW, img_data_r);
+    stdata_->setReprojection();	// set up the reprojection matrix
 
     // @todo: only do processing if topics have subscribers
     // @todo: parameter for bayer interpolation to use
@@ -505,21 +517,35 @@ public:
       img_data_r->doBayerColorRGB();
 
     // @TODO check subscribers
-    if (do_rectify_)
+    if (do_rectify_ &&
+	(pub_rect_color_r_.getNumSubscribers() > 0 ||
+	 pub_rect_r_.getNumSubscribers() > 0 ||
+	 pub_rect_color_l_.getNumSubscribers() > 0 ||
+	 pub_rect_l_.getNumSubscribers() > 0 ||
+	 pub_rect_r_.getNumSubscribers() > 0 ||
+	 pub_disparity_.getNumSubscribers() > 0 ||
+	 pub_disparity_image_.getNumSubscribers() > 0 ||
+	 pub_pts_.getNumSubscribers() > 0))
       {
 	//	ROS_INFO("[stereo_image_proc] Rectifying");
 	stdata_->doRectify();
       }
 
-    if (do_stereo_)
+    if (do_stereo_ &&
+	(pub_disparity_.getNumSubscribers() > 0 ||
+	 pub_disparity_image_.getNumSubscribers() > 0 ||
+	 pub_pts_.getNumSubscribers() > 0))
       {
 	//	ROS_INFO("[stereo_image_proc] Disparity calc");
 	stdata_->doDisparity();
       }
 
-    if (do_calc_points_)
-      stdata_->doCalcPts();
-
+    if (do_calc_points_ &&
+	pub_pts_.getNumSubscribers() > 0)
+      {
+	//	ROS_INFO("[stereo_image_proc] 3D Points calc");
+	stdata_->doCalcPts();
+      }
 
     // Publish images
     img_.header.stamp = raw_image_l->header.stamp;
@@ -547,10 +573,61 @@ public:
 	dimg_.im_Dleft = stdata_->imDleft;
 	dimg_.im_Dwidth = stdata_->imDwidth;
 	dimg_.im_Dheight = stdata_->imDheight;
+
+	dimg_.f = (*cam_info_l).K[0];
+	dimg_.cx = (*cam_info_l).K[2];
+	dimg_.cy = (*cam_info_l).K[5];
+	if ((*cam_info_r).P[3] > 1e-10)
+	  dimg_.Tx = (*cam_info_r).P[0] / (*cam_info_r).P[3];
+	else
+	  dimg_.Tx =0.0;
+
 	publishImageDisparity(stdata_->imDisp, stdata_->imDispSize);
       }
 
+
+    // point cloud
+    if (stdata_->numPts > 0)
+      {
+	sensor_msgs::PointCloud cloud_;
+	cloud_.header.stamp = raw_image_l->header.stamp;
+	cloud_.header.frame_id = raw_image_l->header.frame_id;
+	cloud_.points.resize(stdata_->numPts);
+	if (do_keep_coords_) 
+    	  cloud_.channels.resize(3);
+	else
+    	  cloud_.channels.resize(1);
+	cloud_.channels[0].name = "rgb";
+	cloud_.channels[0].values.resize(stdata_->numPts);
+	if (do_keep_coords_) 
+	  {
+	    cloud_.channels[1].name = "x";
+	    cloud_.channels[1].values.resize(stdata_->numPts);
+	    cloud_.channels[2].name = "y";
+	    cloud_.channels[2].values.resize(stdata_->numPts);
+	  }
+
+	for (int i = 0; i < stdata_->numPts; i++)
+	  {
+	    cloud_.points[i].x = stdata_->imPts[3*i + 0];
+	    cloud_.points[i].y = stdata_->imPts[3*i + 1];
+	    cloud_.points[i].z = stdata_->imPts[3*i + 2];
+	  }
+
+	for (int i = 0; i < stdata_->numPts; i++)
+	  {
+	    int rgb = (stdata_->imPtsColor[3*i] << 16) | (stdata_->imPtsColor[3*i + 1] << 8) | stdata_->imPtsColor[3*i + 2];
+	    cloud_.channels[0].values[i] = *(float*)(&rgb);
+	    if (do_keep_coords_) 
+	      {
+		cloud_.channels[1].values[i] = stdata_->imCoords[2*i+0];
+		cloud_.channels[2].values[i] = stdata_->imCoords[2*i+1];
+	      }
+	  }
+	pub_pts_.publish(cloud_);
+      }
   }
+
 
   void publishImage(color_coding_t coding, void* data, size_t dataSize, const image_transport::ImagePublisher& pub)
   {

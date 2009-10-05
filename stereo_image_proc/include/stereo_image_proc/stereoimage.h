@@ -72,6 +72,8 @@ namespace cam
     int numDisp;		// number of search disparities, in pixels
     int offx;			// x offset of disparity search
 
+    bool setReprojection();	// sets the reprojection matrix from the two image projection matrices
+
     bool setHoropter(int offset); // set horopter offset
     bool setNumDisp(int ndisp);	// set number of disparities
 

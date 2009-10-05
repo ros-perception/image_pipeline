@@ -109,6 +109,41 @@ StereoData::~StereoData()
 }
 
 bool
+StereoData::setReprojection()
+{
+  if (imRight->P[3] < 1e-10 &&
+      imRight->P[3] > -1e-10)	// too small, complain
+    return false;
+
+  // reprojection matrix
+  double Tx = imRight->P[0] /  imRight->P[3];
+
+  if (Tx < 1e-10 &&
+      Tx > -1e-10)		// too small, complain
+    return false;		
+
+  // first column
+  RP[0] = 1.0;
+  RP[4] = RP[8] = RP[12] = 0.0;
+
+  // second column
+  RP[5] = 1.0;
+  RP[1] = RP[9] = RP[13] = 0.0;
+
+  // third column
+  RP[2] = RP[6] = RP[10] = 0.0;
+  RP[14] = -Tx;
+
+  // fourth column
+  RP[3] = -imLeft->P[2];	// cx
+  RP[7] = -imLeft->P[6];	// cy
+  RP[11] = imLeft->P[0];	// fx, fy
+  RP[15] = (imLeft->P[2] - imRight->P[2] - (double)offx) / Tx;
+
+  return true;
+}
+
+bool
 StereoData::setHoropter(int val)
 {
   if (val < 0) val = 0;
