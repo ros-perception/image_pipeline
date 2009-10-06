@@ -34,7 +34,8 @@
 
 #include <cstdio>
 
-#include "ros/node.h"
+#include "ros/ros.h"
+
 #include "stereo_msgs/RawStereo.h"
 
 #include "sensor_msgs/Image.h"
@@ -51,16 +52,40 @@
 
 using namespace std;
 
-class StereoProc : public ros::Node
+class StereoProc
 {
+  class ImagePublishers
+  {
+  public:
+    ros::Publisher cam_info_;
+    ros::Publisher image_raw_; 
+    ros::Publisher image_; 
+    ros::Publisher image_color_; 
+    ros::Publisher image_rect_; 
+    ros::Publisher image_rect_color_; 
+  };
+
+  ros::NodeHandle nh_;
+  ros::NodeHandle private_nh_;
+  ros::NodeHandle left_nh_;
+  ros::NodeHandle right_nh_;
+
+  ros::Subscriber raw_stereo_sub_;
+
+  ImagePublishers left_pubs_;
+  ImagePublishers right_pubs_;
+
+  ros::Publisher stereo_info_pub_;
+  ros::Publisher disparity_pub_;
+  ros::Publisher disparity_info_pub_;
+
+  ros::Publisher cloud_pub_;
 
   bool do_colorize_;
   bool do_rectify_;
   bool do_stereo_;
   bool do_calc_points_;
   bool do_keep_coords_;
-
-  stereo_msgs::RawStereo    raw_stereo_;
 
   sensor_msgs::Image         img_;
   sensor_msgs::PointCloud      cloud_;
@@ -76,25 +101,26 @@ class StereoProc : public ros::Node
 
   string frame_id_;
 
+
 public:
 
   cam::StereoData* stdata_;
 
-  StereoProc() : ros::Node("stereoproc"), diagnostic_(ros::NodeHandle()), /// @todo Pass in the NodeHandle to diagnostic_ when this gets upgraded to NodeHandle API.
-    freq_status_(diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_)), 
-    count_(0), stdata_(NULL)
+  StereoProc() : private_nh_("~"), left_nh_("left"), right_nh_("right"), diagnostic_(nh_),
+                 freq_status_(diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_)), 
+                 count_(0), stdata_(NULL)
   {
     diagnostic_.add( freq_status_ );
 
-    param("~do_colorize", do_colorize_, false);
+    private_nh_.param("do_colorize", do_colorize_, false);
 
-    param("~do_rectify", do_rectify_, false);
+    private_nh_.param("do_rectify", do_rectify_, false);
 
-    param("~do_stereo", do_stereo_, false);
+    private_nh_.param("do_stereo", do_stereo_, false);
 
-    param("~do_calc_points", do_calc_points_, false);
+    private_nh_.param("do_calc_points", do_calc_points_, false);
 
-    param("~do_keep_coords", do_keep_coords_, false);
+    private_nh_.param("do_keep_coords", do_keep_coords_, false);
 
     if (do_keep_coords_) {
     	ROS_INFO("I'm keeping the image coordinate in the point cloud\n");
@@ -113,38 +139,38 @@ public:
     //    stdata_->setSpeckleDiff(10);
 
     int unique_thresh;
-    param("~unique_thresh", unique_thresh, 36);
+    private_nh_.param("unique_thresh", unique_thresh, 36);
     stdata_->setTextureThresh(unique_thresh);
 
     int texture_thresh;
-    param("~texture_thresh", texture_thresh, 30);
+    private_nh_.param("texture_thresh", texture_thresh, 30);
     stdata_->setUniqueThresh(texture_thresh);
 
     int speckle_size;
-    param("~speckle_size", speckle_size, 100);
+    private_nh_.param("speckle_size", speckle_size, 100);
     stdata_->setSpeckleRegionSize(speckle_size);
 
     int speckle_diff;
-    param("~speckle_diff", speckle_diff, 10);
+    private_nh_.param("speckle_diff", speckle_diff, 10);
     stdata_->setSpeckleDiff(speckle_diff);
     
     int smoothness_thresh;
-    if (getParam("~smoothness_thresh", smoothness_thresh))
+    if (private_nh_.getParam("smoothness_thresh", smoothness_thresh))
       stdata_->setSmoothnessThresh(smoothness_thresh);
 
     int horopter;
-    if (getParam("~horopter", horopter))
+    if (private_nh_.getParam("horopter", horopter))
       stdata_->setHoropter(horopter);
 
     int corr_size;
-    if (getParam("~corr_size", corr_size))
+    if (private_nh_.getParam("corr_size", corr_size))
       stdata_->setCorrSize(corr_size);
 
     int num_disp;
-    if (getParam("~num_disp", num_disp))
+    if (private_nh_.getParam("num_disp", num_disp))
       stdata_->setNumDisp(num_disp);
 
-    subscribe("raw_stereo", raw_stereo_, &StereoProc::rawCb, 1);
+    raw_stereo_sub_ = nh_.subscribe("raw_stereo", 1, &StereoProc::rawCb, this);
   }
 
   ~StereoProc()
@@ -153,11 +179,10 @@ public:
       delete stdata_;
   }
 
-
-  void rawCb()
+  void rawCb(const stereo_msgs::RawStereo::ConstPtr& raw_stereo)
   {
 
-    cam_bridge::RawStereoToStereoData(raw_stereo_, stdata_);
+    cam_bridge::RawStereoToStereoData(*raw_stereo, stdata_);
 
     if (do_colorize_)
     {
@@ -180,21 +205,21 @@ public:
     }
 
     advertiseCam();
-    publishCam();
+    publishCam(raw_stereo);
 
     count_++;
   }
 
 
-  void publishCam()
+  void publishCam(const stereo_msgs::RawStereo::ConstPtr& raw_stereo)
   {
-    publishImages("left/", stdata_->imLeft);
-    publishImages("right/", stdata_->imRight);
+    publishImages(left_pubs_, raw_stereo, stdata_->imLeft);
+    publishImages(right_pubs_, raw_stereo, stdata_->imRight);
 
     if (stdata_->hasDisparity)
     {
-      disparity_info_.header.stamp = raw_stereo_.header.stamp;
-      disparity_info_.header.frame_id = raw_stereo_.header.frame_id;
+      disparity_info_.header.stamp = raw_stereo->header.stamp;
+      disparity_info_.header.frame_id = raw_stereo->header.frame_id;
 
       disparity_info_.height = stdata_->imHeight;
       disparity_info_.width = stdata_->imWidth;
@@ -215,19 +240,19 @@ public:
       disparity_info_.speckle_region_size = stdata_->speckleRegionSize;
       disparity_info_.unique_check = stdata_->unique_check;
 
-      publish("disparity_info", disparity_info_);
+      disparity_info_pub_.publish(disparity_info_);
 
       fillImage(img_, sensor_msgs::image_encodings::TYPE_16SC1, stdata_->imHeight, stdata_->imWidth, 2 * stdata_->imWidth, stdata_->imDisp);
 
-      img_.header.stamp = raw_stereo_.header.stamp;
-      img_.header.frame_id = raw_stereo_.header.frame_id;
-      publish("disparity", img_);
+      img_.header.stamp = raw_stereo->header.stamp;
+      img_.header.frame_id = raw_stereo->header.frame_id;
+      disparity_pub_.publish(img_);
     }
 
     if (do_calc_points_)
     {
-      cloud_.header.stamp = raw_stereo_.header.stamp;
-      cloud_.header.frame_id = raw_stereo_.header.frame_id;
+      cloud_.header.stamp = raw_stereo->header.stamp;
+      cloud_.header.frame_id = raw_stereo->header.frame_id;
       cloud_.points.resize(stdata_->numPts);
       if (do_keep_coords_) {
     	  cloud_.channels.resize(3);
@@ -261,10 +286,10 @@ public:
         }
       }
 
-      publish("cloud", cloud_);
+      cloud_pub_.publish(cloud_);
     }
 
-    stereo_info_.header.stamp = raw_stereo_.header.stamp;
+    stereo_info_.header.stamp = raw_stereo->header.stamp;
 
     stereo_info_.height = stdata_->imHeight;
     stereo_info_.width = stdata_->imWidth;
@@ -273,10 +298,10 @@ public:
     memcpy((char*)(&stereo_info_.Om[0]), (char*)(stdata_->Om),  3*sizeof(double));
     memcpy((char*)(&stereo_info_.RP[0]), (char*)(stdata_->RP), 16*sizeof(double));
 
-    publish("stereo_info", stereo_info_);
+    stereo_info_pub_.publish(stereo_info_);
   }
 
-  void publishImage(const std::string& topic, color_coding_t coding, int height,
+  void publishImage(const ros::Publisher& pub, color_coding_t coding, int height,
                     int width, void* data, size_t dataSize)
   {
     if (coding == COLOR_CODING_NONE)
@@ -285,27 +310,27 @@ public:
     // @todo: step calculation is a little hacky
     fillImage(img_, cam_bridge::ColorCodingToImageEncoding(coding),
               height, width, dataSize / height /*step*/, data);
-    publish(topic, img_);
+    pub.publish(img_);
   }
 
-  void publishImages(const std::string& base_name, cam::ImageData* img_data)
+  void publishImages(ImagePublishers& pubs, const stereo_msgs::RawStereo::ConstPtr& raw_stereo, cam::ImageData* img_data)
   {
-    img_.header.stamp = raw_stereo_.header.stamp;
-    img_.header.frame_id = raw_stereo_.header.frame_id;
+    img_.header.stamp = raw_stereo->header.stamp;
+    img_.header.frame_id = raw_stereo->header.frame_id;
     
-    publishImage(base_name + "image_raw", img_data->imRawType, img_data->imHeight,
+    publishImage(pubs.image_raw_, img_data->imRawType, img_data->imHeight,
                  img_data->imWidth, img_data->imRaw, img_data->imRawSize);
-    publishImage(base_name + "image", img_data->imType, img_data->imHeight,
+    publishImage(pubs.image_, img_data->imType, img_data->imHeight,
                  img_data->imWidth, img_data->im, img_data->imSize);
-    publishImage(base_name + "image_color", img_data->imColorType, img_data->imHeight,
+    publishImage(pubs.image_color_, img_data->imColorType, img_data->imHeight,
                  img_data->imWidth, img_data->imColor, img_data->imColorSize);
-    publishImage(base_name + "image_rect", img_data->imRectType, img_data->imHeight,
+    publishImage(pubs.image_rect_, img_data->imRectType, img_data->imHeight,
                  img_data->imWidth, img_data->imRect, img_data->imRectSize);
-    publishImage(base_name + "image_rect_color", img_data->imRectColorType, img_data->imHeight,
+    publishImage(pubs.image_rect_color_, img_data->imRectColorType, img_data->imHeight,
                  img_data->imWidth, img_data->imRectColor, img_data->imRectColorSize);
 
-    cam_info_.header.stamp = raw_stereo_.header.stamp;
-    cam_info_.header.frame_id = raw_stereo_.header.frame_id;
+    cam_info_.header.stamp = raw_stereo->header.stamp;
+    cam_info_.header.frame_id = raw_stereo->header.frame_id;
     cam_info_.height = img_data->imHeight;
     cam_info_.width  = img_data->imWidth;
 
@@ -314,52 +339,52 @@ public:
     memcpy((char*)(&cam_info_.R[0]), (char*)(img_data->R),  9*sizeof(double));
     memcpy((char*)(&cam_info_.P[0]), (char*)(img_data->P), 12*sizeof(double));
 
-    publish(base_name + std::string("cam_info"), cam_info_);
+    pubs.cam_info_.publish(cam_info_);
   }
 
 
-  void advertiseImages(const std::string& base_name, cam::ImageData* img_data)
+  void advertiseImages(ros::NodeHandle& nh, ImagePublishers& pubs, cam::ImageData* img_data)
   {
-    advertise<sensor_msgs::CameraInfo>(base_name + std::string("cam_info"), 1);
+    pubs.cam_info_ = nh.advertise<sensor_msgs::CameraInfo>("cam_info", 1);
 
     if (img_data->imRawType != COLOR_CODING_NONE)
-      advertise<sensor_msgs::Image>(base_name + std::string("image_raw"), 1);
+      pubs.image_raw_ = nh.advertise<sensor_msgs::Image>("image_raw", 1);
 
     if (img_data->imType != COLOR_CODING_NONE)
-      advertise<sensor_msgs::Image>(base_name + std::string("image"), 1);
+      pubs.image_ = nh.advertise<sensor_msgs::Image>("image", 1);
 
     if (img_data->imColorType != COLOR_CODING_NONE)
-      advertise<sensor_msgs::Image>(base_name + std::string("image_color"), 1);
+      pubs.image_color_ = nh.advertise<sensor_msgs::Image>("image_color", 1);
 
     if (img_data->imRectType != COLOR_CODING_NONE)
-      advertise<sensor_msgs::Image>(base_name + std::string("image_rect"), 1);
+      pubs.image_rect_ = nh.advertise<sensor_msgs::Image>("image_rect", 1);
 
     if (img_data->imRectColorType != COLOR_CODING_NONE)
-      advertise<sensor_msgs::Image>(base_name + std::string("image_rect_color"), 1);
+      pubs.image_rect_color_ = nh.advertise<sensor_msgs::Image>("image_rect_color", 1);
 
   }
 
   void advertiseCam()
   {
-    advertise<stereo_msgs::StereoInfo>("stereo_info", 1);
+    stereo_info_pub_ = nh_.advertise<stereo_msgs::StereoInfo>("stereo_info", 1);
 
-    advertiseImages("left/", stdata_->imLeft);
-    advertiseImages("right/", stdata_->imRight);
+    advertiseImages(left_nh_, left_pubs_, stdata_->imLeft);
+    advertiseImages(right_nh_, right_pubs_, stdata_->imRight);
 
     if (stdata_->hasDisparity)
     {
-      advertise<stereo_msgs::DisparityInfo>("disparity_info", 1);
-      advertise<sensor_msgs::Image>("disparity", 1);
+      disparity_info_pub_ = nh_.advertise<stereo_msgs::DisparityInfo>("disparity_info", 1);
+      disparity_pub_ = nh_.advertise<sensor_msgs::Image>("disparity", 1);
     }
 
     if (do_calc_points_)
-      advertise<sensor_msgs::PointCloud>("cloud",1);
+      cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud>("cloud",1);
   }
 
   bool spin()
   {
     // Start up the camera
-    while (ok())
+    while (nh_.ok())
     {
       usleep(100000);
       diagnostic_.update();
@@ -371,7 +396,7 @@ public:
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv);
+  ros::init(argc, argv, "stereoproc");
 
   StereoProc sp;
 
