@@ -95,11 +95,13 @@ class StereoProc
 
 
   diagnostic_updater::Updater diagnostic_;
+  ros::Timer diagnostic_timer_;
   diagnostic_updater::FrequencyStatus freq_status_;
   int count_;
   double desired_freq_;
 
   string frame_id_;
+
 
 
 public:
@@ -170,6 +172,8 @@ public:
     if (private_nh_.getParam("num_disp", num_disp))
       stdata_->setNumDisp(num_disp);
 
+    diagnostic_timer_ = nh_.createTimer(ros::Duration(0.1), &StereoProc::diagnosticUpdate, this);
+
     raw_stereo_sub_ = nh_.subscribe("raw_stereo", 1, &StereoProc::rawCb, this);
   }
 
@@ -181,7 +185,6 @@ public:
 
   void rawCb(const stereo_msgs::RawStereo::ConstPtr& raw_stereo)
   {
-
     cam_bridge::RawStereoToStereoData(*raw_stereo, stdata_);
 
     if (do_colorize_)
@@ -381,16 +384,9 @@ public:
       cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud>("cloud",1);
   }
 
-  bool spin()
+  void diagnosticUpdate(const ros::TimerEvent&)
   {
-    // Start up the camera
-    while (nh_.ok())
-    {
-      usleep(100000);
-      diagnostic_.update();
-    }
-
-    return true;
+    diagnostic_.update();
   }
 };
 
@@ -400,8 +396,7 @@ int main(int argc, char **argv)
 
   StereoProc sp;
 
-  sp.spin();
-
+  ros::spin();
 
   return 0;
 }
