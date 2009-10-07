@@ -86,25 +86,40 @@ void PinholeCameraModel::undistort(IplImage* src, IplImage* dst) const
 
 bool PinholeCameraModel::load(const std::string& file_name)
 {
-  using namespace camera_calibration_parsers;
-  bool success = readCalibration(file_name, camera_name_, image_width_, image_height_, K, D);
-  if (success)
+  sensor_msgs::CameraInfo info;
+  bool success = camera_calibration_parsers::readCalibration(file_name, camera_name_, info);
+  
+  if (success) {
+    image_width_ = info.width;
+    image_height_ = info.height;
+    std::copy(&info.K[0], &info.K[9], K);
+    std::copy(&info.D[0], &info.D[5], D);
+    
     initUndistortMap();
+  }
   return success;
 }
 
 bool PinholeCameraModel::save(const std::string& file_name) const
 {
-  using namespace camera_calibration_parsers;
-  return writeCalibration(file_name, camera_name_, image_width_, image_height_, K, D);
+  sensor_msgs::CameraInfo info;
+  fillCameraInfo(info);
+  return camera_calibration_parsers::writeCalibration(file_name, camera_name_, info);
 }
 
 bool PinholeCameraModel::parse(const std::string& buffer, const std::string& format)
 {
-  using namespace camera_calibration_parsers;
-  bool success = parseCalibration(buffer, format, camera_name_, image_width_, image_height_, K, D);
-  if (success)
+  sensor_msgs::CameraInfo info;
+  bool success = camera_calibration_parsers::parseCalibration(buffer, format, camera_name_, info);
+
+  if (success) {
+    image_width_ = info.width;
+    image_height_ = info.height;
+    std::copy(&info.K[0], &info.K[9], K);
+    std::copy(&info.D[0], &info.D[5], D);
+    
     initUndistortMap();
+  }
   return success;
 }
 
