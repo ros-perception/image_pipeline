@@ -41,7 +41,7 @@
 #include <sensor_msgs/fill_image.h>
 
 #include <opencv_latest/CvBridge.h>
-#include <image_transport/image_publisher.h>
+#include <image_transport/image_transport.h>
 
 #include "image_proc/image.h"
 #include "image_proc/cam_bridge.h"
@@ -60,17 +60,16 @@ class ImageProc
 {
 private:
   ros::NodeHandle nh_;
-  message_filters::Subscriber<sensor_msgs::Image> image_sub_;
-  message_filters::Subscriber<sensor_msgs::CameraInfo> info_sub_;
-  message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
   
   bool do_colorize_;
   bool do_rectify_;
 
-  image_transport::ImagePublisher pub_mono_;
-  image_transport::ImagePublisher pub_rect_;
-  image_transport::ImagePublisher pub_color_;
-  image_transport::ImagePublisher pub_rect_color_;
+  image_transport::ImageTransport it_;
+  image_transport::CameraSubscriber cam_sub_;
+  image_transport::Publisher pub_mono_;
+  image_transport::Publisher pub_rect_;
+  image_transport::Publisher pub_color_;
+  image_transport::Publisher pub_rect_color_;
 
   // @todo: maybe these should not be members?
   cam::ImageData img_data_;
@@ -78,24 +77,23 @@ private:
 
 public:
 
-  ImageProc(const ros::NodeHandle& nh) : nh_(nh), sync_(3)
+  ImageProc(const ros::NodeHandle& nh) : nh_(nh), it_(nh)
   {
+    /// @todo Use child camera_nh instead
     std::string cam_name = nh_.resolveName("camera") + "/";
+    /// @todo Ditch these parameters
     // we check camera node to see if we can do these
     nh_.param("~do_colorize", do_colorize_, true);
     nh_.param("~do_rectify", do_rectify_, true);
 
     // Advertise outputs
-    pub_mono_.advertise(nh_, cam_name+"image_mono", 1);
-    pub_rect_.advertise(nh_, cam_name+"image_rect", 1);
-    pub_color_.advertise(nh_, cam_name+"image_color", 1);
-    pub_rect_color_.advertise(nh_, cam_name+"image_rect_color", 1);
+    pub_mono_ = it_.advertise(cam_name+"image_mono", 1);
+    pub_rect_ = it_.advertise(cam_name+"image_rect", 1);
+    pub_color_ = it_.advertise(cam_name+"image_color", 1);
+    pub_rect_color_ = it_.advertise(cam_name+"image_rect_color", 1);
 
     // Subscribe to synchronized Image & CameraInfo topics
-    image_sub_.subscribe(nh_, cam_name + "image_raw", 1);
-    info_sub_.subscribe(nh_, cam_name + "camera_info", 1);
-    sync_.connectInput(image_sub_, info_sub_);
-    sync_.registerCallback(boost::bind(&ImageProc::imageCb, this, _1, _2));
+    cam_sub_ = it_.subscribeCamera(cam_name + "image_raw", 3, &ImageProc::imageCb, this);
 
     ROS_INFO("%s: starting with rectification %s and colorization %s.",
         ros::this_node::getName().c_str(), do_rectify_ ? "on" : "off", do_colorize_ ? "on" : "off");
@@ -130,7 +128,7 @@ public:
     publishImage(img_data_.imRectColorType, img_data_.imRectColor, img_data_.imRectColorSize, pub_rect_color_);
   }
 
-  void publishImage(color_coding_t coding, void* data, size_t dataSize, const image_transport::ImagePublisher& pub)
+  void publishImage(color_coding_t coding, void* data, size_t dataSize, const image_transport::Publisher& pub)
   {
     if (coding == COLOR_CODING_NONE)
       return;
