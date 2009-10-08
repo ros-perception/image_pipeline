@@ -43,7 +43,8 @@
 #include <sensor_msgs/fill_image.h>
 
 #include <opencv_latest/CvBridge.h>
-#include <image_transport/image_publisher.h>
+#include <image_transport/image_transport.h>
+#include <image_transport/subscriber_filter.h>
 
 #include "stereo_image_proc/stereoimage.h"
 #include "image_proc/cam_bridge.h"
@@ -324,7 +325,8 @@ class StereoProc
 {
 private:
   ros::NodeHandle nh_;
-  message_filters::Subscriber<sensor_msgs::Image> image_sub_l, image_sub_r;
+  image_transport::ImageTransport it_;
+  image_transport::SubscriberFilter image_sub_l, image_sub_r;
   message_filters::Subscriber<sensor_msgs::CameraInfo> info_sub_l, info_sub_r;
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo, 
 				    sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
@@ -335,15 +337,15 @@ private:
   bool do_calc_points_;
   bool do_keep_coords_;
 
-  image_transport::ImagePublisher pub_mono_l_;
-  image_transport::ImagePublisher pub_rect_l_;
-  image_transport::ImagePublisher pub_color_l_;
-  image_transport::ImagePublisher pub_rect_color_l_;
-  image_transport::ImagePublisher pub_mono_r_;
-  image_transport::ImagePublisher pub_rect_r_;
-  image_transport::ImagePublisher pub_color_r_;
-  image_transport::ImagePublisher pub_rect_color_r_;
-  image_transport::ImagePublisher pub_disparity_image_;
+  image_transport::Publisher pub_mono_l_;
+  image_transport::Publisher pub_rect_l_;
+  image_transport::Publisher pub_color_l_;
+  image_transport::Publisher pub_rect_color_l_;
+  image_transport::Publisher pub_mono_r_;
+  image_transport::Publisher pub_rect_r_;
+  image_transport::Publisher pub_color_r_;
+  image_transport::Publisher pub_rect_color_r_;
+  image_transport::Publisher pub_disparity_image_;
   ros::Publisher pub_disparity_;
   ros::Publisher pub_pts_;
 
@@ -357,7 +359,7 @@ public:
 
   cam::StereoData* stdata_;
 
-  StereoProc(const ros::NodeHandle& nh) : nh_(nh), sync_(3)
+  StereoProc(const ros::NodeHandle& nh) : nh_(nh), it_(nh), sync_(3)
   {
     // get standard parameters
     // @TODO use nodehandle with "~" as namespace
@@ -430,26 +432,26 @@ public:
 
     // Advertise outputs
     // @TODO parameters can change, we don't check
-    pub_mono_l_.advertise(nh_, cam_name_l+"image_mono", 1);
-    pub_mono_r_.advertise(nh_, cam_name_r+"image_mono", 1);
+    pub_mono_l_ = it_.advertise(cam_name_l+"image_mono", 1);
+    pub_mono_r_ = it_.advertise(cam_name_r+"image_mono", 1);
     if (do_rectify_)
       {
-	pub_rect_l_.advertise(nh_, cam_name_l+"image_rect", 1);
-	pub_rect_r_.advertise(nh_, cam_name_r+"image_rect", 1);
+	pub_rect_l_ = it_.advertise(cam_name_l+"image_rect", 1);
+	pub_rect_r_ = it_.advertise(cam_name_r+"image_rect", 1);
       }
     if (do_colorize_)
       {
-	pub_color_l_.advertise(nh_, cam_name_l+"image_color", 1);
-	pub_color_r_.advertise(nh_, cam_name_r+"image_color", 1);
+	pub_color_l_ = it_.advertise(cam_name_l+"image_color", 1);
+	pub_color_r_ = it_.advertise(cam_name_r+"image_color", 1);
 	if (do_rectify_)
 	  {
-	    pub_rect_color_l_.advertise(nh_, cam_name_l+"image_rect_color", 1);
-	    pub_rect_color_r_.advertise(nh_, cam_name_r+"image_rect_color", 1);
+	    pub_rect_color_l_ = it_.advertise(cam_name_l+"image_rect_color", 1);
+	    pub_rect_color_r_ = it_.advertise(cam_name_r+"image_rect_color", 1);
 	  }
       }
     if (do_stereo_)
       {
-	pub_disparity_image_.advertise(nh_, cam_name_s+"image_disparity", 1);
+	pub_disparity_image_ = it_.advertise(cam_name_s+"image_disparity", 1);
 	pub_disparity_ = nh_.advertise<stereo_msgs::DisparityImage>(cam_name_s+"disparity", 1);
       }
 
@@ -629,7 +631,7 @@ public:
   }
 
 
-  void publishImage(color_coding_t coding, void* data, size_t dataSize, const image_transport::ImagePublisher& pub)
+  void publishImage(color_coding_t coding, void* data, size_t dataSize, const image_transport::Publisher& pub)
   {
     if (coding == COLOR_CODING_NONE)
       return;
