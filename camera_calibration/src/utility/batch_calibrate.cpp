@@ -1,3 +1,4 @@
+#include <cstdio>
 #include "camera_calibration/calibrate.h"
 #include <opencv/highgui.h>
 
