@@ -412,22 +412,21 @@ public:
     std::string cam_name_l;
     std::string cam_name_r;
     std::string cam_name_s;
-    if (nh.resolveName("image") != "/image") // we're looking at a stereo cam
+    if (nh.resolveName("camera") != "/camera") // we're looking at a stereo cam
       {
-	cam_name_l = nh_.resolveName("image") + "/left/";
-	cam_name_r = nh_.resolveName("image") + "/right/";
-	cam_name_s = nh_.resolveName("image") + "/";
+	cam_name_l = nh_.resolveName("camera") + "/left/";
+	cam_name_r = nh_.resolveName("camera") + "/right/";
+	cam_name_s = nh_.resolveName("camera") + "/";
       }
     else
       {
-	cam_name_l = nh_.resolveName("image_left") + "/";
-	cam_name_r = nh_.resolveName("image_right") + "/";
-	cam_name_s = nh_.resolveName("image_left") + "/";
-      }
-
-    if (nh.resolveName("output") != "/output") // remap of output
-      {
-	cam_name_s = nh_.resolveName("output") + "/";	
+	cam_name_l = nh_.resolveName("camera_left") + "/";
+	cam_name_r = nh_.resolveName("camera_right") + "/";
+	//cam_name_s = nh_.resolveName("camera_left") + "/";
+        if (nh.resolveName("output") != "/output") // remap of output
+          cam_name_s = nh_.resolveName("output") + "/";
+        else
+          cam_name_s = "/stereo/";
       }
 
     // Advertise outputs
@@ -709,21 +708,24 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "image_proc", ros::init_options::AnonymousName);
   ros::NodeHandle nh;
-  // resolve either <image> for both cams, or individual stereo cams
-  if (nh.resolveName("image") == "/image" && 
-      (nh.resolveName("image_left") == "/image_left" ||
-       nh.resolveName("image_right") == "/image_right"))
+  // resolve either <camera> for both cams, or individual stereo cams
+  if (nh.resolveName("camera") == "/camera" && 
+      (nh.resolveName("camera_left") == "/camera_left" ||
+       nh.resolveName("camera_right") == "/camera_right"))
     {
-      ROS_WARN("[stereo_image_proc] Remap either <image> or <image_left> and <image_right>");
+      ROS_WARN("[stereo_image_proc] Remap either <camera> or <camera_left> and <camera_right>");
     }
   
-  // resolve either <image> for both cams, or individual stereo cams
-  if (nh.resolveName("image") != "/image" && 
+  // resolve either <camera> for both cams, or individual stereo cams
+  if (nh.resolveName("camera") != "/camera" && 
       nh.resolveName("output") == "/output")
     {
-      std::string name = nh.resolveName("image_left");
+      /*
+      std::string name = nh.resolveName("camera_left");
       ROS_WARN("[stereo_image_proc] Output will be %s, remap <output> to change", 
 	       name.c_str());
+      */
+      ROS_WARN("[stereo_image_proc] Output will be in /stereo/, remap <output> to change");
     }
 
   StereoProc proc(nh);
