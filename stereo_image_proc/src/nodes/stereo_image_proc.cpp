@@ -367,8 +367,8 @@ public:
     lnh.param("do_colorize", do_colorize_, false);
     lnh.param("do_rectify", do_rectify_, false);
     lnh.param("do_stereo", do_stereo_, true);
-    lnh.param("do_calc_points", do_calc_points_, false);
-    lnh.param("do_keep_coords", do_keep_coords_, false);
+    lnh.param("do_calc_points", do_calc_points_, true);
+    lnh.param("do_keep_coords", do_keep_coords_, true);
 
     // set up stereo structures
     if (do_keep_coords_) {
@@ -508,41 +508,41 @@ public:
     // @todo: only do processing if topics have subscribers
     // @todo: parameter for bayer interpolation to use
     if (do_colorize_ && 
-	(pub_color_l_.getNumSubscribers() > 0 ||
-	 pub_rect_color_l_.getNumSubscribers() > 0))
+	((pub_color_l_ &&pub_color_l_.getNumSubscribers() > 0) ||
+	 (pub_rect_color_l_ && pub_rect_color_l_.getNumSubscribers() > 0)))
       img_data_l->doBayerColorRGB();
 
     if (do_colorize_ && 
-	(pub_color_r_.getNumSubscribers() > 0 ||
-	 pub_rect_color_r_.getNumSubscribers() > 0))
+	((pub_color_r_ && pub_color_r_.getNumSubscribers() > 0) ||
+	 (pub_rect_color_r_ && pub_rect_color_r_.getNumSubscribers()) > 0))
       img_data_r->doBayerColorRGB();
 
     // @TODO check subscribers
     if (do_rectify_ &&
-	(pub_rect_color_r_.getNumSubscribers() > 0 ||
-	 pub_rect_r_.getNumSubscribers() > 0 ||
-	 pub_rect_color_l_.getNumSubscribers() > 0 ||
-	 pub_rect_l_.getNumSubscribers() > 0 ||
-	 pub_rect_r_.getNumSubscribers() > 0 ||
-	 pub_disparity_.getNumSubscribers() > 0 ||
-	 pub_disparity_image_.getNumSubscribers() > 0 ||
-	 pub_pts_.getNumSubscribers() > 0))
+	((pub_rect_color_r_ && pub_rect_color_r_.getNumSubscribers() > 0) ||
+	 (pub_rect_r_ && pub_rect_r_.getNumSubscribers() > 0) ||
+	 (pub_rect_color_l_ && pub_rect_color_l_.getNumSubscribers() > 0) ||
+	 (pub_rect_l_ && pub_rect_l_.getNumSubscribers() > 0) ||
+	 (pub_rect_r_ && pub_rect_r_.getNumSubscribers() > 0) ||
+	 (pub_disparity_ && pub_disparity_.getNumSubscribers() > 0) ||
+	 (pub_disparity_image_ && pub_disparity_image_.getNumSubscribers() > 0) ||
+	 (pub_pts_ && pub_pts_.getNumSubscribers() > 0)))
       {
 	//	ROS_INFO("[stereo_image_proc] Rectifying");
 	stdata_->doRectify();
       }
 
     if (do_stereo_ &&
-	(pub_disparity_.getNumSubscribers() > 0 ||
-	 pub_disparity_image_.getNumSubscribers() > 0 ||
-	 pub_pts_.getNumSubscribers() > 0))
+	((pub_disparity_ && pub_disparity_.getNumSubscribers() > 0) ||
+	 (pub_disparity_image_ && pub_disparity_image_.getNumSubscribers() > 0) ||
+	 (pub_pts_ && pub_pts_.getNumSubscribers() > 0)))
       {
 	//	ROS_INFO("[stereo_image_proc] Disparity calc");
 	stdata_->doDisparity();
       }
 
     if (do_calc_points_ &&
-	pub_pts_.getNumSubscribers() > 0)
+	(pub_pts_ && pub_pts_.getNumSubscribers() > 0) )
       {
 	//	ROS_INFO("[stereo_image_proc] 3D Points calc");
 	stdata_->doCalcPts();
