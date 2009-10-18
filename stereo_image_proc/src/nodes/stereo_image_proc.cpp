@@ -491,19 +491,31 @@ public:
     // copy timestamps
     stdata_->imLeft->im_time = raw_image_l->header.stamp.toNSec() / 1000;
     stdata_->imRight->im_time = raw_image_l->header.stamp.toNSec() / 1000;
+
     // set size
     stdata_->setSize(raw_image_l->width, raw_image_l->height);
     stdata_->hasDisparity = false;
 
-    // @TODO get T, Om, RP
-    // RP can be computed from CameraInfo's
-    // T and Om aren't needed
-
-
     // copy data
     cam_bridge::RawToCamData(*raw_image_l, *cam_info_l, cam::IMAGE_RAW, img_data_l);
     cam_bridge::RawToCamData(*raw_image_r, *cam_info_r, cam::IMAGE_RAW, img_data_r);
-    stdata_->setReprojection();	// set up the reprojection matrix
+
+    // check rectification parameters
+    if (fabs(img_data_l->K[2]) < 1e-10 ||
+	fabs(img_data_r->K[2]) < 1e-10 ||
+	fabs(img_data_l->D[0]) < 1e-10 ||
+	fabs(img_data_l->D[0]) < 1e-10)
+      {
+	ROS_ERROR("[stereo_image_proc] No camera matrix or distortion parameters specified in camera_info message");
+	exit(-1);
+      }
+
+    // set reprojection matrix from projection matrices
+    if (!stdata_->setReprojection())	// set up the reprojection matrix
+      {
+	ROS_ERROR("[stereo_image_proc] No projection matrix specified in camera_info message");
+	exit(-1);
+      }
 
     // @todo: only do processing if topics have subscribers
     // @todo: parameter for bayer interpolation to use
