@@ -38,7 +38,6 @@
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <sensor_msgs/PointCloud.h>
 #include <stereo_msgs/DisparityImage.h>
 #include <sensor_msgs/fill_image.h>
 
@@ -48,6 +47,7 @@
 
 #include "stereo_image_proc/stereoimage.h"
 #include "image_proc/cam_bridge.h"
+#include "new_point_cloud/fast_point_cloud_msg.h"
 
 #include <boost/thread.hpp>
 
@@ -456,7 +456,7 @@ public:
 
     if (do_calc_points_)
       {
-	pub_pts_ = nh_.advertise<sensor_msgs::PointCloud>(cam_name_s+"points", 1);
+	pub_pts_ = nh_.advertise<new_point_cloud::FastPointCloud>(cam_name_s+"points", 1);
       }
 
 
@@ -602,22 +602,18 @@ public:
     // point cloud
     if (stdata_->numPts > 0)
       {
-	sensor_msgs::PointCloud cloud_;
+        new_point_cloud::FastPointCloud cloud_;
 	cloud_.header.stamp = raw_image_l->header.stamp;
 	cloud_.header.frame_id = raw_image_l->header.frame_id;
-	cloud_.points.resize(stdata_->numPts);
+	cloud_.allocate(stdata_->imDwidth, stdata_->imDheight);
 	if (do_keep_coords_) 
-    	  cloud_.channels.resize(3);
-	else
-    	  cloud_.channels.resize(1);
-	cloud_.channels[0].name = "rgb";
-	cloud_.channels[0].values.resize(stdata_->numPts);
+    	  cloud_.channels.resize(2);
 	if (do_keep_coords_) 
 	  {
-	    cloud_.channels[1].name = "x";
+	    cloud_.channels[0].name = "x";
+	    cloud_.channels[0].values.resize(stdata_->numPts);
+	    cloud_.channels[1].name = "y";
 	    cloud_.channels[1].values.resize(stdata_->numPts);
-	    cloud_.channels[2].name = "y";
-	    cloud_.channels[2].values.resize(stdata_->numPts);
 	  }
 
 	for (int i = 0; i < stdata_->numPts; i++)
@@ -625,18 +621,19 @@ public:
 	    cloud_.points[i].x = stdata_->imPts[3*i + 0];
 	    cloud_.points[i].y = stdata_->imPts[3*i + 1];
 	    cloud_.points[i].z = stdata_->imPts[3*i + 2];
+	    cloud_.points[i].color.r = stdata_->imPtsColor[3*i];
+	    cloud_.points[i].color.g = stdata_->imPtsColor[3*i + 1];
+	    cloud_.points[i].color.b = stdata_->imPtsColor[3*i + 2];
 	  }
 
-	for (int i = 0; i < stdata_->numPts; i++)
-	  {
-	    int rgb = (stdata_->imPtsColor[3*i] << 16) | (stdata_->imPtsColor[3*i + 1] << 8) | stdata_->imPtsColor[3*i + 2];
-	    cloud_.channels[0].values[i] = *(float*)(&rgb);
-	    if (do_keep_coords_) 
-	      {
-		cloud_.channels[1].values[i] = stdata_->imCoords[2*i+0];
-		cloud_.channels[2].values[i] = stdata_->imCoords[2*i+1];
-	      }
-	  }
+	if (do_keep_coords_)
+	{
+          for (int i = 0; i < stdata_->numPts; i++)
+            {
+              cloud_.channels[0].values[i] = stdata_->imCoords[2*i];
+              cloud_.channels[1].values[i] = stdata_->imCoords[2*i + 1];
+            }
+	}
 	pub_pts_.publish(cloud_);
       }
   }
