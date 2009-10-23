@@ -14,5 +14,4 @@
   <depend package="sensor_msgs"/>
   <depend package="stereo_msgs"/>
   <depend package="image_proc"/>
-  <depend package="new_point_cloud"/>
 </package>
