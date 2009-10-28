@@ -1,3 +1,4 @@
+<!-- TODO: This should go in pr2_alpha -->
 <launch>
   <!-- stereo processing parameters
        texture_thresh:  Threshold for removing bad disparities based on texture
@@ -16,14 +17,9 @@
                         Default value: 64
        -->
   <group ns="stereo">
-    <node pkg="stereo_image_proc" type="stereo_image_proc" respawn="false" output="screen" name="stereo_image_proc">
+    <node name="narrow_stereo_driver" pkg="stereo_image_proc" type="stereo_image_proc" respawn="false" output="screen">
       <remap from="camera" to="/narrow_stereo" />
-      <!-- Alternately, we can specify the left and right monocular camera namespaces separately: -->
-      <!--
-      <remap from="camera_left" to="/cam1/left" />
-      <remap from="camera_right" to="/cam1/right" />
-      -->
-      <remap from="stereo" to="/cam1/stereo" />
+
       <param name="do_colorize" type="bool" value="True"/>
       <param name="do_rectify" type="bool" value="True"/>
       <param name="do_stereo" type="bool" value="True"/>
@@ -33,4 +29,3 @@
     </node>
   </group>
 </launch>
-
