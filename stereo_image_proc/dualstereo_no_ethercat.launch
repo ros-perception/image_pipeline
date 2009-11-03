@@ -1,0 +1,77 @@
+<launch>
+  <!-- Spwns the controllers -->
+  <node name="$(anon spawner-dualstereo)" pkg="pr2_mechanism_control" type="spawner.py" output="screen" args="trig_controller" />
+  <group ns="trig_controller">
+    <param name="type" type="string" value="TriggerController" />
+    <param name="actuator" type="string" value="led_projector" />
+    <param name="rep_rate" type="double" value="25" />
+    <param name="active_low" type="bool" value="false" />
+    <param name="running" type="bool" value="true" />
+    <param name="pulsed" type="bool" value="false" />
+    <param name="phase" type="double" value="0" />
+    <param name="duty_cycle" type="double" value="0.5" />
+  </group>
+
+  <!-- Spawn the cameras -->
+  
+  <node name="wide_stereo_l" pkg="wge100_camera" type="wge100_camera_node_new" output="screen">
+    <param name="ext_trig" type="bool" value="True" />
+    <param name="camera_url" type="str" value="name://wide_stereo_l" />
+    <remap from="camera" to="wide_stereo/left" />
+  </node>
+
+  <node name="wide_stereo_r" pkg="wge100_camera" type="wge100_camera_node_new" output="screen">
+    <param name="ext_trig" type="bool" value="True" />
+    <param name="camera_url" type="str" value="name://wide_stereo_r"/>
+    <remap from="camera" to="wide_stereo/right" />
+  </node>
+  
+  <node name="wide_stereo_cfg" pkg="wge100_camera" type="wge100_multi_configurator" respawn="true">
+    <param name="camera_nodes" type="str" value="wide_stereo_l wide_stereo_r" />
+    <param name="video_mode" type="str" value="640x480x30" />
+    
+    <param name="auto_exposure" type="bool" value="True" />
+    <param name="exposure" type="double" value="0" />
+    <param name="auto_gain" type="bool" value="True" />
+    <param name="gain" type="int" value="32" />
+    
+    <param name="frame_id" type="str" value="wide_stereo_optical_frame" />
+    <param name="first_packet_offset" type="double" value="0.0025" />
+    
+    <param name="ext_trig" type="bool" value="True" />
+    <param name="trig_controller" type="str" value="trig_controller/falling_edge_timestamps" />
+    <param name="trig_rate" type="double" value="25" />
+    <param name="trig_phase" type="int" value="0" />
+    <param name="rotate_180" type="bool" value="True" />
+  </node>
+  
+  <node name="narrow_stereo_r" pkg="wge100_camera" type="wge100_camera_node_new" output="screen">
+    <param name="camera_url" type="str" value="name://narrow_stereo_r"/>
+    <remap from="camera" to="narrow_stereo/right" />
+    <param name="ext_trig" type="bool" value="True" />
+  </node>
+  
+  <node name="narrow_stereo_l" pkg="wge100_camera" type="wge100_camera_node_new" output="screen">
+    <param name="camera_url" type="str" value="name://narrow_stereo_l"/>
+    <remap from="camera" to="narrow_stereo/left" />
+    <param name="ext_trig" type="bool" value="True" />
+  </node>
+  
+  <node name="narrow_stereo_cfg" pkg="wge100_camera" type="wge100_multi_configurator" respawn="true">
+    <param name="camera_nodes" type="str" value="narrow_stereo_l narrow_stereo_r" />
+    <param name="video_mode" type="str" value="640x480x30" />
+    
+    <param name="auto_exposure" type="bool" value="True" />
+    <param name="exposure" type="double" value="0" />
+    <param name="auto_gain" type="bool" value="True" />
+    <param name="gain" type="int" value="32" />
+    
+    <param name="frame_id" type="str" value="narrow_stereo_optical_frame" />
+    <param name="first_packet_offset" type="double" value="0.0025" />
+    
+    <param name="ext_trig" type="bool" value="True" />
+    <param name="trig_controller" type="str" value="trig_controller/falling_edge_timestamps" />
+    <param name="trig_rate" type="double" value="25" />
+    <param name="trig_phase" type="int" value="0" />
+  </node>
+</launch>

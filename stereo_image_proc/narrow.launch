@@ -1,5 +1,9 @@
 <!-- TODO: This should go in pr2_alpha -->
 <launch>
+  <!-- launches both stereo heads and trigger controller -->
+  <include file="$(find stereo_image_proc)/dualstereo-proj.launch"/>
+
+
   <!-- stereo processing parameters
        texture_thresh:  Threshold for removing bad disparities based on texture
                         Default value: 30

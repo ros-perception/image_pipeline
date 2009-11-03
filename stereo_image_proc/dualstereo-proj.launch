@@ -1,0 +1,24 @@
+<launch>
+  <!-- launches both stereo heads and trigger controller -->
+  <include file="$(find stereo_image_proc)/dualstereo_no_ethercat.launch"/>
+
+  <!-- Sets up the narrow cameras with 2.2ms exposure, auto gain -->
+  <node name="$(anon adjust-exposure)" pkg="dynamic_reconfigure" type="dynparam" output="screen" args="load /narrow_stereo_cfg $(find stereo_image_proc)/narrow-proj.cfg" />
+  
+
+  <!-- Spwns the controllers -->
+  <node name="$(anon spawner-projector)" pkg="pr2_mechanism_control" type="spawner.py" output="screen" args="projector_trigger proj_controller" />
+  <group ns="projector_trigger">
+    <param name="type" type="string" value="MultiTriggerController" />
+    <param name="digital_output" type="string" value="led_projector_digital_out_M" />
+    <param name="period" type="double" value="0.04" />
+    <param name="zero_offset" type="double" value="0.000" />
+    <param name="times" type="string" value="0 0.0035 0.020 0.0235" />
+    <param name="topics" type="string" value="up down up down" />
+    <param name="values" type="string" value="15 14 15 14" />
+  </group>
+  <group ns="proj_controller">
+    <param name="type" type="string" value="ProjectorController" />
+    <param name="actuator" type="string" value="led_projector" />
+  </group>
+</launch>
