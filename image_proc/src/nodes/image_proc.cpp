@@ -33,14 +33,11 @@
 *********************************************************************/
 
 #include <ros/ros.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/fill_image.h>
 
-#include <opencv_latest/CvBridge.h>
 #include <image_transport/image_transport.h>
 
 #include "image_proc/image.h"
@@ -48,21 +45,18 @@
 
 #include <boost/thread.hpp>
 
-using namespace std;
-
 //
 // This is the node creation file
 // Subscribes to a single image topic, and performs rectification and 
 //   color processing on the image
 //
 
+// NB: We currently rely on all callbacks called from the spin() thread.
 class ImageProc
 {
 private:
-  ros::NodeHandle nh_;
-  
-  bool do_colorize_;
-  bool do_rectify_;
+  ros::NodeHandle camera_nh_;
+  ros::NodeHandle local_nh_;
 
   image_transport::ImageTransport it_;
   image_transport::CameraSubscriber cam_sub_;
@@ -71,52 +65,52 @@ private:
   image_transport::Publisher pub_color_;
   image_transport::Publisher pub_rect_color_;
 
-  // @todo: maybe these should not be members?
+  // OK for these to be members in single-threaded case.
   cam::ImageData img_data_;
   sensor_msgs::Image img_;
+  int subscriber_count_;
 
 public:
 
-  ImageProc(const ros::NodeHandle& nh) : nh_(nh), it_(nh)
+  ImageProc(const ros::NodeHandle& camera_nh)
+    : camera_nh_(camera_nh),
+      local_nh_("~"),
+      it_(camera_nh),
+      subscriber_count_(0)
   {
-    /// @todo Use child camera_nh instead
-    std::string cam_name = nh_.resolveName("camera") + "/";
-    /// @todo Ditch these parameters
-    // we check camera node to see if we can do these
-    nh_.param("~do_colorize", do_colorize_, true);
-    nh_.param("~do_rectify", do_rectify_, true);
-
     // Advertise outputs
-    pub_mono_ = it_.advertise(cam_name+"image_mono", 1);
-    pub_rect_ = it_.advertise(cam_name+"image_rect", 1);
-    pub_color_ = it_.advertise(cam_name+"image_color", 1);
-    pub_rect_color_ = it_.advertise(cam_name+"image_rect_color", 1);
+    image_transport::SubscriberStatusCallback connect_cb = boost::bind(&ImageProc::connectCb, this, _1);
+    image_transport::SubscriberStatusCallback disconnect_cb = boost::bind(&ImageProc::disconnectCb, this, _1);
+    pub_mono_ = it_.advertise("image_mono", 1, connect_cb, disconnect_cb);
+    pub_rect_ = it_.advertise("image_rect", 1, connect_cb, disconnect_cb);
+    pub_color_ = it_.advertise("image_color", 1, connect_cb, disconnect_cb);
+    pub_rect_color_ = it_.advertise("image_rect_color", 1, connect_cb, disconnect_cb);
+  }
 
-    // Subscribe to synchronized Image & CameraInfo topics
-    cam_sub_ = it_.subscribeCamera(cam_name + "image_raw", 3, &ImageProc::imageCb, this);
+  bool doColorize()
+  {
+    return pub_color_.getNumSubscribers() > 0 || pub_rect_color_.getNumSubscribers() > 0;
+  }
 
-    ROS_INFO("%s: starting with rectification %s and colorization %s.",
-        ros::this_node::getName().c_str(), do_rectify_ ? "on" : "off", do_colorize_ ? "on" : "off");
+  bool doRectify()
+  {
+    return pub_rect_.getNumSubscribers() > 0 || pub_rect_color_.getNumSubscribers() > 0;
   }
 
   void imageCb(const sensor_msgs::ImageConstPtr& raw_image, const sensor_msgs::CameraInfoConstPtr& cam_info)
   {
     cam_bridge::RawToCamData(*raw_image, *cam_info, cam::IMAGE_RAW, &img_data_);
 
-    // @todo: only do processing if topics have subscribers
-    // @todo: parameter for bayer interpolation to use
-    if (do_colorize_ &&
-	(pub_color_.getNumSubscribers() > 0 ||
-	 pub_rect_color_.getNumSubscribers() > 0))
-      {
-	//img_data_.colorConvertType = COLOR_CONVERSION_EDGE;
-	img_data_.doBayerColorRGB();
-	//img_data_.doBayerMono();
-      }
+    if (doColorize())
+    {
+      /// @todo Parameter for which bayer interpolation to use
+      /// @todo Might need mono only, call doBayerMono() in that case
+      //img_data_.colorConvertType = COLOR_CONVERSION_EDGE;
+      img_data_.doBayerColorRGB();
+      //img_data_.doBayerMono();
+    }
 
-    if (do_rectify_ && 
-	(pub_rect_.getNumSubscribers() > 0 ||
-	 pub_rect_color_.getNumSubscribers() > 0))
+    if (doRectify())
       img_data_.doRectify();
 
     // Publish images
@@ -133,27 +127,39 @@ public:
     if (coding == COLOR_CODING_NONE)
       return;
 
-    // @todo: step calculation is a little hacky
+    uint32_t step = dataSize / img_data_.imHeight;
     fillImage(img_, cam_bridge::ColorCodingToImageEncoding(coding),
-              img_data_.imHeight, img_data_.imWidth,
-              dataSize / img_data_.imHeight /*step*/, data);
+              img_data_.imHeight, img_data_.imWidth, step, data);
     pub.publish(img_);
   }
 
+  void connectCb(const image_transport::SingleSubscriberPublisher& ssp)
+  {
+    if (subscriber_count_++ == 0)
+      cam_sub_ = it_.subscribeCamera("image_raw", 3, &ImageProc::imageCb, this);
+  }
+
+  void disconnectCb(const image_transport::SingleSubscriberPublisher&)
+  {
+    subscriber_count_--;
+    if (subscriber_count_ == 0)
+      cam_sub_.shutdown();
+  }
 };
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "image_proc", ros::init_options::AnonymousName);
   ros::NodeHandle nh;
-  if (nh.resolveName("camera") == "/camera") {
-    ROS_WARN("image_proc: source image has not been remapped! Example command-line usage:\n"
+  std::string cam_name = nh.resolveName("camera");
+  if (cam_name == "/camera") {
+    ROS_WARN("image_proc: Formal parameter 'camera' has not been remapped! Example command-line usage:\n"
              "\t$ rosrun image_proc image_proc camera:=forearm_r");
   }
-  
-  ImageProc proc(nh);
+
+  ros::NodeHandle camera_nh(cam_name);
+  ImageProc proc(camera_nh);
 
   ros::spin();
-  
   return 0;
 }
