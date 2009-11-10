@@ -8,7 +8,8 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/camera_calibration</url>
-  <depend package="opencv_latest"/>
+  <depend package="opencv2"/>
+  <depend package="cv_bridge"/>
   <depend package="roscpp"/>
   <depend package="geometry_msgs"/>
   <depend package="std_srvs"/>

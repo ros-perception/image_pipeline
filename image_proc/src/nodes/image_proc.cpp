@@ -43,8 +43,6 @@
 #include "image_proc/image.h"
 #include "image_proc/cam_bridge.h"
 
-#include <boost/thread.hpp>
-
 //
 // This is the node creation file
 // Subscribes to a single image topic, and performs rectification and 

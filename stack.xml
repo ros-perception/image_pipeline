@@ -1,17 +1,17 @@
 <stack name="image_pipeline" version="0.1.0">
-  <description brief="pipeline for processing monocular and stereo images">
+  <description brief="Pipeline for processing monocular and stereo images">
 
-    pipeline for processing monocular and stereo images
+    image_pipeline fills the gap between getting raw images from a camera driver and higher-level vision processing.
 
   </description>
-  <author>Kurt Konolige</author>
+  <author>Maintained by Patrick Mihelich/mihelich@willowgarage.com</author>
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/image_pipeline</url>
-  <depend stack="opencv"/> <!-- opencv_latest --> 
+  <depend stack="image_common"/> <!-- image_transport, camera_calibration_parsers --> 
   <depend stack="diagnostics"/> <!-- diagnostic_updater --> 
-  <depend stack="ros"/> <!-- rosbagmigration, message_filters, roscpp --> 
-  <depend stack="image_common"/> <!-- image_transport --> 
-  <depend stack="common_msgs"/> <!-- sensor_msgs --> 
+  <depend stack="ros"/> <!-- std_srvs, roscpp, message_filters, rosbagmigration --> 
+  <depend stack="vision_opencv"/> <!-- opencv2, cv_bridge --> 
+  <depend stack="common_msgs"/> <!-- sensor_msgs, geometry_msgs -->
 
 </stack>

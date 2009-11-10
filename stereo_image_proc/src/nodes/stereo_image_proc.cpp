@@ -42,7 +42,7 @@
 #include <stereo_msgs/DisparityImage.h>
 #include <sensor_msgs/fill_image.h>
 
-#include <opencv_latest/CvBridge.h>
+#include <cv_bridge/CvBridge.h>
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
 

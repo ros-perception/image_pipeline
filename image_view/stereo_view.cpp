@@ -37,7 +37,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
-#include <opencv_latest/CvBridge.h>
+#include <cv_bridge/CvBridge.h>
 
 #include <message_filters/time_synchronizer.h>
 #include <image_transport/subscriber_filter.h>

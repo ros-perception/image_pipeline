@@ -1,6 +1,6 @@
 <package>
   <description>Stereo and single image rectification and disparity processing.</description>
-  <author>Kurt Konolige, Jeremy Leibs</author>
+  <author>Kurt Konolige, Jeremy Leibs, Patrick Mihelich</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/stereo_image_proc</url>
@@ -10,7 +10,8 @@
   <depend package="roscpp"/>
   <depend package="diagnostic_updater"/>
   <depend package="message_filters"/>
-  <depend package="opencv_latest"/>
+  <depend package="opencv2"/>
+  <depend package="cv_bridge"/>
   <depend package="sensor_msgs"/>
   <depend package="stereo_msgs"/>
   <depend package="image_proc"/>

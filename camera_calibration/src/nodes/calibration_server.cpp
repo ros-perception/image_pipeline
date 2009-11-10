@@ -5,7 +5,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
-#include <opencv_latest/CvBridge.h>
+#include <cv_bridge/CvBridge.h>
 #include <std_srvs/Empty.h>
 #include <boost/thread.hpp>
 
