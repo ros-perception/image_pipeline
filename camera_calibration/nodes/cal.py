@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-PKG = 'dcam' # this package name
+PKG = 'camera_calibration' # this package name
 import roslib; roslib.load_manifest(PKG)
 
 import rospy
@@ -336,8 +336,10 @@ class StereoCalibrator:
 class CalibrationNode:
 
     def __init__(self):
-        lsub = message_filters.Subscriber('/wide_stereo/left/image_raw', sensor_msgs.msg.Image)
-        rsub = message_filters.Subscriber('/wide_stereo/right/image_raw', sensor_msgs.msg.Image)
+        #lsub = message_filters.Subscriber('/wide_stereo/left/image_raw', sensor_msgs.msg.Image)
+        #rsub = message_filters.Subscriber('/wide_stereo/right/image_raw', sensor_msgs.msg.Image)
+        lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
+        rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = message_filters.TimeSynchronizer([lsub, rsub], 4)
         ts.registerCallback(self.handle)
         cv.NamedWindow("display")
