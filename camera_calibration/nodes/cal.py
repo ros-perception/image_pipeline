@@ -368,13 +368,17 @@ class CalibrationNode:
     def handle(self, lmsg, rmsg):
 
         def mkgray(msg):
-            msg.encoding = "mono8"
-            raw = self.br.imgmsg_to_cv(msg)
-            rgb = cv.CreateMat(raw.rows, raw.cols, cv.CV_8UC3)
-            mono = cv.CreateMat(raw.rows, raw.cols, cv.CV_8UC1)
-            cv.CvtColor(raw, rgb, cv.CV_BayerRG2BGR)
-            cv.CvtColor(rgb, mono, cv.CV_BGR2GRAY)
-            cv.CvtColor(mono, rgb, cv.CV_GRAY2BGR)
+            if 'bayer' in msg.encoding:
+                msg.encoding = "mono8"
+                raw = self.br.imgmsg_to_cv(msg)
+                rgb = cv.CreateMat(raw.rows, raw.cols, cv.CV_8UC3)
+                mono = cv.CreateMat(raw.rows, raw.cols, cv.CV_8UC1)
+                cv.CvtColor(raw, rgb, cv.CV_BayerRG2BGR)
+                cv.CvtColor(rgb, mono, cv.CV_BGR2GRAY)
+                cv.CvtColor(mono, rgb, cv.CV_GRAY2BGR)
+            else:
+                rgb = self.br.imgmsg_to_cv(msg, "bgr8")
+
             return rgb
 
         lrgb = mkgray(lmsg)
