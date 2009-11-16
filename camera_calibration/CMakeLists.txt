@@ -20,3 +20,4 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rospack_add_boost_directories()
 
 add_subdirectory(src)
+rospack_add_pyunit(test/directed.py)
