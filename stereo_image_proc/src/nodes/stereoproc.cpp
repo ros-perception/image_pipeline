@@ -266,9 +266,9 @@ public:
       cloud_.channels[0].name = "rgb";
       cloud_.channels[0].values.resize(stdata_->numPts);
       if (do_keep_coords_) {
-          cloud_.channels[1].name = "x";
+          cloud_.channels[1].name = "u";
           cloud_.channels[1].values.resize(stdata_->numPts);
-          cloud_.channels[2].name = "y";
+          cloud_.channels[2].name = "v";
           cloud_.channels[2].values.resize(stdata_->numPts);
       }
 
