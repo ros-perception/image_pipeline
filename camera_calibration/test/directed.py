@@ -17,19 +17,20 @@ class TestDirected(unittest.TestCase):
         images = [cv.LoadImage("%s/test/wide/left%04d.pgm" % (self.mydir, i)) for i in range(3, 15)]
         mc = MonoCalibrator()
         mc.cal(images)
-        cv.NamedWindow("display")
-        for im in images:
-            (ok, corners) = get_corners(im)
-            if ok:
-                src = cv.Reshape(mk_image_points([corners]), 2)
-                rm = mc.remap(cv.GetMat(im))
+        if 0:
+            cv.NamedWindow("display")
+            for im in images:
+                (ok, corners) = get_corners(im)
+                if ok:
+                    src = cv.Reshape(mk_image_points([corners]), 2)
+                    rm = mc.remap(cv.GetMat(im))
 
-                L = list(cvmat_iterator(mc.undistort_points(src)))
+                    L = list(cvmat_iterator(mc.undistort_points(src)))
 
-                cv.DrawChessboardCorners(rm, (8, 6), L, True)
-                cv.ShowImage("display", rm)
-                if cv.WaitKey() == ord('q'):
-                    assert 0
+                    cv.DrawChessboardCorners(rm, (8, 6), L, True)
+                    cv.ShowImage("display", rm)
+                    if cv.WaitKey() == ord('q'):
+                        assert 0
 
     def test_stereo(self):
         limages = [cv.LoadImage("%s/test/wide/left%04d.pgm" % (self.mydir, i)) for i in range(3, 15)]
@@ -40,9 +41,9 @@ class TestDirected(unittest.TestCase):
         mc.ost()
 
 if __name__ == '__main__':
-    if 0:
+    if 1:
         rostest.unitrun('camera_calibration', 'directed', TestDirected)
     else:
         suite = unittest.TestSuite()
-        suite.addTest(TestDirected('test_stereo'))
+        suite.addTest(TestDirected('test_monocular'))
         unittest.TextTestRunner(verbosity=2).run(suite)

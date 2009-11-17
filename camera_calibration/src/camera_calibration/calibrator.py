@@ -43,12 +43,66 @@ def cvmat_iterator(cvmat):
         for j in range(cvmat.cols):
             yield cvmat[i,j]
 
-class MonoCalibrator:
+class Calibrator:
+    def lrmsg(self, d, k, r, p):
+        """ Used by :meth:`as_message`.  Return a CameraInfo message for the given calibration matrices """
+        msg = sensor_msgs.msg.CameraInfo()
+        (msg.width, msg.height) = self.size
+        msg.D = [d[i,0] for i in range(d.rows)]
+        msg.K = list(cvmat_iterator(k))
+        msg.R = list(cvmat_iterator(r))
+        msg.P = list(cvmat_iterator(p))
+        return msg
+
+    def lrreport(self, d, k, r, p):
+        print "D = ", list(cvmat_iterator(d))
+        print "K = ", list(cvmat_iterator(k))
+        print "R = ", list(cvmat_iterator(r))
+        print "P = ", list(cvmat_iterator(p))
+
+    def lrost(self, name, d, k, r, p):
+        calmessage = (
+        "# oST version 5.0 parameters\n"
+        + "\n"
+        + "\n"
+        + "[image]\n"
+        + "\n"
+        + "width\n"
+        + str(self.size[0]) + "\n"
+        + "\n"
+        + "height\n"
+        + str(self.size[1]) + "\n"
+        + "\n"
+        + "[narrow_stereo/%s]" % name + "\n"
+        + "\n"
+        + "camera matrix\n"
+        + " ".join(["%8f" % k[0,i] for i in range(3)]) + "\n"
+        + " ".join(["%8f" % k[1,i] for i in range(3)]) + "\n"
+        + " ".join(["%8f" % k[2,i] for i in range(3)]) + "\n"
+        + "\n"
+        + "distortion\n"
+        + " ".join(["%8f" % d[i,0] for i in range(4)]) + " 0.0000\n"
+        + "\n"
+        + "rectification\n"
+        + " ".join(["%8f" % r[0,i] for i in range(3)]) + "\n"
+        + " ".join(["%8f" % r[1,i] for i in range(3)]) + "\n"
+        + " ".join(["%8f" % r[2,i] for i in range(3)]) + "\n"
+        + "\n"
+        + "projection\n"
+        + " ".join(["%8f" % p[0,i] for i in range(4)]) + "\n"
+        + " ".join(["%8f" % p[1,i] for i in range(4)]) + "\n"
+        + " ".join(["%8f" % p[2,i] for i in range(4)]) + "\n"
+        + "\n")
+        assert len(calmessage) < 525, "Calibration info must be less than 525 bytes"
+        print calmessage
+
+class MonoCalibrator(Calibrator):
 
     def __init__(self):
         pass
 
     def cal(self, images):
+        self.size = cv.GetSize(images[0])
         corners = [get_corners(i) for i in images]
 
         good = [co for (im, (ok, co)) in zip(images, corners) if ok]
@@ -77,6 +131,11 @@ class MonoCalibrator:
         self.mapy = cv.CreateImage((640, 480), cv.IPL_DEPTH_32F, 1)
         cv.InitUndistortMap(self.intrinsics, self.distortion, self.mapx, self.mapy)
 
+        self.R = cv.CreateMat(3, 3, cv.CV_64FC1)
+        self.P = cv.CreateMat(3, 4, cv.CV_64FC1)
+        cv.SetIdentity(self.R)
+        cv.SetIdentity(self.P)
+
     def remap(self, src):
         r = cv.CloneMat(src)
         cv.Remap(src, r, self.mapx, self.mapy)
@@ -87,10 +146,19 @@ class MonoCalibrator:
         cv.UndistortPoints(src, dst, self.intrinsics, self.distortion, P = self.intrinsics)
         return dst
 
+    def as_message(self):
+        return self.lrmsg(self.distortion, self.intrinsics, self.R, self.P)
+
+    def report(self):
+        self.lrreport(self.distortion, self.intrinsics, self.R, self.P)
+
+    def ost(self):
+        self.lrost("left", self.distortion, self.intrinsics, self.R, self.P)
+
 class CalibrationException(Exception):
     pass
 
-class StereoCalibrator:
+class StereoCalibrator(Calibrator):
 
     def __init__(self):
         self.l = MonoCalibrator()
@@ -158,25 +226,9 @@ class StereoCalibrator:
         cv.InitUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.lR, self.lP, self.lmapx, self.lmapy)
         cv.InitUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.rR, self.rP, self.rmapx, self.rmapy)
 
-    def lrmsg(self, d, k, r, p):
-        """ Used by :meth:`as_message`.  Return a CameraInfo message for the given calibration matrices """
-        msg = sensor_msgs.msg.CameraInfo()
-        (msg.width, msg.height) = self.size
-        msg.D = [d[i,0] for i in range(d.rows)]
-        msg.K = list(cvmat_iterator(k))
-        msg.R = list(cvmat_iterator(r))
-        msg.P = list(cvmat_iterator(p))
-        return msg
-
     def as_message(self):
         return (self.lrmsg(self.l.distortion, self.l.intrinsics, self.lR, self.lP),
                 self.lrmsg(self.r.distortion, self.r.intrinsics, self.rR, self.rP))
-
-    def lrreport(self, d, k, r, p):
-        print "D = ", list(cvmat_iterator(d))
-        print "K = ", list(cvmat_iterator(k))
-        print "R = ", list(cvmat_iterator(r))
-        print "P = ", list(cvmat_iterator(p))
 
     def report(self):
         print "\nLeft:"
@@ -188,41 +240,6 @@ class StereoCalibrator:
         self.lrost("left", self.l.distortion, self.l.intrinsics, self.lR, self.lP)
         self.lrost("right", self.r.distortion, self.r.intrinsics, self.rR, self.rP)
 
-    def lrost(self, name, d, k, r, p):
-        calmessage = (
-        "# oST version 5.0 parameters\n"
-        + "\n"
-        + "\n"
-        + "[image]\n"
-        + "\n"
-        + "width\n"
-        + str(self.size[0]) + "\n"
-        + "\n"
-        + "height\n"
-        + str(self.size[1]) + "\n"
-        + "\n"
-        + "[narrow_stereo/%s]" % name + "\n"
-        + "\n"
-        + "camera matrix\n"
-        + " ".join(["%8f" % k[0,i] for i in range(3)]) + "\n"
-        + " ".join(["%8f" % k[1,i] for i in range(3)]) + "\n"
-        + " ".join(["%8f" % k[2,i] for i in range(3)]) + "\n"
-        + "\n"
-        + "distortion\n"
-        + " ".join(["%8f" % d[i,0] for i in range(4)]) + " 0.0000\n"
-        + "\n"
-        + "rectification\n"
-        + " ".join(["%8f" % r[0,i] for i in range(3)]) + "\n"
-        + " ".join(["%8f" % r[1,i] for i in range(3)]) + "\n"
-        + " ".join(["%8f" % r[2,i] for i in range(3)]) + "\n"
-        + "\n"
-        + "projection\n"
-        + " ".join(["%8f" % p[0,i] for i in range(4)]) + "\n"
-        + " ".join(["%8f" % p[1,i] for i in range(4)]) + "\n"
-        + " ".join(["%8f" % p[2,i] for i in range(4)]) + "\n"
-        + "\n")
-        assert len(calmessage) < 525, "Calibration info must be less than 525 bytes"
-        print calmessage
 
     def epipolar1(self, li, ri):
         # Find corners in both images and undistort them, results in lists L,R

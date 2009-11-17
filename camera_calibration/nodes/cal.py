@@ -215,13 +215,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                         (0,0,0),
                         4)
         else:
-            cv.PutText(display, "error", (640, 100), self.font, (0,0,0))
-            epierror = self.sc.epipolar1(lrgb, rrgb)
-            if epierror == -1:
-                msg = "?"
-            else:
-                msg = "%.2f" % epierror
-            cv.PutText(display, msg, (640, 200), self.font, (0,0,0))
+            cv.PutText(display, "acc.", (640, 100), self.font, (0,0,0))
 
         cv.ShowImage("display", display)
         k = cv.WaitKey(6)
@@ -251,7 +245,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                             (0,0,0),
                             4)
         else:
-            cv.PutText(display, "error", (1280, 100), self.font, (0,0,0))
+            cv.PutText(display, "acc.", (1280, 100), self.font, (0,0,0))
             epierror = self.sc.epipolar1(lrgb, rrgb)
             if epierror == -1:
                 msg = "?"
