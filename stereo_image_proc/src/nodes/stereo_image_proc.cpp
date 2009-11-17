@@ -51,6 +51,10 @@
 
 #include <boost/thread.hpp>
 
+#include <dynamic_reconfigure/server.h>
+#include <stereo_image_proc/StereoImageProcConfig.h>
+
+
 using namespace std;
 
 // colormap for disparities
@@ -331,12 +335,6 @@ private:
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo, 
 				    sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
   
-  bool do_colorize_;
-  bool do_rectify_;
-  bool do_stereo_;
-  bool do_calc_points_;
-  bool do_keep_coords_;
-
   image_transport::Publisher pub_mono_l_;
   image_transport::Publisher pub_rect_l_;
   image_transport::Publisher pub_color_l_;
@@ -358,6 +356,12 @@ private:
 public:
 
   cam::StereoData* stdata_;
+
+  bool do_colorize_;
+  bool do_rectify_;
+  bool do_stereo_;
+  bool do_calc_points_;
+  bool do_keep_coords_;
 
   StereoProc(const ros::NodeHandle& nh) : nh_(nh), it_(nh), sync_(3)
   {
@@ -433,6 +437,7 @@ public:
     // @TODO parameters can change, we don't check
     pub_mono_l_ = it_.advertise(cam_name_l+"image_mono", 1);
     pub_mono_r_ = it_.advertise(cam_name_r+"image_mono", 1);
+
     if (do_rectify_)
       {
 	pub_rect_l_ = it_.advertise(cam_name_l+"image_rect", 1);
@@ -741,9 +746,38 @@ public:
 
 };
 
+StereoProc *StP;		// global var for stereo processing node class
+
+void 
+config_callback(stereo_image_proc::StereoImageProcConfig &config, uint32_t level)
+{
+  ROS_INFO("Reconfigure request received");
+  
+  StP->do_colorize_ = config.do_colorize;
+  StP->do_rectify_ = config.do_rectify;
+  StP->do_stereo_ = config.do_stereo;
+  StP->do_calc_points_ = config.do_calc_points;
+  StP->do_keep_coords_ = config.do_keep_coords;
+
+  // Must do stereo if calculating points
+  StP->do_stereo_ = StP->do_stereo_ || StP->do_calc_points_;
+  // Must rectify if doing stereo
+  StP->do_rectify_ = StP->do_rectify_ || StP->do_stereo_;
+
+  StP->stdata_->setTextureThresh(config.unique_thresh);
+  StP->stdata_->setUniqueThresh(config.texture_thresh);
+  StP->stdata_->setSpeckleRegionSize(config.speckle_size);
+  StP->stdata_->setSpeckleDiff(config.speckle_diff);
+
+  StP->stdata_->setHoropter(config.horopter);
+  StP->stdata_->setCorrSize(config.corr_size);
+  StP->stdata_->setNumDisp(config.num_disp);
+}
+
+
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "image_proc", ros::init_options::AnonymousName);
+  ros::init(argc, argv, "stereo_image_proc", ros::init_options::AnonymousName);
   ros::NodeHandle nh;
   // resolve either <camera> for both cams, or individual stereo cams
   if (nh.resolveName("camera") == "/camera" && 
@@ -765,7 +799,15 @@ int main(int argc, char **argv)
       ROS_WARN("[stereo_image_proc] Output will be in /stereo/, remap <output> to change");
     }
 
-  StereoProc proc(nh);
+  // start stereo processor
+  StP = new StereoProc(nh);
+
+  // set up dynamic reconfiguration
+  dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig> srv;
+  dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig>::CallbackType f = 
+                                                          boost::bind(&config_callback, _1, _2);
+  srv.setCallback(f);
+
 
   ros::spin();
   

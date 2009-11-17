@@ -10,6 +10,14 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rosbuild_add_boost_directories()
 
+# for dynamic parameters, yippee!
+# need to have config file in cfg/xx.cfg
+#  and need to set its executable bit
+rosbuild_find_ros_package(dynamic_reconfigure)
+include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
+gencfg()
+
+# this will go away when the new stereo_image_proc node becomes the default
 rosbuild_add_library(stereoproc src/proc/stereoimage.cpp src/proc/stereolib.c src/proc/stereolib2.cpp)
 rosbuild_add_compile_flags(stereoproc "-msse2 -mpreferred-stack-boundary=4")
 

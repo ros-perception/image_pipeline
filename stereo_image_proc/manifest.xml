@@ -15,4 +15,5 @@
   <depend package="sensor_msgs"/>
   <depend package="stereo_msgs"/>
   <depend package="image_proc"/>
+  <depend package="dynamic_reconfigure"/>
 </package>
