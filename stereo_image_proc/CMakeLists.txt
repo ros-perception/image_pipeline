@@ -13,9 +13,9 @@ rosbuild_add_boost_directories()
 rosbuild_add_library(stereoproc src/proc/stereoimage.cpp src/proc/stereolib.c src/proc/stereolib2.cpp)
 rosbuild_add_compile_flags(stereoproc "-msse2 -mpreferred-stack-boundary=4")
 
-#rosbuild_add_executable(stereoproc_exe src/nodes/stereoproc.cpp)
-#target_link_libraries(stereoproc_exe stereoproc imageproc)
-#SET_TARGET_PROPERTIES(stereoproc_exe PROPERTIES OUTPUT_NAME stereoproc)
+rosbuild_add_executable(stereoproc_exe src/nodes/stereoproc.cpp)
+target_link_libraries(stereoproc_exe stereoproc)
+SET_TARGET_PROPERTIES(stereoproc_exe PROPERTIES OUTPUT_NAME stereoproc)
 
 rosbuild_add_executable(stereoimageproc_exe src/nodes/stereo_image_proc.cpp)
 target_link_libraries(stereoimageproc_exe stereoproc)
