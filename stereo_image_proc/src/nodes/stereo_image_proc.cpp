@@ -476,6 +476,49 @@ public:
       delete stdata_;
   }
 
+  bool doColorizeLeft()
+  {
+    // Need to do this when point cloud requested to get RGB values.
+    return do_colorize_ && 
+      ((pub_color_l_ &&pub_color_l_.getNumSubscribers() > 0) ||
+       (pub_rect_color_l_ && pub_rect_color_l_.getNumSubscribers() > 0) ||
+       doCalcPoints());
+  }
+
+  bool doColorizeRight()
+  {
+    return do_colorize_ && 
+      ((pub_color_r_ && pub_color_r_.getNumSubscribers() > 0) ||
+       (pub_rect_color_r_ && pub_rect_color_r_.getNumSubscribers()) > 0);
+  }
+
+  bool doRectify()
+  {
+    return do_rectify_ &&
+      ((pub_rect_color_r_ && pub_rect_color_r_.getNumSubscribers() > 0) ||
+       (pub_rect_r_ && pub_rect_r_.getNumSubscribers() > 0) ||
+       (pub_rect_color_l_ && pub_rect_color_l_.getNumSubscribers() > 0) ||
+       (pub_rect_l_ && pub_rect_l_.getNumSubscribers() > 0) ||
+       (pub_rect_r_ && pub_rect_r_.getNumSubscribers() > 0) ||
+       (pub_disparity_ && pub_disparity_.getNumSubscribers() > 0) ||
+       (pub_disparity_image_ && pub_disparity_image_.getNumSubscribers() > 0) ||
+       (pub_pts_ && pub_pts_.getNumSubscribers() > 0));
+  }
+
+  bool doStereo()
+  {
+    return do_stereo_ &&
+      ((pub_disparity_ && pub_disparity_.getNumSubscribers() > 0) ||
+       (pub_disparity_image_ && pub_disparity_image_.getNumSubscribers() > 0) ||
+       (pub_pts_ && pub_pts_.getNumSubscribers() > 0));
+  }
+
+  bool doCalcPoints()
+  {
+    return do_calc_points_ &&
+      (pub_pts_ && pub_pts_.getNumSubscribers() > 0);
+  }
+
   // callback
   // gets 2 images and 2 parameter sets, computes disparity
   void imageCb(const sensor_msgs::ImageConstPtr& raw_image_l, 
@@ -483,7 +526,7 @@ public:
 	       const sensor_msgs::ImageConstPtr& raw_image_r, 
 	       const sensor_msgs::CameraInfoConstPtr& cam_info_r)
   {
-    // @TODO: check image sizes for compatibility
+    /// @todo Check image sizes for compatibility
     cam::ImageData *img_data_l, *img_data_r;
     img_data_l = stdata_->imLeft;
     img_data_r = stdata_->imRight;
@@ -517,44 +560,26 @@ public:
 	exit(-1);
       }
 
-    // @todo: only do processing if topics have subscribers
-    // @todo: parameter for bayer interpolation to use
-    if (do_colorize_ && 
-	((pub_color_l_ &&pub_color_l_.getNumSubscribers() > 0) ||
-	 (pub_rect_color_l_ && pub_rect_color_l_.getNumSubscribers() > 0)))
+    /// @todo parameter for bayer interpolation to use
+    if (doColorizeLeft())
       img_data_l->doBayerColorRGB();
 
-    if (do_colorize_ && 
-	((pub_color_r_ && pub_color_r_.getNumSubscribers() > 0) ||
-	 (pub_rect_color_r_ && pub_rect_color_r_.getNumSubscribers()) > 0))
+    if (doColorizeRight())
       img_data_r->doBayerColorRGB();
 
-    // @TODO check subscribers
-    if (do_rectify_ &&
-	((pub_rect_color_r_ && pub_rect_color_r_.getNumSubscribers() > 0) ||
-	 (pub_rect_r_ && pub_rect_r_.getNumSubscribers() > 0) ||
-	 (pub_rect_color_l_ && pub_rect_color_l_.getNumSubscribers() > 0) ||
-	 (pub_rect_l_ && pub_rect_l_.getNumSubscribers() > 0) ||
-	 (pub_rect_r_ && pub_rect_r_.getNumSubscribers() > 0) ||
-	 (pub_disparity_ && pub_disparity_.getNumSubscribers() > 0) ||
-	 (pub_disparity_image_ && pub_disparity_image_.getNumSubscribers() > 0) ||
-	 (pub_pts_ && pub_pts_.getNumSubscribers() > 0)))
+    if (doRectify())
       {
 	//	ROS_INFO("[stereo_image_proc] Rectifying");
 	stdata_->doRectify();
       }
 
-    if (do_stereo_ &&
-	((pub_disparity_ && pub_disparity_.getNumSubscribers() > 0) ||
-	 (pub_disparity_image_ && pub_disparity_image_.getNumSubscribers() > 0) ||
-	 (pub_pts_ && pub_pts_.getNumSubscribers() > 0)))
+    if (doStereo())
       {
 	//	ROS_INFO("[stereo_image_proc] Disparity calc");
 	stdata_->doDisparity();
       }
 
-    if (do_calc_points_ &&
-	(pub_pts_ && pub_pts_.getNumSubscribers() > 0) )
+    if (doCalcPoints())
       {
 	//	ROS_INFO("[stereo_image_proc] 3D Points calc");
 	stdata_->doCalcPts();
