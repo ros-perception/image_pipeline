@@ -17,7 +17,6 @@
   <depend package="message_filters"/>
   <depend package="camera_calibration_parsers"/>
   <depend package="rospy"/>
-  <depend package="image_geometry"/>
   <!--depend package="topic_synchronizer2"/-->
 
   <export>
