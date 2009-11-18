@@ -6,6 +6,9 @@ num_x_ints = 8
 num_y_ints = 6
 num_pts = num_x_ints * num_y_ints
 
+import image_geometry
+import sensor_msgs.msg
+
 def mk_object_points(nimages, squaresize = 1):
     opts = cv.CreateMat(nimages * num_pts, 3, cv.CV_32FC1)
     for i in range(nimages):
@@ -259,6 +262,36 @@ class StereoCalibrator(Calibrator):
         d = [(y0-y1) for ((_, y0), (_, y1)) in zip(L, R)]
         return math.sqrt(sum([i**2 for i in d]) / len(d))
 
+    def chessboard_size(self, li, ri):
+        """
+        Return the square edge length, in meters, or -1 if not possible.
+        """
+        (ok, corners) = get_corners(li)
+        if not ok:
+            return -1
+        src = cv.Reshape(mk_image_points([corners]), 2)
+        L = list(cvmat_iterator(self.lundistort_points(src)))
+        (ok, corners) = get_corners(ri)
+        if not ok:
+            return -1
+        src = cv.Reshape(mk_image_points([corners]), 2)
+        R = list(cvmat_iterator(self.rundistort_points(src)))
+
+
+        # Project the points to 3d
+        cam = image_geometry.StereoCameraModel()
+        cam.fromCameraInfo(*self.as_message())
+        disparities = [(x0 - x1) for ((x0, y0), (x1, y1)) in zip(L, R)]
+        pt3d = [cam.projectPixelTo3d((x, y), d) for ((x, y), d) in zip(L, disparities)]
+        def l2(p0, p1):
+            return math.sqrt(sum([(c0 - c1) ** 2 for (c0, c1) in zip(p0, p1)]))
+
+        # Compute the length from each horizontal and vertical lines, and return the mean
+        lengths = (
+            [l2(pt3d[8 * r + 0], pt3d[8 * r + 7]) / 7 for r in range(6)] +
+            [l2(pt3d[c + 0], pt3d[c + 40]) / 5 for c in range(7)])
+        return sum(lengths) / len(lengths)
+        
     def lremap(self, src):
         r = cv.CloneMat(src)
         cv.Remap(src, r, self.lmapx, self.lmapy)

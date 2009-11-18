@@ -245,13 +245,17 @@ class OpenCVCalibrationNode(CalibrationNode):
                             (0,0,0),
                             4)
         else:
-            cv.PutText(display, "acc.", (1280, 100), self.font, (0,0,0))
+            cv.PutText(display, "acc.", (1280, 50), self.font, (0,0,0))
             epierror = self.sc.epipolar1(lrgb, rrgb)
             if epierror == -1:
                 msg = "?"
             else:
                 msg = "%.2f" % epierror
-            cv.PutText(display, msg, (1280, 200), self.font, (0,0,0))
+            cv.PutText(display, msg, (1280, 150), self.font, (0,0,0))
+            if epierror != -1:
+                cv.PutText(display, "dim", (1280, 250), self.font, (0,0,0))
+                dim = self.sc.chessboard_size(lrgb, rrgb)
+                cv.PutText(display, "%.4f" % dim, (1280, 350), self.font, (0,0,0))
 
         cv.ShowImage("display", display)
         k = cv.WaitKey(6)

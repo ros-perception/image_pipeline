@@ -37,13 +37,17 @@ class TestDirected(unittest.TestCase):
         rimages = [cv.LoadImage("%s/test/wide/right%04d.pgm" % (self.mydir, i)) for i in range(3, 15)]
         mc = StereoCalibrator()
         mc.cal(limages, rimages)
+
         mc.report()
         mc.ost()
 
+        print mc.epipolar1(limages[0], rimages[0])
+        print mc.chessboard_size(limages[0], rimages[0])
+
 if __name__ == '__main__':
-    if 1:
+    if 0:
         rostest.unitrun('camera_calibration', 'directed', TestDirected)
     else:
         suite = unittest.TestSuite()
-        suite.addTest(TestDirected('test_monocular'))
+        suite.addTest(TestDirected('test_stereo'))
         unittest.TextTestRunner(verbosity=2).run(suite)
