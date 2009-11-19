@@ -10,6 +10,7 @@
   <url>http://pr.willowgarage.com/wiki/camera_calibration</url>
   <depend package="opencv2"/>
   <depend package="cv_bridge"/>
+  <depend package="image_geometry"/>
   <depend package="roscpp"/>
   <depend package="geometry_msgs"/>
   <depend package="std_srvs"/>

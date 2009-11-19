@@ -255,7 +255,7 @@ class OpenCVCalibrationNode(CalibrationNode):
             if epierror != -1:
                 cv.PutText(display, "dim", (1280, 250), self.font, (0,0,0))
                 dim = self.sc.chessboard_size(lrgb, rrgb)
-                cv.PutText(display, "%.4f" % dim, (1280, 350), self.font, (0,0,0))
+                cv.PutText(display, "%.3f" % dim, (1280, 350), self.font, (0,0,0))
 
         cv.ShowImage("display", display)
         k = cv.WaitKey(6)
