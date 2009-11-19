@@ -50,6 +50,7 @@
 #include "image_proc/cam_bridge.h"
 
 #include <boost/thread.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include <dynamic_reconfigure/server.h>
 #include <stereo_image_proc/StereoImageProcConfig.h>
@@ -318,17 +319,15 @@ static unsigned char dmap[768] =
   };
 
 //
-// This is the node creation file
 // Subscribes to two Image/CameraInfo topics, and performs rectification,
 //   color processing, and stereo disparity on the images
 //
-
-// @TODO: add in diagnostic frequency messages
 
 class StereoProc
 {
 private:
   ros::NodeHandle nh_;
+  std::string left_ns_, right_ns_, stereo_ns_;
   image_transport::ImageTransport it_;
   image_transport::SubscriberFilter image_sub_l, image_sub_r;
   message_filters::Subscriber<sensor_msgs::CameraInfo> info_sub_l, info_sub_r;
@@ -348,42 +347,24 @@ private:
   ros::Publisher pub_pts_;
 
 
-  // @todo: maybe these should not be members?
+  /// @todo If go to multi-threading, these should not be simple members
   sensor_msgs::Image img_;
   stereo_msgs::DisparityImage dimg_;
 
+  boost::scoped_ptr<cam::StereoData> stdata_;
 
 public:
 
-  cam::StereoData* stdata_;
-
-  bool do_colorize_;
-  bool do_rectify_;
-  bool do_stereo_;
-  bool do_calc_points_;
-  bool do_keep_coords_;
-
-  StereoProc(const ros::NodeHandle& nh) : nh_(nh), it_(nh), sync_(3)
+  StereoProc(ros::NodeHandle& nh, const std::string& left_ns, const std::string& right_ns,
+             const std::string& stereo_ns)
+    : nh_(nh),
+      left_ns_(left_ns + "/"), right_ns_(right_ns + "/"), stereo_ns_(stereo_ns + "/"),
+      it_(nh_),
+      sync_(3),
+      stdata_(new cam::StereoData)
   {
     // get standard parameters
-    // @TODO use nodehandle with "~" as namespace
     ros::NodeHandle lnh("~");
-    lnh.param("do_colorize", do_colorize_, false);
-    lnh.param("do_rectify", do_rectify_, false);
-    lnh.param("do_stereo", do_stereo_, true);
-    lnh.param("do_calc_points", do_calc_points_, true);
-    lnh.param("do_keep_coords", do_keep_coords_, true);
-
-    // set up stereo structures
-    if (do_keep_coords_) {
-    	ROS_INFO("I'm keeping the image coordinate in the point cloud\n");
-    }
-    // Must do stereo if calculating points
-    do_stereo_ = do_stereo_ || do_calc_points_;
-    // Must rectify if doing stereo
-    do_rectify_ = do_rectify_ || do_stereo_;
-
-    stdata_ = new cam::StereoData;
 
     int unique_thresh;
     lnh.param("unique_thresh", unique_thresh, 36);
@@ -411,117 +392,64 @@ public:
       stdata_->setNumDisp(num_disp);
 
 
-    // resolve names, advertise and subscribe
-
-    std::string cam_name_l;
-    std::string cam_name_r;
-    std::string cam_name_s;
-    if (nh.resolveName("camera") != "/camera") // we're looking at a stereo cam
-      {
-	cam_name_l = nh_.resolveName("camera") + "/left/";
-	cam_name_r = nh_.resolveName("camera") + "/right/";
-	cam_name_s = nh_.resolveName("camera") + "/";
-      }
-    else
-      {
-	cam_name_l = nh_.resolveName("camera_left") + "/";
-	cam_name_r = nh_.resolveName("camera_right") + "/";
-	//cam_name_s = nh_.resolveName("camera_left") + "/";
-        if (nh.resolveName("output") != "/output") // remap of output
-          cam_name_s = nh_.resolveName("output") + "/";
-        else
-          cam_name_s = "/stereo/";
-      }
-
     // Advertise outputs
-    // @TODO parameters can change, we don't check
-    pub_mono_l_ = it_.advertise(cam_name_l+"image_mono", 1);
-    pub_mono_r_ = it_.advertise(cam_name_r+"image_mono", 1);
-
-    if (do_rectify_)
-      {
-	pub_rect_l_ = it_.advertise(cam_name_l+"image_rect", 1);
-	pub_rect_r_ = it_.advertise(cam_name_r+"image_rect", 1);
-      }
-    if (do_colorize_)
-      {
-	pub_color_l_ = it_.advertise(cam_name_l+"image_color", 1);
-	pub_color_r_ = it_.advertise(cam_name_r+"image_color", 1);
-	if (do_rectify_)
-	  {
-	    pub_rect_color_l_ = it_.advertise(cam_name_l+"image_rect_color", 1);
-	    pub_rect_color_r_ = it_.advertise(cam_name_r+"image_rect_color", 1);
-	  }
-      }
-    if (do_stereo_)
-      {
-	pub_disparity_image_ = it_.advertise(cam_name_s+"image_disparity", 1);
-	pub_disparity_ = nh_.advertise<stereo_msgs::DisparityImage>(cam_name_s+"disparity", 1);
-      }
-
-    if (do_calc_points_)
-      {
-	pub_pts_ = nh_.advertise<sensor_msgs::PointCloud>(cam_name_s+"points", 1);
-      }
-
-
+    pub_mono_l_ = it_.advertise(left_ns_+"image_mono", 1);
+    pub_rect_l_ = it_.advertise(left_ns_+"image_rect", 1);
+    pub_color_l_ = it_.advertise(left_ns_+"image_color", 1);
+    pub_rect_color_l_ = it_.advertise(left_ns_+"image_rect_color", 1);
+    
+    pub_mono_r_ = it_.advertise(right_ns_+"image_mono", 1);
+    pub_rect_r_ = it_.advertise(right_ns_+"image_rect", 1);
+    pub_color_r_ = it_.advertise(right_ns_+"image_color", 1);
+    pub_rect_color_r_ = it_.advertise(right_ns_+"image_rect_color", 1);
+    
+    pub_disparity_image_ = it_.advertise(stereo_ns_+"image_disparity", 1);
+    pub_disparity_ = nh_.advertise<stereo_msgs::DisparityImage>(stereo_ns_+"disparity", 1);
+    pub_pts_ = nh_.advertise<sensor_msgs::PointCloud>(stereo_ns_+"points", 1);
+    
     // Subscribe to synchronized Image & CameraInfo topics
-    image_sub_l.subscribe(nh_, cam_name_l + "image_raw", 1);
-    info_sub_l.subscribe(nh_, cam_name_l + "camera_info", 1);
-    image_sub_r.subscribe(nh_, cam_name_r + "image_raw", 1);
-    info_sub_r.subscribe(nh_, cam_name_r + "camera_info", 1);
+    /// @todo Put these in subscription callbacks, like in image_proc
+    /// @todo Make left and right subscriptions independent. Not possible with current synch tools.
+    image_sub_l.subscribe(nh_, left_ns_ + "image_raw", 1);
+    info_sub_l.subscribe(nh_, left_ns_ + "camera_info", 1);
+    image_sub_r.subscribe(nh_, right_ns_ + "image_raw", 1);
+    info_sub_r.subscribe(nh_, right_ns_ + "camera_info", 1);
     sync_.connectInput(image_sub_l, info_sub_l, image_sub_r, info_sub_r);
     sync_.registerCallback(boost::bind(&StereoProc::imageCb, this, _1, _2, _3, _4));
   }
 
-  // teardown
-  ~StereoProc()
-  {
-    if (stdata_)
-      delete stdata_;
-  }
-
   bool doColorizeLeft()
   {
-    // Need to do this when point cloud requested to get RGB values.
-    return do_colorize_ && 
-      ((pub_color_l_ &&pub_color_l_.getNumSubscribers() > 0) ||
-       (pub_rect_color_l_ && pub_rect_color_l_.getNumSubscribers() > 0) ||
-       doCalcPoints());
+    return pub_color_l_.getNumSubscribers() > 0 ||
+      pub_rect_color_l_.getNumSubscribers() > 0 ||
+      doCalcPoints(); // Need to do this when point cloud requested to get RGB values.
   }
 
   bool doColorizeRight()
   {
-    return do_colorize_ && 
-      ((pub_color_r_ && pub_color_r_.getNumSubscribers() > 0) ||
-       (pub_rect_color_r_ && pub_rect_color_r_.getNumSubscribers()) > 0);
+    return pub_color_r_.getNumSubscribers() > 0 ||
+      pub_rect_color_r_.getNumSubscribers() > 0;
   }
 
   bool doRectify()
   {
-    return do_rectify_ &&
-      ((pub_rect_color_r_ && pub_rect_color_r_.getNumSubscribers() > 0) ||
-       (pub_rect_r_ && pub_rect_r_.getNumSubscribers() > 0) ||
-       (pub_rect_color_l_ && pub_rect_color_l_.getNumSubscribers() > 0) ||
-       (pub_rect_l_ && pub_rect_l_.getNumSubscribers() > 0) ||
-       (pub_rect_r_ && pub_rect_r_.getNumSubscribers() > 0) ||
-       (pub_disparity_ && pub_disparity_.getNumSubscribers() > 0) ||
-       (pub_disparity_image_ && pub_disparity_image_.getNumSubscribers() > 0) ||
-       (pub_pts_ && pub_pts_.getNumSubscribers() > 0));
+    return pub_rect_l_.getNumSubscribers() > 0 ||
+      pub_rect_color_l_.getNumSubscribers() > 0 ||
+      pub_rect_r_.getNumSubscribers() > 0 ||
+      pub_rect_color_r_.getNumSubscribers() > 0 ||
+      doStereo();
   }
 
   bool doStereo()
   {
-    return do_stereo_ &&
-      ((pub_disparity_ && pub_disparity_.getNumSubscribers() > 0) ||
-       (pub_disparity_image_ && pub_disparity_image_.getNumSubscribers() > 0) ||
-       (pub_pts_ && pub_pts_.getNumSubscribers() > 0));
+    return  pub_disparity_.getNumSubscribers() > 0 ||
+      pub_disparity_image_.getNumSubscribers() > 0 ||
+      doCalcPoints();
   }
 
   bool doCalcPoints()
   {
-    return do_calc_points_ &&
-      (pub_pts_ && pub_pts_.getNumSubscribers() > 0);
+    return pub_pts_.getNumSubscribers() > 0;
   }
 
   // callback
@@ -549,6 +477,7 @@ public:
     cam_bridge::RawToCamData(*raw_image_r, *cam_info_r, cam::IMAGE_RAW, img_data_r);
 
     // check rectification parameters
+    /// @todo Zero distortion is not an error (in sim)
     if (fabs(img_data_l->K[2]) < 1e-10 ||
 	fabs(img_data_r->K[2]) < 1e-10 ||
 	fabs(img_data_l->D[0]) < 1e-10 ||
@@ -572,23 +501,15 @@ public:
     if (doColorizeRight())
       img_data_r->doBayerColorRGB();
 
+    /// @todo Separate left and right rectification
     if (doRectify())
-      {
-	//	ROS_INFO("[stereo_image_proc] Rectifying");
-	stdata_->doRectify();
-      }
+      stdata_->doRectify();
 
     if (doStereo())
-      {
-	//	ROS_INFO("[stereo_image_proc] Disparity calc");
-	stdata_->doDisparity();
-      }
+      stdata_->doDisparity();
 
     if (doCalcPoints())
-      {
-	//	ROS_INFO("[stereo_image_proc] 3D Points calc");
-	stdata_->doCalcPts();
-      }
+      stdata_->doCalcPts();
 
     // Publish images
     img_.header.stamp = raw_image_l->header.stamp;
@@ -636,19 +557,13 @@ public:
 	cloud_.header.stamp = raw_image_l->header.stamp;
 	cloud_.header.frame_id = raw_image_l->header.frame_id;
 	cloud_.points.resize(stdata_->numPts);
-	if (do_keep_coords_) 
-    	  cloud_.channels.resize(3);
-	else
-    	  cloud_.channels.resize(1);
+        cloud_.channels.resize(3);
 	cloud_.channels[0].name = "rgb";
 	cloud_.channels[0].values.resize(stdata_->numPts);
-	if (do_keep_coords_) 
-	  {
-	    cloud_.channels[1].name = "u";
-	    cloud_.channels[1].values.resize(stdata_->numPts);
-	    cloud_.channels[2].name = "v";
-	    cloud_.channels[2].values.resize(stdata_->numPts);
-	  }
+        cloud_.channels[1].name = "u";
+        cloud_.channels[1].values.resize(stdata_->numPts);
+        cloud_.channels[2].name = "v";
+        cloud_.channels[2].values.resize(stdata_->numPts);
 
 	for (int i = 0; i < stdata_->numPts; i++)
 	  {
@@ -661,11 +576,8 @@ public:
 	  {
 	    int rgb = (stdata_->imPtsColor[3*i] << 16) | (stdata_->imPtsColor[3*i + 1] << 8) | stdata_->imPtsColor[3*i + 2];
 	    cloud_.channels[0].values[i] = *(float*)(&rgb);
-	    if (do_keep_coords_) 
-	      {
-		cloud_.channels[1].values[i] = stdata_->imCoords[2*i+0];
-		cloud_.channels[2].values[i] = stdata_->imCoords[2*i+1];
-	      }
+            cloud_.channels[1].values[i] = stdata_->imCoords[2*i+0];
+            cloud_.channels[2].values[i] = stdata_->imCoords[2*i+1];
 	  }
 	pub_pts_.publish(cloud_);
       }
@@ -677,10 +589,9 @@ public:
     if (coding == COLOR_CODING_NONE)
       return;
 
-    // @todo: step calculation is a little hacky
+    uint32_t step = dataSize / stdata_->imHeight;
     fillImage(img_, cam_bridge::ColorCodingToImageEncoding(coding),
-              stdata_->imHeight, stdata_->imWidth,
-              dataSize / stdata_->imHeight /*step*/, data);
+              stdata_->imHeight, stdata_->imWidth, step, data);
     pub.publish(img_);
   }
 
@@ -703,7 +614,8 @@ public:
     dimage.is_bigendian = 0;
 
     // now do regular image
-    if (1)			// should check if we're subscribed
+    /// @todo Check if subscribed to color-mapped image
+    if (1)
       {
 	int nd = dimg_.num_disp;
 	int dpp = dimg_.dpp;
@@ -743,71 +655,56 @@ public:
     pub_disparity_.publish(dimg_);
   }
 
+  void config_callback(stereo_image_proc::StereoImageProcConfig &config, uint32_t level)
+  {
+    ROS_INFO("Reconfigure request received");
 
+    stdata_->setTextureThresh(config.unique_thresh);
+    stdata_->setUniqueThresh(config.texture_thresh);
+    stdata_->setSpeckleRegionSize(config.speckle_size);
+    stdata_->setSpeckleDiff(config.speckle_diff);
+    
+    stdata_->setHoropter(config.horopter);
+    stdata_->setCorrSize(config.corr_size);
+    stdata_->setNumDisp(config.num_disp);
+  }
 };
-
-StereoProc *StP;		// global var for stereo processing node class
-
-void 
-config_callback(stereo_image_proc::StereoImageProcConfig &config, uint32_t level)
-{
-  ROS_INFO("Reconfigure request received");
-  
-  StP->do_colorize_ = config.do_colorize;
-  StP->do_rectify_ = config.do_rectify;
-  StP->do_stereo_ = config.do_stereo;
-  StP->do_calc_points_ = config.do_calc_points;
-  StP->do_keep_coords_ = config.do_keep_coords;
-
-  // Must do stereo if calculating points
-  StP->do_stereo_ = StP->do_stereo_ || StP->do_calc_points_;
-  // Must rectify if doing stereo
-  StP->do_rectify_ = StP->do_rectify_ || StP->do_stereo_;
-
-  StP->stdata_->setTextureThresh(config.unique_thresh);
-  StP->stdata_->setUniqueThresh(config.texture_thresh);
-  StP->stdata_->setSpeckleRegionSize(config.speckle_size);
-  StP->stdata_->setSpeckleDiff(config.speckle_diff);
-
-  StP->stdata_->setHoropter(config.horopter);
-  StP->stdata_->setCorrSize(config.corr_size);
-  StP->stdata_->setNumDisp(config.num_disp);
-}
 
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "stereo_image_proc", ros::init_options::AnonymousName);
   ros::NodeHandle nh;
-  // resolve either <camera> for both cams, or individual stereo cams
-  if (nh.resolveName("camera") == "/camera" && 
-      (nh.resolveName("camera_left") == "/camera_left" ||
-       nh.resolveName("camera_right") == "/camera_right"))
-    {
-      ROS_WARN("[stereo_image_proc] Remap either <camera> or <camera_left> and <camera_right>");
+  std::string cam_ns = nh.resolveName("camera");
+  std::string cam_left_ns, cam_right_ns, stereo_ns;
+
+  if (cam_ns == "/camera") {
+    cam_left_ns = nh.resolveName("camera_left");
+    cam_right_ns = nh.resolveName("camera_right");
+    stereo_ns = nh.resolveName("output");
+    if (cam_left_ns == "/camera_left" || cam_right_ns == "/camera_right")
+      ROS_WARN("If you do not remap <camera>, you must remap both <camera_left> and <camera_right>.");
+    if (stereo_ns == "/output") {
+      ROS_WARN("You have remapped neither <camera> nor <output>. Stereo outputs will go in /stereo.");
+      stereo_ns = "/stereo";
     }
-  
-  // resolve either <camera> for both cams, or individual stereo cams
-  if (nh.resolveName("camera") != "/camera" && 
-      nh.resolveName("output") == "/output")
-    {
-      /*
-      std::string name = nh.resolveName("camera_left");
-      ROS_WARN("[stereo_image_proc] Output will be %s, remap <output> to change", 
-	       name.c_str());
-      */
-      ROS_WARN("[stereo_image_proc] Output will be in /stereo/, remap <output> to change");
-    }
+  }
+  else {
+    cam_left_ns = cam_ns + "/left";
+    cam_right_ns = cam_ns + "/right";
+    stereo_ns = nh.resolveName("output");
+    if (stereo_ns == "/output")
+      stereo_ns = cam_ns;
+  }
 
   // start stereo processor
-  StP = new StereoProc(nh);
+  StereoProc proc(nh, cam_left_ns, cam_right_ns, stereo_ns);
 
   // set up dynamic reconfiguration
   dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig> srv;
   dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig>::CallbackType f = 
-                                                          boost::bind(&config_callback, _1, _2);
+    boost::bind(&StereoProc::config_callback, &proc, _1, _2);
   srv.setCallback(f);
-
 
   ros::spin();
   
