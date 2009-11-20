@@ -22,6 +22,7 @@
 
   <export>
     <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcamera_calibration" cflags="-I${prefix}/include -I${prefix}/msg/cpp"/>
+    <rosdoc config="rosdoc.yaml" />
   </export>
 
 </package>
