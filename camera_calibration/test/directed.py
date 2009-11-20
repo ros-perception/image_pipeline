@@ -45,7 +45,7 @@ class TestDirected(unittest.TestCase):
         print mc.chessboard_size(limages[0], rimages[0])
 
 if __name__ == '__main__':
-    if 0:
+    if 1:
         rostest.unitrun('camera_calibration', 'directed', TestDirected)
     else:
         suite = unittest.TestSuite()
