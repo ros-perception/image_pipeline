@@ -186,8 +186,8 @@ class OpenCVCalibrationNode(CalibrationNode):
                 rimages = [ r for (p, l, r) in vv ]
                 self.sc.cal(limages, rimages)
                 self.calibrated = True
-                #for (i, (p, limg, rimg)) in enumerate(self.db.values()):
-                #    cv.SaveImage("/tmp/cal%04d.png" % i, self.sc.lremap(limg))
+                for (i, (p, limg, rimg)) in enumerate(self.db.values()):
+                    cv.SaveImage("/tmp/cal%04d.png" % i, self.sc.lremap(limg))
 
                 self.sc.report()
                 self.sc.ost()
@@ -198,13 +198,13 @@ class OpenCVCalibrationNode(CalibrationNode):
         cv.Set(cv.GetSubRect(display, (640,0,100,480)), (255, 255, 255))
         cv.Resize(self.button, cv.GetSubRect(display, (640,380,100,100)))
 
-        # Report dimensions of the n-polytope
-        Ps = [v[0] for v in self.db.values()]
-        Pmins = reduce(lmin, Ps)
-        Pmaxs = reduce(lmax, Ps)
-        ranges = [(x-n) for (x, n) in zip(Pmaxs, Pmins)]
-
         if not self.calibrated:
+            # Report dimensions of the n-polytope
+            Ps = [v[0] for v in self.db.values()]
+            Pmins = reduce(lmin, Ps)
+            Pmaxs = reduce(lmax, Ps)
+            ranges = [(x-n) for (x, n) in zip(Pmaxs, Pmins)]
+
             for i, (label, lo, hi) in enumerate(zip(["X", "Y", "Size"], Pmins, Pmaxs)):
                 y = 100 + 100 * i
                 (width,_),_ = cv.GetTextSize(label, self.font)
