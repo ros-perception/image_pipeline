@@ -74,6 +74,7 @@ class CalibrationNode:
     def handle_monocular(self, msg):
 
         rgb = self.mkgray(msg)
+        (self.width, self.height) = cv.GetSize(rgb)
         scrib = rgb
 
         if not self.calibrated:
@@ -82,9 +83,9 @@ class CalibrationNode:
                 # Compute some parameters for this chessboard
                 Xs = [x for (x, y) in corners]
                 Ys = [y for (x, y) in corners]
-                p_x = mean(Xs) / 640
-                p_y = mean(Ys) / 480
-                p_size = (max(Xs) - min(Xs)) / 640
+                p_x = mean(Xs) / self.width
+                p_y = mean(Ys) / self.height
+                p_size = (max(Xs) - min(Xs)) / self.width
                 params = [p_x, p_y, p_size]
                 if self.p_mins == None:
                     self.p_mins = params
@@ -97,10 +98,15 @@ class CalibrationNode:
                 is_min = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_mins)]
                 is_max = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_maxs)]
 
-                scrib = cv.CloneMat(rgb)
-                for (co, im) in [(corners, scrib)]:
-                    src = cv.Reshape(mk_image_points([co]), 2)
-                    cv.DrawChessboardCorners(im, (8, 6), cvmat_iterator(src), True)
+                src = cv.Reshape(mk_image_points([corners]), 2)
+
+                scale = math.ceil(self.width / 640)
+                if scale != 1:
+                    scrib = cv.CreateMat(self.height / scale, self.width / scale, cv.GetElemType(rgb))
+                    cv.Resize(rgb, scrib)
+                else:
+                    scrib = cv.CloneMat(rgb)
+                cv.DrawChessboardCorners(scrib, (8, 6), [ (x/scale, y/scale) for (x, y) in cvmat_iterator(src)], True)
 
                 # If the image is a min or max in every parameter, add to the collection
                 if any(is_min) or any(is_max):
@@ -114,6 +120,7 @@ class CalibrationNode:
 
         lrgb = self.mkgray(lmsg)
         rrgb = self.mkgray(rmsg)
+        (self.width, self.height) = cv.GetSize(lrgb)
         lscrib = lrgb
         rscrib = rrgb
 
@@ -125,9 +132,9 @@ class CalibrationNode:
                     # Compute some parameters for this chessboard
                     Xs = [x for (x, y) in lcorners]
                     Ys = [y for (x, y) in lcorners]
-                    p_x = mean(Xs) / 640
-                    p_y = mean(Ys) / 480
-                    p_size = (max(Xs) - min(Xs)) / 640
+                    p_x = mean(Xs) / self.width
+                    p_y = mean(Ys) / self.height
+                    p_size = (max(Xs) - min(Xs)) / self.width
                     params = [p_x, p_y, p_size]
                     if self.p_mins == None:
                         self.p_mins = params
@@ -192,11 +199,13 @@ class OpenCVCalibrationNode(CalibrationNode):
                 self.sc.report()
                 self.sc.ost()
 
-    def redraw_monocular(self, scrib, rgb):
-        display = cv.CreateMat(480, 640 + 100, cv.CV_8UC3)
-        cv.Copy(scrib, cv.GetSubRect(display, (0,0,640,480)))
-        cv.Set(cv.GetSubRect(display, (640,0,100,480)), (255, 255, 255))
-        cv.Resize(self.button, cv.GetSubRect(display, (640,380,100,100)))
+    def redraw_monocular(self, scrib, _):
+        width, height = cv.GetSize(scrib)
+
+        display = cv.CreateMat(height, width + 100, cv.CV_8UC3)
+        cv.Copy(scrib, cv.GetSubRect(display, (0,0,width,height)))
+        cv.Set(cv.GetSubRect(display, (width,0,100,height)), (255, 255, 255))
+        cv.Resize(self.button, cv.GetSubRect(display, (width,380,100,100)))
 
         if not self.calibrated:
             # Report dimensions of the n-polytope
@@ -207,25 +216,25 @@ class OpenCVCalibrationNode(CalibrationNode):
 
             for i, (label, lo, hi) in enumerate(zip(["X", "Y", "Size"], Pmins, Pmaxs)):
                 y = 100 + 100 * i
-                (width,_),_ = cv.GetTextSize(label, self.font)
-                cv.PutText(display, label, (640 + (100 - width) / 2, 100 + 100 * i), self.font, (0,0,0))
+                (w,_),_ = cv.GetTextSize(label, self.font)
+                cv.PutText(display, label, (width + (100 - w) / 2, 100 + 100 * i), self.font, (0,0,0))
                 cv.Line(display,
-                        (640 + lo * 100, y + 20),
-                        (640 + hi * 100, y + 20),
+                        (width + lo * 100, y + 20),
+                        (width + hi * 100, y + 20),
                         (0,0,0),
                         4)
         else:
-            cv.PutText(display, "acc.", (640, 100), self.font, (0,0,0))
+            cv.PutText(display, "acc.", (width, 100), self.font, (0,0,0))
 
         cv.ShowImage("display", display)
         k = cv.WaitKey(6)
 
     def redraw_stereo(self, lscrib, rscrib, lrgb, rrgb):
-        display = cv.CreateMat(480, 1280 + 100, cv.CV_8UC3)
-        cv.Copy(lscrib, cv.GetSubRect(display, (0,0,640,480)))
-        cv.Copy(rscrib, cv.GetSubRect(display, (640,0,640,480)))
-        cv.Set(cv.GetSubRect(display, (1280,0,100,480)), (255, 255, 255))
-        cv.Resize(self.button, cv.GetSubRect(display, (1280,380,100,100)))
+        display = cv.CreateMat(self.height, 2 * self.width + 100, cv.CV_8UC3)
+        cv.Copy(lscrib, cv.GetSubRect(display, (0,0,self.width,self.height)))
+        cv.Copy(rscrib, cv.GetSubRect(display, (self.width,0,self.width,self.height)))
+        cv.Set(cv.GetSubRect(display, (2 * self.width,0,100,self.height)), (255, 255, 255))
+        cv.Resize(self.button, cv.GetSubRect(display, (2 * self.width,380,100,100)))
 
 
         if not self.calibrated:
@@ -238,24 +247,24 @@ class OpenCVCalibrationNode(CalibrationNode):
                 for i, (label, lo, hi) in enumerate(zip(["X", "Y", "Size"], Pmins, Pmaxs)):
                     y = 100 + 100 * i
                     (width,_),_ = cv.GetTextSize(label, self.font)
-                    cv.PutText(display, label, (1280 + (100 - width) / 2, 100 + 100 * i), self.font, (0,0,0))
+                    cv.PutText(display, label, (2 * self.width + (100 - width) / 2, 100 + 100 * i), self.font, (0,0,0))
                     cv.Line(display,
-                            (1280 + lo * 100, y + 20),
-                            (1280 + hi * 100, y + 20),
+                            (2 * self.width + lo * 100, y + 20),
+                            (2 * self.width + hi * 100, y + 20),
                             (0,0,0),
                             4)
         else:
-            cv.PutText(display, "acc.", (1280, 50), self.font, (0,0,0))
+            cv.PutText(display, "acc.", (2 * self.width, 50), self.font, (0,0,0))
             epierror = self.sc.epipolar1(lrgb, rrgb)
             if epierror == -1:
                 msg = "?"
             else:
                 msg = "%.2f" % epierror
-            cv.PutText(display, msg, (1280, 150), self.font, (0,0,0))
+            cv.PutText(display, msg, (2 * self.width, 150), self.font, (0,0,0))
             if epierror != -1:
-                cv.PutText(display, "dim", (1280, 250), self.font, (0,0,0))
+                cv.PutText(display, "dim", (2 * self.width, 250), self.font, (0,0,0))
                 dim = self.sc.chessboard_size(lrgb, rrgb)
-                cv.PutText(display, "%.3f" % dim, (1280, 350), self.font, (0,0,0))
+                cv.PutText(display, "%.3f" % dim, (2 * self.width, 350), self.font, (0,0,0))
 
         cv.ShowImage("display", display)
         k = cv.WaitKey(6)
