@@ -187,7 +187,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 self.sc.cal(limages, rimages)
                 self.calibrated = True
                 for (i, (p, limg, rimg)) in enumerate(self.db.values()):
-                    cv.SaveImage("/tmp/cal%04d.png" % i, self.sc.lremap(limg))
+                    cv.SaveImage("/tmp/cal%04d.png" % i, limg)
 
                 self.sc.report()
                 self.sc.ost()
