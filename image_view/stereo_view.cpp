@@ -48,7 +48,6 @@
 class StereoView
 {
 private:
-  ros::NodeHandle nh_;
   image_transport::SubscriberFilter left_sub_, right_sub_;
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync_;
   
@@ -60,16 +59,15 @@ private:
   int count_;
 
 public:
-  StereoView(const ros::NodeHandle& nh)
-    : nh_(nh), sync_(3), filename_format_(""), count_(0)
+  StereoView(ros::NodeHandle& nh)
+    : sync_(3), filename_format_(""), count_(0)
   {
-    /// @todo Queue size as parameter
-    
+    ros::NodeHandle local_nh("~");
     bool autosize;
-    nh_.param("~autosize", autosize, true);
+    local_nh.param("autosize", autosize, true);
     
     std::string format_string;
-    nh_.param("~filename_format", format_string, std::string("%s%04i.pgm"));
+    local_nh.param("filename_format", format_string, std::string("%s%04i.pgm"));
     filename_format_.parse(format_string);
     
     cvNamedWindow("left", autosize ? CV_WINDOW_AUTOSIZE : 0);
@@ -80,8 +78,8 @@ public:
 
     std::string left_topic = nh.resolveName("stereo") + "/left/" + nh.resolveName("image");
     std::string right_topic = nh.resolveName("stereo") + "/right/" + nh.resolveName("image");
-    left_sub_.subscribe(nh_, left_topic, 3);
-    right_sub_.subscribe(nh_, right_topic, 3);
+    left_sub_.subscribe(nh, left_topic, 3);
+    right_sub_.subscribe(nh, right_topic, 3);
     sync_.connectInput(left_sub_, right_sub_);
     sync_.registerCallback(boost::bind(&StereoView::imageCB, this, _1, _2));
   }
