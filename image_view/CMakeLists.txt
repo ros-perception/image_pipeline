@@ -5,6 +5,8 @@ rosbuild_init()
 
 rosbuild_add_executable(image_view image_view.cpp)
 
+rosbuild_add_executable(extract_images extract_images.cpp)
+
 rosbuild_add_executable(stereo_view stereo_view.cpp)
 
 #rosbuild_add_executable(test_stereo test_stereo.cpp)
