@@ -55,7 +55,7 @@ private:
   std::string window_name_;
   boost::format filename_format_;
   int count_;
-  clock_t _time;
+  double _time;
   double sec_per_frame_;
 
 public:
@@ -99,7 +99,7 @@ public:
     double delay = ros::Time::now().toSec()-_time;
     if(delay >= sec_per_frame_)
     {
-      _time = clock();
+      _time = ros::Time::now().toSec();
 
       IplImage *image = img_bridge_.toIpl();
       if (image) {
@@ -110,10 +110,6 @@ public:
       } else {
         ROS_WARN("Couldn't save image, no data!");
       }
-    }
-    else
-    {
-      ROS_INFO("delay = %f", delay);
     }
   }
 };
