@@ -1,1 +1,1 @@
-rospack_add_library(camera_calibration pinhole.cpp calibrate.cpp)
+rosbuild_add_library(camera_calibration pinhole.cpp calibrate.cpp)

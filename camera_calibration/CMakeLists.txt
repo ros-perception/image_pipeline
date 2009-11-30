@@ -9,15 +9,15 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
-rospack(camera_calibration)
-genmsg()
+rosbuild_init()
+rosbuild_genmsg()
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-rospack_add_boost_directories()
+rosbuild_add_boost_directories()
 
 add_subdirectory(src)
-rospack_add_pyunit(test/directed.py)
+rosbuild_add_pyunit(test/directed.py)
