@@ -77,6 +77,13 @@ class CalibrationNode:
         (self.width, self.height) = cv.GetSize(rgb)
         scrib = rgb
 
+        scale = int(math.ceil(self.width / 640))
+        if scale != 1:
+            scrib = cv.CreateMat(self.height / scale, self.width / scale, cv.GetElemType(rgb))
+            cv.Resize(rgb, scrib)
+        else:
+            scrib = cv.CloneMat(rgb)
+
         if not self.calibrated:
             (ok, corners) = get_corners(rgb, refine = False)
             if ok:
@@ -100,19 +107,14 @@ class CalibrationNode:
 
                 src = cv.Reshape(mk_image_points([corners]), 2)
 
-                scale = math.ceil(self.width / 640)
-                if scale != 1:
-                    scrib = cv.CreateMat(self.height / scale, self.width / scale, cv.GetElemType(rgb))
-                    cv.Resize(rgb, scrib)
-                else:
-                    scrib = cv.CloneMat(rgb)
                 cv.DrawChessboardCorners(scrib, (8, 6), [ (x/scale, y/scale) for (x, y) in cvmat_iterator(src)], True)
 
                 # If the image is a min or max in every parameter, add to the collection
                 if any(is_min) or any(is_max):
                     self.db[str(is_min + is_max)] = (params, rgb)
         else:
-            scrib = self.mc.remap(rgb)
+            rgb_remapped = self.mc.remap(rgb)
+            cv.Resize(rgb_remapped, scrib)
 
         self.redraw_monocular(scrib, rgb)
 
@@ -208,21 +210,22 @@ class OpenCVCalibrationNode(CalibrationNode):
         cv.Resize(self.button, cv.GetSubRect(display, (width,380,100,100)))
 
         if not self.calibrated:
-            # Report dimensions of the n-polytope
-            Ps = [v[0] for v in self.db.values()]
-            Pmins = reduce(lmin, Ps)
-            Pmaxs = reduce(lmax, Ps)
-            ranges = [(x-n) for (x, n) in zip(Pmaxs, Pmins)]
+            if len(self.db) != 0:
+                # Report dimensions of the n-polytope
+                Ps = [v[0] for v in self.db.values()]
+                Pmins = reduce(lmin, Ps)
+                Pmaxs = reduce(lmax, Ps)
+                ranges = [(x-n) for (x, n) in zip(Pmaxs, Pmins)]
 
-            for i, (label, lo, hi) in enumerate(zip(["X", "Y", "Size"], Pmins, Pmaxs)):
-                y = 100 + 100 * i
-                (w,_),_ = cv.GetTextSize(label, self.font)
-                cv.PutText(display, label, (width + (100 - w) / 2, 100 + 100 * i), self.font, (0,0,0))
-                cv.Line(display,
-                        (width + lo * 100, y + 20),
-                        (width + hi * 100, y + 20),
-                        (0,0,0),
-                        4)
+                for i, (label, lo, hi) in enumerate(zip(["X", "Y", "Size"], Pmins, Pmaxs)):
+                    y = 100 + 100 * i
+                    (w,_),_ = cv.GetTextSize(label, self.font)
+                    cv.PutText(display, label, (width + (100 - w) / 2, 100 + 100 * i), self.font, (0,0,0))
+                    cv.Line(display,
+                            (width + lo * 100, y + 20),
+                            (width + hi * 100, y + 20),
+                            (0,0,0),
+                            4)
         else:
             cv.PutText(display, "acc.", (width, 100), self.font, (0,0,0))
 

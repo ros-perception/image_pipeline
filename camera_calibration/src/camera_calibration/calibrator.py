@@ -130,8 +130,8 @@ class MonoCalibrator(Calibrator):
         self.intrinsics = intrinsics
         self.distortion = distortion
 
-        self.mapx = cv.CreateImage((640, 480), cv.IPL_DEPTH_32F, 1)
-        self.mapy = cv.CreateImage((640, 480), cv.IPL_DEPTH_32F, 1)
+        self.mapx = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
+        self.mapy = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
         cv.InitUndistortMap(self.intrinsics, self.distortion, self.mapx, self.mapy)
 
         self.R = cv.CreateMat(3, 3, cv.CV_64FC1)
