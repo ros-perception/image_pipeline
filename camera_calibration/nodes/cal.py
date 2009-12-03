@@ -222,8 +222,8 @@ class OpenCVCalibrationNode(CalibrationNode):
                     (w,_),_ = cv.GetTextSize(label, self.font)
                     cv.PutText(display, label, (width + (100 - w) / 2, 100 + 100 * i), self.font, (0,0,0))
                     cv.Line(display,
-                            (width + lo * 100, y + 20),
-                            (width + hi * 100, y + 20),
+                            (int(width + lo * 100), y + 20),
+                            (int(width + hi * 100), y + 20),
                             (0,0,0),
                             4)
         else:
