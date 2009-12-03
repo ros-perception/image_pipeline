@@ -21,3 +21,4 @@ rosbuild_add_boost_directories()
 
 add_subdirectory(src)
 rosbuild_add_pyunit(test/directed.py)
+rosbuild_download_test_data(http://pr.willowgarage.com/data/camera_calibration/camera_calibration.tar.gz camera_calibration.tar.gz 6da43ea314640a4c15dd7a90cbc3aee0)

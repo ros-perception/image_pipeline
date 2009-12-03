@@ -5,6 +5,7 @@ import rostest
 import rospy
 import cv
 import unittest
+import tarfile
 
 from camera_calibration.calibrator import get_corners, mk_image_points, cvmat_iterator, MonoCalibrator, StereoCalibrator
 
@@ -12,9 +13,17 @@ class TestDirected(unittest.TestCase):
 
     def setUp(self):
         self.mydir = roslib.packages.get_pkg_dir(PKG)
+        self.tar = tarfile.open('%s/camera_calibration.tar.gz' % self.mydir, 'r')
 
+    def image_from_archive(self, name):
+        member = self.tar.getmember(name)
+        filedata = self.tar.extractfile(member).read()
+        imagefiledata = cv.CreateMat(1, len(filedata), cv.CV_8UC1)
+        cv.SetData(imagefiledata, filedata, len(filedata))
+        return cv.DecodeImageM(imagefiledata)
+        
     def test_monocular(self):
-        images = [cv.LoadImage("%s/test/wide/left%04d.pgm" % (self.mydir, i)) for i in range(3, 15)]
+        images = [self.image_from_archive("wide/left%04d.pgm" % i) for i in range(3, 15)]
         mc = MonoCalibrator()
         mc.cal(images)
         if 0:
@@ -33,8 +42,9 @@ class TestDirected(unittest.TestCase):
                         assert 0
 
     def test_stereo(self):
-        limages = [cv.LoadImage("%s/test/wide/left%04d.pgm" % (self.mydir, i)) for i in range(3, 15)]
-        rimages = [cv.LoadImage("%s/test/wide/right%04d.pgm" % (self.mydir, i)) for i in range(3, 15)]
+        print self.image_from_archive('wide/left0003.pgm')
+        limages = [self.image_from_archive("wide/left%04d.pgm" % i) for i in range(3, 15)]
+        rimages = [self.image_from_archive("wide/right%04d.pgm" % i) for i in range(3, 15)]
         mc = StereoCalibrator()
         mc.cal(limages, rimages)
 
