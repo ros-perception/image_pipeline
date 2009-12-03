@@ -169,6 +169,26 @@ class CalibrationNode:
 
         self.redraw_stereo(lscrib, rscrib, lrgb, rrgb)
 
+    def do_calibration(self):
+        vv = list(self.db.values())
+        # vv is a list of pairs (p, i) for monocular, and triples (p, l, r) for stereo
+        if len(vv[0]) == 2:
+            images = [i for (p, i) in vv]
+            self.mc.cal(images)
+            self.calibrated = True
+            self.mc.report()
+            self.mc.ost()
+        else:
+            limages = [ l for (p, l, r) in vv ]
+            rimages = [ r for (p, l, r) in vv ]
+            self.sc.cal(limages, rimages)
+            self.calibrated = True
+            # for (i, (p, limg, rimg)) in enumerate(self.db.values()):
+            #     cv.SaveImage("/tmp/cal%04d.png" % i, limg)
+
+            self.sc.report()
+            self.sc.ost()
+
 class OpenCVCalibrationNode(CalibrationNode):
     """ Calibration node with an OpenCV Gui """
 
@@ -182,24 +202,7 @@ class OpenCVCalibrationNode(CalibrationNode):
 
     def on_mouse(self, event, x, y, flags, param):
         if event == cv.CV_EVENT_LBUTTONDOWN:
-            vv = list(self.db.values())
-            # vv is a list of pairs (p, i) for monocular, and triples (p, l, r) for stereo
-            if len(vv[0]) == 2:
-                images = [i for (p, i) in vv]
-                self.mc.cal(images)
-                self.calibrated = True
-                self.mc.report()
-                self.mc.ost()
-            else:
-                limages = [ l for (p, l, r) in vv ]
-                rimages = [ r for (p, l, r) in vv ]
-                self.sc.cal(limages, rimages)
-                self.calibrated = True
-                for (i, (p, limg, rimg)) in enumerate(self.db.values()):
-                    cv.SaveImage("/tmp/cal%04d.png" % i, limg)
-
-                self.sc.report()
-                self.sc.ost()
+            self.do_calibration()
 
     def redraw_monocular(self, scrib, _):
         width, height = cv.GetSize(scrib)
@@ -238,7 +241,6 @@ class OpenCVCalibrationNode(CalibrationNode):
         cv.Copy(rscrib, cv.GetSubRect(display, (self.width,0,self.width,self.height)))
         cv.Set(cv.GetSubRect(display, (2 * self.width,0,100,self.height)), (255, 255, 255))
         cv.Resize(self.button, cv.GetSubRect(display, (2 * self.width,380,100,100)))
-
 
         if not self.calibrated:
             if len(self.db) != 0:
