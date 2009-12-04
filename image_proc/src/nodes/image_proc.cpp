@@ -54,7 +54,6 @@ class ImageProc
 {
 private:
   ros::NodeHandle camera_nh_;
-  ros::NodeHandle local_nh_;
 
   image_transport::ImageTransport it_;
   image_transport::CameraSubscriber cam_sub_;
@@ -72,7 +71,6 @@ public:
 
   ImageProc(const ros::NodeHandle& camera_nh)
     : camera_nh_(camera_nh),
-      local_nh_("~"),
       it_(camera_nh),
       subscriber_count_(0)
   {
@@ -133,15 +131,19 @@ public:
 
   void connectCb(const image_transport::SingleSubscriberPublisher& ssp)
   {
-    if (subscriber_count_++ == 0)
+    if (subscriber_count_++ == 0) {
+      ROS_DEBUG("Subscribing to camera topics");
       cam_sub_ = it_.subscribeCamera("image_raw", 3, &ImageProc::imageCb, this);
+    }
   }
 
   void disconnectCb(const image_transport::SingleSubscriberPublisher&)
   {
     subscriber_count_--;
-    if (subscriber_count_ == 0)
+    if (subscriber_count_ == 0) {
+      ROS_DEBUG("Unsubscribing from camera topics");
       cam_sub_.shutdown();
+    }
   }
 };
 
