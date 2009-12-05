@@ -23,6 +23,8 @@ ID_EXIT=200
 # /wg/osx/rosCode/ros-pkg/ros-pkg/stacks/image_pipeline/image_view/preCalib
 
 from camera_calibration.calibrator import get_corners, mk_image_points, cvmat_iterator, MonoCalibrator, StereoCalibrator
+from std_msgs.msg import String
+from std_srvs.srv import Empty
 
 def mean(seq):
     return sum(seq) / len(seq)
@@ -189,6 +191,44 @@ class CalibrationNode:
             self.sc.report()
             self.sc.ost()
 
+class WebCalibrationNode(CalibrationNode):
+    """ Calibration node backend for a web-based UI """
+
+    def __init__(self):
+        CalibrationNode.__init__(self)
+        self.img_pub = rospy.Publisher("calibration_image", sensor_msgs.msg.Image)
+        self.meta_pub = rospy.Publisher("calibration_meta", String)
+        self.calibration_done = rospy.Service('calibration_done', Empty, self.calibrate)
+
+    def calibrate(self, req):
+        self.do_calibration()
+
+    def publish_meta(self):
+        if not self.calibrated:
+            if len(self.db) != 0:
+                # Report dimensions of the n-polytope
+                Ps = [v[0] for v in self.db.values()]
+                Pmins = reduce(lmin, Ps)
+                Pmaxs = reduce(lmax, Ps)
+                vals = ['%s:%s:%s' % (label, lo, hi) for (label, lo, hi) in zip(["X", "Y", "Size"], Pmins, Pmaxs)]
+                self.meta_pub.publish(String(",".join(vals)))
+
+    def redraw_monocular(self, scrib, _):
+        msg = self.br.cv_to_imgmsg(scrib, "bgr8")
+        msg.header.stamp = rospy.rostime.get_rostime()
+        self.img_pub.publish(msg)
+        self.publish_meta()
+                   
+
+    def redraw_stereo(self, lscrib, rscrib, lrgb, rrgb):
+        display = cv.CreateMat(lscrib.height, lscrib.width + rscrib.width, cv.CV_8UC3)
+        cv.Copy(lscrib, cv.GetSubRect(display, (0,0,lscrib.width,lscrib.height)))
+        cv.Copy(rscrib, cv.GetSubRect(display, (lscrib.width,0,rscrib.width,rscrib.height)))
+        msg = self.br.cv_to_imgmsg(display, "bgr8")
+        msg.header.stamp = rospy.rostime.get_rostime()
+        self.img_pub.publish(msg)
+        self.publish_meta()
+
 class OpenCVCalibrationNode(CalibrationNode):
     """ Calibration node with an OpenCV Gui """
 
@@ -274,6 +314,18 @@ class OpenCVCalibrationNode(CalibrationNode):
         cv.ShowImage("display", display)
         k = cv.WaitKey(6)
 
-rospy.init_node('calibrationnode')
-node = OpenCVCalibrationNode()
-rospy.spin()
+def main():
+    from optparse import OptionParser
+    rospy.init_node('calibrationnode')
+    parser = OptionParser()
+    parser.add_option("-w", "--web", dest="web", action="store_true", default=False, help="create backend for web-based calibration")
+    parser.add_option("-o", "--opencv", dest="web", action="store_false", help="use OpenCV-based GUI for calibration (default)")
+    options, args = parser.parse_args()
+    if options.web:
+        node = WebCalibrationNode()
+    else:
+        node = OpenCVCalibrationNode()
+    rospy.spin()
+
+if __name__ == "__main__":
+    main()
