@@ -172,24 +172,31 @@ class CalibrationNode:
         self.redraw_stereo(lscrib, rscrib, lrgb, rrgb)
 
     def do_calibration(self):
+        self.calibrated = True
         vv = list(self.db.values())
         # vv is a list of pairs (p, i) for monocular, and triples (p, l, r) for stereo
         if len(vv[0]) == 2:
             images = [i for (p, i) in vv]
             self.mc.cal(images)
-            self.calibrated = True
             self.mc.report()
             self.mc.ost()
         else:
             limages = [ l for (p, l, r) in vv ]
             rimages = [ r for (p, l, r) in vv ]
             self.sc.cal(limages, rimages)
-            self.calibrated = True
             # for (i, (p, limg, rimg)) in enumerate(self.db.values()):
             #     cv.SaveImage("/tmp/cal%04d.png" % i, limg)
 
             self.sc.report()
             self.sc.ost()
+
+    def set_scale(self, a):
+        if self.calibrated:
+            vv = list(self.db.values())
+            if len(vv[0]) == 2:
+                self.mc.set_alpha(a)
+            else:
+                self.sc.set_alpha(a)
 
 class WebCalibrationNode(CalibrationNode):
     """ Calibration node backend for a web-based UI """
@@ -239,10 +246,14 @@ class OpenCVCalibrationNode(CalibrationNode):
         self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 1, 1, thickness = 2, line_type = cv.CV_AA)
         self.button = cv.LoadImage("%s/button.jpg" % roslib.packages.get_pkg_dir(PKG))
         cv.SetMouseCallback("display", self.on_mouse)
+        cv.CreateTrackbar("scale", "display", 0, 100, self.on_scale)
 
     def on_mouse(self, event, x, y, flags, param):
         if event == cv.CV_EVENT_LBUTTONDOWN:
             self.do_calibration()
+
+    def on_scale(self, scalevalue):
+        self.set_scale(scalevalue / 100.0)
 
     def redraw_monocular(self, scrib, _):
         width, height = cv.GetSize(scrib)

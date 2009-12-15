@@ -132,7 +132,14 @@ class MonoCalibrator(Calibrator):
 
         self.mapx = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
         self.mapy = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
-        cv.InitUndistortMap(self.intrinsics, self.distortion, self.mapx, self.mapy)
+        self.set_alpha(0.0)
+
+    def set_alpha(self, a):
+        ncm = cv.CreateMat(3, 3, cv.CV_64FC1)
+        R = cv.CreateMat(3, 3, cv.CV_64FC1)
+        cv.SetIdentity(R)
+        cv.GetOptimalNewCameraMatrix(self.intrinsics, self.distortion, self.size, a, ncm)
+        cv.InitUndistortRectifyMap(self.intrinsics, self.distortion, R, ncm, self.mapx, self.mapy)
 
         self.R = cv.CreateMat(3, 3, cv.CV_64FC1)
         self.P = cv.CreateMat(3, 4, cv.CV_64FC1)
@@ -193,16 +200,16 @@ class StereoCalibrator(Calibrator):
 
         flags = cv.CV_CALIB_FIX_ASPECT_RATIO | cv.CV_CALIB_FIX_INTRINSIC
 
-        T = cv.CreateMat(3, 1, cv.CV_64FC1)
-        R = cv.CreateMat(3, 3, cv.CV_64FC1)
-        cv.SetIdentity(T)
-        cv.SetIdentity(R)
+        self.T = cv.CreateMat(3, 1, cv.CV_64FC1)
+        self.R = cv.CreateMat(3, 3, cv.CV_64FC1)
+        cv.SetIdentity(self.T)
+        cv.SetIdentity(self.R)
         cv.StereoCalibrate(opts, lipts, ripts, npts,
                            self.l.intrinsics, self.l.distortion,
                            self.r.intrinsics, self.r.distortion,
-                           cv.GetSize(limages[0]),
-                           R,                                  # R
-                           T,                                  # T
+                           self.size,
+                           self.R,                                  # R
+                           self.T,                                  # T
                            cv.CreateMat(3, 3, cv.CV_32FC1),    # E
                            cv.CreateMat(3, 3, cv.CV_32FC1),    # F
                            (cv.CV_TERMCRIT_ITER + cv.CV_TERMCRIT_EPS, 1, 1e-5),
@@ -213,14 +220,18 @@ class StereoCalibrator(Calibrator):
         self.rP = cv.CreateMat(3, 4, cv.CV_64FC1)
         for m in [self.lR, self.rR, self.lP, self.rP]:
             cv.SetZero(m)
+        self.set_alpha(0.0)
+
+    def set_alpha(self, a):
         cv.StereoRectify(self.l.intrinsics,
                          self.r.intrinsics,
                          self.l.distortion,
                          self.r.distortion,
-                         cv.GetSize(limages[0]),
-                         R,
-                         T,
-                         self.lR, self.rR, self.lP, self.rP)
+                         self.size,
+                         self.R,
+                         self.T,
+                         self.lR, self.rR, self.lP, self.rP,
+                         alpha = a)
         
         self.lmapx = cv.CreateImage((640, 480), cv.IPL_DEPTH_32F, 1)
         self.lmapy = cv.CreateImage((640, 480), cv.IPL_DEPTH_32F, 1)
