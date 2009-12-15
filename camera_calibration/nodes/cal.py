@@ -5,6 +5,7 @@ import roslib; roslib.load_manifest(PKG)
 
 import rospy
 import sensor_msgs.msg
+import sensor_msgs.srv
 import cv_bridge
 
 import math
@@ -46,6 +47,7 @@ class CalibrationNode:
         ts.registerCallback(self.handle_stereo)
 
         rospy.Subscriber('image', sensor_msgs.msg.Image, self.handle_monocular)
+        self.set_camera_info_service = rospy.ServiceProxy("camera/set_camera_info", sensor_msgs.srv.SetCameraInfo)
 
         self.br = cv_bridge.CvBridge()
         self.p_mins = None
@@ -190,6 +192,14 @@ class CalibrationNode:
             self.sc.report()
             self.sc.ost()
 
+    def do_upload(self):
+        vv = list(self.db.values())
+        if len(vv[0]) == 2:
+            info = self.mc.as_message()
+        else:
+            info = self.sc.as_message()
+        self.set_camera_info_service(info)
+
     def set_scale(self, a):
         if self.calibrated:
             vv = list(self.db.values())
@@ -243,14 +253,17 @@ class OpenCVCalibrationNode(CalibrationNode):
 
         CalibrationNode.__init__(self)
         cv.NamedWindow("display")
-        self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 1, 1, thickness = 2, line_type = cv.CV_AA)
-        self.button = cv.LoadImage("%s/button.jpg" % roslib.packages.get_pkg_dir(PKG))
+        self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 0.20, 1, thickness = 2, line_type = cv.CV_AA)
+        #self.button = cv.LoadImage("%s/button.jpg" % roslib.packages.get_pkg_dir(PKG))
         cv.SetMouseCallback("display", self.on_mouse)
         cv.CreateTrackbar("scale", "display", 0, 100, self.on_scale)
 
     def on_mouse(self, event, x, y, flags, param):
         if event == cv.CV_EVENT_LBUTTONDOWN:
-            self.do_calibration()
+            if not self.calibrated:
+                self.do_calibration()
+            else:
+                self.do_upload()
 
     def on_scale(self, scalevalue):
         self.set_scale(scalevalue / 100.0)
@@ -261,7 +274,8 @@ class OpenCVCalibrationNode(CalibrationNode):
         display = cv.CreateMat(height, width + 100, cv.CV_8UC3)
         cv.Copy(scrib, cv.GetSubRect(display, (0,0,width,height)))
         cv.Set(cv.GetSubRect(display, (width,0,100,height)), (255, 255, 255))
-        cv.Resize(self.button, cv.GetSubRect(display, (width,380,100,100)))
+        #cv.Resize(self.button, cv.GetSubRect(display, (width,380,100,100)))
+        self.button(cv.GetSubRect(display, (width,380,100,100)))
 
         if not self.calibrated:
             if len(self.db) != 0:
@@ -286,12 +300,27 @@ class OpenCVCalibrationNode(CalibrationNode):
         cv.ShowImage("display", display)
         k = cv.WaitKey(6)
 
+    def button(self, dst):
+        cv.Set(dst, (255, 25, 255))
+        size = cv.GetSize(dst)
+        if not self.calibrated:
+            color = cv.RGB(155, 100, 80)
+            label = "CALIBRATE"
+        else:
+            color = cv.RGB(80, 155, 100)
+            label = "UPLOAD"
+        cv.Circle(dst, (size[0] / 2, size[1] / 2), min(size) / 2, color, -1)
+        ((w, h), _) = cv.GetTextSize(label, self.font)
+        print ((size[0] + w) / 2, (size[1] - h) / 2)
+        cv.PutText(dst, label, ((size[0] - w) / 2, (size[1] + h) / 2), self.font, (255,255,255))
+
     def redraw_stereo(self, lscrib, rscrib, lrgb, rrgb):
         display = cv.CreateMat(self.height, 2 * self.width + 100, cv.CV_8UC3)
         cv.Copy(lscrib, cv.GetSubRect(display, (0,0,self.width,self.height)))
         cv.Copy(rscrib, cv.GetSubRect(display, (self.width,0,self.width,self.height)))
         cv.Set(cv.GetSubRect(display, (2 * self.width,0,100,self.height)), (255, 255, 255))
-        cv.Resize(self.button, cv.GetSubRect(display, (2 * self.width,380,100,100)))
+        #cv.Resize(self.button, cv.GetSubRect(display, (2 * self.width,380,100,100)))
+        self.button(cv.GetSubRect(display, (2 * self.width,380,100,100)))
 
         if not self.calibrated:
             if len(self.db) != 0:
