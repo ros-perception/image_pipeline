@@ -47,7 +47,10 @@ class CalibrationNode:
         ts.registerCallback(self.handle_stereo)
 
         rospy.Subscriber('image', sensor_msgs.msg.Image, self.handle_monocular)
-        self.set_camera_info_service = rospy.ServiceProxy("camera/set_camera_info", sensor_msgs.srv.SetCameraInfo)
+
+        self.set_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"), sensor_msgs.srv.SetCameraInfo)
+        self.set_left_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("left_camera"), sensor_msgs.srv.SetCameraInfo)
+        self.set_right_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("right_camera"), sensor_msgs.srv.SetCameraInfo)
 
         self.br = cv_bridge.CvBridge()
         self.p_mins = None
@@ -180,8 +183,6 @@ class CalibrationNode:
         if len(vv[0]) == 2:
             images = [i for (p, i) in vv]
             self.mc.cal(images)
-            self.mc.report()
-            self.mc.ost()
         else:
             limages = [ l for (p, l, r) in vv ]
             rimages = [ r for (p, l, r) in vv ]
@@ -189,16 +190,21 @@ class CalibrationNode:
             # for (i, (p, limg, rimg)) in enumerate(self.db.values()):
             #     cv.SaveImage("/tmp/cal%04d.png" % i, limg)
 
-            self.sc.report()
-            self.sc.ost()
 
     def do_upload(self):
         vv = list(self.db.values())
         if len(vv[0]) == 2:
-            info = self.mc.as_message()
+            c = self.mc
         else:
-            info = self.sc.as_message()
-        self.set_camera_info_service(info)
+            c = self.sc
+        c.report()
+        c.ost()
+        info = c.as_message()
+        if len(vv[0]) == 2:
+            self.set_camera_info_service(info)
+        else:
+            self.set_left_camera_info_service(info[0])
+            self.set_right_camera_info_service(info[1])
 
     def set_scale(self, a):
         if self.calibrated:
@@ -301,7 +307,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         k = cv.WaitKey(6)
 
     def button(self, dst):
-        cv.Set(dst, (255, 25, 255))
+        cv.Set(dst, (255, 255, 255))
         size = cv.GetSize(dst)
         if not self.calibrated:
             color = cv.RGB(155, 100, 80)
@@ -311,7 +317,6 @@ class OpenCVCalibrationNode(CalibrationNode):
             label = "UPLOAD"
         cv.Circle(dst, (size[0] / 2, size[1] / 2), min(size) / 2, color, -1)
         ((w, h), _) = cv.GetTextSize(label, self.font)
-        print ((size[0] + w) / 2, (size[1] - h) / 2)
         cv.PutText(dst, label, ((size[0] - w) / 2, (size[1] + h) / 2), self.font, (255,255,255))
 
     def redraw_stereo(self, lscrib, rscrib, lrgb, rrgb):
