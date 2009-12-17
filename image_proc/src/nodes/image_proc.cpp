@@ -33,6 +33,7 @@
 *********************************************************************/
 
 #include <ros/ros.h>
+#include <ros/names.h>
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
@@ -53,8 +54,7 @@
 class ImageProc
 {
 private:
-  ros::NodeHandle camera_nh_;
-
+  ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
   image_transport::CameraSubscriber cam_sub_;
   image_transport::Publisher pub_mono_;
@@ -69,18 +69,34 @@ private:
 
 public:
 
-  ImageProc(const ros::NodeHandle& camera_nh)
-    : camera_nh_(camera_nh),
-      it_(camera_nh),
+  ImageProc(const ros::NodeHandle& nh)
+    : nh_(nh), it_(nh_),
       subscriber_count_(0)
   {
     // Advertise outputs
-    image_transport::SubscriberStatusCallback connect_cb = boost::bind(&ImageProc::connectCb, this, _1);
+    image_transport::SubscriberStatusCallback connect_cb    = boost::bind(&ImageProc::connectCb, this, _1);
     image_transport::SubscriberStatusCallback disconnect_cb = boost::bind(&ImageProc::disconnectCb, this, _1);
-    pub_mono_ = it_.advertise("image_mono", 1, connect_cb, disconnect_cb);
-    pub_rect_ = it_.advertise("image_rect", 1, connect_cb, disconnect_cb);
-    pub_color_ = it_.advertise("image_color", 1, connect_cb, disconnect_cb);
+    pub_mono_       = it_.advertise("image_mono", 1, connect_cb, disconnect_cb);
+    pub_rect_       = it_.advertise("image_rect", 1, connect_cb, disconnect_cb);
+    pub_color_      = it_.advertise("image_color", 1, connect_cb, disconnect_cb);
     pub_rect_color_ = it_.advertise("image_rect_color", 1, connect_cb, disconnect_cb);
+  }
+
+  void connectCb(const image_transport::SingleSubscriberPublisher& ssp)
+  {
+    if (subscriber_count_++ == 0) {
+      ROS_DEBUG("Subscribing to camera topics");
+      cam_sub_ = it_.subscribeCamera("image_raw", 3, &ImageProc::imageCb, this);
+    }
+  }
+
+  void disconnectCb(const image_transport::SingleSubscriberPublisher&)
+  {
+    subscriber_count_--;
+    if (subscriber_count_ == 0) {
+      ROS_DEBUG("Unsubscribing from camera topics");
+      cam_sub_.shutdown();
+    }
   }
 
   bool doColorize()
@@ -130,37 +146,19 @@ public:
               img_data_.imHeight, img_data_.imWidth, step, data);
     pub.publish(img_);
   }
-
-  void connectCb(const image_transport::SingleSubscriberPublisher& ssp)
-  {
-    if (subscriber_count_++ == 0) {
-      ROS_DEBUG("Subscribing to camera topics");
-      cam_sub_ = it_.subscribeCamera("image_raw", 3, &ImageProc::imageCb, this);
-    }
-  }
-
-  void disconnectCb(const image_transport::SingleSubscriberPublisher&)
-  {
-    subscriber_count_--;
-    if (subscriber_count_ == 0) {
-      ROS_DEBUG("Unsubscribing from camera topics");
-      cam_sub_.shutdown();
-    }
-  }
 };
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "image_proc", ros::init_options::AnonymousName);
-  ros::NodeHandle nh;
-  std::string cam_name = nh.resolveName("camera");
-  if (cam_name == "/camera") {
-    ROS_WARN("image_proc: Formal parameter 'camera' has not been remapped! Example command-line usage:\n"
-             "\t$ rosrun image_proc image_proc camera:=forearm_r");
+  if (ros::names::remap("camera") != "camera") {
+    ROS_WARN("[image_proc] Remapping 'camera' no longer has any effect! Start image_proc in the "
+             "camera namespace instead.\nExample command-line usage:\n"
+             "\t$ ROS_NAMESPACE=%s rosrun image_proc image_proc", ros::names::remap("camera").c_str());
   }
 
-  ros::NodeHandle camera_nh(cam_name);
-  ImageProc proc(camera_nh);
+  ros::NodeHandle nh;
+  ImageProc proc(nh);
 
   ros::spin();
   return 0;
