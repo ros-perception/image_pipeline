@@ -16,7 +16,7 @@
    inkscape:version="0.46"
    sodipodi:docname="image_proc.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
-   inkscape:export-filename="/u/konolige/writings/docs/image_proc.png"
+   inkscape:export-filename="/u/mihelich/ros/pkgs/ros-pkg-trunk/stacks/image_pipeline/wiki_files/image_proc.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <defs
@@ -145,9 +145,9 @@
      inkscape:snap-global="true"
      showguides="false"
      inkscape:window-width="1236"
-     inkscape:window-height="695"
-     inkscape:window-x="133"
-     inkscape:window-y="47">
+     inkscape:window-height="722"
+     inkscape:window-x="316"
+     inkscape:window-y="308">
     <inkscape:grid
        type="xygrid"
        id="grid2383" />
@@ -293,40 +293,43 @@
          sodipodi:role="line"
          id="tspan4179"
          x="180"
-         y="202.36218">/&lt;camera&gt;</tspan><tspan
+         y="202.36218">&lt;camera&gt;/</tspan><tspan
          sodipodi:role="line"
          x="180"
          y="214.86218"
-         id="tspan2675">  /camera_info [CameraInfo]</tspan><tspan
+         id="tspan2675">  camera_info [CameraInfo]</tspan><tspan
          sodipodi:role="line"
          x="180"
          y="227.36218"
-         id="tspan4182">  /image_raw [Image]</tspan></text>
+         id="tspan4182">  image_raw [Image]</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:10px;font-style:normal;font-weight:bold;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans Bold"
        x="440"
        y="192.36218"
-       id="text7959"><tspan
+       id="text7959"
+       inkscape:export-filename="/wg/adt/mihelich/ros/pkgs/ros-pkg-trunk/stacks/image_pipeline/wiki_files/image_proc.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"><tspan
          sodipodi:role="line"
          id="tspan7961"
          x="440"
-         y="192.36218">/&lt;camera&gt;</tspan><tspan
+         y="192.36218">&lt;camera&gt;/</tspan><tspan
          sodipodi:role="line"
          x="440"
          y="204.86218"
-         id="tspan2431">  /image_mono [Image]</tspan><tspan
+         id="tspan2431">  image_mono [Image]</tspan><tspan
          sodipodi:role="line"
          x="440"
          y="217.36218"
-         id="tspan4192">  /image_color [Image]</tspan><tspan
+         id="tspan4192">  image_color [Image]</tspan><tspan
          sodipodi:role="line"
          x="440"
          y="229.86218"
-         id="tspan7963">  /image_rect [Image]</tspan><tspan
+         id="tspan7963">  image_rect [Image]</tspan><tspan
          sodipodi:role="line"
          x="440"
          y="242.36218"
-         id="tspan2429">  /image_rect_color [Image]</tspan></text>
+         id="tspan2429">  image_rect_color [Image]</tspan></text>
   </g>
 </svg>
