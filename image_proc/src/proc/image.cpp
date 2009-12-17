@@ -365,7 +365,7 @@ StereoData::setNumDisp(int val)
   if (val < 0) val = 0;
   if (val > 256) val = 256;
   numDisp = val;
-  PRINTF("[StereoData] Num disp set to %d\n", val);
+  //PRINTF("[StereoData] Num disp set to %d\n", val);
   return true;
 }
 
@@ -582,7 +582,8 @@ StereoData::doDisparity(stereo_algorithm_t alg)
 	break;
 
 	default:
-	PRINTF("No algorithm has been selected..sorry!\n");
+          ROS_ERROR("No disparity algorithm has been selected\n");
+          return false;
   }
 
 
@@ -1346,7 +1347,7 @@ ImageData::doBayerColorRGB()
       break;
       
     default:
-      PRINTF("Unsupported color coding %i", imRawType);
+      ROS_WARN("Unsupported color coding %i", imRawType);
       return;
   }
   imType = COLOR_CODING_MONO8;
@@ -1388,7 +1389,7 @@ ImageData::doBayerMono()
       break;
       
     default:
-      PRINTF("Unsupported color coding %i", imRawType);
+      ROS_WARN("Unsupported color coding %i", imRawType);
       return;
   }
   imType = COLOR_CODING_MONO8;

@@ -49,7 +49,7 @@
 //   color processing on the image
 //
 
-// NB: We currently rely on all callbacks called from the spin() thread.
+// NB: We currently rely on single-threaded spinning.
 class ImageProc
 {
 private:
@@ -85,7 +85,9 @@ public:
 
   bool doColorize()
   {
-    return pub_color_.getNumSubscribers() > 0 || pub_rect_color_.getNumSubscribers() > 0;
+    //return pub_color_.getNumSubscribers() > 0 || pub_rect_color_.getNumSubscribers() > 0;
+    /// @todo Operations required really depend on subscribed topics and image encoding...
+    return true;
   }
 
   bool doRectify()
