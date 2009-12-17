@@ -1,9 +1,0 @@
-<launch>
-
-<node pkg="topic_tools" type="throttle" name="stereo_cloud"  args="messages /narrow_stereo_offset/cloud 1.0" />
-
-<node pkg="topic_tools" type="throttle" name="stereo_cloud"  args="messages /narrow_stereo_offset/left/image_rect 1.0" />
-
-
-
-</launch>

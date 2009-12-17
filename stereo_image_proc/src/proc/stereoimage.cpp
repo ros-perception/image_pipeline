@@ -132,9 +132,11 @@ StereoData::setReprojection()
 
   // third column
   RP[2] = RP[6] = RP[10] = 0.0;
-  RP[14] = -Tx;
+  RP[14] = -Tx; /// @todo Think this is incorrect, setting 1/Tx when should be -1/Tx
 
   // fourth column
+  /// @todo these should be from right P
+  /// @todo What's offx about??
   RP[3] = -imLeft->P[2];	// cx
   RP[7] = -imLeft->P[6];	// cy
   RP[11] = imLeft->P[0];	// fx, fy

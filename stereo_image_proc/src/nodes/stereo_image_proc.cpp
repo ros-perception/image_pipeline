@@ -33,6 +33,7 @@
 *********************************************************************/
 
 #include <ros/ros.h>
+#include <ros/names.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 
@@ -327,7 +328,6 @@ class StereoProc
 {
 private:
   ros::NodeHandle nh_;
-  std::string left_ns_, right_ns_, stereo_ns_;
   image_transport::ImageTransport it_;
   image_transport::SubscriberFilter image_sub_l, image_sub_r;
   message_filters::Subscriber<sensor_msgs::CameraInfo> info_sub_l, info_sub_r;
@@ -346,7 +346,6 @@ private:
   ros::Publisher pub_disparity_;
   ros::Publisher pub_pts_;
 
-
   /// @todo If go to multi-threading, these should not be simple members
   sensor_msgs::Image img_;
   stereo_msgs::DisparityImage dimg_;
@@ -355,65 +354,34 @@ private:
 
 public:
 
-  StereoProc(ros::NodeHandle& nh, const std::string& left_ns, const std::string& right_ns,
-             const std::string& stereo_ns)
-    : nh_(nh),
-      left_ns_(left_ns + "/"), right_ns_(right_ns + "/"), stereo_ns_(stereo_ns + "/"),
-      it_(nh_),
-      sync_(3),
+  StereoProc(ros::NodeHandle& nh)
+    : nh_(nh), it_(nh_), sync_(3),
       stdata_(new cam::StereoData)
   {
-    // get standard parameters
-    ros::NodeHandle lnh("~");
-
-    int unique_thresh;
-    lnh.param("unique_thresh", unique_thresh, 36);
-    stdata_->setTextureThresh(unique_thresh);
-    int texture_thresh;
-    lnh.param("texture_thresh", texture_thresh, 30);
-    stdata_->setUniqueThresh(texture_thresh);
-    int speckle_size;
-    lnh.param("speckle_size", speckle_size, 100);
-    stdata_->setSpeckleRegionSize(speckle_size);
-    int speckle_diff;
-    lnh.param("speckle_diff", speckle_diff, 10);
-    stdata_->setSpeckleDiff(speckle_diff);
-    int smoothness_thresh;
-    if (lnh.getParam("smoothness_thresh", smoothness_thresh))
-      stdata_->setSmoothnessThresh(smoothness_thresh);
-    int horopter;
-    if (lnh.getParam("horopter", horopter))
-      stdata_->setHoropter(horopter);
-    int corr_size;
-    if (lnh.getParam("corr_size", corr_size))
-      stdata_->setCorrSize(corr_size);
-    int num_disp;
-    if (lnh.getParam("num_disp", num_disp))
-      stdata_->setNumDisp(num_disp);
-
-
     // Advertise outputs
-    pub_mono_l_ = it_.advertise(left_ns_+"image_mono", 1);
-    pub_rect_l_ = it_.advertise(left_ns_+"image_rect", 1);
-    pub_color_l_ = it_.advertise(left_ns_+"image_color", 1);
-    pub_rect_color_l_ = it_.advertise(left_ns_+"image_rect_color", 1);
+    std::string left_ns = nh_.resolveName("left");
+    pub_mono_l_       = it_.advertise(left_ns+"/image_mono", 1);
+    pub_rect_l_       = it_.advertise(left_ns+"/image_rect", 1);
+    pub_color_l_      = it_.advertise(left_ns+"/image_color", 1);
+    pub_rect_color_l_ = it_.advertise(left_ns+"/image_rect_color", 1);
+
+    std::string right_ns = nh_.resolveName("right");
+    pub_mono_r_       = it_.advertise(right_ns+"/image_mono", 1);
+    pub_rect_r_       = it_.advertise(right_ns+"/image_rect", 1);
+    pub_color_r_      = it_.advertise(right_ns+"/image_color", 1);
+    pub_rect_color_r_ = it_.advertise(right_ns+"/image_rect_color", 1);
     
-    pub_mono_r_ = it_.advertise(right_ns_+"image_mono", 1);
-    pub_rect_r_ = it_.advertise(right_ns_+"image_rect", 1);
-    pub_color_r_ = it_.advertise(right_ns_+"image_color", 1);
-    pub_rect_color_r_ = it_.advertise(right_ns_+"image_rect_color", 1);
-    
-    pub_disparity_image_ = it_.advertise(stereo_ns_+"image_disparity", 1);
-    pub_disparity_ = nh_.advertise<stereo_msgs::DisparityImage>(stereo_ns_+"disparity", 1);
-    pub_pts_ = nh_.advertise<sensor_msgs::PointCloud>(stereo_ns_+"points", 1);
+    pub_disparity_image_ = it_.advertise("image_disparity", 1);
+    pub_disparity_ = nh_.advertise<stereo_msgs::DisparityImage>("disparity", 1);
+    pub_pts_ = nh_.advertise<sensor_msgs::PointCloud>("points", 1);
     
     // Subscribe to synchronized Image & CameraInfo topics
     /// @todo Put these in subscription callbacks, like in image_proc
     /// @todo Make left and right subscriptions independent. Not possible with current synch tools.
-    image_sub_l.subscribe(nh_, left_ns_ + "image_raw", 1);
-    info_sub_l.subscribe(nh_, left_ns_ + "camera_info", 1);
-    image_sub_r.subscribe(nh_, right_ns_ + "image_raw", 1);
-    info_sub_r.subscribe(nh_, right_ns_ + "camera_info", 1);
+    image_sub_l.subscribe(nh_, left_ns  + "/image_raw", 1);
+    info_sub_l .subscribe(nh_, left_ns  + "/camera_info", 1);
+    image_sub_r.subscribe(nh_, right_ns + "/image_raw", 1);
+    info_sub_r .subscribe(nh_, right_ns + "/camera_info", 1);
     sync_.connectInput(image_sub_l, info_sub_l, image_sub_r, info_sub_r);
     sync_.registerCallback(boost::bind(&StereoProc::imageCb, this, _1, _2, _3, _4));
   }
@@ -459,6 +427,7 @@ public:
 	       const sensor_msgs::ImageConstPtr& raw_image_r, 
 	       const sensor_msgs::CameraInfoConstPtr& cam_info_r)
   {
+    //ROS_INFO("In callback");
     /// @todo Check image sizes for compatibility
     cam::ImageData *img_data_l, *img_data_r;
     img_data_l = stdata_->imLeft;
@@ -477,13 +446,11 @@ public:
     cam_bridge::RawToCamData(*raw_image_r, *cam_info_r, cam::IMAGE_RAW, img_data_r);
 
     // check rectification parameters
-    /// @todo Zero distortion is not an error (in sim)
+    /// @todo Put these sorts of checks in image_geometry camera models
     if (fabs(img_data_l->K[2]) < 1e-10 ||
-	fabs(img_data_r->K[2]) < 1e-10 ||
-	fabs(img_data_l->D[0]) < 1e-10 ||
-	fabs(img_data_l->D[0]) < 1e-10)
+	fabs(img_data_r->K[2]) < 1e-10)
       {
-	ROS_ERROR("[stereo_image_proc] No camera matrix or distortion parameters specified in camera_info message");
+	ROS_ERROR("[stereo_image_proc] No camera matrix specified in camera_info message");
 	exit(-1);
       }
 
@@ -494,9 +461,12 @@ public:
 	exit(-1);
       }
 
-    /// @todo parameter for bayer interpolation to use
-    if (doColorizeLeft())
+    /// @todo Parameter for bayer interpolation to use
+    /// @todo Call doBayerMono() when applicable
+    if (doColorizeLeft()) {
+      //ROS_INFO("Colorizing left");
       img_data_l->doBayerColorRGB();
+    }
 
     if (doColorizeRight())
       img_data_r->doBayerColorRGB();
@@ -588,6 +558,7 @@ public:
   {
     if (coding == COLOR_CODING_NONE)
       return;
+    ROS_INFO("Publishing %s", pub.getTopic().c_str());
 
     uint32_t step = dataSize / stdata_->imHeight;
     fillImage(img_, cam_bridge::ColorCodingToImageEncoding(coding),
@@ -670,43 +641,36 @@ public:
   }
 };
 
+bool isRemapped(const std::string& name)
+{
+  if (ros::names::remap(name) != name) {
+    ROS_WARN("[stereo_image_proc] Remapping '%s' no longer has any effect!", name.c_str());
+    return true;
+  }
+  return false;
+}
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "stereo_image_proc", ros::init_options::AnonymousName);
+  if (isRemapped("camera") | isRemapped("camera_left") | isRemapped("camera_right") | isRemapped("output")) {
+    ROS_WARN("stereo_image_proc should be started in the namespace of the camera.\nExample command-line usage:\n"
+             "\t$ ROS_NAMESPACE=my_camera rosrun stereo_image_proc stereo_image_proc\n"
+             "Or, for using two arbitrary cameras as a stereo pair (with 3d outputs in '/stereo'):\n"
+             "\t$ ROS_NAMESPACE=stereo rosrun stereo_image_proc stereo_image_proc left:=/left_camera right:=/right_camera");
+  }
+
+  // Start stereo processor
   ros::NodeHandle nh;
-  std::string cam_ns = nh.resolveName("camera");
-  std::string cam_left_ns, cam_right_ns, stereo_ns;
+  StereoProc proc(nh);
 
-  if (cam_ns == "/camera") {
-    cam_left_ns = nh.resolveName("camera_left");
-    cam_right_ns = nh.resolveName("camera_right");
-    stereo_ns = nh.resolveName("output");
-    if (cam_left_ns == "/camera_left" || cam_right_ns == "/camera_right")
-      ROS_WARN("If you do not remap <camera>, you must remap both <camera_left> and <camera_right>.");
-    if (stereo_ns == "/output") {
-      ROS_WARN("You have remapped neither <camera> nor <output>. Stereo outputs will go in /stereo.");
-      stereo_ns = "/stereo";
-    }
-  }
-  else {
-    cam_left_ns = cam_ns + "/left";
-    cam_right_ns = cam_ns + "/right";
-    stereo_ns = nh.resolveName("output");
-    if (stereo_ns == "/output")
-      stereo_ns = cam_ns;
-  }
-
-  // start stereo processor
-  StereoProc proc(nh, cam_left_ns, cam_right_ns, stereo_ns);
-
-  // set up dynamic reconfiguration
+  // Set up dynamic reconfiguration
   dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig> srv;
   dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig>::CallbackType f = 
     boost::bind(&StereoProc::config_callback, &proc, _1, _2);
   srv.setCallback(f);
 
   ros::spin();
-  
+
   return 0;
 }
