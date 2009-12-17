@@ -10,3 +10,5 @@ rosbuild_add_executable(extract_images extract_images.cpp)
 rosbuild_add_executable(stereo_view stereo_view.cpp)
 
 #rosbuild_add_executable(test_stereo test_stereo.cpp)
+
+rosbuild_add_executable(image_saver image_saver.cpp)
