@@ -168,8 +168,8 @@
      showguides="false"
      inkscape:window-width="1440"
      inkscape:window-height="900"
-     inkscape:window-x="143"
-     inkscape:window-y="459">
+     inkscape:window-x="148"
+     inkscape:window-y="483">
     <inkscape:grid
        type="xygrid"
        id="grid2383" />
@@ -360,15 +360,15 @@
          sodipodi:role="line"
          id="tspan4396"
          x="175"
-         y="212.36218">&lt;camera&gt;/left/</tspan><tspan
+         y="212.36218">left/</tspan><tspan
          sodipodi:role="line"
          x="175"
          y="224.86218"
-         id="tspan2675">  camera_info [CameraInfo]</tspan><tspan
+         id="tspan2675">    camera_info [CameraInfo]</tspan><tspan
          sodipodi:role="line"
          x="175"
          y="237.36218"
-         id="tspan4399">  image_raw [Image]</tspan></text>
+         id="tspan4399">    image_raw [Image]</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:10px;font-style:normal;font-weight:bold;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans;-inkscape-font-specification:Bitstream Vera Sans Bold"
@@ -378,15 +378,15 @@
          sodipodi:role="line"
          id="tspan7961"
          x="180"
-         y="357.36218">&lt;camera&gt;/right/</tspan><tspan
+         y="357.36218">right/</tspan><tspan
          sodipodi:role="line"
          x="180"
          y="369.86218"
-         id="tspan4403">  camera_info [CameraInfo]</tspan><tspan
+         id="tspan4403">    camera_info [CameraInfo]</tspan><tspan
          sodipodi:role="line"
          x="180"
          y="382.36218"
-         id="tspan7963">  image_raw [Image]</tspan></text>
+         id="tspan7963">    image_raw [Image]</tspan></text>
     <flowRoot
        xml:space="preserve"
        id="flowRoot4412"
@@ -412,11 +412,11 @@
          sodipodi:role="line"
          id="tspan4347"
          x="395"
-         y="167.36218">&lt;camera&gt;/</tspan><tspan
+         y="167.36218" /><tspan
          sodipodi:role="line"
          x="395"
          y="179.86218"
-         id="tspan2456">  left/</tspan><tspan
+         id="tspan2456">left/</tspan><tspan
          sodipodi:role="line"
          x="395"
          y="192.36218"
@@ -436,7 +436,7 @@
          sodipodi:role="line"
          x="395"
          y="242.36218"
-         id="tspan2490">  right/</tspan><tspan
+         id="tspan2490">right/</tspan><tspan
          sodipodi:role="line"
          x="395"
          y="254.86218"
@@ -460,19 +460,15 @@
          sodipodi:role="line"
          x="395"
          y="317.36218"
-         id="tspan2492">&lt;camera&gt;/</tspan><tspan
+         id="tspan2498">disparity [DisparityImage]</tspan><tspan
          sodipodi:role="line"
          x="395"
          y="329.86218"
-         id="tspan2498">  disparity [DisparityImage]</tspan><tspan
+         id="tspan2486">image_disparity [Image]</tspan><tspan
          sodipodi:role="line"
          x="395"
          y="342.36218"
-         id="tspan2486">  image_disparity [Image]</tspan><tspan
-         sodipodi:role="line"
-         x="395"
-         y="354.86218"
-         id="tspan2494">  points [PointCloud]</tspan><tspan
+         id="tspan2494">points [PointCloud]</tspan><tspan
          sodipodi:role="line"
          x="395"
          y="367.36218"
