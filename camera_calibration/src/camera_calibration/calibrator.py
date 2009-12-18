@@ -101,6 +101,7 @@ class Calibrator:
 
 class MonoCalibrator(Calibrator):
 
+    is_mono = True
     def __init__(self):
         pass
 
@@ -170,6 +171,7 @@ class CalibrationException(Exception):
 
 class StereoCalibrator(Calibrator):
 
+    is_mono = False
     def __init__(self):
         self.l = MonoCalibrator()
         self.r = MonoCalibrator()

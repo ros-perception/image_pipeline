@@ -56,8 +56,7 @@ class CalibrationNode:
         self.p_mins = None
         self.p_maxs = None
         self.db = {}
-        self.sc = StereoCalibrator()
-        self.mc = MonoCalibrator()
+        self.c = None
         self.calibrated = False
 
     def mkgray(self, msg):
@@ -79,6 +78,9 @@ class CalibrationNode:
         return rgb
 
     def handle_monocular(self, msg):
+
+        if self.c == None:
+            self.c = MonoCalibrator()
 
         rgb = self.mkgray(msg)
         (self.width, self.height) = cv.GetSize(rgb)
@@ -120,13 +122,15 @@ class CalibrationNode:
                 if any(is_min) or any(is_max):
                     self.db[str(is_min + is_max)] = (params, rgb)
         else:
-            rgb_remapped = self.mc.remap(rgb)
+            rgb_remapped = self.c.remap(rgb)
             cv.Resize(rgb_remapped, scrib)
 
         self.redraw_monocular(scrib, rgb)
 
     def handle_stereo(self, lmsg, rmsg):
 
+        if self.c == None:
+            self.c = StereoCalibrator()
         lrgb = self.mkgray(lmsg)
         rrgb = self.mkgray(rmsg)
         (self.width, self.height) = cv.GetSize(lrgb)
@@ -166,13 +170,13 @@ class CalibrationNode:
                     if any(is_min) or any(is_max):
                         self.db[str(is_min + is_max)] = (params, lrgb, rrgb)
         else:
-            epierror = self.sc.epipolar1(lrgb, rrgb)
+            epierror = self.c.epipolar1(lrgb, rrgb)
             if epierror == -1:
                 print "Cannot find checkerboard"
             else:
                 print "epipolar error:", epierror
-            lscrib = self.sc.lremap(lrgb)
-            rscrib = self.sc.rremap(rrgb)
+            lscrib = self.c.lremap(lrgb)
+            rscrib = self.c.rremap(rrgb)
 
         self.redraw_stereo(lscrib, rscrib, lrgb, rrgb)
 
@@ -180,27 +184,20 @@ class CalibrationNode:
         self.calibrated = True
         vv = list(self.db.values())
         # vv is a list of pairs (p, i) for monocular, and triples (p, l, r) for stereo
-        if len(vv[0]) == 2:
+        if self.c.is_mono:
             images = [i for (p, i) in vv]
-            self.mc.cal(images)
+            self.c.cal(images)
         else:
             limages = [ l for (p, l, r) in vv ]
             rimages = [ r for (p, l, r) in vv ]
-            self.sc.cal(limages, rimages)
-            # for (i, (p, limg, rimg)) in enumerate(self.db.values()):
-            #     cv.SaveImage("/tmp/cal%04d.png" % i, limg)
-
+            self.c.cal(limages, rimages)
 
     def do_upload(self):
         vv = list(self.db.values())
-        if len(vv[0]) == 2:
-            c = self.mc
-        else:
-            c = self.sc
-        c.report()
-        c.ost()
-        info = c.as_message()
-        if len(vv[0]) == 2:
+        self.c.report()
+        self.c.ost()
+        info = self.c.as_message()
+        if self.c.is_mono:
             self.set_camera_info_service(info)
         else:
             self.set_left_camera_info_service(info[0])
@@ -209,10 +206,7 @@ class CalibrationNode:
     def set_scale(self, a):
         if self.calibrated:
             vv = list(self.db.values())
-            if len(vv[0]) == 2:
-                self.mc.set_alpha(a)
-            else:
-                self.sc.set_alpha(a)
+            self.c.set_alpha(a)
 
 class WebCalibrationNode(CalibrationNode):
     """ Calibration node backend for a web-based UI """
@@ -339,13 +333,13 @@ class OpenCVCalibrationNode(CalibrationNode):
                     (width,_),_ = cv.GetTextSize(label, self.font)
                     cv.PutText(display, label, (2 * self.width + (100 - width) / 2, 100 + 100 * i), self.font, (0,0,0))
                     cv.Line(display,
-                            (2 * self.width + lo * 100, y + 20),
-                            (2 * self.width + hi * 100, y + 20),
+                            (int(2 * self.width + lo * 100), y + 20),
+                            (int(2 * self.width + hi * 100), y + 20),
                             (0,0,0),
                             4)
         else:
             cv.PutText(display, "acc.", (2 * self.width, 50), self.font, (0,0,0))
-            epierror = self.sc.epipolar1(lrgb, rrgb)
+            epierror = self.c.epipolar1(lrgb, rrgb)
             if epierror == -1:
                 msg = "?"
             else:
@@ -353,7 +347,7 @@ class OpenCVCalibrationNode(CalibrationNode):
             cv.PutText(display, msg, (2 * self.width, 150), self.font, (0,0,0))
             if epierror != -1:
                 cv.PutText(display, "dim", (2 * self.width, 250), self.font, (0,0,0))
-                dim = self.sc.chessboard_size(lrgb, rrgb)
+                dim = self.c.chessboard_size(lrgb, rrgb)
                 cv.PutText(display, "%.3f" % dim, (2 * self.width, 350), self.font, (0,0,0))
 
         cv.ShowImage("display", display)
