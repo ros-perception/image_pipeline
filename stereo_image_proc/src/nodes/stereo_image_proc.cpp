@@ -378,9 +378,9 @@ public:
     // Subscribe to synchronized Image & CameraInfo topics
     /// @todo Put these in subscription callbacks, like in image_proc
     /// @todo Make left and right subscriptions independent. Not possible with current synch tools.
-    image_sub_l.subscribe(nh_, left_ns  + "/image_raw", 1);
+    image_sub_l.subscribe(it_, left_ns  + "/image_raw", 1);
     info_sub_l .subscribe(nh_, left_ns  + "/camera_info", 1);
-    image_sub_r.subscribe(nh_, right_ns + "/image_raw", 1);
+    image_sub_r.subscribe(it_, right_ns + "/image_raw", 1);
     info_sub_r .subscribe(nh_, right_ns + "/camera_info", 1);
     sync_.connectInput(image_sub_l, info_sub_l, image_sub_r, info_sub_r);
     sync_.registerCallback(boost::bind(&StereoProc::imageCb, this, _1, _2, _3, _4));
