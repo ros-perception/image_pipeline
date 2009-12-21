@@ -1,6 +1,7 @@
 <package>
   <description>
-  An opencv based viewer for monocular camera images
+  A simple viewer for ROS image topics. Includes a specialized viewer
+  for stereo + disparity images.
   </description>
   <author>Patrick Mihelich</author>
   <license>BSD</license>
