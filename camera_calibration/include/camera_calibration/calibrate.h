@@ -82,7 +82,7 @@ inline PinholeCameraModel& Calibrater::model() { return model_; }
 inline const PinholeCameraModel& Calibrater::model() const { return model_; }
 
 inline void CheckerboardDetector::setFlags(int flags) { flags_ = flags; }
-inline void CheckerboardDetector::setSearchRadius(int radius) { radius_ = radius_; }
+inline void CheckerboardDetector::setSearchRadius(int radius) { radius_ = radius; }
 
 inline int CheckerboardDetector::width()   const { return board_w_; }
 inline int CheckerboardDetector::height()  const { return board_h_; }
