@@ -58,6 +58,10 @@ private:
   double _time;
   double sec_per_frame_;
 
+#if defined(_VIDEO)
+  CvVideoWriter* video_writer;
+#endif //_VIDEO
+
 public:
   ExtractImages(const ros::NodeHandle& nh, const std::string& transport)
     : filename_format_(""), count_(0), _time(ros::Time::now().toSec())
@@ -73,6 +77,10 @@ public:
 
     image_transport::ImageTransport it(nh);
     sub_ = it.subscribe(topic, 1, &ExtractImages::image_cb, this, transport);
+
+#if defined(_VIDEO)
+    video_writer = 0;
+#endif
 
     ROS_INFO("Initialized sec per frame to %f", sec_per_frame_);
   }
@@ -104,7 +112,19 @@ public:
       IplImage *image = img_bridge_.toIpl();
       if (image) {
         std::string filename = (filename_format_ % count_).str();
+
+#if !defined(_VIDEO)
         cvSaveImage(filename.c_str(), image);
+#else
+        if(!video_writer)
+        {
+            video_writer = cvCreateVideoWriter("video.avi", CV_FOURCC('M','J','P','G'),
+                int(1.0/sec_per_frame_), cvSize(image->width, image->height));
+        }
+
+        cvWriteFrame(video_writer, image);
+#endif // _VIDEO
+
         ROS_INFO("Saved image %s", filename.c_str());
         count_++;
       } else {
