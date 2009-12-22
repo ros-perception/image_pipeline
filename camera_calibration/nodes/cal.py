@@ -289,11 +289,19 @@ class OpenCVCalibrationNode(CalibrationNode):
                     y = 100 + 100 * i
                     (w,_),_ = cv.GetTextSize(label, self.font)
                     cv.PutText(display, label, (width + (100 - w) / 2, 100 + 100 * i), self.font, (0,0,0))
-                    cv.Line(display,
+                    if((hi-lo)>0.50):
+                      cv.Line(display,
                             (int(width + lo * 100), y + 20),
                             (int(width + hi * 100), y + 20),
-                            (0,0,0),
+                            (0,255,0),
                             4)
+                    else:
+                      cv.Line(display,
+                            (int(width + lo * 100), y + 20),
+                            (int(width + hi * 100), y + 20),
+                            (0,0,255),
+                            4)
+
         else:
             cv.PutText(display, "acc.", (width, 100), self.font, (0,0,0))
 
@@ -332,11 +340,20 @@ class OpenCVCalibrationNode(CalibrationNode):
                     y = 100 + 100 * i
                     (width,_),_ = cv.GetTextSize(label, self.font)
                     cv.PutText(display, label, (2 * self.width + (100 - width) / 2, 100 + 100 * i), self.font, (0,0,0))
-                    cv.Line(display,
+                    #print label, hi, lo
+                    if((hi-lo)>0.50):
+                      cv.Line(display,
                             (int(2 * self.width + lo * 100), y + 20),
                             (int(2 * self.width + hi * 100), y + 20),
-                            (0,0,0),
+                            (0,255,0),
                             4)
+                    else:
+                      cv.Line(display,
+                            (int(2 * self.width + lo * 100), y + 20),
+                            (int(2 * self.width + hi * 100), y + 20),
+                            (0,0,255),
+                            4)
+
         else:
             cv.PutText(display, "acc.", (2 * self.width, 50), self.font, (0,0,0))
             epierror = self.c.epipolar1(lrgb, rrgb)
