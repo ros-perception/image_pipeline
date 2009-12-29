@@ -34,24 +34,15 @@
 
 #include <ros/ros.h>
 #include <ros/names.h>
-
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/fill_image.h>
-
 #include <image_transport/image_transport.h>
+#include <image_geometry/pinhole_camera_model.h>
 
-#include "image_proc/image.h"
-#include "image_proc/cam_bridge.h"
+#include "image_proc/processor.h"
 
-//
-// This is the node creation file
-// Subscribes to a single image topic, and performs rectification and 
-//   color processing on the image
-//
-
-// NB: We currently rely on single-threaded spinning.
-class ImageProc
+class ImageProcNode
 {
 private:
   ros::NodeHandle nh_;
@@ -63,19 +54,21 @@ private:
   image_transport::Publisher pub_rect_color_;
 
   // OK for these to be members in single-threaded case.
-  cam::ImageData img_data_;
+  image_proc::Processor processor_;
+  image_geometry::PinholeCameraModel model_;
+  image_proc::ImageSet processed_images_;
   sensor_msgs::Image img_;
   int subscriber_count_;
 
 public:
 
-  ImageProc(const ros::NodeHandle& nh)
-    : nh_(nh), it_(nh_),
+  ImageProcNode()
+    : it_(nh_),
       subscriber_count_(0)
   {
     // Advertise outputs
-    image_transport::SubscriberStatusCallback connect_cb    = boost::bind(&ImageProc::connectCb, this, _1);
-    image_transport::SubscriberStatusCallback disconnect_cb = boost::bind(&ImageProc::disconnectCb, this, _1);
+    image_transport::SubscriberStatusCallback connect_cb    = boost::bind(&ImageProcNode::connectCb, this, _1);
+    image_transport::SubscriberStatusCallback disconnect_cb = boost::bind(&ImageProcNode::disconnectCb, this, _1);
     pub_mono_       = it_.advertise("image_mono", 1, connect_cb, disconnect_cb);
     pub_rect_       = it_.advertise("image_rect", 1, connect_cb, disconnect_cb);
     pub_color_      = it_.advertise("image_color", 1, connect_cb, disconnect_cb);
@@ -86,7 +79,7 @@ public:
   {
     if (subscriber_count_++ == 0) {
       ROS_DEBUG("Subscribing to camera topics");
-      cam_sub_ = it_.subscribeCamera("image_raw", 3, &ImageProc::imageCb, this);
+      cam_sub_ = it_.subscribeCamera("image_raw", 3, &ImageProcNode::imageCb, this);
     }
   }
 
@@ -99,51 +92,39 @@ public:
     }
   }
 
-  bool doColorize()
-  {
-    //return pub_color_.getNumSubscribers() > 0 || pub_rect_color_.getNumSubscribers() > 0;
-    /// @todo Operations required really depend on subscribed topics and image encoding...
-    return true;
-  }
-
-  bool doRectify()
-  {
-    return pub_rect_.getNumSubscribers() > 0 || pub_rect_color_.getNumSubscribers() > 0;
-  }
-
   void imageCb(const sensor_msgs::ImageConstPtr& raw_image, const sensor_msgs::CameraInfoConstPtr& cam_info)
   {
-    cam_bridge::RawToCamData(*raw_image, *cam_info, cam::IMAGE_RAW, &img_data_);
+    // Update the camera model
+    model_.fromCameraInfo(cam_info);
 
-    if (doColorize())
-    {
-      /// @todo Parameter for which bayer interpolation to use
-      /// @todo Might need mono only, call doBayerMono() in that case
-      //img_data_.colorConvertType = COLOR_CONVERSION_EDGE;
-      img_data_.doBayerColorRGB();
-      //img_data_.doBayerMono();
-    }
+    // Compute which outputs are in demand
+    int flags = 0;
+    typedef image_proc::Processor Proc;
+    if (pub_mono_      .getNumSubscribers() > 0) flags |= Proc::MONO;
+    if (pub_color_     .getNumSubscribers() > 0) flags |= Proc::COLOR;
+    if (pub_rect_      .getNumSubscribers() > 0) flags |= Proc::RECT;
+    if (pub_rect_color_.getNumSubscribers() > 0) flags |= Proc::RECT_COLOR;
 
-    if (doRectify())
-      img_data_.doRectify();
+    // Process raw image into colorized and/or rectified outputs
+    if (!processor_.process(raw_image, model_, processed_images_, flags))
+      return;
 
     // Publish images
     img_.header.stamp = raw_image->header.stamp;
     img_.header.frame_id = raw_image->header.frame_id;
-    publishImage(img_data_.imType, img_data_.im, img_data_.imSize, pub_mono_);
-    publishImage(img_data_.imColorType, img_data_.imColor, img_data_.imColorSize, pub_color_);
-    publishImage(img_data_.imRectType, img_data_.imRect, img_data_.imRectSize, pub_rect_);
-    publishImage(img_data_.imRectColorType, img_data_.imRectColor, img_data_.imRectColorSize, pub_rect_color_);
+    if (flags & Proc::MONO)
+      publishImage(pub_mono_, processed_images_.mono, sensor_msgs::image_encodings::MONO8);
+    if (flags & Proc::COLOR)
+      publishImage(pub_color_, processed_images_.color, processed_images_.color_encoding);
+    if (flags & Proc::RECT)
+      publishImage(pub_rect_, processed_images_.rect, sensor_msgs::image_encodings::MONO8);
+    if (flags & Proc::RECT_COLOR)
+      publishImage(pub_rect_color_, processed_images_.rect_color, processed_images_.color_encoding);
   }
 
-  void publishImage(color_coding_t coding, void* data, size_t dataSize, const image_transport::Publisher& pub)
+  void publishImage(const image_transport::Publisher& pub, const cv::Mat& image, const std::string& encoding)
   {
-    if (coding == COLOR_CODING_NONE)
-      return;
-
-    uint32_t step = dataSize / img_data_.imHeight;
-    fillImage(img_, cam_bridge::ColorCodingToImageEncoding(coding),
-              img_data_.imHeight, img_data_.imWidth, step, data);
+    fillImage(img_, encoding, image.rows, image.cols, image.step, const_cast<uint8_t*>(image.data));
     pub.publish(img_);
   }
 };
@@ -157,8 +138,7 @@ int main(int argc, char **argv)
              "\t$ ROS_NAMESPACE=%s rosrun image_proc image_proc", ros::names::remap("camera").c_str());
   }
 
-  ros::NodeHandle nh;
-  ImageProc proc(nh);
+  ImageProcNode proc;
 
   ros::spin();
   return 0;

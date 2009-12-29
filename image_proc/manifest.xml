@@ -5,7 +5,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/image_proc</url>
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -limageproc" />
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -limageproc" />
   </export>
   <depend package="roscpp"/>
   <depend package="opencv2"/>
@@ -13,5 +13,6 @@
   <depend package="image_transport" />
   <depend package="message_filters" />
   <depend package="cv_bridge" />
+  <depend package="image_geometry" />
   <depend package="camera_calibration_parsers" />
 </package>
