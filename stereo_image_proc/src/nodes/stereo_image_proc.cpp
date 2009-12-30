@@ -324,7 +324,7 @@ static unsigned char dmap[768] =
 //   color processing, and stereo disparity on the images
 //
 
-class StereoProc
+class StereoProcNode
 {
 private:
   ros::NodeHandle nh_;
@@ -346,7 +346,7 @@ private:
   ros::Publisher pub_disparity_;
   ros::Publisher pub_pts_;
 
-  /// @todo If go to multi-threading, these should not be simple members
+  // OK for these to be members in single-threaded case.
   sensor_msgs::Image img_;
   stereo_msgs::DisparityImage dimg_;
 
@@ -354,8 +354,8 @@ private:
 
 public:
 
-  StereoProc(ros::NodeHandle& nh)
-    : nh_(nh), it_(nh_), sync_(3),
+  StereoProcNode()
+    : it_(nh_), sync_(3),
       stdata_(new cam::StereoData)
   {
     // Advertise outputs
@@ -383,7 +383,7 @@ public:
     image_sub_r.subscribe(it_, right_ns + "/image_raw", 1);
     info_sub_r .subscribe(nh_, right_ns + "/camera_info", 1);
     sync_.connectInput(image_sub_l, info_sub_l, image_sub_r, info_sub_r);
-    sync_.registerCallback(boost::bind(&StereoProc::imageCb, this, _1, _2, _3, _4));
+    sync_.registerCallback(boost::bind(&StereoProcNode::imageCb, this, _1, _2, _3, _4));
   }
 
   bool doColorizeLeft()
@@ -497,6 +497,7 @@ public:
     publishImage(img_data_r->imRectColorType, img_data_r->imRectColor, img_data_r->imRectColorSize, pub_rect_color_r_);
 
     // disparity
+#if 0
     if (stdata_->hasDisparity)
       {
 	dimg_.header.stamp = raw_image_l->header.stamp;
@@ -518,6 +519,7 @@ public:
 
 	publishImageDisparity(stdata_->imDisp, stdata_->imDispSize);
       }
+#endif
 
 
     // point cloud
@@ -565,7 +567,7 @@ public:
               stdata_->imHeight, stdata_->imWidth, step, data);
     pub.publish(img_);
   }
-
+#if 0
   bool fillImageDisparity(stereo_msgs::DisparityImage& dimage,
 			  sensor_msgs::Image& image,
 			  std::string encoding_arg,
@@ -625,6 +627,7 @@ public:
     pub_disparity_image_.publish(img_);
     pub_disparity_.publish(dimg_);
   }
+#endif
 
   void config_callback(stereo_image_proc::StereoImageProcConfig &config, uint32_t level)
   {
@@ -661,16 +664,14 @@ int main(int argc, char **argv)
   }
 
   // Start stereo processor
-  ros::NodeHandle nh;
-  StereoProc proc(nh);
+  StereoProcNode proc;
 
   // Set up dynamic reconfiguration
   dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig> srv;
   dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig>::CallbackType f = 
-    boost::bind(&StereoProc::config_callback, &proc, _1, _2);
+    boost::bind(&StereoProcNode::config_callback, &proc, _1, _2);
   srv.setCallback(f);
 
   ros::spin();
-
   return 0;
 }
