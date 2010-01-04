@@ -52,6 +52,8 @@ class Calibrator:
         msg = sensor_msgs.msg.CameraInfo()
         (msg.width, msg.height) = self.size
         msg.D = [d[i,0] for i in range(d.rows)]
+        while len(msg.D)<5:
+	        msg.D.append(0)
         msg.K = list(cvmat_iterator(k))
         msg.R = list(cvmat_iterator(r))
         msg.P = list(cvmat_iterator(p))
