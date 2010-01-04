@@ -560,7 +560,7 @@ public:
   {
     if (coding == COLOR_CODING_NONE)
       return;
-    ROS_INFO("Publishing %s", pub.getTopic().c_str());
+    //ROS_INFO("Publishing %s", pub.getTopic().c_str());
 
     uint32_t step = dataSize / stdata_->imHeight;
     fillImage(img_, cam_bridge::ColorCodingToImageEncoding(coding),
