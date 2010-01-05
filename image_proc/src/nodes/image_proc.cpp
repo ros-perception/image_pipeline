@@ -34,11 +34,14 @@
 
 #include <ros/ros.h>
 #include <ros/names.h>
+#include <ros/master.h>
+#include <ros/this_node.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/fill_image.h>
 #include <image_transport/image_transport.h>
 #include <image_geometry/pinhole_camera_model.h>
+#include <boost/foreach.hpp>
 
 #include "image_proc/processor.h"
 
@@ -52,6 +55,7 @@ private:
   image_transport::Publisher pub_rect_;
   image_transport::Publisher pub_color_;
   image_transport::Publisher pub_rect_color_;
+  ros::Timer check_inputs_timer_;
 
   // OK for these to be members in single-threaded case.
   image_proc::Processor processor_;
@@ -73,6 +77,10 @@ public:
     pub_rect_       = it_.advertise("image_rect", 1, connect_cb, disconnect_cb);
     pub_color_      = it_.advertise("image_color", 1, connect_cb, disconnect_cb);
     pub_rect_color_ = it_.advertise("image_rect_color", 1, connect_cb, disconnect_cb);
+
+    // Print a warning every minute until the camera topics are advertised
+    check_inputs_timer_ = nh_.createTimer(ros::Duration(60.0), boost::bind(&ImageProcNode::checkInputsAdvertised, this));
+    checkInputsAdvertised();
   }
 
   void connectCb(const image_transport::SingleSubscriberPublisher& ssp)
@@ -127,15 +135,44 @@ public:
     fillImage(img_, encoding, image.rows, image.cols, image.step, const_cast<uint8_t*>(image.data));
     pub.publish(img_);
   }
+
+  void checkInputsAdvertised()
+  {
+    ros::master::V_TopicInfo topics;
+    if (!ros::master::getTopics(topics)) return;
+
+    std::string image_topic = nh_.resolveName("image_raw");
+    std::string info_topic  = nh_.resolveName("camera_info");
+    bool have_image = false, have_info = false;
+    BOOST_FOREACH(const ros::master::TopicInfo& info, topics) {
+      have_image = have_image || (info.name == image_topic);
+      have_info = have_info || (info.name == info_topic);
+      if (have_image && have_info) {
+        check_inputs_timer_.stop();
+        return;
+      }
+    }
+    if (!have_image)
+      ROS_WARN("The camera image topic [%s] does not appear to be published yet.", image_topic.c_str());
+    if (!have_info)
+      ROS_WARN("The camera info topic [%s] does not appear to be published yet.", info_topic.c_str());
+  }
 };
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "image_proc", ros::init_options::AnonymousName);
+
+  // Check for common user errors
   if (ros::names::remap("camera") != "camera") {
     ROS_WARN("[image_proc] Remapping 'camera' no longer has any effect! Start image_proc in the "
              "camera namespace instead.\nExample command-line usage:\n"
              "\t$ ROS_NAMESPACE=%s rosrun image_proc image_proc", ros::names::remap("camera").c_str());
+  }
+  if (ros::this_node::getNamespace() == "/") {
+    ROS_WARN("[image_proc] Started in the global namespace! This is probably wrong. Start image_proc "
+             "in the camera namespace.\nExample command-line usage:\n"
+             "\t$ ROS_NAMESPACE=my_camera rosrun image_proc image_proc");
   }
 
   ImageProcNode proc;
