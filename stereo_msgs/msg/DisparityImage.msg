@@ -1,3 +1,7 @@
+# Separate header for compatibility with current TimeSynchronizer.
+# Likely to be removed in a later release, use image.header instead.
+Header header
+
 # Floating point disparity image.
 sensor_msgs/Image image
 
