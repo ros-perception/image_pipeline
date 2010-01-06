@@ -10,6 +10,7 @@
   <depend package="opencv2"/>
   <depend package="cv_bridge"/>
   <depend package="sensor_msgs"/>
+  <depend package="stereo_msgs"/>
   <depend package="roscpp"/>
   <depend package="image_transport"/>
   <depend package="camera_calibration_parsers"/>
