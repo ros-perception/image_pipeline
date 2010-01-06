@@ -11,6 +11,12 @@ import cv_bridge
 import math
 import os
 import sys
+import operator
+import time
+import Queue
+import threading
+import tarfile
+import StringIO
 
 import cv
 
@@ -38,15 +44,29 @@ def lmax(seq1, seq2):
     """ Pairwise maximum of two sequences """
     return [max(a, b) for (a, b) in zip(seq1, seq2)]
 
+class ConsumerThread(threading.Thread):
+    def __init__(self, queue, function):
+        threading.Thread.__init__(self)
+        self.queue = queue
+        self.function = function
+
+    def run(self):
+        while True:
+            while True:
+                m = self.queue.get()
+                if self.queue.empty():
+                    break
+            self.function(m)
+
 class CalibrationNode:
 
     def __init__(self):
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = message_filters.TimeSynchronizer([lsub, rsub], 4)
-        ts.registerCallback(self.handle_stereo)
+        ts.registerCallback(self.queue_stereo)
 
-        rospy.Subscriber('image', sensor_msgs.msg.Image, self.handle_monocular)
+        rospy.Subscriber('image', sensor_msgs.msg.Image, self.queue_monocular)
 
         self.set_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"), sensor_msgs.srv.SetCameraInfo)
         self.set_left_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("left_camera"), sensor_msgs.srv.SetCameraInfo)
@@ -58,6 +78,19 @@ class CalibrationNode:
         self.db = {}
         self.c = None
         self.calibrated = False
+
+        self.q_mono = Queue.Queue()
+        self.q_stereo = Queue.Queue()
+
+        self.goodenough = False
+
+        mth = ConsumerThread(self.q_mono, self.handle_monocular)
+        mth.setDaemon(True)
+        mth.start()
+
+        sth = ConsumerThread(self.q_stereo, self.handle_stereo)
+        sth.setDaemon(True)
+        sth.start()
 
     def mkgray(self, msg):
         """
@@ -77,6 +110,20 @@ class CalibrationNode:
 
         return rgb
 
+    def queue_monocular(self, msg):
+        self.q_mono.put(msg)
+
+    def queue_stereo(self, lmsg, rmsg):
+        self.q_stereo.put((lmsg, rmsg))
+
+    def compute_goodenough(self):
+        if len(self.db) > 0:
+            Ps = [v[0] for v in self.db.values()]
+            Pmins = reduce(lmin, Ps)
+            Pmaxs = reduce(lmax, Ps)
+            if reduce(operator.__mul__, [(hi - lo) for (lo, hi) in zip(Pmins, Pmaxs)]) > .1:
+                self.goodenough = True
+
     def handle_monocular(self, msg):
 
         if self.c == None:
@@ -93,12 +140,60 @@ class CalibrationNode:
         else:
             scrib = cv.CloneMat(rgb)
 
-        if not self.calibrated:
-            (ok, corners) = get_corners(rgb, refine = False)
-            if ok:
+        (ok, corners) = get_corners(rgb, refine = False)
+        if ok:
+            # Compute some parameters for this chessboard
+            Xs = [x for (x, y) in corners]
+            Ys = [y for (x, y) in corners]
+            p_x = mean(Xs) / self.width
+            p_y = mean(Ys) / self.height
+            p_size = (max(Xs) - min(Xs)) / self.width
+            params = [p_x, p_y, p_size]
+            if self.p_mins == None:
+                self.p_mins = params
+            else:
+                self.p_mins = lmin(self.p_mins, params)
+            if self.p_maxs == None:
+                self.p_maxs = params
+            else:
+                self.p_maxs = lmax(self.p_maxs, params)
+            is_min = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_mins)]
+            is_max = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_maxs)]
+
+            src = cv.Reshape(mk_image_points([corners]), 2)
+
+            cv.DrawChessboardCorners(scrib, (8, 6), [ (x/scale, y/scale) for (x, y) in cvmat_iterator(src)], True)
+
+            # If the image is a min or max in every parameter, add to the collection
+            if any(is_min) or any(is_max):
+                self.db[str(is_min + is_max)] = (params, rgb)
+
+        if self.calibrated:
+            rgb_remapped = self.c.remap(rgb)
+            cv.Resize(rgb_remapped, scrib)
+
+        self.compute_goodenough()
+
+        self.redraw_monocular(scrib, rgb)
+
+    def handle_stereo(self, msg):
+
+        (lmsg, rmsg) = msg
+        if self.c == None:
+            self.c = StereoCalibrator()
+        lrgb = self.mkgray(lmsg)
+        rrgb = self.mkgray(rmsg)
+        (self.width, self.height) = cv.GetSize(lrgb)
+        lscrib = lrgb
+        rscrib = rrgb
+
+        (lok, lcorners) = get_corners(lrgb, refine = False)
+        if lok:
+            (rok, rcorners) = get_corners(rrgb, refine = False)
+            if lok and rok:
                 # Compute some parameters for this chessboard
-                Xs = [x for (x, y) in corners]
-                Ys = [y for (x, y) in corners]
+                Xs = [x for (x, y) in lcorners]
+                Ys = [y for (x, y) in lcorners]
                 p_x = mean(Xs) / self.width
                 p_y = mean(Ys) / self.height
                 p_size = (max(Xs) - min(Xs)) / self.width
@@ -113,63 +208,18 @@ class CalibrationNode:
                     self.p_maxs = lmax(self.p_maxs, params)
                 is_min = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_mins)]
                 is_max = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_maxs)]
-
-                src = cv.Reshape(mk_image_points([corners]), 2)
-
-                cv.DrawChessboardCorners(scrib, (8, 6), [ (x/scale, y/scale) for (x, y) in cvmat_iterator(src)], True)
+                
+                lscrib = cv.CloneMat(lrgb)
+                rscrib = cv.CloneMat(rrgb)
+                for (co, im) in [(lcorners, lscrib), (rcorners, rscrib)]:
+                    src = cv.Reshape(mk_image_points([co]), 2)
+                    cv.DrawChessboardCorners(im, (8, 6), cvmat_iterator(src), True)
 
                 # If the image is a min or max in every parameter, add to the collection
                 if any(is_min) or any(is_max):
-                    self.db[str(is_min + is_max)] = (params, rgb)
-        else:
-            rgb_remapped = self.c.remap(rgb)
-            cv.Resize(rgb_remapped, scrib)
+                    self.db[str(is_min + is_max)] = (params, lrgb, rrgb)
 
-        self.redraw_monocular(scrib, rgb)
-
-    def handle_stereo(self, lmsg, rmsg):
-
-        if self.c == None:
-            self.c = StereoCalibrator()
-        lrgb = self.mkgray(lmsg)
-        rrgb = self.mkgray(rmsg)
-        (self.width, self.height) = cv.GetSize(lrgb)
-        lscrib = lrgb
-        rscrib = rrgb
-
-        if not self.calibrated:
-            (lok, lcorners) = get_corners(lrgb, refine = False)
-            if lok:
-                (rok, rcorners) = get_corners(rrgb, refine = False)
-                if lok and rok:
-                    # Compute some parameters for this chessboard
-                    Xs = [x for (x, y) in lcorners]
-                    Ys = [y for (x, y) in lcorners]
-                    p_x = mean(Xs) / self.width
-                    p_y = mean(Ys) / self.height
-                    p_size = (max(Xs) - min(Xs)) / self.width
-                    params = [p_x, p_y, p_size]
-                    if self.p_mins == None:
-                        self.p_mins = params
-                    else:
-                        self.p_mins = lmin(self.p_mins, params)
-                    if self.p_maxs == None:
-                        self.p_maxs = params
-                    else:
-                        self.p_maxs = lmax(self.p_maxs, params)
-                    is_min = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_mins)]
-                    is_max = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_maxs)]
-                    
-                    lscrib = cv.CloneMat(lrgb)
-                    rscrib = cv.CloneMat(rrgb)
-                    for (co, im) in [(lcorners, lscrib), (rcorners, rscrib)]:
-                        src = cv.Reshape(mk_image_points([co]), 2)
-                        cv.DrawChessboardCorners(im, (8, 6), cvmat_iterator(src), True)
-
-                    # If the image is a min or max in every parameter, add to the collection
-                    if any(is_min) or any(is_max):
-                        self.db[str(is_min + is_max)] = (params, lrgb, rrgb)
-        else:
+        if self.calibrated:
             epierror = self.c.epipolar1(lrgb, rrgb)
             if epierror == -1:
                 print "Cannot find checkerboard"
@@ -177,6 +227,8 @@ class CalibrationNode:
                 print "epipolar error:", epierror
             lscrib = self.c.lremap(lrgb)
             rscrib = self.c.rremap(rrgb)
+
+        self.compute_goodenough()
 
         self.redraw_stereo(lscrib, rscrib, lrgb, rrgb)
 
@@ -192,10 +244,37 @@ class CalibrationNode:
             rimages = [ r for (p, l, r) in vv ]
             self.c.cal(limages, rimages)
 
+    def do_save(self):
+        filename = '/tmp/calibrationdata.tar.gz'
+        tf = tarfile.open(filename, 'w:gz')
+
+        vv = list(self.db.values())
+        # vv is a list of pairs (p, i) for monocular, and triples (p, l, r) for stereo
+        if self.c.is_mono:
+            ims = [("left-%04d.png" % i, im) for i,(_, im) in enumerate(vv)]
+        else:
+            ims = ([("left-%04d.png"  % i, im) for i,(_, im, _) in enumerate(vv)] +
+                   [("right-%04d.png" % i, im) for i,(_, _, im) in enumerate(vv)])
+
+        def taradd(name, buf):
+            s = StringIO.StringIO(buf)
+            ti = tarfile.TarInfo(name)
+            ti.size = len(s.buf)
+            ti.uname = 'calibrator'
+            ti.mtime = int(time.time())
+            tf.addfile(tarinfo=ti, fileobj=s)
+
+        for (name, im) in ims:
+            taradd(name, cv.EncodeImage(".png", im).tostring())
+
+        taradd('ost.txt', self.c.ost())
+        tf.close()
+        print "Wrote calibration data to", filename
+
     def do_upload(self):
         vv = list(self.db.values())
         self.c.report()
-        self.c.ost()
+        print self.c.ost()
         info = self.c.as_message()
         if self.c.is_mono:
             self.set_camera_info_service(info)
@@ -260,23 +339,54 @@ class OpenCVCalibrationNode(CalibrationNode):
 
     def on_mouse(self, event, x, y, flags, param):
         if event == cv.CV_EVENT_LBUTTONDOWN:
-            if not self.calibrated:
+            if 180 <= y < 280:
                 self.do_calibration()
-            else:
+            elif 280 <= y < 380:
+                self.do_save()
+            elif 380 <= y < 480:
                 self.do_upload()
+
+    def waitkey(self):
+        k = cv.WaitKey(6)
+        if k == ord('q'):
+            rospy.signal_shutdown('Quit')
 
     def on_scale(self, scalevalue):
         self.set_scale(scalevalue / 100.0)
 
+
+    def button(self, dst, label, enable):
+        cv.Set(dst, (255, 255, 255))
+        size = cv.GetSize(dst)
+        if enable:
+            color = cv.RGB(155, 155, 80)
+        else:
+            color = cv.RGB(224, 224, 224)
+        cv.Circle(dst, (size[0] / 2, size[1] / 2), min(size) / 2, color, -1)
+        ((w, h), _) = cv.GetTextSize(label, self.font)
+        cv.PutText(dst, label, ((size[0] - w) / 2, (size[1] + h) / 2), self.font, (255,255,255))
+
+    def buttons(self, display):
+        if self.c.is_mono:
+            x = self.width
+        else:
+            x = 2 * self.width
+        self.button(cv.GetSubRect(display, (x,180,100,100)), "CALIBRATE", self.goodenough)
+        self.button(cv.GetSubRect(display, (x,280,100,100)), "SAVE", self.calibrated)
+        self.button(cv.GetSubRect(display, (x,380,100,100)), "UPLOAD", self.calibrated)
+
+    def y(self, i):
+        return 30 + 50 * i
+        
     def redraw_monocular(self, scrib, _):
         width, height = cv.GetSize(scrib)
 
         display = cv.CreateMat(height, width + 100, cv.CV_8UC3)
         cv.Copy(scrib, cv.GetSubRect(display, (0,0,width,height)))
         cv.Set(cv.GetSubRect(display, (width,0,100,height)), (255, 255, 255))
-        #cv.Resize(self.button, cv.GetSubRect(display, (width,380,100,100)))
-        self.button(cv.GetSubRect(display, (width,380,100,100)))
 
+
+        self.buttons(display)
         if not self.calibrated:
             if len(self.db) != 0:
                 # Report dimensions of the n-polytope
@@ -286,48 +396,27 @@ class OpenCVCalibrationNode(CalibrationNode):
                 ranges = [(x-n) for (x, n) in zip(Pmaxs, Pmins)]
 
                 for i, (label, lo, hi) in enumerate(zip(["X", "Y", "Size"], Pmins, Pmaxs)):
-                    y = 100 + 100 * i
                     (w,_),_ = cv.GetTextSize(label, self.font)
-                    cv.PutText(display, label, (width + (100 - w) / 2, 100 + 100 * i), self.font, (0,0,0))
-                    if((hi-lo)>0.50):
-                      cv.Line(display,
-                            (int(width + lo * 100), y + 20),
-                            (int(width + hi * 100), y + 20),
-                            (0,255,0),
-                            4)
-                    else:
-                      cv.Line(display,
-                            (int(width + lo * 100), y + 20),
-                            (int(width + hi * 100), y + 20),
-                            (0,0,255),
+                    cv.PutText(display, label, (width + (100 - w) / 2, self.y(i)), self.font, (0,0,0))
+                    cv.Line(display,
+                            (int(width + lo * 100), self.y(i) + 20),
+                            (int(width + hi * 100), self.y(i) + 20),
+                            (0,0,0),
                             4)
 
         else:
-            cv.PutText(display, "acc.", (width, 100), self.font, (0,0,0))
+            cv.PutText(display, "acc.", (width, self.y(0)), self.font, (0,0,0))
 
         cv.ShowImage("display", display)
-        k = cv.WaitKey(6)
-
-    def button(self, dst):
-        cv.Set(dst, (255, 255, 255))
-        size = cv.GetSize(dst)
-        if not self.calibrated:
-            color = cv.RGB(155, 100, 80)
-            label = "CALIBRATE"
-        else:
-            color = cv.RGB(80, 155, 100)
-            label = "UPLOAD"
-        cv.Circle(dst, (size[0] / 2, size[1] / 2), min(size) / 2, color, -1)
-        ((w, h), _) = cv.GetTextSize(label, self.font)
-        cv.PutText(dst, label, ((size[0] - w) / 2, (size[1] + h) / 2), self.font, (255,255,255))
+        self.waitkey()
 
     def redraw_stereo(self, lscrib, rscrib, lrgb, rrgb):
         display = cv.CreateMat(self.height, 2 * self.width + 100, cv.CV_8UC3)
         cv.Copy(lscrib, cv.GetSubRect(display, (0,0,self.width,self.height)))
         cv.Copy(rscrib, cv.GetSubRect(display, (self.width,0,self.width,self.height)))
         cv.Set(cv.GetSubRect(display, (2 * self.width,0,100,self.height)), (255, 255, 255))
-        #cv.Resize(self.button, cv.GetSubRect(display, (2 * self.width,380,100,100)))
-        self.button(cv.GetSubRect(display, (2 * self.width,380,100,100)))
+
+        self.buttons(display)
 
         if not self.calibrated:
             if len(self.db) != 0:
@@ -337,38 +426,30 @@ class OpenCVCalibrationNode(CalibrationNode):
                 Pmaxs = reduce(lmax, Ps)
                 ranges = [(x-n) for (x, n) in zip(Pmaxs, Pmins)]
                 for i, (label, lo, hi) in enumerate(zip(["X", "Y", "Size"], Pmins, Pmaxs)):
-                    y = 100 + 100 * i
                     (width,_),_ = cv.GetTextSize(label, self.font)
-                    cv.PutText(display, label, (2 * self.width + (100 - width) / 2, 100 + 100 * i), self.font, (0,0,0))
+                    cv.PutText(display, label, (2 * self.width + (100 - width) / 2, self.y(i)), self.font, (0,0,0))
                     #print label, hi, lo
-                    if((hi-lo)>0.50):
-                      cv.Line(display,
-                            (int(2 * self.width + lo * 100), y + 20),
-                            (int(2 * self.width + hi * 100), y + 20),
-                            (0,255,0),
-                            4)
-                    else:
-                      cv.Line(display,
-                            (int(2 * self.width + lo * 100), y + 20),
-                            (int(2 * self.width + hi * 100), y + 20),
-                            (0,0,255),
+                    cv.Line(display,
+                            (int(2 * self.width + lo * 100), self.y(i) + 20),
+                            (int(2 * self.width + hi * 100), self.y(i) + 20),
+                            (0,0,0),
                             4)
 
         else:
-            cv.PutText(display, "acc.", (2 * self.width, 50), self.font, (0,0,0))
+            cv.PutText(display, "epi.", (2 * self.width, self.y(0)), self.font, (0,0,0))
             epierror = self.c.epipolar1(lrgb, rrgb)
             if epierror == -1:
                 msg = "?"
             else:
                 msg = "%.2f" % epierror
-            cv.PutText(display, msg, (2 * self.width, 150), self.font, (0,0,0))
+            cv.PutText(display, msg, (2 * self.width, self.y(1)), self.font, (0,0,0))
             if epierror != -1:
-                cv.PutText(display, "dim", (2 * self.width, 250), self.font, (0,0,0))
+                cv.PutText(display, "dim", (2 * self.width, self.y(2)), self.font, (0,0,0))
                 dim = self.c.chessboard_size(lrgb, rrgb)
-                cv.PutText(display, "%.3f" % dim, (2 * self.width, 350), self.font, (0,0,0))
+                cv.PutText(display, "%.3f" % dim, (2 * self.width, self.y(3)), self.font, (0,0,0))
 
         cv.ShowImage("display", display)
-        k = cv.WaitKey(6)
+        self.waitkey()
 
 def main():
     from optparse import OptionParser
