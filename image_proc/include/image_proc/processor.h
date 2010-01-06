@@ -27,16 +27,16 @@ public:
   int interpolation_;
 
   enum {
-    MONO = 1 << 0,
-    RECT = 1 << 1,
-    COLOR = 1 << 2,
+    MONO       = 1 << 0,
+    RECT       = 1 << 1,
+    COLOR      = 1 << 2,
     RECT_COLOR = 1 << 3,
     ALL = MONO | RECT | COLOR | RECT_COLOR
   };
   
   bool process(const sensor_msgs::ImageConstPtr& raw_image,
                const image_geometry::PinholeCameraModel& model,
-               ImageSet& output, int flags = ALL);
+               ImageSet& output, int flags = ALL) const;
 };
 
 } //namespace image_proc

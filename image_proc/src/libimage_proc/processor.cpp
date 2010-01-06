@@ -8,7 +8,7 @@ namespace enc = sensor_msgs::image_encodings;
 
 bool Processor::process(const sensor_msgs::ImageConstPtr& raw_image,
                         const image_geometry::PinholeCameraModel& model,
-                        ImageSet& output, int flags)
+                        ImageSet& output, int flags) const
 {
   static const int MONO_EITHER = MONO | RECT;
   static const int COLOR_EITHER = COLOR | RECT_COLOR;
