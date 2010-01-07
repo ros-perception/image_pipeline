@@ -61,6 +61,7 @@ private:
   image_proc::Processor processor_;
   image_geometry::PinholeCameraModel model_;
   image_proc::ImageSet processed_images_;
+  /// @todo Separate color_img_ to avoid some allocations?
   sensor_msgs::Image img_;
   int subscriber_count_;
 
@@ -109,8 +110,8 @@ public:
     int flags = 0;
     typedef image_proc::Processor Proc;
     if (pub_mono_      .getNumSubscribers() > 0) flags |= Proc::MONO;
-    if (pub_color_     .getNumSubscribers() > 0) flags |= Proc::COLOR;
     if (pub_rect_      .getNumSubscribers() > 0) flags |= Proc::RECT;
+    if (pub_color_     .getNumSubscribers() > 0) flags |= Proc::COLOR;
     if (pub_rect_color_.getNumSubscribers() > 0) flags |= Proc::RECT_COLOR;
 
     // Process raw image into colorized and/or rectified outputs
@@ -122,10 +123,10 @@ public:
     img_.header.frame_id = raw_image->header.frame_id;
     if (flags & Proc::MONO)
       publishImage(pub_mono_, processed_images_.mono, sensor_msgs::image_encodings::MONO8);
-    if (flags & Proc::COLOR)
-      publishImage(pub_color_, processed_images_.color, processed_images_.color_encoding);
     if (flags & Proc::RECT)
       publishImage(pub_rect_, processed_images_.rect, sensor_msgs::image_encodings::MONO8);
+    if (flags & Proc::COLOR)
+      publishImage(pub_color_, processed_images_.color, processed_images_.color_encoding);
     if (flags & Proc::RECT_COLOR)
       publishImage(pub_rect_color_, processed_images_.rect_color, processed_images_.color_encoding);
   }
