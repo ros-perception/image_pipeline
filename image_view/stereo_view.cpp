@@ -346,11 +346,14 @@ public:
     cvSetMouseCallback("right", &StereoView::mouseCB, this);
     cvStartWindowThread();
 
-    std::string left_topic = nh.resolveName("stereo") + "/left/" + nh.resolveName("image");
-    std::string right_topic = nh.resolveName("stereo") + "/right/" + nh.resolveName("image");
+    std::string stereo_ns = nh.resolveName("stereo");
+    std::string left_topic = stereo_ns + "/left/" + nh.resolveName("image");
+    std::string right_topic = stereo_ns + "/right/" + nh.resolveName("image");
+    std::string disparity_topic = stereo_ns + "/disparity";
     left_sub_.subscribe(it_, left_topic, 3);
     right_sub_.subscribe(it_, right_topic, 3);
-    sync_.connectInput(left_sub_, right_sub_);
+    disparity_sub_.subscribe(nh, disparity_topic, 3);
+    sync_.connectInput(left_sub_, right_sub_, disparity_sub_);
     sync_.registerCallback(boost::bind(&StereoView::imageCB, this, _1, _2, _3));
   }
 
