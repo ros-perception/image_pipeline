@@ -244,10 +244,8 @@ class CalibrationNode:
             rimages = [ r for (p, l, r) in vv ]
             self.c.cal(limages, rimages)
 
-    def do_save(self):
-        filename = '/tmp/calibrationdata.tar.gz'
-        tf = tarfile.open(filename, 'w:gz')
-
+    def do_tarfile_save(self, tf):
+        """ Write images and calibration solution to a tarfile object """
         vv = list(self.db.values())
         # vv is a list of pairs (p, i) for monocular, and triples (p, l, r) for stereo
         if self.c.is_mono:
@@ -268,6 +266,11 @@ class CalibrationNode:
             taradd(name, cv.EncodeImage(".png", im).tostring())
 
         taradd('ost.txt', self.c.ost())
+
+    def do_save(self):
+        filename = '/tmp/calibrationdata.tar.gz'
+        tf = tarfile.open(filename, 'w:gz')
+        self.do_tarfile_save(tf)
         tf.close()
         print "Wrote calibration data to", filename
 
