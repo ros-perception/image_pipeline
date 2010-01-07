@@ -2,7 +2,9 @@
 # Likely to be removed in a later release, use image.header instead.
 Header header
 
-# Floating point disparity image.
+# Floating point disparity image. The disparities are pre-adjusted for any
+# x-offset between the principal points of the two cameras (in the case
+# that they are verged). That is: d = x_l - x_r - (cx_l - cx_r)
 sensor_msgs/Image image
 
 # Stereo geometry. For disparity d, the depth from the camera is Z = fT/d.
