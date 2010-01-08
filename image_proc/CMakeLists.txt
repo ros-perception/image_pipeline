@@ -8,8 +8,8 @@ rosbuild_init()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 rosbuild_add_boost_directories()
 
-#rosbuild_add_library(imageproc src/proc/image.cpp)
 rosbuild_add_library(image_proc src/libimage_proc/processor.cpp)
+#rosbuild_add_library(image_proc src/libimage_proc/processor.cpp src/proc/image.cpp)
 
 rosbuild_add_executable(image_proc_exe src/nodes/image_proc.cpp)
 target_link_libraries(image_proc_exe image_proc)
