@@ -1476,6 +1476,8 @@ do_speckle(int16_t *disp, int16_t badval, int width, int height,
   memset(labels,0x0,width*height*sizeof(uint32_t));
 
   // loop over rows, omit borders (TDB: use dtop etc here)
+  const uint32_t MIN_P = 4*width+4;
+  const uint32_t MAX_P = (height-4)*width-4;
   cur = 0;			// current label
   for (i=4; i<height-4; i++)
     {
@@ -1507,10 +1509,11 @@ do_speckle(int16_t *disp, int16_t badval, int width, int height,
 		      cnt++;
 		      // put neighbors onto wavefront
 		      dp = disp[p];
-		      push(p+1,dp);
-		      push(p-1,dp);
-		      push(p-width,dp);
-		      push(p+width,dp);
+                      /// @todo These checks shouldn't really be necessary if the border is properly marked invalid
+		      if (p+1 < MAX_P)      push(p+1,dp);
+		      if (p-1 >= MIN_P)     push(p-1,dp);
+		      if (p-width >= MIN_P) push(p-width,dp);
+		      if (p+width < MAX_P)  push(p+width,dp);
 
 		      // pop most recent and propagate
 		      // NB: could try least recent, maybe better convergence
