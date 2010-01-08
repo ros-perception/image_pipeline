@@ -108,7 +108,7 @@ public:
 
   cam::StereoData* stdata_;
 
-  StereoProc() : private_nh_("~"), left_nh_("left"), right_nh_("right"), diagnostic_(nh_),
+  StereoProc() : private_nh_("~"), left_nh_("left"), right_nh_("right"), diagnostic_(),
                  freq_status_(diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_)), 
                  count_(0), stdata_(NULL)
   {
