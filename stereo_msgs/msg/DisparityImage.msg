@@ -8,17 +8,22 @@ Header header
 sensor_msgs/Image image
 
 # Stereo geometry. For disparity d, the depth from the camera is Z = fT/d.
-float64 f # Focal length, pixels
-float64 T # Baseline, world units
+float32 f # Focal length, pixels
+float32 T # Baseline, world units
 
-# Subwindow of valid stereo values.
+# Subwindow of (potentially) valid disparity values.
 sensor_msgs/RegionOfInterest valid_window
 
-# The horopter, or 3D volume covered by the disparity search. Points with Z
-# less than min_depth or greater than max_depth could not be found.
-float64 min_depth
-float64 max_depth
+# The range of disparities searched.
+# In the disparity image, any disparity less than min_disparity is invalid.
+# The disparity search range defines the horopter, or 3D volume that the
+# stereo algorithm can "see". Points with Z outside of:
+#     Z_min = fT / max_disparity
+#     Z_max = fT / min_disparity
+# could not be found.
+float32 min_disparity
+float32 max_disparity
 
 # Smallest allowed disparity increment. The smallest achievable depth range
 # resolution is delta_Z = (Z^2/fT)*delta_d.
-float64 delta_d
+float32 delta_d
