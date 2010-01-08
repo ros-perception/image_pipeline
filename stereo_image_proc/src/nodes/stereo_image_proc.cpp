@@ -225,17 +225,18 @@ public:
   void configCallback(stereo_image_proc::StereoImageProcConfig &config, uint32_t level)
   {
     ROS_INFO("Reconfigure request received");
-    /// @todo Restore dynamic reconfig
-    /*
-    stdata_->setTextureThresh(config.unique_thresh);
-    stdata_->setUniqueThresh(config.texture_thresh);
-    stdata_->setSpeckleRegionSize(config.speckle_size);
-    stdata_->setSpeckleDiff(config.speckle_diff);
-    
-    stdata_->setHoropter(config.horopter);
-    stdata_->setCorrSize(config.corr_size);
-    stdata_->setNumDisp(config.num_disp);
-    */
+
+    processor_.setPreFilterSize(config.prefilter_size);
+    processor_.setPreFilterCap(config.prefilter_cap);
+
+    processor_.setCorrelationWindowSize(config.correlation_window_size);
+    processor_.setMinDisparity(config.min_disparity);
+    processor_.setDisparityRange(config.disparity_range);
+
+    processor_.setUniquenessRatio(config.uniqueness_ratio);
+    processor_.setTextureThreshold(config.texture_threshold);
+    processor_.setSpeckleSize(config.speckle_size);
+    processor_.setSpeckleRange(config.speckle_range);
   }
 };
 
