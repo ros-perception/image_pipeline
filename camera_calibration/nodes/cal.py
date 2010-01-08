@@ -187,9 +187,21 @@ class CalibrationNode:
         lscrib = lrgb
         rscrib = rrgb
 
-        (lok, lcorners) = get_corners(lrgb, refine = False)
+        if self.calibrated:
+            epierror = self.c.epipolar1(lrgb, rrgb)
+            if epierror == -1:
+                print "Cannot find checkerboard"
+            else:
+                print "epipolar error:", epierror
+            lscrib = self.c.lremap(lrgb)
+            rscrib = self.c.rremap(rrgb)
+        else:
+            lscrib = cv.CloneMat(lrgb)
+            rscrib = cv.CloneMat(rrgb)
+
+        (lok, lcorners) = get_corners(lrgb, refine = True)
         if lok:
-            (rok, rcorners) = get_corners(rrgb, refine = False)
+            (rok, rcorners) = get_corners(rrgb, refine = True)
             if lok and rok:
                 # Compute some parameters for this chessboard
                 Xs = [x for (x, y) in lcorners]
@@ -208,25 +220,16 @@ class CalibrationNode:
                     self.p_maxs = lmax(self.p_maxs, params)
                 is_min = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_mins)]
                 is_max = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_maxs)]
-                
-                lscrib = cv.CloneMat(lrgb)
-                rscrib = cv.CloneMat(rrgb)
-                for (co, im) in [(lcorners, lscrib), (rcorners, rscrib)]:
+
+                for (co, im, udm) in [(lcorners, lscrib, self.c.lundistort_points), (rcorners, rscrib, self.c.rundistort_points)]:
                     src = cv.Reshape(mk_image_points([co]), 2)
+                    if self.calibrated:
+                        src = udm(src)
                     cv.DrawChessboardCorners(im, (8, 6), cvmat_iterator(src), True)
 
                 # If the image is a min or max in every parameter, add to the collection
                 if any(is_min) or any(is_max):
                     self.db[str(is_min + is_max)] = (params, lrgb, rrgb)
-
-        if self.calibrated:
-            epierror = self.c.epipolar1(lrgb, rrgb)
-            if epierror == -1:
-                print "Cannot find checkerboard"
-            else:
-                print "epipolar error:", epierror
-            lscrib = self.c.lremap(lrgb)
-            rscrib = self.c.rremap(rrgb)
 
         self.compute_goodenough()
 
