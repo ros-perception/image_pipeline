@@ -379,7 +379,7 @@ public:
   }
 
   void imageCB(const sensor_msgs::ImageConstPtr& left, const sensor_msgs::ImageConstPtr& right,
-               const stereo_msgs::DisparityImageConstPtr& disparity)
+               const stereo_msgs::DisparityImageConstPtr& disparity_msg)
   {
     {
       boost::lock_guard<boost::mutex> guard(image_mutex_);
@@ -393,18 +393,19 @@ public:
     showImage("right", *right, right_bridge_);
 
     // Colormap and display the disparity image
-    double f = disparity->f;
-    double T = disparity->T;
-    double min_disparity = f*T / disparity->max_depth;
-    double max_disparity = f*T / disparity->min_depth;
-    double inv_disparity_range = 1.0 / (max_disparity - min_disparity);
+    float min_disparity = disparity_msg->min_disparity;
+    float max_disparity = disparity_msg->max_disparity;
+    float multiplier = 255.0f / (max_disparity - min_disparity);
 
-    assert(disparity->image.encoding == enc::TYPE_32FC1);
-    disparity_color_.create(disparity->image.height, disparity->image.width);
+    assert(disparity_msg->image.encoding == enc::TYPE_32FC1);
+    const cv::Mat_<float> dmat(disparity_msg->image.height, disparity_msg->image.width,
+                               (float*)&disparity_msg->image.data[0], disparity_msg->image.step);
+    disparity_color_.create(disparity_msg->image.height, disparity_msg->image.width);
+    
     for (int row = 0; row < disparity_color_.rows; ++row) {
-      const float* d = (const float*)(&disparity->image.data[row*disparity->image.step]);
+      const float* d = dmat[row];
       for (int col = 0; col < disparity_color_.cols; ++col) {
-        int index = (d[col] - min_disparity) * inv_disparity_range + 0.5;
+        int index = (d[col] - min_disparity) * multiplier + 0.5;
         index = std::min(255, std::max(0, index));
         // Fill as BGR
         disparity_color_(row, col)[2] = colormap[3*index + 0];
