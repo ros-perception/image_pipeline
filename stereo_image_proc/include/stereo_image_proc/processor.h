@@ -92,12 +92,17 @@ private:
   mutable cv::Mat_<uint32_t> labels_;
   mutable cv::Mat_<uint32_t> wavefront_;
   mutable cv::Mat_<uint8_t> region_types_;
+  // scratch buffer for dense point cloud
+  mutable cv::Mat_<cv::Vec3f> dense_points_;
 
   void processDisparity(const cv::Mat& left_rect, const cv::Mat& right_rect,
                         const image_geometry::StereoCameraModel& model,
                         stereo_msgs::DisparityImage& disparity) const;
 
-  void processPoints() const;
+  void processPoints(const stereo_msgs::DisparityImage& disparity,
+                     const cv::Mat& color, const std::string& encoding,
+                     const image_geometry::StereoCameraModel& model,
+                     sensor_msgs::PointCloud& points) const;
 };
 
 

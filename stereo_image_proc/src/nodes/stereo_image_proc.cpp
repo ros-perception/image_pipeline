@@ -152,8 +152,7 @@ public:
       return;
     
     // Publish monocular output images
-    img_.header.stamp = raw_image_l->header.stamp;
-    img_.header.frame_id = raw_image_l->header.frame_id;
+    img_.header = raw_image_l->header;
     // left
     if (flags & Proc::LEFT_MONO)
       publishImage(pub_mono_l_, processed_images_.left.mono, sensor_msgs::image_encodings::MONO8);
@@ -179,42 +178,12 @@ public:
       processed_images_.disparity.header = img_.header;
       pub_disparity_.publish(processed_images_.disparity);
     }
-    //if (flags & Proc::POINT_CLOUD)
-    
-#if 0
-    // point cloud
-    if (stdata_->numPts > 0)
-      {
-	sensor_msgs::PointCloud cloud_;
-	cloud_.header.stamp = raw_image_l->header.stamp;
-	cloud_.header.frame_id = raw_image_l->header.frame_id;
-	cloud_.points.resize(stdata_->numPts);
-        cloud_.channels.resize(3);
-	cloud_.channels[0].name = "rgb";
-	cloud_.channels[0].values.resize(stdata_->numPts);
-        cloud_.channels[1].name = "u";
-        cloud_.channels[1].values.resize(stdata_->numPts);
-        cloud_.channels[2].name = "v";
-        cloud_.channels[2].values.resize(stdata_->numPts);
-
-	for (int i = 0; i < stdata_->numPts; i++)
-	  {
-	    cloud_.points[i].x = stdata_->imPts[3*i + 0];
-	    cloud_.points[i].y = stdata_->imPts[3*i + 1];
-	    cloud_.points[i].z = stdata_->imPts[3*i + 2];
-	  }
-
-	for (int i = 0; i < stdata_->numPts; i++)
-	  {
-	    int rgb = (stdata_->imPtsColor[3*i] << 16) | (stdata_->imPtsColor[3*i + 1] << 8) | stdata_->imPtsColor[3*i + 2];
-	    cloud_.channels[0].values[i] = *(float*)(&rgb);
-            cloud_.channels[1].values[i] = stdata_->imCoords[2*i+0];
-            cloud_.channels[2].values[i] = stdata_->imCoords[2*i+1];
-	  }
-	pub_pts_.publish(cloud_);
-      }
-#endif
+    if (flags & Proc::POINT_CLOUD) {
+      processed_images_.points.header = cam_info_l->header;
+      pub_pts_.publish(processed_images_.points);
+    }
   }
+    
 
   void publishImage(const image_transport::Publisher& pub, const cv::Mat& image, const std::string& encoding)
   {
