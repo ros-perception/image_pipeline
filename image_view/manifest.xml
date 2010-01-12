@@ -5,7 +5,7 @@
   </description>
   <author>Patrick Mihelich</author>
   <license>BSD</license>
-  <review status="proposal cleared" notes=""/>
+  <review status="Doc reviewed" notes="Dec 17, 2009"/>
   <url>http://pr.willowgarage.com/wiki/image_view</url>
   <depend package="opencv2"/>
   <depend package="cv_bridge"/>
