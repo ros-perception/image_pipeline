@@ -6,7 +6,7 @@
   <author>Patrick Mihelich</author>
   <license>BSD</license>
   <review status="Doc reviewed" notes="Dec 17, 2009"/>
-  <url>http://pr.willowgarage.com/wiki/image_view</url>
+  <url>http://www.ros.org/wiki/image_view</url>
   <depend package="opencv2"/>
   <depend package="cv_bridge"/>
   <depend package="sensor_msgs"/>
