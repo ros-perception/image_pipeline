@@ -116,10 +116,19 @@ public:
     info_sub_r .subscribe(nh_, right_ns + "/camera_info", 1);
     sync_.connectInput(image_sub_l, info_sub_l, image_sub_r, info_sub_r);
     sync_.registerCallback(boost::bind(&StereoProcNode::imageCb, this, _1, _2, _3, _4));
+
+    /// @todo Print a warning every minute until the camera topics are advertised (like image_proc)
   }
 
-  //void connectCb()
-  //void disconnectCb()
+  void connectCb()
+  {
+
+  }
+
+  void disconnectCb()
+  {
+
+  }
 
   void imageCb(const sensor_msgs::ImageConstPtr& raw_image_l, 
 	       const sensor_msgs::CameraInfoConstPtr& cam_info_l,
