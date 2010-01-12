@@ -26,11 +26,6 @@ rosbuild_add_executable(stereoimageproc_exe src/nodes/stereo_image_proc.cpp)
 target_link_libraries(stereoimageproc_exe stereo_image_proc)
 SET_TARGET_PROPERTIES(stereoimageproc_exe PROPERTIES OUTPUT_NAME stereo_image_proc)
 
-# this will go away when the new stereo_image_proc node becomes the default
-#rosbuild_add_executable(stereoproc_exe src/nodes/stereoproc.cpp)
-#target_link_libraries(stereoproc_exe stereo_image_proc)
-#SET_TARGET_PROPERTIES(stereoproc_exe PROPERTIES OUTPUT_NAME stereoproc)
-
 # DEBUG old version for comparison
 #rosbuild_add_executable(stereo_image_proc_old src/nodes/stereo_image_proc_stable.cpp)
 #target_link_libraries(stereo_image_proc_old stereo_image_proc)
