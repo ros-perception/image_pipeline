@@ -47,11 +47,14 @@ def cvmat_iterator(cvmat):
             yield cvmat[i,j]
 
 class Calibrator:
+
     def lrmsg(self, d, k, r, p):
         """ Used by :meth:`as_message`.  Return a CameraInfo message for the given calibration matrices """
         msg = sensor_msgs.msg.CameraInfo()
         (msg.width, msg.height) = self.size
         msg.D = [d[i,0] for i in range(d.rows)]
+        while len(msg.D)<5:
+	        msg.D.append(0)
         msg.K = list(cvmat_iterator(k))
         msg.R = list(cvmat_iterator(r))
         msg.P = list(cvmat_iterator(p))
@@ -97,7 +100,7 @@ class Calibrator:
         + " ".join(["%8f" % p[2,i] for i in range(4)]) + "\n"
         + "\n")
         assert len(calmessage) < 525, "Calibration info must be less than 525 bytes"
-        print calmessage
+        return calmessage
 
 class MonoCalibrator(Calibrator):
 
@@ -164,7 +167,7 @@ class MonoCalibrator(Calibrator):
         self.lrreport(self.distortion, self.intrinsics, self.R, self.P)
 
     def ost(self):
-        self.lrost("left", self.distortion, self.intrinsics, self.R, self.P)
+        return self.lrost("left", self.distortion, self.intrinsics, self.R, self.P)
 
 class CalibrationException(Exception):
     pass
@@ -253,9 +256,8 @@ class StereoCalibrator(Calibrator):
         self.lrreport(self.r.distortion, self.r.intrinsics, self.rR, self.rP)
 
     def ost(self):
-        self.lrost("left", self.l.distortion, self.l.intrinsics, self.lR, self.lP)
-        self.lrost("right", self.r.distortion, self.r.intrinsics, self.rR, self.rP)
-
+        return (self.lrost("left", self.l.distortion, self.l.intrinsics, self.lR, self.lP) +
+          self.lrost("right", self.r.distortion, self.r.intrinsics, self.rR, self.rP))
 
     def epipolar1(self, li, ri):
         # Find corners in both images and undistort them, results in lists L,R

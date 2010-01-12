@@ -1,13 +1,13 @@
 <package>
   <description brief="stereo_msgs">
 
-     stereo_msgs
+     stereo_msgs contains messages specific to stereo processing, such as disparity images.
 
   </description>
-  <author>Kurt Konolige</author>
+  <author>Patrick Mihelich, Kurt Konolige</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
-  <url>http://pr.willowgarage.com/wiki/stereo_msgs</url>
+  <review status="API reviewed" notes="Nov 12, 2009"/>
+  <url>http://www.ros.org/wiki/stereo_msgs</url>
   <depend package="sensor_msgs"/>
   <depend package="rosbagmigration"/>
   <export>
@@ -16,5 +16,3 @@
   </export>
 
 </package>
-
-
