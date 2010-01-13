@@ -103,12 +103,26 @@ class Calibrator:
         return calmessage
 
 class MonoCalibrator(Calibrator):
+    """
+    Calibration class for monocular cameras::
+
+        images = [cv.LoadImage("mono%d.png") for i in range(8)]
+        mc = MonoCalibrator()
+        mc.cal(images)
+        print mc.as_message()
+    """
 
     is_mono = True
     def __init__(self):
         pass
 
     def cal(self, images):
+        """
+        :param images: source images containing chessboards
+        :type images: list of :class:`cvMat`
+
+        Find chessboards in images, and runs the OpenCV calibration solver.
+        """
         self.size = cv.GetSize(images[0])
         corners = [get_corners(i) for i in images]
 
@@ -139,6 +153,13 @@ class MonoCalibrator(Calibrator):
         self.set_alpha(0.0)
 
     def set_alpha(self, a):
+        """
+        Set the alpha value for the calibrated camera solution.  The alpha
+        value is a zoom, and ranges from 0 (zoomed in, all pixels in
+        calibrated image are valid) to 1 (zoomed out, all pixels in
+        original image are in calibrated image).
+        """
+
         ncm = cv.CreateMat(3, 3, cv.CV_64FC1)
         R = cv.CreateMat(3, 3, cv.CV_64FC1)
         cv.SetIdentity(R)
@@ -151,16 +172,30 @@ class MonoCalibrator(Calibrator):
         cv.SetIdentity(self.P)
 
     def remap(self, src):
+        """
+        :param src: source image
+        :type src: :class:`cvMat`
+
+        Apply the post-calibration undistortion to the source image
+        """
         r = cv.CloneMat(src)
         cv.Remap(src, r, self.mapx, self.mapy)
         return r
 
     def undistort_points(self, src):
+        """
+        :param src: N source pixel points (u,v) as an Nx2 matrix
+        :type src: :class:`cvMat`
+
+        Apply the post-calibration undistortion to the source points
+        """
+
         dst = cv.CloneMat(src)
         cv.UndistortPoints(src, dst, self.intrinsics, self.distortion, P = self.intrinsics)
         return dst
 
     def as_message(self):
+        """ Return the camera calibration as a CameraInfo message """
         return self.lrmsg(self.distortion, self.intrinsics, self.R, self.P)
 
     def report(self):
@@ -173,6 +208,15 @@ class CalibrationException(Exception):
     pass
 
 class StereoCalibrator(Calibrator):
+    """
+    Calibration class for stereo cameras::
+
+        limages = [cv.LoadImage("left%d.png") for i in range(8)]
+        rimages = [cv.LoadImage("right%d.png") for i in range(8)]
+        sc = StereoCalibrator()
+        sc.cal(limages, rimages)
+        print sc.as_message()
+    """
 
     is_mono = False
     def __init__(self):
@@ -190,6 +234,14 @@ class StereoCalibrator(Calibrator):
         return good
 
     def cal(self, limages, rimages):
+        """
+        :param limages: source left images containing chessboards
+        :type limages: list of :class:`cvMat`
+        :param rimages: source right images containing chessboards
+        :type rimages: list of :class:`cvMat`
+
+        Find chessboards in images, and runs the OpenCV calibration solver.
+        """
         self.size = cv.GetSize(limages[0])
         self.l.cal(limages)
         self.r.cal(rimages)
@@ -228,6 +280,13 @@ class StereoCalibrator(Calibrator):
         self.set_alpha(0.0)
 
     def set_alpha(self, a):
+        """
+        Set the alpha value for the calibrated camera solution. The
+        alpha value is a zoom, and ranges from 0 (zoomed in, all pixels
+        in calibrated image are valid) to 1 (zoomed out, all pixels in
+        original image are in calibrated image).
+        """
+
         cv.StereoRectify(self.l.intrinsics,
                          self.r.intrinsics,
                          self.l.distortion,
@@ -246,6 +305,10 @@ class StereoCalibrator(Calibrator):
         cv.InitUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.rR, self.rP, self.rmapx, self.rmapy)
 
     def as_message(self):
+        """
+        Return the camera calibration as a pair of CameraInfo messages, for left and right cameras respectively.
+        """
+
         return (self.lrmsg(self.l.distortion, self.l.intrinsics, self.lR, self.lP),
                 self.lrmsg(self.r.distortion, self.r.intrinsics, self.rR, self.rP))
 
@@ -260,7 +323,13 @@ class StereoCalibrator(Calibrator):
           self.lrost("right", self.r.distortion, self.r.intrinsics, self.rR, self.rP))
 
     def epipolar1(self, li, ri):
-        # Find corners in both images and undistort them, results in lists L,R
+        """
+        :param li: source left image containing chessboard
+        :type li: :class:`cvMat`
+        :param ri: source left image containing chessboard
+        :type ri: :class:`cvMat`
+
+        """
 
         (ok, corners) = get_corners(li)
         if not ok:
@@ -279,7 +348,12 @@ class StereoCalibrator(Calibrator):
 
     def chessboard_size(self, li, ri):
         """
-        Return the square edge length, in meters, or -1 if not possible.
+        :param li: source left image containing chessboard
+        :type li: :class:`cvMat`
+        :param ri: source left image containing chessboard
+        :type ri: :class:`cvMat`
+
+        Post calibration, return the square edge length, in meters, or -1 if not possible.
         """
         (ok, corners) = get_corners(li)
         if not ok:
@@ -291,7 +365,6 @@ class StereoCalibrator(Calibrator):
             return -1
         src = cv.Reshape(mk_image_points([corners]), 2)
         R = list(cvmat_iterator(self.rundistort_points(src)))
-
 
         # Project the points to 3d
         cam = image_geometry.StereoCameraModel()
@@ -326,5 +399,3 @@ class StereoCalibrator(Calibrator):
         dst = cv.CloneMat(src)
         cv.UndistortPoints(src, dst, self.r.intrinsics, self.r.distortion, self.rR, self.rP)
         return dst
-
-
