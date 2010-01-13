@@ -1,6 +1,7 @@
 #include "stereo_image_proc/processor.h"
 #include "stereo_image_proc/stereolib.h"
 #include <sensor_msgs/image_encodings.h>
+#include <boost/math/special_functions/fpclassify.hpp>
 
 namespace stereo_image_proc {
 
@@ -87,7 +88,12 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
   disparity.delta_d = inv_dpp;
 }
 
-
+inline bool isValidPoint(const cv::Vec3f& pt)
+{
+  // Check both for disparities explicitly marked as invalid (where OpenCV maps pt.z to MISSING_Z)
+  // and zero disparities (point mapped to infinity).
+  return pt[2] != image_geometry::StereoCameraModel::MISSING_Z && !(boost::math::isinf)(pt[2]);
+}
 
 void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity,
                                     const cv::Mat& color, const std::string& encoding,
@@ -109,10 +115,9 @@ void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity
   points.channels[2].name = "v";
   points.channels[2].values.resize(0);
   
-  const float MISSING_Z = image_geometry::StereoCameraModel::MISSING_Z;
   for (int32_t u = 0; u < dense_points_.rows; ++u) {
     for (int32_t v = 0; v < dense_points_.cols; ++v) {
-      if (dense_points_(u,v)[2] != MISSING_Z) {
+      if (isValidPoint(dense_points_(u,v))) {
         // x,y,z
         geometry_msgs::Point32 pt;
         pt.x = dense_points_(u,v)[0];
@@ -132,7 +137,7 @@ void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity
   if (encoding == enc::MONO8) {
     for (int32_t u = 0; u < dense_points_.rows; ++u) {
       for (int32_t v = 0; v < dense_points_.cols; ++v) {
-        if (dense_points_(u,v)[2] != MISSING_Z) {
+        if (isValidPoint(dense_points_(u,v))) {
           uint8_t g = color.at<uint8_t>(u,v);
           int32_t rgb = (g << 16) | (g << 8) | g;
           points.channels[0].values.push_back(*(float*)(&rgb));
@@ -143,7 +148,7 @@ void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity
   else if (encoding == enc::RGB8) {
     for (int32_t u = 0; u < dense_points_.rows; ++u) {
       for (int32_t v = 0; v < dense_points_.cols; ++v) {
-        if (dense_points_(u,v)[2] != MISSING_Z) {
+        if (isValidPoint(dense_points_(u,v))) {
           const cv::Vec3b& rgb = color.at<cv::Vec3b>(u,v);
           int32_t rgb_packed = (rgb[0] << 16) | (rgb[1] << 8) | rgb[0];
           points.channels[0].values.push_back(*(float*)(&rgb_packed));
@@ -154,7 +159,7 @@ void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity
   else if (encoding == enc::BGR8) {
     for (int32_t u = 0; u < dense_points_.rows; ++u) {
       for (int32_t v = 0; v < dense_points_.cols; ++v) {
-        if (dense_points_(u,v)[2] != MISSING_Z) {
+        if (isValidPoint(dense_points_(u,v))) {
           const cv::Vec3b& bgr = color.at<cv::Vec3b>(u,v);
           int32_t rgb_packed = (bgr[2] << 16) | (bgr[1] << 8) | bgr[0];
           points.channels[0].values.push_back(*(float*)(&rgb_packed));
