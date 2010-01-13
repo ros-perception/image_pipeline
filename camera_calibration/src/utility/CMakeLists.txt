@@ -1,5 +1,0 @@
-rosbuild_add_executable(undistort undistort.cpp)
-target_link_libraries(undistort camera_calibration)
-
-rosbuild_add_executable(batch_calibrate batch_calibrate.cpp)
-target_link_libraries(batch_calibrate camera_calibration)
