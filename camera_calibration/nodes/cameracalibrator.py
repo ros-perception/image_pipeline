@@ -459,7 +459,7 @@ class OpenCVCalibrationNode(CalibrationNode):
 
 def main():
     from optparse import OptionParser
-    rospy.init_node('calibrationnode')
+    rospy.init_node('cameracalibrator')
     parser = OptionParser()
     parser.add_option("-w", "--web", dest="web", action="store_true", default=False, help="create backend for web-based calibration")
     parser.add_option("-o", "--opencv", dest="web", action="store_false", help="use OpenCV-based GUI for calibration (default)")
