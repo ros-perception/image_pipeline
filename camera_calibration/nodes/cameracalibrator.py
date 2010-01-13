@@ -60,8 +60,9 @@ class ConsumerThread(threading.Thread):
 
 class CalibrationNode:
 
-    def __init__(self, chess_size):
+    def __init__(self, chess_size, dim):
         self.chess_size = chess_size
+        self.dim = dim
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = message_filters.TimeSynchronizer([lsub, rsub], 4)
@@ -297,8 +298,8 @@ class CalibrationNode:
 class WebCalibrationNode(CalibrationNode):
     """ Calibration node backend for a web-based UI """
 
-    def __init__(self, chess_size):
-        CalibrationNode.__init__(self, chess_size)
+    def __init__(self, *args):
+        CalibrationNode.__init__(self, *args)
         self.img_pub = rospy.Publisher("calibration_image", sensor_msgs.msg.Image)
         self.meta_pub = rospy.Publisher("calibration_meta", String)
         self.calibration_done = rospy.Service('calibration_done', Empty, self.calibrate)
@@ -335,9 +336,9 @@ class WebCalibrationNode(CalibrationNode):
 class OpenCVCalibrationNode(CalibrationNode):
     """ Calibration node with an OpenCV Gui """
 
-    def __init__(self, chess_size):
+    def __init__(self, *args):
 
-        CalibrationNode.__init__(self, chess_size)
+        CalibrationNode.__init__(self, *args)
         cv.NamedWindow("display")
         self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 0.20, 1, thickness = 2, line_type = cv.CV_AA)
         #self.button = cv.LoadImage("%s/button.jpg" % roslib.packages.get_pkg_dir(PKG))
@@ -465,12 +466,14 @@ def main():
     parser.add_option("-w", "--web", dest="web", action="store_true", default=False, help="create backend for web-based calibration")
     parser.add_option("-o", "--opencv", dest="web", action="store_false", help="use OpenCV-based GUI for calibration (default)")
     parser.add_option("-s", "--size", default="8x6", help="specify chessboard size as nxm [default: %default]")
+    parser.add_option("-q", "--square", default=".108", help="specify chessboard square size in meters [default: %default]")
     options, args = parser.parse_args()
     size = tuple([int(c) for c in options.size.split('x')])
+    dim = float(options.square)
     if options.web:
-        node = WebCalibrationNode(size)
+        node = WebCalibrationNode(size, dim)
     else:
-        node = OpenCVCalibrationNode(size)
+        node = OpenCVCalibrationNode(size, dim)
     rospy.spin()
 
 if __name__ == "__main__":

@@ -15,9 +15,10 @@ def cvmat_iterator(cvmat):
 
 class Calibrator:
 
-    def __init__(self, size = (8, 6)):
+    def __init__(self, size = (8, 6), dim = .108):
         self.chessboard_n_cols = size[0]
         self.chessboard_n_rows = size[1]
+        self.dim = dim
 
     def mk_object_points(self, nimages, squaresize = 1):
         num_pts = self.chessboard_n_cols * self.chessboard_n_rows
@@ -264,7 +265,7 @@ class StereoCalibrator(Calibrator):
 
         lipts = self.mk_image_points([l for (l, r) in good])
         ripts = self.mk_image_points([r for (l, r) in good])
-        opts = self.mk_object_points(len(good), .108)
+        opts = self.mk_object_points(len(good), self.dim)
         npts = self.mk_point_counts(len(good))
 
         flags = cv.CV_CALIB_FIX_ASPECT_RATIO | cv.CV_CALIB_FIX_INTRINSIC
