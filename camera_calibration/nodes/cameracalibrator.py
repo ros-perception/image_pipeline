@@ -171,7 +171,7 @@ class CalibrationNode:
 
             src = cv.Reshape(self.c.mk_image_points([corners]), 2)
 
-            cv.DrawChessboardCorners(scrib, (8, 6), [ (x/scale, y/scale) for (x, y) in cvmat_iterator(src)], True)
+            cv.DrawChessboardCorners(scrib, self.chess_size, [ (x/scale, y/scale) for (x, y) in cvmat_iterator(src)], True)
 
             # If the image is a min or max in every parameter, add to the collection
             if any(is_min) or any(is_max):
@@ -235,7 +235,7 @@ class CalibrationNode:
                     src = cv.Reshape(self.c.mk_image_points([co]), 2)
                     if self.calibrated:
                         src = udm(src)
-                    cv.DrawChessboardCorners(im, (8, 6), cvmat_iterator(src), True)
+                    cv.DrawChessboardCorners(im, self.chess_size, cvmat_iterator(src), True)
 
                 # If the image is a min or max in every parameter, add to the collection
                 if any(is_min) or any(is_max):

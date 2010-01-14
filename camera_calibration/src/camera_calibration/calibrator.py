@@ -227,8 +227,8 @@ class StereoCalibrator(Calibrator):
 
     is_mono = False
     def __init__(self, *args):
-        self.l = MonoCalibrator()
-        self.r = MonoCalibrator()
+        self.l = MonoCalibrator(*args)
+        self.r = MonoCalibrator(*args)
         Calibrator.__init__(self, *args)
 
     def goodpairs(self, limages, rimages):
