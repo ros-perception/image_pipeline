@@ -55,15 +55,15 @@ private:
   image_transport::Publisher pub_rect_;
   image_transport::Publisher pub_color_;
   image_transport::Publisher pub_rect_color_;
-  ros::Timer check_inputs_timer_;
+  ros::WallTimer check_inputs_timer_;
 
   // OK for these to be members in single-threaded case.
   image_proc::Processor processor_;
   image_geometry::PinholeCameraModel model_;
   image_proc::ImageSet processed_images_;
-  /// @todo Separate color_img_ to avoid some allocations?
   sensor_msgs::Image img_;
   int subscriber_count_;
+  ros::WallTime last_uncalibrated_error_;
 
 public:
 
@@ -80,7 +80,8 @@ public:
     pub_rect_color_ = it_.advertise("image_rect_color", 1, connect_cb, disconnect_cb);
 
     // Print a warning every minute until the camera topics are advertised
-    check_inputs_timer_ = nh_.createTimer(ros::Duration(60.0), boost::bind(&ImageProcNode::checkInputsAdvertised, this));
+    check_inputs_timer_ = nh_.createWallTimer(ros::WallDuration(60.0),
+                                              boost::bind(&ImageProcNode::checkInputsAdvertised, this));
     checkInputsAdvertised();
   }
 
@@ -103,9 +104,6 @@ public:
 
   void imageCb(const sensor_msgs::ImageConstPtr& raw_image, const sensor_msgs::CameraInfoConstPtr& cam_info)
   {
-    // Update the camera model
-    model_.fromCameraInfo(cam_info);
-
     // Compute which outputs are in demand
     int flags = 0;
     typedef image_proc::Processor Proc;
@@ -113,7 +111,27 @@ public:
     if (pub_rect_      .getNumSubscribers() > 0) flags |= Proc::RECT;
     if (pub_color_     .getNumSubscribers() > 0) flags |= Proc::COLOR;
     if (pub_rect_color_.getNumSubscribers() > 0) flags |= Proc::RECT_COLOR;
+    if (!flags) return;
 
+    // Verify camera is actually calibrated if we need to rectify
+    static const int NEED_RECT = Proc::RECT | Proc::RECT_COLOR;
+    if (cam_info->K[0] == 0.0) {
+      if (flags & NEED_RECT) {
+        // Complain every 30s
+        ros::WallTime now = ros::WallTime::now();
+        if ((now - last_uncalibrated_error_).toSec() > 30.0) {
+          ROS_ERROR("Rectified topic requested, but camera is uncalibrated.");
+          last_uncalibrated_error_ = now;
+        }
+      }
+      /// @todo Shut down rectified topics? But then what if camera is calibrated while running image_proc?
+      flags &= ~NEED_RECT;
+    }
+    else {
+      // Update the camera model
+      model_.fromCameraInfo(cam_info);
+    }
+    
     // Process raw image into colorized and/or rectified outputs
     if (!processor_.process(raw_image, model_, processed_images_, flags))
       return;
