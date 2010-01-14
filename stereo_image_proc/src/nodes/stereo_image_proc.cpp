@@ -61,11 +61,12 @@ class StereoProcNode
 private:
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
-  image_transport::SubscriberFilter image_sub_l, image_sub_r;
-  message_filters::Subscriber<sensor_msgs::CameraInfo> info_sub_l, info_sub_r;
+  image_transport::SubscriberFilter image_sub_l_, image_sub_r_;
+  message_filters::Subscriber<sensor_msgs::CameraInfo> info_sub_l_, info_sub_r_;
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo, 
 				    sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
-  
+
+  std::string left_ns_, right_ns_;
   image_transport::Publisher pub_mono_l_;
   image_transport::Publisher pub_rect_l_;
   image_transport::Publisher pub_color_l_;
@@ -92,42 +93,54 @@ public:
       subscriber_count_(0)
   {
     // Advertise outputs
-    std::string left_ns = nh_.resolveName("left");
-    pub_mono_l_       = it_.advertise(left_ns+"/image_mono", 1);
-    pub_rect_l_       = it_.advertise(left_ns+"/image_rect", 1);
-    pub_color_l_      = it_.advertise(left_ns+"/image_color", 1);
-    pub_rect_color_l_ = it_.advertise(left_ns+"/image_rect_color", 1);
+    image_transport::SubscriberStatusCallback img_connect    = boost::bind(&StereoProcNode::connectCb, this);
+    image_transport::SubscriberStatusCallback img_disconnect = boost::bind(&StereoProcNode::disconnectCb, this);
+    left_ns_ = nh_.resolveName("left");
+    pub_mono_l_       = it_.advertise(left_ns_+"/image_mono", 1, img_connect, img_disconnect);
+    pub_rect_l_       = it_.advertise(left_ns_+"/image_rect", 1, img_connect, img_disconnect);
+    pub_color_l_      = it_.advertise(left_ns_+"/image_color", 1, img_connect, img_disconnect);
+    pub_rect_color_l_ = it_.advertise(left_ns_+"/image_rect_color", 1, img_connect, img_disconnect);
 
-    std::string right_ns = nh_.resolveName("right");
-    pub_mono_r_       = it_.advertise(right_ns+"/image_mono", 1);
-    pub_rect_r_       = it_.advertise(right_ns+"/image_rect", 1);
-    pub_color_r_      = it_.advertise(right_ns+"/image_color", 1);
-    pub_rect_color_r_ = it_.advertise(right_ns+"/image_rect_color", 1);
-    
-    pub_disparity_ = nh_.advertise<stereo_msgs::DisparityImage>("disparity", 1);
-    pub_pts_ = nh_.advertise<sensor_msgs::PointCloud>("points", 1);
-    
-    // Subscribe to synchronized Image & CameraInfo topics
-    /// @todo Put these in subscription callbacks, like in image_proc
-    /// @todo Make left and right subscriptions independent. Not possible with current synch tools.
-    image_sub_l.subscribe(it_, left_ns  + "/image_raw", 1);
-    info_sub_l .subscribe(nh_, left_ns  + "/camera_info", 1);
-    image_sub_r.subscribe(it_, right_ns + "/image_raw", 1);
-    info_sub_r .subscribe(nh_, right_ns + "/camera_info", 1);
-    sync_.connectInput(image_sub_l, info_sub_l, image_sub_r, info_sub_r);
+    right_ns_ = nh_.resolveName("right");
+    pub_mono_r_       = it_.advertise(right_ns_+"/image_mono", 1, img_connect, img_disconnect);
+    pub_rect_r_       = it_.advertise(right_ns_+"/image_rect", 1, img_connect, img_disconnect);
+    pub_color_r_      = it_.advertise(right_ns_+"/image_color", 1, img_connect, img_disconnect);
+    pub_rect_color_r_ = it_.advertise(right_ns_+"/image_rect_color", 1, img_connect, img_disconnect);
+
+    ros::SubscriberStatusCallback msg_connect    = boost::bind(&StereoProcNode::connectCb, this);
+    ros::SubscriberStatusCallback msg_disconnect = boost::bind(&StereoProcNode::disconnectCb, this);
+    pub_disparity_ = nh_.advertise<stereo_msgs::DisparityImage>("disparity", 1, msg_connect, msg_disconnect);
+    pub_pts_ = nh_.advertise<sensor_msgs::PointCloud>("points", 1, msg_connect, msg_disconnect);
+
+    // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
+    sync_.connectInput(image_sub_l_, info_sub_l_, image_sub_r_, info_sub_r_);
     sync_.registerCallback(boost::bind(&StereoProcNode::imageCb, this, _1, _2, _3, _4));
-
+    
     /// @todo Print a warning every minute until the camera topics are advertised (like image_proc)
   }
 
   void connectCb()
   {
-
+    if (subscriber_count_++ == 0) {
+      ROS_DEBUG("Subscribing to camera topics");
+      /// @todo Make left and right subscriptions independent. Not easily possible with current synch tools.
+      image_sub_l_.subscribe(it_, left_ns_  + "/image_raw", 1);
+      info_sub_l_ .subscribe(nh_, left_ns_  + "/camera_info", 1);
+      image_sub_r_.subscribe(it_, right_ns_ + "/image_raw", 1);
+      info_sub_r_ .subscribe(nh_, right_ns_ + "/camera_info", 1);
+    }
   }
 
   void disconnectCb()
   {
-
+    subscriber_count_--;
+    if (subscriber_count_ == 0) {
+      ROS_DEBUG("Unsubscribing from camera topics");
+      image_sub_l_.unsubscribe();
+      info_sub_l_ .unsubscribe();
+      image_sub_r_.unsubscribe();
+      info_sub_r_ .unsubscribe();
+    }
   }
 
   void imageCb(const sensor_msgs::ImageConstPtr& raw_image_l, 
@@ -135,8 +148,6 @@ public:
 	       const sensor_msgs::ImageConstPtr& raw_image_r, 
 	       const sensor_msgs::CameraInfoConstPtr& cam_info_r)
   {
-    //ROS_INFO("In callback");
-    
     // Update the camera model
     model_.fromCameraInfo(cam_info_l, cam_info_r);
 
