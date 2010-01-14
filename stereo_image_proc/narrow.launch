@@ -1,6 +1,0 @@
-<!-- TODO: This should go in pr2_alpha -->
-<launch>
-  <node ns="narrow_stereo" name="narrow_stereo_proc" pkg="stereo_image_proc" type="stereo_image_proc" respawn="false" output="screen">
-    <param name="disparity_range" type="int" value="128"/>
-  </node>
-</launch>
