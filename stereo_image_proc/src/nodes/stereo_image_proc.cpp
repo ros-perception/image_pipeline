@@ -61,11 +61,15 @@ class StereoProcNode
 private:
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
+
+  // Subscriptions
   image_transport::SubscriberFilter image_sub_l_, image_sub_r_;
   message_filters::Subscriber<sensor_msgs::CameraInfo> info_sub_l_, info_sub_r_;
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo, 
 				    sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
+  int subscriber_count_;
 
+  // Publications
   std::string left_ns_, right_ns_;
   image_transport::Publisher pub_mono_l_;
   image_transport::Publisher pub_rect_l_;
@@ -78,13 +82,18 @@ private:
   ros::Publisher pub_disparity_;
   ros::Publisher pub_pts_;
 
-  // OK for these to be members in single-threaded case.
+  // Dynamic reconfigure
+  typedef dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig> ReconfigureServer;
+  ReconfigureServer reconfigure_server_;
+
+  // Processing state (OK for these to be members in single-threaded case)
   stereo_image_proc::StereoProcessor processor_;
   image_geometry::StereoCameraModel model_;
   stereo_image_proc::StereoImageSet processed_images_;
-  /// @todo Separate color_img_ to avoid some allocations?
   sensor_msgs::Image img_;
-  int subscriber_count_;
+
+  // Error reporting
+  ros::WallTime last_uncalibrated_error_;
 
 public:
 
@@ -115,6 +124,10 @@ public:
     // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
     sync_.connectInput(image_sub_l_, info_sub_l_, image_sub_r_, info_sub_r_);
     sync_.registerCallback(boost::bind(&StereoProcNode::imageCb, this, _1, _2, _3, _4));
+
+    // Set up dynamic reconfiguration
+    ReconfigureServer::CallbackType f = boost::bind(&StereoProcNode::configCallback, this, _1, _2);
+    reconfigure_server_.setCallback(f);
     
     /// @todo Print a warning every minute until the camera topics are advertised (like image_proc)
   }
@@ -148,9 +161,6 @@ public:
 	       const sensor_msgs::ImageConstPtr& raw_image_r, 
 	       const sensor_msgs::CameraInfoConstPtr& cam_info_r)
   {
-    // Update the camera model
-    model_.fromCameraInfo(cam_info_l, cam_info_r);
-
     // Compute which outputs are in demand
     int flags = 0;
     typedef stereo_image_proc::StereoProcessor Proc;
@@ -164,8 +174,27 @@ public:
     if (pub_rect_color_r_.getNumSubscribers() > 0) flags |= Proc::RIGHT_RECT_COLOR;
     if (pub_disparity_   .getNumSubscribers() > 0) flags |= Proc::DISPARITY;
     if (pub_pts_         .getNumSubscribers() > 0) flags |= Proc::POINT_CLOUD;
-
-    /// @todo Verify cameras are actually calibrated if rectification is needed
+    if (!flags) return;
+    
+    // Verify cameras are actually calibrated if we need to rectify
+    static const int NEED_RECT = Proc::LEFT_RECT | Proc::LEFT_RECT_COLOR | Proc::RIGHT_RECT |
+      Proc::RIGHT_RECT_COLOR | Proc::DISPARITY | Proc::POINT_CLOUD;
+    if (cam_info_l->K[0] == 0.0 || cam_info_r->K[0] == 0.0) {
+      if (flags & NEED_RECT) {
+        // Complain every 30s
+        ros::WallTime now = ros::WallTime::now();
+        if ((now - last_uncalibrated_error_).toSec() > 30.0) {
+          ROS_ERROR("Rectified or stereo topic requested, but cameras are uncalibrated.");
+          last_uncalibrated_error_ = now;
+        }
+      }
+      flags &= ~NEED_RECT;
+      if (!flags) return;
+    }
+    else {
+      // Update the camera model
+      model_.fromCameraInfo(cam_info_l, cam_info_r);
+    }
 
     // Process raw images into colorized/rectified/stereo outputs.
     if (!processor_.process(raw_image_l, raw_image_r, model_, processed_images_, flags))
@@ -250,12 +279,6 @@ int main(int argc, char **argv)
 
   // Start stereo processor
   StereoProcNode proc;
-
-  // Set up dynamic reconfiguration
-  dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig> srv;
-  dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig>::CallbackType f = 
-    boost::bind(&StereoProcNode::configCallback, &proc, _1, _2);
-  srv.setCallback(f);
 
   ros::spin();
   return 0;
