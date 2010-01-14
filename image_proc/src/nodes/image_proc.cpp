@@ -50,19 +50,25 @@ class ImageProcNode
 private:
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
+
+  // Subscriptions
   image_transport::CameraSubscriber cam_sub_;
+  int subscriber_count_;
+
+  // Publications
   image_transport::Publisher pub_mono_;
   image_transport::Publisher pub_rect_;
   image_transport::Publisher pub_color_;
   image_transport::Publisher pub_rect_color_;
-  ros::WallTimer check_inputs_timer_;
 
-  // OK for these to be members in single-threaded case.
+  // Processing state (OK for these to be members in single-threaded case)
   image_proc::Processor processor_;
   image_geometry::PinholeCameraModel model_;
   image_proc::ImageSet processed_images_;
   sensor_msgs::Image img_;
-  int subscriber_count_;
+
+  // Error reporting
+  ros::WallTimer check_inputs_timer_;
   ros::WallTime last_uncalibrated_error_;
 
 public:
@@ -124,8 +130,8 @@ public:
           last_uncalibrated_error_ = now;
         }
       }
-      /// @todo Shut down rectified topics? But then what if camera is calibrated while running image_proc?
       flags &= ~NEED_RECT;
+      if (!flags) return;
     }
     else {
       // Update the camera model
