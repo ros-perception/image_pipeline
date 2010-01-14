@@ -1,7 +1,7 @@
 #include "stereo_image_proc/processor.h"
 #include "stereo_image_proc/stereolib.h"
 #include <sensor_msgs/image_encodings.h>
-#include <boost/math/special_functions/fpclassify.hpp>
+#include <cmath>
 
 namespace stereo_image_proc {
 
@@ -92,7 +92,7 @@ inline bool isValidPoint(const cv::Vec3f& pt)
 {
   // Check both for disparities explicitly marked as invalid (where OpenCV maps pt.z to MISSING_Z)
   // and zero disparities (point mapped to infinity).
-  return pt[2] != image_geometry::StereoCameraModel::MISSING_Z && !(boost::math::isinf)(pt[2]);
+  return pt[2] != image_geometry::StereoCameraModel::MISSING_Z && !std::isinf(pt[2]);
 }
 
 void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity,
