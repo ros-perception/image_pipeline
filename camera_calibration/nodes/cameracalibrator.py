@@ -100,11 +100,17 @@ class CalibrationNode:
         Deal with bayer images by converting to color, then to monochrome.
         """
         if 'bayer' in msg.encoding:
+            converter = {
+                "bayer_rggb8" : cv.CV_BayerBG2BGR,
+                "bayer_bggr8" : cv.CV_BayerRG2BGR,
+                "bayer_gbrg8" : cv.CV_BayerGR2BGR,
+                "bayer_grbg8" : cv.CV_BayerGB2BGR }[msg.encoding]
             msg.encoding = "mono8"
             raw = self.br.imgmsg_to_cv(msg)
             rgb = cv.CreateMat(raw.rows, raw.cols, cv.CV_8UC3)
             mono = cv.CreateMat(raw.rows, raw.cols, cv.CV_8UC1)
-            cv.CvtColor(raw, rgb, cv.CV_BayerRG2BGR)
+
+            cv.CvtColor(raw, rgb, converter)
             cv.CvtColor(rgb, mono, cv.CV_BGR2GRAY)
             cv.CvtColor(mono, rgb, cv.CV_GRAY2BGR)
         else:
@@ -141,6 +147,7 @@ class CalibrationNode:
             cv.Resize(rgb, scrib)
         else:
             scrib = cv.CloneMat(rgb)
+        self.displaywidth = scrib.cols
 
         (ok, corners) = self.c.get_corners(rgb, refine = False)
         if ok:
@@ -200,6 +207,7 @@ class CalibrationNode:
         else:
             lscrib = cv.CloneMat(lrgb)
             rscrib = cv.CloneMat(rrgb)
+        self.displaywidth = lscrib.cols + rscrib.cols
 
         (lok, lcorners) = self.c.get_corners(lrgb, refine = True)
         if lok:
@@ -358,6 +366,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         k = cv.WaitKey(6)
         if k == ord('q'):
             rospy.signal_shutdown('Quit')
+        return k
 
     def on_scale(self, scalevalue):
         self.set_scale(scalevalue / 100.0)
@@ -375,10 +384,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         cv.PutText(dst, label, ((size[0] - w) / 2, (size[1] + h) / 2), self.font, (255,255,255))
 
     def buttons(self, display):
-        if self.c.is_mono:
-            x = self.width
-        else:
-            x = 2 * self.width
+        x = self.displaywidth
         self.button(cv.GetSubRect(display, (x,180,100,100)), "CALIBRATE", self.goodenough)
         self.button(cv.GetSubRect(display, (x,280,100,100)), "SAVE", self.calibrated)
         self.button(cv.GetSubRect(display, (x,380,100,100)), "UPLOAD", self.calibrated)
@@ -386,6 +392,12 @@ class OpenCVCalibrationNode(CalibrationNode):
     def y(self, i):
         return 30 + 50 * i
         
+    def screendump(self, im):
+        i = 0
+        while os.access("/tmp/dump%d.png" % i, os.R_OK):
+            i += 1
+        cv.SaveImage("/tmp/dump%d.png" % i, im)
+
     def redraw_monocular(self, scrib, _):
         width, height = cv.GetSize(scrib)
 
@@ -415,8 +427,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         else:
             cv.PutText(display, "acc.", (width, self.y(0)), self.font, (0,0,0))
 
-        cv.ShowImage("display", display)
-        self.waitkey()
+        self.show(display)
 
     def redraw_stereo(self, lscrib, rscrib, lrgb, rrgb):
         display = cv.CreateMat(self.height, 2 * self.width + 100, cv.CV_8UC3)
@@ -456,8 +467,12 @@ class OpenCVCalibrationNode(CalibrationNode):
                 dim = self.c.chessboard_size(lrgb, rrgb)
                 cv.PutText(display, "%.3f" % dim, (2 * self.width, self.y(3)), self.font, (0,0,0))
 
-        cv.ShowImage("display", display)
-        self.waitkey()
+        self.show(display)
+
+    def show(self, im):
+        cv.ShowImage("display", im)
+        if self.waitkey() == ord('s'):
+            self.screendump(im)
 
 def main():
     from optparse import OptionParser
