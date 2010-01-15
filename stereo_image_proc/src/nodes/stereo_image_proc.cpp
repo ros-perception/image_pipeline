@@ -151,7 +151,7 @@ public:
   void connectCb()
   {
     if (subscriber_count_++ == 0) {
-      ROS_DEBUG("Subscribing to camera topics");
+      ROS_DEBUG("[stereo_image_proc] Subscribing to camera topics");
       /// @todo Make left and right subscriptions independent. Not easily possible with current synch tools.
       image_sub_l_.subscribe(it_, left_ns_  + "/image_raw", 1);
       info_sub_l_ .subscribe(nh_, left_ns_  + "/camera_info", 1);
@@ -164,7 +164,7 @@ public:
   {
     subscriber_count_--;
     if (subscriber_count_ == 0) {
-      ROS_DEBUG("Unsubscribing from camera topics");
+      ROS_DEBUG("[stereo_image_proc] Unsubscribing from camera topics");
       image_sub_l_.unsubscribe();
       info_sub_l_ .unsubscribe();
       image_sub_r_.unsubscribe();
@@ -200,7 +200,7 @@ public:
         // Complain every 30s
         ros::WallTime now = ros::WallTime::now();
         if ((now - last_uncalibrated_error_).toSec() > 30.0) {
-          ROS_ERROR("Rectified or stereo topic requested, but cameras are uncalibrated.");
+          ROS_ERROR("[stereo_image_proc] Rectified or stereo topic requested, but cameras are uncalibrated.");
           last_uncalibrated_error_ = now;
         }
       }
@@ -260,7 +260,11 @@ public:
   {
     int threshold = 3 * both_received_;
     if (left_received_ > threshold || right_received_ > threshold) {
-      ROS_WARN("Received %d left camera images and %d right camera images, but %d synchronized pairs. Possible issues:\n"
+      ROS_WARN("[stereo_image_proc] Low number of synchronized left/right image pairs received.\n"
+               "Left images received: %d\n"
+               "Right images received: %d\n"
+               "Synchronized pairs: %d\n"
+               "Possible issues:\n"
                "\t* The cameras are not synchronized.\n"
                "\t* The network is too slow. For each synchronized image pair, at most 1 is getting through.",
                left_received_, right_received_, both_received_);
@@ -269,7 +273,7 @@ public:
 
   void configCallback(stereo_image_proc::StereoImageProcConfig &config, uint32_t level)
   {
-    ROS_INFO("Reconfigure request received");
+    ROS_INFO("[stereo_image_proc] Reconfigure request received");
 
     config.prefilter_size |= 0x1; // must be odd
     processor_.setPreFilterSize(config.prefilter_size);
