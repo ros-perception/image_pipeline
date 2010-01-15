@@ -94,7 +94,7 @@ public:
   void connectCb(const image_transport::SingleSubscriberPublisher& ssp)
   {
     if (subscriber_count_++ == 0) {
-      ROS_DEBUG("Subscribing to camera topics");
+      ROS_DEBUG("[image_proc] Subscribing to camera topics");
       cam_sub_ = it_.subscribeCamera("image_raw", 3, &ImageProcNode::imageCb, this);
     }
   }
@@ -103,7 +103,7 @@ public:
   {
     subscriber_count_--;
     if (subscriber_count_ == 0) {
-      ROS_DEBUG("Unsubscribing from camera topics");
+      ROS_DEBUG("[image_proc] Unsubscribing from camera topics");
       cam_sub_.shutdown();
     }
   }
@@ -126,7 +126,7 @@ public:
         // Complain every 30s
         ros::WallTime now = ros::WallTime::now();
         if ((now - last_uncalibrated_error_).toSec() > 30.0) {
-          ROS_ERROR("Rectified topic requested, but camera is uncalibrated.");
+          ROS_ERROR("[image_proc] Rectified topic requested, but camera is uncalibrated.");
           last_uncalibrated_error_ = now;
         }
       }
@@ -178,9 +178,9 @@ public:
       }
     }
     if (!have_image)
-      ROS_WARN("The camera image topic [%s] does not appear to be published yet.", image_topic.c_str());
+      ROS_WARN("[image_proc] The camera image topic [%s] does not appear to be published yet.", image_topic.c_str());
     if (!have_info)
-      ROS_WARN("The camera info topic [%s] does not appear to be published yet.", info_topic.c_str());
+      ROS_WARN("[image_proc] The camera info topic [%s] does not appear to be published yet.", info_topic.c_str());
   }
 };
 
