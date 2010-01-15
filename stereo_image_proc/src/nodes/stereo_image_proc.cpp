@@ -244,14 +244,17 @@ public:
   {
     ROS_INFO("Reconfigure request received");
 
+    config.prefilter_size |= 0x1; // must be odd
     processor_.setPreFilterSize(config.prefilter_size);
     processor_.setPreFilterCap(config.prefilter_cap);
 
+    config.correlation_window_size |= 0x1; // must be odd
     processor_.setCorrelationWindowSize(config.correlation_window_size);
     processor_.setMinDisparity(config.min_disparity);
+    config.disparity_range = (config.disparity_range / 16) * 16; // must be multiple of 16
     processor_.setDisparityRange(config.disparity_range);
 
-    processor_.setUniquenessRatio(config.uniqueness_ratio);
+    processor_.setUniquenessRatio((int)(config.uniqueness_ratio + 0.5));
     processor_.setTextureThreshold(config.texture_threshold);
     processor_.setSpeckleSize(config.speckle_size);
     processor_.setSpeckleRange(config.speckle_range);
