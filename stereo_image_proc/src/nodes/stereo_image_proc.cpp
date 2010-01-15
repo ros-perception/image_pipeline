@@ -51,6 +51,11 @@
 
 #include "stereo_image_proc/processor.h"
 
+void increment(int* value)
+{
+  ++(*value);
+}
+
 //
 // Subscribes to two Image/CameraInfo topics, and performs rectification,
 //   color processing, and stereo disparity on the images
@@ -93,13 +98,17 @@ private:
   sensor_msgs::Image img_;
 
   // Error reporting
+  //ros::WallTimer check_inputs_timer_;
   ros::WallTime last_uncalibrated_error_;
+  ros::WallTimer check_synced_timer_;
+  int left_received_, right_received_, both_received_;
 
 public:
 
   StereoProcNode()
     : it_(nh_), sync_(3),
-      subscriber_count_(0)
+      subscriber_count_(0),
+      left_received_(0), right_received_(0), both_received_(0)
   {
     // Advertise outputs
     image_transport::SubscriberStatusCallback img_connect    = boost::bind(&StereoProcNode::connectCb, this);
@@ -128,6 +137,13 @@ public:
     // Set up dynamic reconfiguration
     ReconfigureServer::CallbackType f = boost::bind(&StereoProcNode::configCallback, this, _1, _2);
     reconfigure_server_.setCallback(f);
+
+    // Complain every 30s if it appears that the image topics are not synchronized
+    image_sub_l_.registerCallback(boost::bind(increment, &left_received_));
+    image_sub_r_.registerCallback(boost::bind(increment, &right_received_));
+    sync_.registerCallback(boost::bind(increment, &both_received_));
+    check_synced_timer_ = nh_.createWallTimer(ros::WallDuration(30.0),
+                                              boost::bind(&StereoProcNode::checkImagesSynchronized, this));
     
     /// @todo Print a warning every minute until the camera topics are advertised (like image_proc)
   }
@@ -238,6 +254,17 @@ public:
   {
     fillImage(img_, encoding, image.rows, image.cols, image.step, const_cast<uint8_t*>(image.data));
     pub.publish(img_);
+  }
+
+  void checkImagesSynchronized()
+  {
+    int threshold = 3 * both_received_;
+    if (left_received_ > threshold || right_received_ > threshold) {
+      ROS_WARN("Received %d left camera images and %d right camera images, but %d synchronized pairs. Possible issues:\n"
+               "\t* The cameras are not synchronized.\n"
+               "\t* The network is too slow. For each synchronized image pair, at most 1 is getting through.",
+               left_received_, right_received_, both_received_);
+    }
   }
 
   void configCallback(stereo_image_proc::StereoImageProcConfig &config, uint32_t level)
