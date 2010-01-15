@@ -310,6 +310,11 @@ static unsigned char colormap[768] =
     255,  0, 0,
   };
 
+void increment(int* value)
+{
+  ++(*value);
+}
+
 class StereoView
 {
 private:
@@ -325,11 +330,15 @@ private:
   boost::mutex image_mutex_;
   
   boost::format filename_format_;
-  int count_;
+  int save_count_;
+
+  ros::WallTimer check_synced_timer_;
+  int left_received_, right_received_, disp_received_, all_received_;
 
 public:
   StereoView(ros::NodeHandle& nh)
-    : it_(nh), sync_(3), filename_format_(""), count_(0)
+    : it_(nh), sync_(3), filename_format_(""), save_count_(0),
+      left_received_(0), right_received_(0), disp_received_(0), all_received_(0)
   {
     ros::NodeHandle local_nh("~");
     bool autosize;
@@ -347,14 +356,24 @@ public:
     cvStartWindowThread();
 
     std::string stereo_ns = nh.resolveName("stereo");
-    std::string left_topic = stereo_ns + "/left/" + nh.resolveName("image");
-    std::string right_topic = stereo_ns + "/right/" + nh.resolveName("image");
-    std::string disparity_topic = stereo_ns + "/disparity";
+    std::string left_topic = ros::names::clean(stereo_ns + "/left/" + nh.resolveName("image"));
+    std::string right_topic = ros::names::clean(stereo_ns + "/right/" + nh.resolveName("image"));
+    std::string disparity_topic = ros::names::clean(stereo_ns + "/disparity");
+    ROS_INFO("Subscribing to:\n\t* %s\n\t* %s\n\t* %s", left_topic.c_str(), right_topic.c_str(),
+             disparity_topic.c_str());
     left_sub_.subscribe(it_, left_topic, 3);
     right_sub_.subscribe(it_, right_topic, 3);
     disparity_sub_.subscribe(nh, disparity_topic, 3);
     sync_.connectInput(left_sub_, right_sub_, disparity_sub_);
     sync_.registerCallback(boost::bind(&StereoView::imageCB, this, _1, _2, _3));
+
+    // Complain every 30s if the topics appear unsynchronized
+    left_sub_.registerCallback(boost::bind(increment, &left_received_));
+    right_sub_.registerCallback(boost::bind(increment, &right_received_));
+    disparity_sub_.registerCallback(boost::bind(increment, &disp_received_));
+    sync_.registerCallback(boost::bind(increment, &all_received_));
+    check_synced_timer_ = nh.createWallTimer(ros::WallDuration(30.0),
+                                             boost::bind(&StereoView::checkInputsSynchronized, this));
   }
 
   ~StereoView()
@@ -375,7 +394,7 @@ public:
     else if (bridge.fromImage(img, enc::BGR8))
       cvShowImage(window, bridge.toIpl());
     else
-      ROS_ERROR("Unable to convert %s image to bgr8", img.encoding.c_str());
+      ROS_ERROR("[stereo_view] Unable to convert %s image to bgr8", img.encoding.c_str());
   }
 
   void imageCB(const sensor_msgs::ImageConstPtr& left, const sensor_msgs::ImageConstPtr& right,
@@ -420,11 +439,11 @@ public:
   void saveImage(const char* prefix, const IplImage* image)
   {
     if (image) {
-      std::string filename = (filename_format_ % prefix % count_).str();
+      std::string filename = (filename_format_ % prefix % save_count_).str();
       cvSaveImage(filename.c_str(), image);
-      ROS_INFO("Saved image %s", filename.c_str());
+      ROS_INFO("[stereo_view] Saved image %s", filename.c_str());
     } else {
-      ROS_WARN("Couldn't save image, no data!");
+      ROS_WARN("[stereo_view] Couldn't save image, no data!");
     }
   }
   
@@ -438,7 +457,24 @@ public:
 
     sv->saveImage("left", sv->left_bridge_.toIpl());
     sv->saveImage("right", sv->right_bridge_.toIpl());
-    sv->count_++;
+    sv->save_count_++;
+  }
+
+  void checkInputsSynchronized()
+  {
+    int threshold = 3 * all_received_;
+    if (left_received_ > threshold || right_received_ > threshold || disp_received_ > threshold) {
+      ROS_WARN("[stereo_view] Low number of synchronized left/right/disparity triplets received.\n"
+               "Left images received: %d\n"
+               "Right images received: %d\n"
+               "Disparity images received: %d\n"
+               "Synchronized triplets: %d\n"
+               "Possible issues:\n"
+               "\t* stereo_image_proc is not running.\n"
+               "\t* The cameras are not synchronized.\n"
+               "\t* The network is too slow. One or more images are dropped from each triplet.",
+               left_received_, right_received_, disp_received_, all_received_);
+    }
   }
 };
 
@@ -446,9 +482,14 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "stereo_view", ros::init_options::AnonymousName);
   ros::NodeHandle nh;
-  if (nh.resolveName("stereo") == "/stereo") {
-    ROS_WARN("stereo_view: stereo has not been remapped! Example command-line usage:\n"
+  if (ros::names::remap("stereo") == "stereo") {
+    ROS_WARN("[stereo_view] stereo has not been remapped! Example command-line usage:\n"
              "\t$ rosrun image_view stereo_view stereo:=narrow_stereo image:=image_color");
+  }
+  if (ros::names::remap("image") == "/image_raw") {
+    ROS_WARN("[stereo_view] There is a delay between when the camera drivers publish the raw "
+             "images and when stereo_image_proc publishes the computed point cloud. stereo_view "
+             "may fail to synchronize these topics.");
   }
   
   StereoView view(nh);
