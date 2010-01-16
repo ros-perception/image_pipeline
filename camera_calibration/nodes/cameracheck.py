@@ -56,22 +56,31 @@ class CameraCheckerNode:
         self.chess_size = chess_size
         self.dim = dim
 
+        image_topic = rospy.resolve_name("monocular") + "/" + rospy.resolve_name("image")
+        camera_topic = rospy.resolve_name("monocular") + "/" + "camera_info"
+
+        tosync_mono = [
+            (image_topic, sensor_msgs.msg.Image),
+            (camera_topic, sensor_msgs.msg.CameraInfo),
+        ]
+
+        tsm = message_filters.TimeSynchronizer([message_filters.Subscriber(topic, type) for (topic, type) in tosync_mono], 10)
+        tsm.registerCallback(self.queue_monocular)
+
         left_topic = rospy.resolve_name("stereo") + "/left/" + rospy.resolve_name("image")
         left_camera_topic = rospy.resolve_name("stereo") + "/left/" + "camera_info"
         right_topic = rospy.resolve_name("stereo") + "/right/" + rospy.resolve_name("image")
         right_camera_topic = rospy.resolve_name("stereo") + "/right/" + "camera_info"
                  
-        tosync = [
+        tosync_stereo = [
             (left_topic, sensor_msgs.msg.Image),
             (left_camera_topic, sensor_msgs.msg.CameraInfo),
             (right_topic, sensor_msgs.msg.Image),
             (right_camera_topic, sensor_msgs.msg.CameraInfo)
         ]
 
-        ts = message_filters.TimeSynchronizer([message_filters.Subscriber(topic, type) for (topic, type) in tosync], 10)
-        ts.registerCallback(self.queue_stereo)
-
-        rospy.Subscriber('image', sensor_msgs.msg.Image, self.queue_monocular)
+        tss = message_filters.TimeSynchronizer([message_filters.Subscriber(topic, type) for (topic, type) in tosync_stereo], 10)
+        tss.registerCallback(self.queue_stereo)
 
         self.br = cv_bridge.CvBridge()
 
@@ -87,10 +96,9 @@ class CameraCheckerNode:
         sth.start()
 
         self.mc = MonoCalibrator(self.chess_size)
-        self.sc = StereoCalibrator(self.chess_size)
 
-    def queue_monocular(self, msg):
-        self.q_mono.put(msg)
+    def queue_monocular(self, msg, cmsg):
+        self.q_mono.put((msg, cmsg))
 
     def queue_stereo(self, lmsg, lcmsg, rmsg, rcmsg):
         self.q_stereo.put((lmsg, lcmsg, rmsg, rcmsg))
@@ -98,9 +106,32 @@ class CameraCheckerNode:
     def mkgray(self, msg):
         return self.br.imgmsg_to_cv(msg, "bgr8")
 
+    def image_corners(self, im):
+        (ok, corners) = self.mc.get_corners(im)
+        if ok:
+            return list(cvmat_iterator(cv.Reshape(self.mc.mk_image_points([corners]), 2)))
+        else:
+            return None
+
     def handle_monocular(self, msg):
 
-        rgb = self.mkgray(msg)
+        def pt2line(x0, y0, x1, y1, x2, y2):
+            """ point is (x0, y0), line is (x1, y1, x2, y2) """
+            return abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) / math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        (image, camera) = msg
+        rgb = self.mkgray(image)
+        C = self.image_corners(rgb)
+        if C:
+            cc = self.mc.chessboard_n_cols
+            cr = self.mc.chessboard_n_rows
+            errors = []
+            for r in range(cr):
+                (x1, y1) = C[(cc * r) + 0]
+                (x2, y2) = C[(cc * r) + cc - 1]
+                for i in range(1, cc - 1):
+                    (x0, y0) = C[(cc * r) + i]
+                    errors.append(pt2line(x0, y0, x1, y1, x2, y2))
+            print "error", math.sqrt(sum([e**2 for e in errors]) / len(errors)), "pixels"
 
     def handle_stereo(self, msg):
 
@@ -110,19 +141,8 @@ class CameraCheckerNode:
 
         sc = StereoCalibrator(self.chess_size)
 
-        cv.NamedWindow("left")
-        cv.ShowImage("left", lrgb)
-        cv.WaitKey(6)
-
-        def image_corners(im):
-            (ok, corners) = self.mc.get_corners(im)
-            if ok:
-                return list(cvmat_iterator(cv.Reshape(self.mc.mk_image_points([corners]), 2)))
-            else:
-                return None
-
-        L = image_corners(lrgb)
-        R = image_corners(rrgb)
+        L = self.image_corners(lrgb)
+        R = self.image_corners(rrgb)
         scm = image_geometry.StereoCameraModel()
         scm.fromCameraInfo(lcmsg, rcmsg)
         if L and R:
