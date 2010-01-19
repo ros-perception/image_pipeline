@@ -8,7 +8,6 @@
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lstereo_image_proc" />
   </export>
   <depend package="roscpp"/>
-  <depend package="diagnostic_updater"/>
   <depend package="message_filters"/>
   <depend package="opencv2"/>
   <depend package="cv_bridge"/>
