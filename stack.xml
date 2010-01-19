@@ -9,7 +9,6 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/image_pipeline</url>
   <depend stack="common_msgs" /> <!-- sensor_msgs, geometry_msgs -->
-  <depend stack="diagnostics" /> <!-- diagnostic_updater -->
   <depend stack="driver_common" /> <!-- dynamic_reconfigure -->
   <depend stack="image_common" /> <!-- image_transport, camera_calibration_parsers -->
   <depend stack="ros" /> <!-- rospy, std_srvs, roscpp, message_filters, rosbagmigration -->
