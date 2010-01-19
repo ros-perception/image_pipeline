@@ -6,7 +6,7 @@
   </description>
   <author>Maintained by Patrick Mihelich/mihelich@willowgarage.com</author>
   <license>BSD</license>  
-  <review status="unreviewed" notes=""/>
+  <review status="Doc reviewed" notes="Jan 18, 2010"/>
   <url>http://ros.org/wiki/image_pipeline</url>
   <depend stack="common_msgs" /> <!-- sensor_msgs, geometry_msgs -->
   <depend stack="driver_common" /> <!-- dynamic_reconfigure -->
