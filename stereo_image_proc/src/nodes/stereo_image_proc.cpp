@@ -51,6 +51,11 @@
 
 #include "stereo_image_proc/processor.h"
 
+void increment(int* value)
+{
+  ++(*value);
+}
+
 //
 // Subscribes to two Image/CameraInfo topics, and performs rectification,
 //   color processing, and stereo disparity on the images
@@ -61,11 +66,16 @@ class StereoProcNode
 private:
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
-  image_transport::SubscriberFilter image_sub_l, image_sub_r;
-  message_filters::Subscriber<sensor_msgs::CameraInfo> info_sub_l, info_sub_r;
+
+  // Subscriptions
+  image_transport::SubscriberFilter image_sub_l_, image_sub_r_;
+  message_filters::Subscriber<sensor_msgs::CameraInfo> info_sub_l_, info_sub_r_;
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo, 
 				    sensor_msgs::Image, sensor_msgs::CameraInfo> sync_;
-  
+  int subscriber_count_;
+
+  // Publications
+  std::string left_ns_, right_ns_;
   image_transport::Publisher pub_mono_l_;
   image_transport::Publisher pub_rect_l_;
   image_transport::Publisher pub_color_l_;
@@ -77,57 +87,89 @@ private:
   ros::Publisher pub_disparity_;
   ros::Publisher pub_pts_;
 
-  // OK for these to be members in single-threaded case.
+  // Dynamic reconfigure
+  typedef dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig> ReconfigureServer;
+  ReconfigureServer reconfigure_server_;
+
+  // Processing state (OK for these to be members in single-threaded case)
   stereo_image_proc::StereoProcessor processor_;
   image_geometry::StereoCameraModel model_;
   stereo_image_proc::StereoImageSet processed_images_;
-  /// @todo Separate color_img_ to avoid some allocations?
   sensor_msgs::Image img_;
-  int subscriber_count_;
+
+  // Error reporting
+  //ros::WallTimer check_inputs_timer_;
+  ros::WallTime last_uncalibrated_error_;
+  ros::WallTimer check_synced_timer_;
+  int left_received_, right_received_, both_received_;
 
 public:
 
   StereoProcNode()
     : it_(nh_), sync_(3),
-      subscriber_count_(0)
+      subscriber_count_(0),
+      left_received_(0), right_received_(0), both_received_(0)
   {
     // Advertise outputs
-    std::string left_ns = nh_.resolveName("left");
-    pub_mono_l_       = it_.advertise(left_ns+"/image_mono", 1);
-    pub_rect_l_       = it_.advertise(left_ns+"/image_rect", 1);
-    pub_color_l_      = it_.advertise(left_ns+"/image_color", 1);
-    pub_rect_color_l_ = it_.advertise(left_ns+"/image_rect_color", 1);
+    image_transport::SubscriberStatusCallback img_connect    = boost::bind(&StereoProcNode::connectCb, this);
+    image_transport::SubscriberStatusCallback img_disconnect = boost::bind(&StereoProcNode::disconnectCb, this);
+    left_ns_ = nh_.resolveName("left");
+    pub_mono_l_       = it_.advertise(left_ns_+"/image_mono", 1, img_connect, img_disconnect);
+    pub_rect_l_       = it_.advertise(left_ns_+"/image_rect", 1, img_connect, img_disconnect);
+    pub_color_l_      = it_.advertise(left_ns_+"/image_color", 1, img_connect, img_disconnect);
+    pub_rect_color_l_ = it_.advertise(left_ns_+"/image_rect_color", 1, img_connect, img_disconnect);
 
-    std::string right_ns = nh_.resolveName("right");
-    pub_mono_r_       = it_.advertise(right_ns+"/image_mono", 1);
-    pub_rect_r_       = it_.advertise(right_ns+"/image_rect", 1);
-    pub_color_r_      = it_.advertise(right_ns+"/image_color", 1);
-    pub_rect_color_r_ = it_.advertise(right_ns+"/image_rect_color", 1);
-    
-    pub_disparity_ = nh_.advertise<stereo_msgs::DisparityImage>("disparity", 1);
-    pub_pts_ = nh_.advertise<sensor_msgs::PointCloud>("points", 1);
-    
-    // Subscribe to synchronized Image & CameraInfo topics
-    /// @todo Put these in subscription callbacks, like in image_proc
-    /// @todo Make left and right subscriptions independent. Not possible with current synch tools.
-    image_sub_l.subscribe(it_, left_ns  + "/image_raw", 1);
-    info_sub_l .subscribe(nh_, left_ns  + "/camera_info", 1);
-    image_sub_r.subscribe(it_, right_ns + "/image_raw", 1);
-    info_sub_r .subscribe(nh_, right_ns + "/camera_info", 1);
-    sync_.connectInput(image_sub_l, info_sub_l, image_sub_r, info_sub_r);
+    right_ns_ = nh_.resolveName("right");
+    pub_mono_r_       = it_.advertise(right_ns_+"/image_mono", 1, img_connect, img_disconnect);
+    pub_rect_r_       = it_.advertise(right_ns_+"/image_rect", 1, img_connect, img_disconnect);
+    pub_color_r_      = it_.advertise(right_ns_+"/image_color", 1, img_connect, img_disconnect);
+    pub_rect_color_r_ = it_.advertise(right_ns_+"/image_rect_color", 1, img_connect, img_disconnect);
+
+    ros::SubscriberStatusCallback msg_connect    = boost::bind(&StereoProcNode::connectCb, this);
+    ros::SubscriberStatusCallback msg_disconnect = boost::bind(&StereoProcNode::disconnectCb, this);
+    pub_disparity_ = nh_.advertise<stereo_msgs::DisparityImage>("disparity", 1, msg_connect, msg_disconnect);
+    pub_pts_ = nh_.advertise<sensor_msgs::PointCloud>("points", 1, msg_connect, msg_disconnect);
+
+    // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
+    sync_.connectInput(image_sub_l_, info_sub_l_, image_sub_r_, info_sub_r_);
     sync_.registerCallback(boost::bind(&StereoProcNode::imageCb, this, _1, _2, _3, _4));
 
+    // Set up dynamic reconfiguration
+    ReconfigureServer::CallbackType f = boost::bind(&StereoProcNode::configCallback, this, _1, _2);
+    reconfigure_server_.setCallback(f);
+
+    // Complain every 30s if it appears that the image topics are not synchronized
+    image_sub_l_.registerCallback(boost::bind(increment, &left_received_));
+    image_sub_r_.registerCallback(boost::bind(increment, &right_received_));
+    sync_.registerCallback(boost::bind(increment, &both_received_));
+    check_synced_timer_ = nh_.createWallTimer(ros::WallDuration(30.0),
+                                              boost::bind(&StereoProcNode::checkImagesSynchronized, this));
+    
     /// @todo Print a warning every minute until the camera topics are advertised (like image_proc)
   }
 
   void connectCb()
   {
-
+    if (subscriber_count_++ == 0) {
+      ROS_DEBUG("[stereo_image_proc] Subscribing to camera topics");
+      /// @todo Make left and right subscriptions independent. Not easily possible with current synch tools.
+      image_sub_l_.subscribe(it_, left_ns_  + "/image_raw", 1);
+      info_sub_l_ .subscribe(nh_, left_ns_  + "/camera_info", 1);
+      image_sub_r_.subscribe(it_, right_ns_ + "/image_raw", 1);
+      info_sub_r_ .subscribe(nh_, right_ns_ + "/camera_info", 1);
+    }
   }
 
   void disconnectCb()
   {
-
+    subscriber_count_--;
+    if (subscriber_count_ == 0) {
+      ROS_DEBUG("[stereo_image_proc] Unsubscribing from camera topics");
+      image_sub_l_.unsubscribe();
+      info_sub_l_ .unsubscribe();
+      image_sub_r_.unsubscribe();
+      info_sub_r_ .unsubscribe();
+    }
   }
 
   void imageCb(const sensor_msgs::ImageConstPtr& raw_image_l, 
@@ -135,11 +177,6 @@ public:
 	       const sensor_msgs::ImageConstPtr& raw_image_r, 
 	       const sensor_msgs::CameraInfoConstPtr& cam_info_r)
   {
-    //ROS_INFO("In callback");
-    
-    // Update the camera model
-    model_.fromCameraInfo(cam_info_l, cam_info_r);
-
     // Compute which outputs are in demand
     int flags = 0;
     typedef stereo_image_proc::StereoProcessor Proc;
@@ -153,8 +190,27 @@ public:
     if (pub_rect_color_r_.getNumSubscribers() > 0) flags |= Proc::RIGHT_RECT_COLOR;
     if (pub_disparity_   .getNumSubscribers() > 0) flags |= Proc::DISPARITY;
     if (pub_pts_         .getNumSubscribers() > 0) flags |= Proc::POINT_CLOUD;
-
-    /// @todo Verify cameras are actually calibrated if rectification is needed
+    if (!flags) return;
+    
+    // Verify cameras are actually calibrated if we need to rectify
+    static const int NEED_RECT = Proc::LEFT_RECT | Proc::LEFT_RECT_COLOR | Proc::RIGHT_RECT |
+      Proc::RIGHT_RECT_COLOR | Proc::DISPARITY | Proc::POINT_CLOUD;
+    if (cam_info_l->K[0] == 0.0 || cam_info_r->K[0] == 0.0) {
+      if (flags & NEED_RECT) {
+        // Complain every 30s
+        ros::WallTime now = ros::WallTime::now();
+        if ((now - last_uncalibrated_error_).toSec() > 30.0) {
+          ROS_ERROR("[stereo_image_proc] Rectified or stereo topic requested, but cameras are uncalibrated.");
+          last_uncalibrated_error_ = now;
+        }
+      }
+      flags &= ~NEED_RECT;
+      if (!flags) return;
+    }
+    else {
+      // Update the camera model
+      model_.fromCameraInfo(cam_info_l, cam_info_r);
+    }
 
     // Process raw images into colorized/rectified/stereo outputs.
     if (!processor_.process(raw_image_l, raw_image_r, model_, processed_images_, flags))
@@ -200,18 +256,36 @@ public:
     pub.publish(img_);
   }
 
+  void checkImagesSynchronized()
+  {
+    int threshold = 3 * both_received_;
+    if (left_received_ > threshold || right_received_ > threshold) {
+      ROS_WARN("[stereo_image_proc] Low number of synchronized left/right image pairs received.\n"
+               "Left images received: %d\n"
+               "Right images received: %d\n"
+               "Synchronized pairs: %d\n"
+               "Possible issues:\n"
+               "\t* The cameras are not synchronized.\n"
+               "\t* The network is too slow. For each synchronized image pair, at most 1 is getting through.",
+               left_received_, right_received_, both_received_);
+    }
+  }
+
   void configCallback(stereo_image_proc::StereoImageProcConfig &config, uint32_t level)
   {
-    ROS_INFO("Reconfigure request received");
+    ROS_INFO("[stereo_image_proc] Reconfigure request received");
 
+    config.prefilter_size |= 0x1; // must be odd
     processor_.setPreFilterSize(config.prefilter_size);
     processor_.setPreFilterCap(config.prefilter_cap);
 
+    config.correlation_window_size |= 0x1; // must be odd
     processor_.setCorrelationWindowSize(config.correlation_window_size);
     processor_.setMinDisparity(config.min_disparity);
+    config.disparity_range = (config.disparity_range / 16) * 16; // must be multiple of 16
     processor_.setDisparityRange(config.disparity_range);
 
-    processor_.setUniquenessRatio(config.uniqueness_ratio);
+    processor_.setUniquenessRatio((int)(config.uniqueness_ratio + 0.5));
     processor_.setTextureThreshold(config.texture_threshold);
     processor_.setSpeckleSize(config.speckle_size);
     processor_.setSpeckleRange(config.speckle_range);
@@ -239,12 +313,6 @@ int main(int argc, char **argv)
 
   // Start stereo processor
   StereoProcNode proc;
-
-  // Set up dynamic reconfiguration
-  dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig> srv;
-  dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig>::CallbackType f = 
-    boost::bind(&StereoProcNode::configCallback, &proc, _1, _2);
-  srv.setCallback(f);
 
   ros::spin();
   return 0;

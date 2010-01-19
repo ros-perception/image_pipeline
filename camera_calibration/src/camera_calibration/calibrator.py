@@ -2,44 +2,11 @@ import math
 
 import cv
 
-num_x_ints = 8
-num_y_ints = 6
-num_pts = num_x_ints * num_y_ints
-
 import image_geometry
 import sensor_msgs.msg
 
-def mk_object_points(nimages, squaresize = 1):
-    opts = cv.CreateMat(nimages * num_pts, 3, cv.CV_32FC1)
-    for i in range(nimages):
-        for j in range(num_pts):
-            opts[i * num_pts + j, 0] = (j / num_x_ints) * squaresize
-            opts[i * num_pts + j, 1] = (j % num_x_ints) * squaresize
-            opts[i * num_pts + j, 2] = 0
-    return opts
-
-def mk_image_points(good):
-    ipts = cv.CreateMat(len(good) * num_pts, 2, cv.CV_32FC1)
-    for (i, co) in enumerate(good):
-        for j in range(num_pts):
-            ipts[i * num_pts + j, 0] = co[j][0]
-            ipts[i * num_pts + j, 1] = co[j][1]
-    return ipts
-
-def mk_point_counts(nimages):
-    npts = cv.CreateMat(nimages, 1, cv.CV_32SC1)
-    for i in range(nimages):
-        npts[i, 0] = num_pts
-    return npts
-
-def get_corners(img, refine = True):
-    w, h = cv.GetSize(img)
-    mono = cv.CreateMat(h, w, cv.CV_8UC1)
-    cv.CvtColor(img, mono, cv.CV_BGR2GRAY)
-    (ok, corners) = cv.FindChessboardCorners(mono, (num_x_ints, num_y_ints), cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE)
-    if refine and ok:
-        corners = cv.FindCornerSubPix(mono, corners, (5,5), (-1,-1), ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
-    return (ok, corners)
+class CalibrationException(Exception):
+    pass
 
 def cvmat_iterator(cvmat):
     for i in range(cvmat.rows):
@@ -47,6 +14,46 @@ def cvmat_iterator(cvmat):
             yield cvmat[i,j]
 
 class Calibrator:
+
+    def __init__(self, size = (8, 6), dim = .108):
+        self.chessboard_n_cols = size[0]
+        self.chessboard_n_rows = size[1]
+        self.dim = dim
+
+    def mk_object_points(self, nimages, squaresize = 1):
+        num_pts = self.chessboard_n_cols * self.chessboard_n_rows
+        opts = cv.CreateMat(nimages * num_pts, 3, cv.CV_32FC1)
+        for i in range(nimages):
+            for j in range(num_pts):
+                opts[i * num_pts + j, 0] = (j / self.chessboard_n_cols) * squaresize
+                opts[i * num_pts + j, 1] = (j % self.chessboard_n_cols) * squaresize
+                opts[i * num_pts + j, 2] = 0
+        return opts
+
+    def mk_image_points(self, good):
+        num_pts = self.chessboard_n_cols * self.chessboard_n_rows
+        ipts = cv.CreateMat(len(good) * num_pts, 2, cv.CV_32FC1)
+        for (i, co) in enumerate(good):
+            for j in range(num_pts):
+                ipts[i * num_pts + j, 0] = co[j][0]
+                ipts[i * num_pts + j, 1] = co[j][1]
+        return ipts
+
+    def mk_point_counts(self, nimages):
+        num_pts = self.chessboard_n_cols * self.chessboard_n_rows
+        npts = cv.CreateMat(nimages, 1, cv.CV_32SC1)
+        for i in range(nimages):
+            npts[i, 0] = num_pts
+        return npts
+
+    def get_corners(self, img, refine = True):
+        w, h = cv.GetSize(img)
+        mono = cv.CreateMat(h, w, cv.CV_8UC1)
+        cv.CvtColor(img, mono, cv.CV_BGR2GRAY)
+        (ok, corners) = cv.FindChessboardCorners(mono, (self.chessboard_n_cols, self.chessboard_n_rows), cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE)
+        if refine and ok:
+            corners = cv.FindCornerSubPix(mono, corners, (5,5), (-1,-1), ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
+        return (ok, corners)
 
     def lrmsg(self, d, k, r, p):
         """ Used by :meth:`as_message`.  Return a CameraInfo message for the given calibration matrices """
@@ -103,20 +110,34 @@ class Calibrator:
         return calmessage
 
 class MonoCalibrator(Calibrator):
+    """
+    Calibration class for monocular cameras::
+
+        images = [cv.LoadImage("mono%d.png") for i in range(8)]
+        mc = MonoCalibrator()
+        mc.cal(images)
+        print mc.as_message()
+    """
 
     is_mono = True
-    def __init__(self):
-        pass
 
     def cal(self, images):
+        """
+        :param images: source images containing chessboards
+        :type images: list of :class:`cvMat`
+
+        Find chessboards in images, and runs the OpenCV calibration solver.
+        """
         self.size = cv.GetSize(images[0])
-        corners = [get_corners(i) for i in images]
+        corners = [self.get_corners(i) for i in images]
 
         good = [co for (im, (ok, co)) in zip(images, corners) if ok]
+        if len(good) == 0:
+            raise CalibrationException
 
-        ipts = mk_image_points(good)
-        opts = mk_object_points(len(good))
-        npts = mk_point_counts(len(good))
+        ipts = self.mk_image_points(good)
+        opts = self.mk_object_points(len(good))
+        npts = self.mk_point_counts(len(good))
 
         intrinsics = cv.CreateMat(3, 3, cv.CV_64FC1)
         distortion = cv.CreateMat(4, 1, cv.CV_64FC1)
@@ -139,6 +160,13 @@ class MonoCalibrator(Calibrator):
         self.set_alpha(0.0)
 
     def set_alpha(self, a):
+        """
+        Set the alpha value for the calibrated camera solution.  The alpha
+        value is a zoom, and ranges from 0 (zoomed in, all pixels in
+        calibrated image are valid) to 1 (zoomed out, all pixels in
+        original image are in calibrated image).
+        """
+
         ncm = cv.CreateMat(3, 3, cv.CV_64FC1)
         R = cv.CreateMat(3, 3, cv.CV_64FC1)
         cv.SetIdentity(R)
@@ -151,16 +179,30 @@ class MonoCalibrator(Calibrator):
         cv.SetIdentity(self.P)
 
     def remap(self, src):
+        """
+        :param src: source image
+        :type src: :class:`cvMat`
+
+        Apply the post-calibration undistortion to the source image
+        """
         r = cv.CloneMat(src)
         cv.Remap(src, r, self.mapx, self.mapy)
         return r
 
     def undistort_points(self, src):
+        """
+        :param src: N source pixel points (u,v) as an Nx2 matrix
+        :type src: :class:`cvMat`
+
+        Apply the post-calibration undistortion to the source points
+        """
+
         dst = cv.CloneMat(src)
         cv.UndistortPoints(src, dst, self.intrinsics, self.distortion, P = self.intrinsics)
         return dst
 
     def as_message(self):
+        """ Return the camera calibration as a CameraInfo message """
         return self.lrmsg(self.distortion, self.intrinsics, self.R, self.P)
 
     def report(self):
@@ -173,35 +215,58 @@ class CalibrationException(Exception):
     pass
 
 class StereoCalibrator(Calibrator):
+    """
+    Calibration class for stereo cameras::
+
+        limages = [cv.LoadImage("left%d.png") for i in range(8)]
+        rimages = [cv.LoadImage("right%d.png") for i in range(8)]
+        sc = StereoCalibrator()
+        sc.cal(limages, rimages)
+        print sc.as_message()
+    """
 
     is_mono = False
-    def __init__(self):
-        self.l = MonoCalibrator()
-        self.r = MonoCalibrator()
+    def __init__(self, *args):
+        self.l = MonoCalibrator(*args)
+        self.r = MonoCalibrator(*args)
+        Calibrator.__init__(self, *args)
 
     def goodpairs(self, limages, rimages):
         """
         For a sequence of left and right images, find pairs of images where both left and right have a chessboard, and return 
         their corners as a list of pairs.
         """
-        lcorners = [cv.FindChessboardCorners(i, (8, 6), cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE) for i in limages]
-        rcorners = [cv.FindChessboardCorners(i, (8, 6), cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE) for i in rimages]
+        sz = (self.chessboard_n_cols, self.chessboard_n_rows)
+        lcorners = [cv.FindChessboardCorners(i, sz, cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE) for i in limages]
+        rcorners = [cv.FindChessboardCorners(i, sz, cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE) for i in rimages]
         good = [(lco, rco) for ((lok, lco), (rok, rco)) in zip(lcorners, rcorners) if (lok and rok)]
         return good
 
     def cal(self, limages, rimages):
+        """
+        :param limages: source left images containing chessboards
+        :type limages: list of :class:`cvMat`
+        :param rimages: source right images containing chessboards
+        :type rimages: list of :class:`cvMat`
+
+        Find chessboards in images, and runs the OpenCV calibration solver.
+        """
         self.size = cv.GetSize(limages[0])
         self.l.cal(limages)
         self.r.cal(rimages)
 
-        lcorners = [cv.FindChessboardCorners(i, (8, 6), cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE) for i in limages]
-        rcorners = [cv.FindChessboardCorners(i, (8, 6), cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE) for i in rimages]
+        sz = (self.chessboard_n_cols, self.chessboard_n_rows)
+        lcorners = [cv.FindChessboardCorners(i, sz, cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE) for i in limages]
+        rcorners = [cv.FindChessboardCorners(i, sz, cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE) for i in rimages]
         good = [(lco, rco) for ((lok, lco), (rok, rco)) in zip( lcorners, rcorners) if (lok and rok)]
 
-        lipts = mk_image_points([l for (l, r) in good])
-        ripts = mk_image_points([r for (l, r) in good])
-        opts = mk_object_points(len(good), .108)
-        npts = mk_point_counts(len(good))
+        if len(good) == 0:
+            raise CalibrationException
+
+        lipts = self.mk_image_points([l for (l, r) in good])
+        ripts = self.mk_image_points([r for (l, r) in good])
+        opts = self.mk_object_points(len(good), self.dim)
+        npts = self.mk_point_counts(len(good))
 
         flags = cv.CV_CALIB_FIX_ASPECT_RATIO | cv.CV_CALIB_FIX_INTRINSIC
 
@@ -228,6 +293,13 @@ class StereoCalibrator(Calibrator):
         self.set_alpha(0.0)
 
     def set_alpha(self, a):
+        """
+        Set the alpha value for the calibrated camera solution. The
+        alpha value is a zoom, and ranges from 0 (zoomed in, all pixels
+        in calibrated image are valid) to 1 (zoomed out, all pixels in
+        original image are in calibrated image).
+        """
+
         cv.StereoRectify(self.l.intrinsics,
                          self.r.intrinsics,
                          self.l.distortion,
@@ -246,6 +318,10 @@ class StereoCalibrator(Calibrator):
         cv.InitUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.rR, self.rP, self.rmapx, self.rmapy)
 
     def as_message(self):
+        """
+        Return the camera calibration as a pair of CameraInfo messages, for left and right cameras respectively.
+        """
+
         return (self.lrmsg(self.l.distortion, self.l.intrinsics, self.lR, self.lP),
                 self.lrmsg(self.r.distortion, self.r.intrinsics, self.rR, self.rP))
 
@@ -260,17 +336,23 @@ class StereoCalibrator(Calibrator):
           self.lrost("right", self.r.distortion, self.r.intrinsics, self.rR, self.rP))
 
     def epipolar1(self, li, ri):
-        # Find corners in both images and undistort them, results in lists L,R
+        """
+        :param li: source left image containing chessboard
+        :type li: :class:`cvMat`
+        :param ri: source left image containing chessboard
+        :type ri: :class:`cvMat`
 
-        (ok, corners) = get_corners(li)
+        """
+
+        (ok, corners) = self.get_corners(li)
         if not ok:
             return -1
-        src = cv.Reshape(mk_image_points([corners]), 2)
+        src = cv.Reshape(self.mk_image_points([corners]), 2)
         L = list(cvmat_iterator(self.lundistort_points(src)))
-        (ok, corners) = get_corners(ri)
+        (ok, corners) = self.get_corners(ri)
         if not ok:
             return -1
-        src = cv.Reshape(mk_image_points([corners]), 2)
+        src = cv.Reshape(self.mk_image_points([corners]), 2)
         R = list(cvmat_iterator(self.rundistort_points(src)))
 
         # print 'diffs', [abs(y0-y1) for ((_, y0), (_, y1)) in zip(L, R)]
@@ -279,19 +361,23 @@ class StereoCalibrator(Calibrator):
 
     def chessboard_size(self, li, ri):
         """
-        Return the square edge length, in meters, or -1 if not possible.
-        """
-        (ok, corners) = get_corners(li)
-        if not ok:
-            return -1
-        src = cv.Reshape(mk_image_points([corners]), 2)
-        L = list(cvmat_iterator(self.lundistort_points(src)))
-        (ok, corners) = get_corners(ri)
-        if not ok:
-            return -1
-        src = cv.Reshape(mk_image_points([corners]), 2)
-        R = list(cvmat_iterator(self.rundistort_points(src)))
+        :param li: source left image containing chessboard
+        :type li: :class:`cvMat`
+        :param ri: source left image containing chessboard
+        :type ri: :class:`cvMat`
 
+        Post calibration, return the square edge length, in meters, or -1 if not possible.
+        """
+        (ok, corners) = self.get_corners(li)
+        if not ok:
+            return -1
+        src = cv.Reshape(self.mk_image_points([corners]), 2)
+        L = list(cvmat_iterator(self.lundistort_points(src)))
+        (ok, corners) = self.get_corners(ri)
+        if not ok:
+            return -1
+        src = cv.Reshape(self.mk_image_points([corners]), 2)
+        R = list(cvmat_iterator(self.rundistort_points(src)))
 
         # Project the points to 3d
         cam = image_geometry.StereoCameraModel()
@@ -302,9 +388,11 @@ class StereoCalibrator(Calibrator):
             return math.sqrt(sum([(c0 - c1) ** 2 for (c0, c1) in zip(p0, p1)]))
 
         # Compute the length from each horizontal and vertical lines, and return the mean
+        cc = self.chessboard_n_cols
+        cr = self.chessboard_n_rows
         lengths = (
-            [l2(pt3d[8 * r + 0], pt3d[8 * r + 7]) / 7 for r in range(6)] +
-            [l2(pt3d[c + 0], pt3d[c + 40]) / 5 for c in range(7)])
+            [l2(pt3d[cc * r + 0], pt3d[cc * r + (cc - 1)]) / (cc - 1) for r in range(cr)] +
+            [l2(pt3d[c + 0], pt3d[c + (cc * (cr - 1))]) / (cr - 1) for c in range(cc)])
         return sum(lengths) / len(lengths)
         
     def lremap(self, src):
@@ -326,5 +414,3 @@ class StereoCalibrator(Calibrator):
         dst = cv.CloneMat(src)
         cv.UndistortPoints(src, dst, self.r.intrinsics, self.r.distortion, self.rR, self.rP)
         return dst
-
-

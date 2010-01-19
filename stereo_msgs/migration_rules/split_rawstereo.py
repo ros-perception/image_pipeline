@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-PKG = 'door_handle_detector'
+PKG = 'stereo_msgs'
 import roslib; roslib.load_manifest(PKG)
 import rospy
 import rosrecord

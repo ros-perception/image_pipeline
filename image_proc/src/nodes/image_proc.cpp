@@ -50,20 +50,26 @@ class ImageProcNode
 private:
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
+
+  // Subscriptions
   image_transport::CameraSubscriber cam_sub_;
+  int subscriber_count_;
+
+  // Publications
   image_transport::Publisher pub_mono_;
   image_transport::Publisher pub_rect_;
   image_transport::Publisher pub_color_;
   image_transport::Publisher pub_rect_color_;
-  ros::Timer check_inputs_timer_;
 
-  // OK for these to be members in single-threaded case.
+  // Processing state (OK for these to be members in single-threaded case)
   image_proc::Processor processor_;
   image_geometry::PinholeCameraModel model_;
   image_proc::ImageSet processed_images_;
-  /// @todo Separate color_img_ to avoid some allocations?
   sensor_msgs::Image img_;
-  int subscriber_count_;
+
+  // Error reporting
+  ros::WallTimer check_inputs_timer_;
+  ros::WallTime last_uncalibrated_error_;
 
 public:
 
@@ -80,14 +86,15 @@ public:
     pub_rect_color_ = it_.advertise("image_rect_color", 1, connect_cb, disconnect_cb);
 
     // Print a warning every minute until the camera topics are advertised
-    check_inputs_timer_ = nh_.createTimer(ros::Duration(60.0), boost::bind(&ImageProcNode::checkInputsAdvertised, this));
+    check_inputs_timer_ = nh_.createWallTimer(ros::WallDuration(60.0),
+                                              boost::bind(&ImageProcNode::checkInputsAdvertised, this));
     checkInputsAdvertised();
   }
 
   void connectCb(const image_transport::SingleSubscriberPublisher& ssp)
   {
     if (subscriber_count_++ == 0) {
-      ROS_DEBUG("Subscribing to camera topics");
+      ROS_DEBUG("[image_proc] Subscribing to camera topics");
       cam_sub_ = it_.subscribeCamera("image_raw", 3, &ImageProcNode::imageCb, this);
     }
   }
@@ -96,16 +103,13 @@ public:
   {
     subscriber_count_--;
     if (subscriber_count_ == 0) {
-      ROS_DEBUG("Unsubscribing from camera topics");
+      ROS_DEBUG("[image_proc] Unsubscribing from camera topics");
       cam_sub_.shutdown();
     }
   }
 
   void imageCb(const sensor_msgs::ImageConstPtr& raw_image, const sensor_msgs::CameraInfoConstPtr& cam_info)
   {
-    // Update the camera model
-    model_.fromCameraInfo(cam_info);
-
     // Compute which outputs are in demand
     int flags = 0;
     typedef image_proc::Processor Proc;
@@ -113,7 +117,27 @@ public:
     if (pub_rect_      .getNumSubscribers() > 0) flags |= Proc::RECT;
     if (pub_color_     .getNumSubscribers() > 0) flags |= Proc::COLOR;
     if (pub_rect_color_.getNumSubscribers() > 0) flags |= Proc::RECT_COLOR;
+    if (!flags) return;
 
+    // Verify camera is actually calibrated if we need to rectify
+    static const int NEED_RECT = Proc::RECT | Proc::RECT_COLOR;
+    if (cam_info->K[0] == 0.0) {
+      if (flags & NEED_RECT) {
+        // Complain every 30s
+        ros::WallTime now = ros::WallTime::now();
+        if ((now - last_uncalibrated_error_).toSec() > 30.0) {
+          ROS_ERROR("[image_proc] Rectified topic requested, but camera is uncalibrated.");
+          last_uncalibrated_error_ = now;
+        }
+      }
+      flags &= ~NEED_RECT;
+      if (!flags) return;
+    }
+    else {
+      // Update the camera model
+      model_.fromCameraInfo(cam_info);
+    }
+    
     // Process raw image into colorized and/or rectified outputs
     if (!processor_.process(raw_image, model_, processed_images_, flags))
       return;
@@ -154,9 +178,9 @@ public:
       }
     }
     if (!have_image)
-      ROS_WARN("The camera image topic [%s] does not appear to be published yet.", image_topic.c_str());
+      ROS_WARN("[image_proc] The camera image topic [%s] does not appear to be published yet.", image_topic.c_str());
     if (!have_info)
-      ROS_WARN("The camera info topic [%s] does not appear to be published yet.", info_topic.c_str());
+      ROS_WARN("[image_proc] The camera info topic [%s] does not appear to be published yet.", info_topic.c_str());
   }
 };
 

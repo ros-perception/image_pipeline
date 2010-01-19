@@ -29,7 +29,7 @@ ID_EXIT=200
 
 # /wg/osx/rosCode/ros-pkg/ros-pkg/stacks/image_pipeline/image_view/preCalib
 
-from camera_calibration.calibrator import get_corners, mk_image_points, cvmat_iterator, MonoCalibrator, StereoCalibrator
+from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator
 from std_msgs.msg import String
 from std_srvs.srv import Empty
 
@@ -60,7 +60,9 @@ class ConsumerThread(threading.Thread):
 
 class CalibrationNode:
 
-    def __init__(self):
+    def __init__(self, chess_size, dim):
+        self.chess_size = chess_size
+        self.dim = dim
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = message_filters.TimeSynchronizer([lsub, rsub], 4)
@@ -98,11 +100,17 @@ class CalibrationNode:
         Deal with bayer images by converting to color, then to monochrome.
         """
         if 'bayer' in msg.encoding:
+            converter = {
+                "bayer_rggb8" : cv.CV_BayerBG2BGR,
+                "bayer_bggr8" : cv.CV_BayerRG2BGR,
+                "bayer_gbrg8" : cv.CV_BayerGR2BGR,
+                "bayer_grbg8" : cv.CV_BayerGB2BGR }[msg.encoding]
             msg.encoding = "mono8"
             raw = self.br.imgmsg_to_cv(msg)
             rgb = cv.CreateMat(raw.rows, raw.cols, cv.CV_8UC3)
             mono = cv.CreateMat(raw.rows, raw.cols, cv.CV_8UC1)
-            cv.CvtColor(raw, rgb, cv.CV_BayerRG2BGR)
+
+            cv.CvtColor(raw, rgb, converter)
             cv.CvtColor(rgb, mono, cv.CV_BGR2GRAY)
             cv.CvtColor(mono, rgb, cv.CV_GRAY2BGR)
         else:
@@ -127,7 +135,7 @@ class CalibrationNode:
     def handle_monocular(self, msg):
 
         if self.c == None:
-            self.c = MonoCalibrator()
+            self.c = MonoCalibrator(self.chess_size)
 
         rgb = self.mkgray(msg)
         (self.width, self.height) = cv.GetSize(rgb)
@@ -139,8 +147,9 @@ class CalibrationNode:
             cv.Resize(rgb, scrib)
         else:
             scrib = cv.CloneMat(rgb)
+        self.displaywidth = scrib.cols
 
-        (ok, corners) = get_corners(rgb, refine = False)
+        (ok, corners) = self.c.get_corners(rgb, refine = False)
         if ok:
             # Compute some parameters for this chessboard
             Xs = [x for (x, y) in corners]
@@ -160,9 +169,9 @@ class CalibrationNode:
             is_min = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_mins)]
             is_max = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_maxs)]
 
-            src = cv.Reshape(mk_image_points([corners]), 2)
+            src = cv.Reshape(self.c.mk_image_points([corners]), 2)
 
-            cv.DrawChessboardCorners(scrib, (8, 6), [ (x/scale, y/scale) for (x, y) in cvmat_iterator(src)], True)
+            cv.DrawChessboardCorners(scrib, self.chess_size, [ (x/scale, y/scale) for (x, y) in cvmat_iterator(src)], True)
 
             # If the image is a min or max in every parameter, add to the collection
             if any(is_min) or any(is_max):
@@ -180,7 +189,7 @@ class CalibrationNode:
 
         (lmsg, rmsg) = msg
         if self.c == None:
-            self.c = StereoCalibrator()
+            self.c = StereoCalibrator(self.chess_size)
         lrgb = self.mkgray(lmsg)
         rrgb = self.mkgray(rmsg)
         (self.width, self.height) = cv.GetSize(lrgb)
@@ -198,10 +207,11 @@ class CalibrationNode:
         else:
             lscrib = cv.CloneMat(lrgb)
             rscrib = cv.CloneMat(rrgb)
+        self.displaywidth = lscrib.cols + rscrib.cols
 
-        (lok, lcorners) = get_corners(lrgb, refine = True)
+        (lok, lcorners) = self.c.get_corners(lrgb, refine = True)
         if lok:
-            (rok, rcorners) = get_corners(rrgb, refine = True)
+            (rok, rcorners) = self.c.get_corners(rrgb, refine = True)
             if lok and rok:
                 # Compute some parameters for this chessboard
                 Xs = [x for (x, y) in lcorners]
@@ -222,10 +232,10 @@ class CalibrationNode:
                 is_max = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_maxs)]
 
                 for (co, im, udm) in [(lcorners, lscrib, self.c.lundistort_points), (rcorners, rscrib, self.c.rundistort_points)]:
-                    src = cv.Reshape(mk_image_points([co]), 2)
+                    src = cv.Reshape(self.c.mk_image_points([co]), 2)
                     if self.calibrated:
                         src = udm(src)
-                    cv.DrawChessboardCorners(im, (8, 6), cvmat_iterator(src), True)
+                    cv.DrawChessboardCorners(im, self.chess_size, cvmat_iterator(src), True)
 
                 # If the image is a min or max in every parameter, add to the collection
                 if any(is_min) or any(is_max):
@@ -296,8 +306,8 @@ class CalibrationNode:
 class WebCalibrationNode(CalibrationNode):
     """ Calibration node backend for a web-based UI """
 
-    def __init__(self):
-        CalibrationNode.__init__(self)
+    def __init__(self, *args):
+        CalibrationNode.__init__(self, *args)
         self.img_pub = rospy.Publisher("calibration_image", sensor_msgs.msg.Image)
         self.meta_pub = rospy.Publisher("calibration_meta", String)
         self.calibration_done = rospy.Service('calibration_done', Empty, self.calibrate)
@@ -334,9 +344,9 @@ class WebCalibrationNode(CalibrationNode):
 class OpenCVCalibrationNode(CalibrationNode):
     """ Calibration node with an OpenCV Gui """
 
-    def __init__(self):
+    def __init__(self, *args):
 
-        CalibrationNode.__init__(self)
+        CalibrationNode.__init__(self, *args)
         cv.NamedWindow("display")
         self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 0.20, 1, thickness = 2, line_type = cv.CV_AA)
         #self.button = cv.LoadImage("%s/button.jpg" % roslib.packages.get_pkg_dir(PKG))
@@ -356,6 +366,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         k = cv.WaitKey(6)
         if k == ord('q'):
             rospy.signal_shutdown('Quit')
+        return k
 
     def on_scale(self, scalevalue):
         self.set_scale(scalevalue / 100.0)
@@ -373,10 +384,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         cv.PutText(dst, label, ((size[0] - w) / 2, (size[1] + h) / 2), self.font, (255,255,255))
 
     def buttons(self, display):
-        if self.c.is_mono:
-            x = self.width
-        else:
-            x = 2 * self.width
+        x = self.displaywidth
         self.button(cv.GetSubRect(display, (x,180,100,100)), "CALIBRATE", self.goodenough)
         self.button(cv.GetSubRect(display, (x,280,100,100)), "SAVE", self.calibrated)
         self.button(cv.GetSubRect(display, (x,380,100,100)), "UPLOAD", self.calibrated)
@@ -384,6 +392,12 @@ class OpenCVCalibrationNode(CalibrationNode):
     def y(self, i):
         return 30 + 50 * i
         
+    def screendump(self, im):
+        i = 0
+        while os.access("/tmp/dump%d.png" % i, os.R_OK):
+            i += 1
+        cv.SaveImage("/tmp/dump%d.png" % i, im)
+
     def redraw_monocular(self, scrib, _):
         width, height = cv.GetSize(scrib)
 
@@ -413,8 +427,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         else:
             cv.PutText(display, "acc.", (width, self.y(0)), self.font, (0,0,0))
 
-        cv.ShowImage("display", display)
-        self.waitkey()
+        self.show(display)
 
     def redraw_stereo(self, lscrib, rscrib, lrgb, rrgb):
         display = cv.CreateMat(self.height, 2 * self.width + 100, cv.CV_8UC3)
@@ -454,20 +467,28 @@ class OpenCVCalibrationNode(CalibrationNode):
                 dim = self.c.chessboard_size(lrgb, rrgb)
                 cv.PutText(display, "%.3f" % dim, (2 * self.width, self.y(3)), self.font, (0,0,0))
 
-        cv.ShowImage("display", display)
-        self.waitkey()
+        self.show(display)
+
+    def show(self, im):
+        cv.ShowImage("display", im)
+        if self.waitkey() == ord('s'):
+            self.screendump(im)
 
 def main():
     from optparse import OptionParser
-    rospy.init_node('calibrationnode')
+    rospy.init_node('cameracalibrator')
     parser = OptionParser()
     parser.add_option("-w", "--web", dest="web", action="store_true", default=False, help="create backend for web-based calibration")
     parser.add_option("-o", "--opencv", dest="web", action="store_false", help="use OpenCV-based GUI for calibration (default)")
+    parser.add_option("-s", "--size", default="8x6", help="specify chessboard size as nxm [default: %default]")
+    parser.add_option("-q", "--square", default=".108", help="specify chessboard square size in meters [default: %default]")
     options, args = parser.parse_args()
+    size = tuple([int(c) for c in options.size.split('x')])
+    dim = float(options.square)
     if options.web:
-        node = WebCalibrationNode()
+        node = WebCalibrationNode(size, dim)
     else:
-        node = OpenCVCalibrationNode()
+        node = OpenCVCalibrationNode(size, dim)
     rospy.spin()
 
 if __name__ == "__main__":

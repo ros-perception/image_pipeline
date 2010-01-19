@@ -5,9 +5,9 @@
      cameras using a checkerboard calibration target.
 
   </description>
-  <author>James Bowman, Patrick Mihelich</author>
+  <author>James Bowman</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
+  <review status="Doc reviewed" notes="Jan 18, 2010"/>
   <url>http://www.ros.org/wiki/camera_calibration</url>
   <depend package="opencv2"/>
   <depend package="cv_bridge"/>
@@ -19,7 +19,6 @@
   <depend package="message_filters"/>
   <depend package="camera_calibration_parsers"/>
   <depend package="rospy"/>
-  <!--depend package="topic_synchronizer2"/-->
 
   <export>
     <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcamera_calibration" cflags="-I${prefix}/include -I${prefix}/msg/cpp"/>
