@@ -15,7 +15,7 @@ def cvmat_iterator(cvmat):
 
 class Calibrator:
 
-    def __init__(self, size = (8, 6), dim = .108):
+    def __init__(self, size, dim):
         self.chessboard_n_cols = size[0]
         self.chessboard_n_rows = size[1]
         self.dim = dim
