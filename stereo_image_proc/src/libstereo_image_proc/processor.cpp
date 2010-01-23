@@ -90,6 +90,10 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
     do_stereo(flim, frim, imDisp, NULL, xim, yim, ftzero, corr, corr, dlen, tthresh, uthresh, buf);
     bad_value = getMinDisparity(); // for speckle filtering
   }
+  else {
+    ROS_FATAL("Unknown disparity algorithm value [%d]", disparity_algorithm_);
+    ROS_BREAK();
+  }
 
   // OpenCV doesn't do speckle filtering yet! Do it ourselves.
   labels_.create(disparity16_.size());
