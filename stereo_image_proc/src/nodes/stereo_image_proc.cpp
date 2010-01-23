@@ -215,6 +215,8 @@ public:
     // Process raw images into colorized/rectified/stereo outputs.
     if (!processor_.process(raw_image_l, raw_image_r, model_, processed_images_, flags))
       return;
+
+    /// @todo Check that if color is requested, we actually got it
     
     // Publish monocular output images
     img_.header = raw_image_l->header;
@@ -273,7 +275,15 @@ public:
 
   void configCallback(stereo_image_proc::StereoImageProcConfig &config, uint32_t level)
   {
-    ROS_INFO("[stereo_image_proc] Reconfigure request received");
+    ROS_DEBUG("[stereo_image_proc] Reconfigure request received.");
+
+    if (config.disparity_algorithm == "cv_bm")
+      processor_.setDisparityAlgorithm(stereo_image_proc::StereoProcessor::OPENCV_BLOCK_MATCHER);
+    else if (config.disparity_algorithm == "wg_bm")
+      processor_.setDisparityAlgorithm(stereo_image_proc::StereoProcessor::WG_BLOCK_MATCHER);
+    else
+      ROS_ERROR("[stereo_image_proc] Unrecognized disparity algorithm [%s] in reconfigure request.",
+                config.disparity_algorithm.c_str());
 
     config.prefilter_size |= 0x1; // must be odd
     processor_.setPreFilterSize(config.prefilter_size);
