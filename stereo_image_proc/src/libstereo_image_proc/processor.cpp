@@ -89,20 +89,20 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
     // do block matching
     do_stereo(flim, frim, imDisp, NULL, xim, yim, ftzero, corr, corr, dlen, tthresh, uthresh, buf);
     bad_value = getMinDisparity(); // for speckle filtering
+
+    // do speckle filtering
+    labels_.create(disparity16_.size());
+    wavefront_.create(disparity16_.size());
+    region_types_.create(disparity16_.size());
+    int speckle_size = getSpeckleSize(); // actually region size
+    int speckle_diff = getSpeckleRange();
+    do_speckle(disparity16_[0], bad_value, disparity16_.cols, disparity16_.rows, speckle_diff,
+               speckle_size, labels_[0], wavefront_[0], region_types_[0]);
   }
   else {
     ROS_FATAL("Unknown disparity algorithm value [%d]", disparity_algorithm_);
     ROS_BREAK();
   }
-
-  // OpenCV doesn't do speckle filtering yet! Do it ourselves.
-  labels_.create(disparity16_.size());
-  wavefront_.create(disparity16_.size());
-  region_types_.create(disparity16_.size());
-  int speckle_size = getSpeckleSize(); // actually region size
-  int speckle_diff = getSpeckleRange();
-  do_speckle(disparity16_[0], bad_value, disparity16_.cols, disparity16_.rows, speckle_diff,
-             speckle_size, labels_[0], wavefront_[0], region_types_[0]);
 
   // Fill in DisparityImage image data, converting to 32-bit float
   sensor_msgs::Image& dimage = disparity.image;
