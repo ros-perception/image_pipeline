@@ -19,7 +19,7 @@ bool StereoProcessor::process(const sensor_msgs::ImageConstPtr& left_raw,
     left_flags |= LEFT_RECT;
     right_flags |= RIGHT_RECT;
   }
-  if (flags & POINT_CLOUD) {
+  if (flags & (POINT_CLOUD | POINT_CLOUD2)) {
     flags |= DISPARITY;
     // Need the color channels for the point cloud
     left_flags |= LEFT_RECT_COLOR;
@@ -243,7 +243,7 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
   points.fields[2].name = "z";
   points.fields[2].offset = 8;
   points.fields[2].datatype = sensor_msgs::PointField::FLOAT32;
-  points.fields[3].name = "rgba";
+  points.fields[3].name = "rgb";
   points.fields[3].offset = 12;
   points.fields[3].datatype = sensor_msgs::PointField::FLOAT32;
   //points.is_bigendian = false; ???
@@ -278,7 +278,7 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
         if (isValidPoint(dense_points_(u,v))) {
           uint8_t g = color.at<uint8_t>(u,v);
           int32_t rgb = (g << 16) | (g << 8) | g;
-          memcpy (&points.data[i * points.point_step + 12], &*(float*)(&rgb), sizeof (float));
+          memcpy (&points.data[i * points.point_step + 12], &rgb, sizeof (int32_t));
         }
         else {
           memcpy (&points.data[i * points.point_step + 12], &bad_point, sizeof (float));
@@ -292,7 +292,7 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
         if (isValidPoint(dense_points_(u,v))) {
           const cv::Vec3b& rgb = color.at<cv::Vec3b>(u,v);
           int32_t rgb_packed = (rgb[0] << 16) | (rgb[1] << 8) | rgb[0];
-          memcpy (&points.data[i * points.point_step + 12], &*(float*)(&rgb_packed), sizeof (float));
+          memcpy (&points.data[i * points.point_step + 12], &rgb_packed, sizeof (int32_t));
         }
         else {
           memcpy (&points.data[i * points.point_step + 12], &bad_point, sizeof (float));
@@ -306,7 +306,7 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
         if (isValidPoint(dense_points_(u,v))) {
           const cv::Vec3b& bgr = color.at<cv::Vec3b>(u,v);
           int32_t rgb_packed = (bgr[2] << 16) | (bgr[1] << 8) | bgr[0];
-          memcpy (&points.data[i * points.point_step + 12], &*(float*)(&rgb_packed), sizeof (float));
+          memcpy (&points.data[i * points.point_step + 12], &rgb_packed, sizeof (int32_t));
         }
         else {
           memcpy (&points.data[i * points.point_step + 12], &bad_point, sizeof (float));
