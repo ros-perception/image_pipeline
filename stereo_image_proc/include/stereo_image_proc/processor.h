@@ -5,6 +5,7 @@
 #include <image_geometry/stereo_camera_model.h>
 #include <stereo_msgs/DisparityImage.h>
 #include <sensor_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud2.h>
 
 namespace stereo_image_proc {
 
@@ -14,6 +15,7 @@ struct StereoImageSet
   image_proc::ImageSet right;
   stereo_msgs::DisparityImage disparity;
   sensor_msgs::PointCloud points;
+  sensor_msgs::PointCloud2 points2;
 };
 
 class StereoProcessor
@@ -42,10 +44,11 @@ public:
     RIGHT_RECT_COLOR = 1 << 7,
     DISPARITY        = 1 << 8,
     POINT_CLOUD      = 1 << 9,
+    POINT_CLOUD2     = 1 << 10,
 
     LEFT_ALL = LEFT_MONO | LEFT_RECT | LEFT_COLOR | LEFT_RECT_COLOR,
     RIGHT_ALL = RIGHT_MONO | RIGHT_RECT | RIGHT_COLOR | RIGHT_RECT_COLOR,
-    STEREO_ALL = DISPARITY | POINT_CLOUD,
+    STEREO_ALL = DISPARITY | POINT_CLOUD | POINT_CLOUD2,
     ALL = LEFT_ALL | RIGHT_ALL | STEREO_ALL
   };
 
@@ -119,6 +122,10 @@ private:
                      const cv::Mat& color, const std::string& encoding,
                      const image_geometry::StereoCameraModel& model,
                      sensor_msgs::PointCloud& points) const;
+  void processPoints2(const stereo_msgs::DisparityImage& disparity,
+                      const cv::Mat& color, const std::string& encoding,
+                      const image_geometry::StereoCameraModel& model,
+                      sensor_msgs::PointCloud2& points) const;
 };
 
 

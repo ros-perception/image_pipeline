@@ -2,6 +2,7 @@
 #include "stereo_image_proc/stereolib.h"
 #include <sensor_msgs/image_encodings.h>
 #include <cmath>
+#include <limits>
 
 namespace stereo_image_proc {
 
@@ -36,6 +37,11 @@ bool StereoProcessor::process(const sensor_msgs::ImageConstPtr& left_raw,
   // Project disparity image to 3d point cloud
   if (flags & POINT_CLOUD) {
     processPoints(output.disparity, output.left.rect_color, output.left.color_encoding, model, output.points);
+  }
+
+  // Project disparity image to 3d point cloud
+  if (flags & POINT_CLOUD2) {
+    processPoints2(output.disparity, output.left.rect_color, output.left.color_encoding, model, output.points2);
   }
 
   return true;
@@ -205,6 +211,105 @@ void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity
           const cv::Vec3b& bgr = color.at<cv::Vec3b>(u,v);
           int32_t rgb_packed = (bgr[2] << 16) | (bgr[1] << 8) | bgr[0];
           points.channels[0].values.push_back(*(float*)(&rgb_packed));
+        }
+      }
+    }
+  }
+  else {
+    ROS_WARN("Could not fill color channel of the point cloud, unrecognized encoding '%s'", encoding.c_str());
+  }
+}
+
+void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparity,
+                                     const cv::Mat& color, const std::string& encoding,
+                                     const image_geometry::StereoCameraModel& model,
+                                     sensor_msgs::PointCloud2& points) const
+{
+  // Calculate dense point cloud
+  const sensor_msgs::Image& dimage = disparity.image;
+  const cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
+  model.projectDisparityImageTo3d(dmat, dense_points_, true);
+
+  // Fill in sparse point cloud message
+  points.height = dense_points_.rows;
+  points.width  = dense_points_.cols;
+  points.fields.resize (4);
+  points.fields[0].name = "x";
+  points.fields[0].offset = 0;
+  points.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
+  points.fields[1].name = "y";
+  points.fields[1].offset = 4;
+  points.fields[1].datatype = sensor_msgs::PointField::FLOAT32;
+  points.fields[2].name = "z";
+  points.fields[2].offset = 8;
+  points.fields[2].datatype = sensor_msgs::PointField::FLOAT32;
+  points.fields[3].name = "rgba";
+  points.fields[3].offset = 12;
+  points.fields[3].datatype = sensor_msgs::PointField::FLOAT32;
+  //points.is_bigendian = false; ???
+  points.point_step = 16;
+  points.row_step = points.point_step * points.width;
+  points.data.resize (points.row_step * points.height);
+  points.is_dense = true;
+ 
+  float bad_point = std::numeric_limits<float>::quiet_NaN ();
+  int i = 0;
+  for (int32_t u = 0; u < dense_points_.rows; ++u) {
+    for (int32_t v = 0; v < dense_points_.cols; ++v, ++i) {
+      if (isValidPoint(dense_points_(u,v))) {
+        // x,y,z,rgba
+        memcpy (&points.data[i * points.point_step + 0], &dense_points_(u,v)[0], sizeof (float));
+        memcpy (&points.data[i * points.point_step + 4], &dense_points_(u,v)[1], sizeof (float));
+        memcpy (&points.data[i * points.point_step + 8], &dense_points_(u,v)[2], sizeof (float));
+      }
+      else {
+        memcpy (&points.data[i * points.point_step + 0], &bad_point, sizeof (float));
+        memcpy (&points.data[i * points.point_step + 4], &bad_point, sizeof (float));
+        memcpy (&points.data[i * points.point_step + 8], &bad_point, sizeof (float));
+      }
+    }
+  }
+
+  // Fill in color
+  namespace enc = sensor_msgs::image_encodings;
+  if (encoding == enc::MONO8) {
+    for (int32_t u = 0; u < dense_points_.rows; ++u) {
+      for (int32_t v = 0; v < dense_points_.cols; ++v) {
+        if (isValidPoint(dense_points_(u,v))) {
+          uint8_t g = color.at<uint8_t>(u,v);
+          int32_t rgb = (g << 16) | (g << 8) | g;
+          memcpy (&points.data[i * points.point_step + 12], &*(float*)(&rgb), sizeof (float));
+        }
+        else {
+          memcpy (&points.data[i * points.point_step + 12], &bad_point, sizeof (float));
+        }
+      }
+    }
+  }
+  else if (encoding == enc::RGB8) {
+    for (int32_t u = 0; u < dense_points_.rows; ++u) {
+      for (int32_t v = 0; v < dense_points_.cols; ++v) {
+        if (isValidPoint(dense_points_(u,v))) {
+          const cv::Vec3b& rgb = color.at<cv::Vec3b>(u,v);
+          int32_t rgb_packed = (rgb[0] << 16) | (rgb[1] << 8) | rgb[0];
+          memcpy (&points.data[i * points.point_step + 12], &*(float*)(&rgb_packed), sizeof (float));
+        }
+        else {
+          memcpy (&points.data[i * points.point_step + 12], &bad_point, sizeof (float));
+        }
+      }
+    }
+  }
+  else if (encoding == enc::BGR8) {
+    for (int32_t u = 0; u < dense_points_.rows; ++u) {
+      for (int32_t v = 0; v < dense_points_.cols; ++v) {
+        if (isValidPoint(dense_points_(u,v))) {
+          const cv::Vec3b& bgr = color.at<cv::Vec3b>(u,v);
+          int32_t rgb_packed = (bgr[2] << 16) | (bgr[1] << 8) | bgr[0];
+          memcpy (&points.data[i * points.point_step + 12], &*(float*)(&rgb_packed), sizeof (float));
+        }
+        else {
+          memcpy (&points.data[i * points.point_step + 12], &bad_point, sizeof (float));
         }
       }
     }

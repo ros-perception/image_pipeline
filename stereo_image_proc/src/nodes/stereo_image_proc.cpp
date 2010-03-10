@@ -38,6 +38,7 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <stereo_msgs/DisparityImage.h>
 #include <sensor_msgs/fill_image.h>
 
@@ -85,7 +86,7 @@ private:
   image_transport::Publisher pub_color_r_;
   image_transport::Publisher pub_rect_color_r_;
   ros::Publisher pub_disparity_;
-  ros::Publisher pub_pts_;
+  ros::Publisher pub_pts_, pub_pts2_;
 
   // Dynamic reconfigure
   typedef dynamic_reconfigure::Server<stereo_image_proc::StereoImageProcConfig> ReconfigureServer;
@@ -129,6 +130,7 @@ public:
     ros::SubscriberStatusCallback msg_disconnect = boost::bind(&StereoProcNode::disconnectCb, this);
     pub_disparity_ = nh_.advertise<stereo_msgs::DisparityImage>("disparity", 1, msg_connect, msg_disconnect);
     pub_pts_ = nh_.advertise<sensor_msgs::PointCloud>("points", 1, msg_connect, msg_disconnect);
+    pub_pts2_ = nh_.advertise<sensor_msgs::PointCloud2>("points2", 1, msg_connect, msg_disconnect);
 
     // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
     sync_.connectInput(image_sub_l_, info_sub_l_, image_sub_r_, info_sub_r_);
@@ -190,11 +192,12 @@ public:
     if (pub_rect_color_r_.getNumSubscribers() > 0) flags |= Proc::RIGHT_RECT_COLOR;
     if (pub_disparity_   .getNumSubscribers() > 0) flags |= Proc::DISPARITY;
     if (pub_pts_         .getNumSubscribers() > 0) flags |= Proc::POINT_CLOUD;
+    if (pub_pts2_        .getNumSubscribers() > 0) flags |= Proc::POINT_CLOUD2;
     if (!flags) return;
     
     // Verify cameras are actually calibrated if we need to rectify
     static const int NEED_RECT = Proc::LEFT_RECT | Proc::LEFT_RECT_COLOR | Proc::RIGHT_RECT |
-      Proc::RIGHT_RECT_COLOR | Proc::DISPARITY | Proc::POINT_CLOUD;
+      Proc::RIGHT_RECT_COLOR | Proc::DISPARITY | Proc::POINT_CLOUD | Proc::POINT_CLOUD2;
     if (cam_info_l->K[0] == 0.0 || cam_info_r->K[0] == 0.0) {
       if (flags & NEED_RECT) {
         // Complain every 30s
@@ -248,6 +251,10 @@ public:
     if (flags & Proc::POINT_CLOUD) {
       processed_images_.points.header = cam_info_l->header;
       pub_pts_.publish(processed_images_.points);
+    }
+    if (flags & Proc::POINT_CLOUD2) {
+      processed_images_.points2.header = cam_info_l->header;
+      pub_pts2_.publish(processed_images_.points2);
     }
   }
     
