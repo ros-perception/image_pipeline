@@ -95,7 +95,7 @@ class CameraCheckerNode:
         sth.setDaemon(True)
         sth.start()
 
-        self.mc = MonoCalibrator(self.chess_size)
+        self.mc = MonoCalibrator(self.chess_size, self.dim)
 
     def queue_monocular(self, msg, cmsg):
         self.q_mono.put((msg, cmsg))
@@ -139,7 +139,7 @@ class CameraCheckerNode:
         lrgb = self.mkgray(lmsg)
         rrgb = self.mkgray(rmsg)
 
-        sc = StereoCalibrator(self.chess_size)
+        sc = StereoCalibrator(self.chess_size, self.dim)
 
         L = self.image_corners(lrgb)
         R = self.image_corners(rrgb)

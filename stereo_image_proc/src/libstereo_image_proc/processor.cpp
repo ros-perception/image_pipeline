@@ -2,6 +2,7 @@
 #include "stereo_image_proc/stereolib.h"
 #include <sensor_msgs/image_encodings.h>
 #include <cmath>
+#include <limits>
 
 namespace stereo_image_proc {
 
@@ -18,7 +19,7 @@ bool StereoProcessor::process(const sensor_msgs::ImageConstPtr& left_raw,
     left_flags |= LEFT_RECT;
     right_flags |= RIGHT_RECT;
   }
-  if (flags & POINT_CLOUD) {
+  if (flags & (POINT_CLOUD | POINT_CLOUD2)) {
     flags |= DISPARITY;
     // Need the color channels for the point cloud
     left_flags |= LEFT_RECT_COLOR;
@@ -38,6 +39,11 @@ bool StereoProcessor::process(const sensor_msgs::ImageConstPtr& left_raw,
     processPoints(output.disparity, output.left.rect_color, output.left.color_encoding, model, output.points);
   }
 
+  // Project disparity image to 3d point cloud
+  if (flags & POINT_CLOUD2) {
+    processPoints2(output.disparity, output.left.rect_color, output.left.color_encoding, model, output.points2);
+  }
+
   return true;
 }
 
@@ -48,19 +54,61 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
   // Fixed-point disparity is 16 times the true value: d = d_fp / 16.0 = x_l - x_r.
   static const int DPP = 16; // disparities per pixel
   static const double inv_dpp = 1.0 / DPP;
-  
-  // Block matcher produces 16-bit signed (fixed point) disparity image
-  block_matcher_(left_rect, right_rect, disparity16_);
 
-  // OpenCV doesn't do speckle filtering yet! Do it ourselves.
-  labels_.create(disparity16_.size());
-  wavefront_.create(disparity16_.size());
-  region_types_.create(disparity16_.size());
-  int speckle_size = getSpeckleSize(); // actually region size
-  int speckle_diff = getSpeckleRange();
-  int16_t bad_value = getMinDisparity() - DPP;
-  do_speckle(disparity16_[0], bad_value, disparity16_.cols, disparity16_.rows, speckle_diff,
-             speckle_size, labels_[0], wavefront_[0], region_types_[0]);
+  int16_t bad_value = 0;
+  if (disparity_algorithm_ == OPENCV_BLOCK_MATCHER) {
+    // Block matcher produces 16-bit signed (fixed point) disparity image
+    block_matcher_(left_rect, right_rect, disparity16_);
+    bad_value = getMinDisparity() - DPP; // for speckle filtering
+  }
+  else if (disparity_algorithm_ == WG_BLOCK_MATCHER) {
+    // parameters
+    int xim = left_rect.cols;
+    int yim = left_rect.rows;
+    int ftzero = getPreFilterCap();
+    int dlen = getDisparityRange();
+    int corr = getCorrelationWindowSize();
+    int tthresh = getTextureThreshold();
+    int uthresh = (int)(getUniquenessRatio() + 0.5f);
+
+    // allocate memory
+    left_feature_.create(yim, xim);            // left feature image
+    right_feature_.create(yim, xim);           // right feature image
+    disp_buffer_.create(yim, 2*dlen*(corr+5)); // local storage for the algorithm
+    disparity16_.create(yim, xim);             // output, need to allocate explicitly here
+
+    // buffer pointers
+    int16_t* imDisp = disparity16_[0];
+    uint8_t* lim  = const_cast<uint8_t*>(left_rect.ptr<uint8_t>());
+    uint8_t* rim  = const_cast<uint8_t*>(right_rect.ptr<uint8_t>());
+    uint8_t* flim = left_feature_[0];
+    uint8_t* frim = right_feature_[0];
+    uint8_t* buf  = disp_buffer_[0];
+
+    // prefilter
+    do_prefilter(lim, flim, xim, yim, ftzero, buf);
+    do_prefilter(rim, frim, xim, yim, ftzero, buf);
+
+    // clear disparity buffer
+    memset(imDisp, 0, xim*yim*sizeof(int16_t));
+
+    // do block matching
+    do_stereo(flim, frim, imDisp, NULL, xim, yim, ftzero, corr, corr, dlen, tthresh, uthresh, buf);
+    bad_value = getMinDisparity(); // for speckle filtering
+
+    // do speckle filtering
+    labels_.create(disparity16_.size());
+    wavefront_.create(disparity16_.size());
+    region_types_.create(disparity16_.size());
+    int speckle_size = getSpeckleSize(); // actually region size
+    int speckle_diff = getSpeckleRange();
+    do_speckle(disparity16_[0], bad_value, disparity16_.cols, disparity16_.rows, speckle_diff,
+               speckle_size, labels_[0], wavefront_[0], region_types_[0]);
+  }
+  else {
+    ROS_FATAL("Unknown disparity algorithm value [%d]", disparity_algorithm_);
+    ROS_BREAK();
+  }
 
   // Fill in DisparityImage image data, converting to 32-bit float
   sensor_msgs::Image& dimage = disparity.image;
@@ -163,6 +211,106 @@ void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity
           const cv::Vec3b& bgr = color.at<cv::Vec3b>(u,v);
           int32_t rgb_packed = (bgr[2] << 16) | (bgr[1] << 8) | bgr[0];
           points.channels[0].values.push_back(*(float*)(&rgb_packed));
+        }
+      }
+    }
+  }
+  else {
+    ROS_WARN("Could not fill color channel of the point cloud, unrecognized encoding '%s'", encoding.c_str());
+  }
+}
+
+void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparity,
+                                     const cv::Mat& color, const std::string& encoding,
+                                     const image_geometry::StereoCameraModel& model,
+                                     sensor_msgs::PointCloud2& points) const
+{
+  // Calculate dense point cloud
+  const sensor_msgs::Image& dimage = disparity.image;
+  const cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
+  model.projectDisparityImageTo3d(dmat, dense_points_, true);
+
+  // Fill in sparse point cloud message
+  points.height = dense_points_.rows;
+  points.width  = dense_points_.cols;
+  points.fields.resize (4);
+  points.fields[0].name = "x";
+  points.fields[0].offset = 0;
+  points.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
+  points.fields[1].name = "y";
+  points.fields[1].offset = 4;
+  points.fields[1].datatype = sensor_msgs::PointField::FLOAT32;
+  points.fields[2].name = "z";
+  points.fields[2].offset = 8;
+  points.fields[2].datatype = sensor_msgs::PointField::FLOAT32;
+  points.fields[3].name = "rgb";
+  points.fields[3].offset = 12;
+  points.fields[3].datatype = sensor_msgs::PointField::FLOAT32;
+  //points.is_bigendian = false; ???
+  points.point_step = 16;
+  points.row_step = points.point_step * points.width;
+  points.data.resize (points.row_step * points.height);
+  points.is_dense = true;
+ 
+  float bad_point = std::numeric_limits<float>::quiet_NaN ();
+  int i = 0;
+  for (int32_t u = 0; u < dense_points_.rows; ++u) {
+    for (int32_t v = 0; v < dense_points_.cols; ++v, ++i) {
+      if (isValidPoint(dense_points_(u,v))) {
+        // x,y,z,rgba
+        memcpy (&points.data[i * points.point_step + 0], &dense_points_(u,v)[0], sizeof (float));
+        memcpy (&points.data[i * points.point_step + 4], &dense_points_(u,v)[1], sizeof (float));
+        memcpy (&points.data[i * points.point_step + 8], &dense_points_(u,v)[2], sizeof (float));
+      }
+      else {
+        memcpy (&points.data[i * points.point_step + 0], &bad_point, sizeof (float));
+        memcpy (&points.data[i * points.point_step + 4], &bad_point, sizeof (float));
+        memcpy (&points.data[i * points.point_step + 8], &bad_point, sizeof (float));
+      }
+    }
+  }
+
+  // Fill in color
+  namespace enc = sensor_msgs::image_encodings;
+  i = 0;
+  if (encoding == enc::MONO8) {
+    for (int32_t u = 0; u < dense_points_.rows; ++u) {
+      for (int32_t v = 0; v < dense_points_.cols; ++v, ++i) {
+        if (isValidPoint(dense_points_(u,v))) {
+          uint8_t g = color.at<uint8_t>(u,v);
+          int32_t rgb = (g << 16) | (g << 8) | g;
+          memcpy (&points.data[i * points.point_step + 12], &rgb, sizeof (int32_t));
+        }
+        else {
+          memcpy (&points.data[i * points.point_step + 12], &bad_point, sizeof (float));
+        }
+      }
+    }
+  }
+  else if (encoding == enc::RGB8) {
+    for (int32_t u = 0; u < dense_points_.rows; ++u) {
+      for (int32_t v = 0; v < dense_points_.cols; ++v, ++i) {
+        if (isValidPoint(dense_points_(u,v))) {
+          const cv::Vec3b& rgb = color.at<cv::Vec3b>(u,v);
+          int32_t rgb_packed = (rgb[0] << 16) | (rgb[1] << 8) | rgb[0];
+          memcpy (&points.data[i * points.point_step + 12], &rgb_packed, sizeof (int32_t));
+        }
+        else {
+          memcpy (&points.data[i * points.point_step + 12], &bad_point, sizeof (float));
+        }
+      }
+    }
+  }
+  else if (encoding == enc::BGR8) {
+    for (int32_t u = 0; u < dense_points_.rows; ++u) {
+      for (int32_t v = 0; v < dense_points_.cols; ++v, ++i) {
+        if (isValidPoint(dense_points_(u,v))) {
+          const cv::Vec3b& bgr = color.at<cv::Vec3b>(u,v);
+          int32_t rgb_packed = (bgr[2] << 16) | (bgr[1] << 8) | bgr[0];
+          memcpy (&points.data[i * points.point_step + 12], &rgb_packed, sizeof (int32_t));
+        }
+        else {
+          memcpy (&points.data[i * points.point_step + 12], &bad_point, sizeof (float));
         }
       }
     }

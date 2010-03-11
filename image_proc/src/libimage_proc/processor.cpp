@@ -66,7 +66,6 @@ bool Processor::process(const sensor_msgs::ImageConstPtr& raw_image,
     if (flags & COLOR_EITHER) {
       output.color_encoding = enc::MONO8;
       output.color = raw;
-      /// @todo Warn once that color requested but raw_image is mono
     }
   }
   // Something we can't handle
