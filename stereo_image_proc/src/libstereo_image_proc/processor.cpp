@@ -272,9 +272,10 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
 
   // Fill in color
   namespace enc = sensor_msgs::image_encodings;
+  i = 0;
   if (encoding == enc::MONO8) {
     for (int32_t u = 0; u < dense_points_.rows; ++u) {
-      for (int32_t v = 0; v < dense_points_.cols; ++v) {
+      for (int32_t v = 0; v < dense_points_.cols; ++v, ++i) {
         if (isValidPoint(dense_points_(u,v))) {
           uint8_t g = color.at<uint8_t>(u,v);
           int32_t rgb = (g << 16) | (g << 8) | g;
@@ -288,7 +289,7 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
   }
   else if (encoding == enc::RGB8) {
     for (int32_t u = 0; u < dense_points_.rows; ++u) {
-      for (int32_t v = 0; v < dense_points_.cols; ++v) {
+      for (int32_t v = 0; v < dense_points_.cols; ++v, ++i) {
         if (isValidPoint(dense_points_(u,v))) {
           const cv::Vec3b& rgb = color.at<cv::Vec3b>(u,v);
           int32_t rgb_packed = (rgb[0] << 16) | (rgb[1] << 8) | rgb[0];
@@ -302,7 +303,7 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
   }
   else if (encoding == enc::BGR8) {
     for (int32_t u = 0; u < dense_points_.rows; ++u) {
-      for (int32_t v = 0; v < dense_points_.cols; ++v) {
+      for (int32_t v = 0; v < dense_points_.cols; ++v, ++i) {
         if (isValidPoint(dense_points_(u,v))) {
           const cv::Vec3b& bgr = color.at<cv::Vec3b>(u,v);
           int32_t rgb_packed = (bgr[2] << 16) | (bgr[1] << 8) | bgr[0];
