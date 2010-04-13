@@ -59,7 +59,14 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
   if (disparity_algorithm_ == OPENCV_BLOCK_MATCHER) {
     // Block matcher produces 16-bit signed (fixed point) disparity image
     block_matcher_(left_rect, right_rect, disparity16_);
-    bad_value = getMinDisparity() - DPP; // for speckle filtering
+
+    // Explicitly mark border as invalid. This should already be fixed in recent OpenCV revisions.
+    /// @todo Remove when opencv2 revision gets bumped.
+    bad_value = (getMinDisparity() - 1) * DPP;
+    disparity16_.row(0).setTo( cv::Scalar(bad_value) );
+    disparity16_.row(disparity16_.rows - 1).setTo( cv::Scalar(bad_value) );
+    disparity16_.col(0).setTo( cv::Scalar(bad_value) );
+    disparity16_.col(disparity16_.cols - 1).setTo( cv::Scalar(bad_value) );
   }
   else if (disparity_algorithm_ == WG_BLOCK_MATCHER) {
     // parameters
