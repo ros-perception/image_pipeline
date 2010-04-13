@@ -284,13 +284,21 @@ public:
   {
     ROS_DEBUG("[stereo_image_proc] Reconfigure request received.");
 
-    if (config.disparity_algorithm == "cv_bm")
+    if (config.disparity_algorithm == "cv_bm") {
       processor_.setDisparityAlgorithm(stereo_image_proc::StereoProcessor::OPENCV_BLOCK_MATCHER);
-    else if (config.disparity_algorithm == "wg_bm")
+    }
+    else if (config.disparity_algorithm == "wg_bm") {
       processor_.setDisparityAlgorithm(stereo_image_proc::StereoProcessor::WG_BLOCK_MATCHER);
-    else
+      if (config.min_disparity != 0) {
+        ROS_WARN("WG block matcher does not support min_disparity. To use non-zero values of min_disparity " 
+                 "switch to the OpenCV block matcher.");
+        config.min_disparity = 0;
+      }
+    }
+    else {
       ROS_ERROR("[stereo_image_proc] Unrecognized disparity algorithm [%s] in reconfigure request.",
                 config.disparity_algorithm.c_str());
+    }
 
     config.prefilter_size |= 0x1; // must be odd
     processor_.setPreFilterSize(config.prefilter_size);

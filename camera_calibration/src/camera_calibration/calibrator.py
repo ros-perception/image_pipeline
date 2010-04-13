@@ -206,6 +206,27 @@ class MonoCalibrator(Calibrator):
         """ Return the camera calibration as a CameraInfo message """
         return self.lrmsg(self.distortion, self.intrinsics, self.R, self.P)
 
+    def from_message(self, msg, alpha = 0.0):
+        """ Initialize the camera calibration from a CameraInfo message """
+
+        self.size = (msg.width, msg.height)
+        self.intrinsics = cv.CreateMat(3, 3, cv.CV_64FC1)
+        self.distortion = cv.CreateMat(4, 1, cv.CV_64FC1)
+        self.R = cv.CreateMat(3, 3, cv.CV_64FC1)
+        self.P = cv.CreateMat(3, 4, cv.CV_64FC1)
+        for i in range(4):
+            self.distortion[i, 0] = msg.D[i]
+        for i in range(9):
+            cv.Set1D(self.intrinsics, i, msg.K[i])
+        for i in range(9):
+            cv.Set1D(self.R, i, msg.R[i])
+        for i in range(12):
+            cv.Set1D(self.P, i, msg.P[i])
+
+        self.mapx = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
+        self.mapy = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
+        self.set_alpha(0.0)
+
     def report(self):
         self.lrreport(self.distortion, self.intrinsics, self.R, self.P)
 
@@ -326,11 +347,36 @@ class StereoCalibrator(Calibrator):
         return (self.lrmsg(self.l.distortion, self.l.intrinsics, self.lR, self.lP),
                 self.lrmsg(self.r.distortion, self.r.intrinsics, self.rR, self.rP))
 
+    def from_message(self, msgs, alpha = 0.0):
+        """ Initialize the camera calibration from a pair of CameraInfo messages.  """
+        self.size = (msgs[0].width, msgs[0].height)
+
+        self.T = cv.CreateMat(3, 1, cv.CV_64FC1)
+        self.R = cv.CreateMat(3, 3, cv.CV_64FC1)
+        cv.SetIdentity(self.T)
+        cv.SetIdentity(self.R)
+
+        self.l.from_message(msgs[0])
+        self.r.from_message(msgs[1])
+        self.lR = self.l.R
+        self.lP = self.l.P
+        self.rR = self.r.R
+        self.rP = self.r.P
+        # Need to compute self.T and self.R here, using the monocular parameters above
+        if False:
+            self.set_alpha(0.0)
+
     def report(self):
         print "\nLeft:"
         self.lrreport(self.l.distortion, self.l.intrinsics, self.lR, self.lP)
         print "\nRight:"
         self.lrreport(self.r.distortion, self.r.intrinsics, self.rR, self.rP)
+        print "self.T", list(cvmat_iterator(self.T))
+        print "self.R", list(cvmat_iterator(self.R))
+        print "self.l.R = ", list(cvmat_iterator(self.l.R))
+        print "self.r.R = ", list(cvmat_iterator(self.r.R))
+        print "self.l.P = ", list(cvmat_iterator(self.l.P))
+        print "self.r.P = ", list(cvmat_iterator(self.r.P))
 
     def ost(self):
         return (self.lrost("left", self.l.distortion, self.l.intrinsics, self.lR, self.lP) +

@@ -68,7 +68,13 @@ bool Processor::process(const sensor_msgs::ImageConstPtr& raw_image,
       output.color = raw;
     }
   }
-  // Something we can't handle
+  // 8UC3 does not specify a color encoding. Is it BGR, RGB, HSV, XYZ, LUV...?
+  else if (raw_encoding == enc::TYPE_8UC3) {
+    ROS_ERROR("[image_proc] Ambiguous encoding '8UC3'. The camera driver "
+              "should set the encoding to 'bgr8' or 'rgb8'.");
+    return false;
+  }
+  // Something else we can't handle
   else {
     ROS_ERROR("[image_proc] Unsupported encoding '%s'", raw_encoding.c_str());
     return false;
