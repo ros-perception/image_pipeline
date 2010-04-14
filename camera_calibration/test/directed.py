@@ -63,7 +63,7 @@ class TestDirected(unittest.TestCase):
         self.assertRaises(CalibrationException, lambda: mc.cal(self.limages))
 
 if __name__ == '__main__':
-    if 1:
+    if 0:
         rostest.unitrun('camera_calibration', 'directed', TestDirected)
     else:
         suite = unittest.TestSuite()

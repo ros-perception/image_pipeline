@@ -61,6 +61,19 @@ class ConsumerThread(threading.Thread):
 class CalibrationNode:
 
     def __init__(self, chess_size, dim):
+        # assume any non-default service names have been set.  Wait for the service to become ready
+        for svcname in ["camera", "left_camera", "right_camera"]:
+            remapped = rospy.remap_name("camera")
+            if remapped != svcname:
+                fullservicename = "%s/set_camera_info" % remapped
+                print "Waiting for service", fullservicename, "..."
+                try:
+                    rospy.wait_for_service(fullservicename, 5)
+                    print "OK"
+                except rospy.ROSException:
+                    print "Service not found"
+                    rospy.signal_shutdown('Quit')
+
         self.chess_size = chess_size
         self.dim = dim
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)

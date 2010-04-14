@@ -434,7 +434,7 @@ class StereoCalibrator(Calibrator):
         def l2(p0, p1):
             return math.sqrt(sum([(c0 - c1) ** 2 for (c0, c1) in zip(p0, p1)]))
 
-        # Compute the length from each horizontal and vertical lines, and return the mean
+        # Compute the length from each horizontal and vertical line, and return the mean
         cc = self.chessboard_n_cols
         cr = self.chessboard_n_rows
         lengths = (
