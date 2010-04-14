@@ -31,6 +31,7 @@ class TestDirected(unittest.TestCase):
         mc2 = MonoCalibrator((8,6), .108)
         mc2.from_message(mc.as_message())
         mc2.report()
+        self.assert_(len(mc2.ost()) > 0)
 
     def test_stereo(self):
         limages = [self.image_from_archive("wide/left%04d.pgm" % i) for i in range(3, 15)]
@@ -50,6 +51,7 @@ class TestDirected(unittest.TestCase):
         sc2.from_message(sc.as_message())
         # sc2.set_alpha(1.0)
         sc2.report()
+        self.assert_(len(sc2.ost()) > 0)
 
     def test_nochecker(self):
 
@@ -63,7 +65,7 @@ class TestDirected(unittest.TestCase):
         self.assertRaises(CalibrationException, lambda: mc.cal(self.limages))
 
 if __name__ == '__main__':
-    if 0:
+    if 1:
         rostest.unitrun('camera_calibration', 'directed', TestDirected)
     else:
         suite = unittest.TestSuite()
