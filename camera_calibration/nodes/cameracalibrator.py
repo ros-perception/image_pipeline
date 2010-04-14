@@ -60,19 +60,21 @@ class ConsumerThread(threading.Thread):
 
 class CalibrationNode:
 
-    def __init__(self, chess_size, dim):
-        # assume any non-default service names have been set.  Wait for the service to become ready
-        for svcname in ["camera", "left_camera", "right_camera"]:
-            remapped = rospy.remap_name("camera")
-            if remapped != svcname:
-                fullservicename = "%s/set_camera_info" % remapped
-                print "Waiting for service", fullservicename, "..."
-                try:
-                    rospy.wait_for_service(fullservicename, 5)
-                    print "OK"
-                except rospy.ROSException:
-                    print "Service not found"
-                    rospy.signal_shutdown('Quit')
+    def __init__(self, chess_size, dim, service_check):
+
+        if service_check:
+            # assume any non-default service names have been set.  Wait for the service to become ready
+            for svcname in ["camera", "left_camera", "right_camera"]:
+                remapped = rospy.remap_name("camera")
+                if remapped != svcname:
+                    fullservicename = "%s/set_camera_info" % remapped
+                    print "Waiting for service", fullservicename, "..."
+                    try:
+                        rospy.wait_for_service(fullservicename, 5)
+                        print "OK"
+                    except rospy.ROSException:
+                        print "Service not found"
+                        rospy.signal_shutdown('Quit')
 
         self.chess_size = chess_size
         self.dim = dim
@@ -495,13 +497,14 @@ def main():
     parser.add_option("-o", "--opencv", dest="web", action="store_false", help="use OpenCV-based GUI for calibration (default)")
     parser.add_option("-s", "--size", default="8x6", help="specify chessboard size as nxm [default: %default]")
     parser.add_option("-q", "--square", default=".108", help="specify chessboard square size in meters [default: %default]")
+    parser.add_option("", "--no-service-check", dest="service_check", action="store_false", default=True, help="disable check for set_camera_info services at startup")
     options, args = parser.parse_args()
     size = tuple([int(c) for c in options.size.split('x')])
     dim = float(options.square)
     if options.web:
         node = WebCalibrationNode(size, dim)
     else:
-        node = OpenCVCalibrationNode(size, dim)
+        node = OpenCVCalibrationNode(size, dim, options.service_check)
     rospy.spin()
 
 if __name__ == "__main__":
