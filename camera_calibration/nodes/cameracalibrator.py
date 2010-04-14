@@ -156,9 +156,9 @@ class CalibrationNode:
         (self.width, self.height) = cv.GetSize(rgb)
         scrib = rgb
 
-        scale = int(math.ceil(self.width / 640))
+        scale = math.ceil(self.width / 640.)
         if scale != 1:
-            scrib = cv.CreateMat(self.height / scale, self.width / scale, cv.GetElemType(rgb))
+            scrib = cv.CreateMat(int(self.height / scale), int(self.width / scale), cv.GetElemType(rgb))
             cv.Resize(rgb, scrib)
         else:
             scrib = cv.CloneMat(rgb)
@@ -186,7 +186,7 @@ class CalibrationNode:
 
             src = cv.Reshape(self.c.mk_image_points([corners]), 2)
 
-            cv.DrawChessboardCorners(scrib, self.chess_size, [ (x/scale, y/scale) for (x, y) in cvmat_iterator(src)], True)
+            cv.DrawChessboardCorners(scrib, self.chess_size, [ (int(x/scale), int(y/scale)) for (x, y) in cvmat_iterator(src)], True)
 
             # If the image is a min or max in every parameter, add to the collection
             if any(is_min) or any(is_max):
