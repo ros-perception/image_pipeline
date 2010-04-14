@@ -51,6 +51,12 @@ class Calibrator:
         mono = cv.CreateMat(h, w, cv.CV_8UC1)
         cv.CvtColor(img, mono, cv.CV_BGR2GRAY)
         (ok, corners) = cv.FindChessboardCorners(mono, (self.chessboard_n_cols, self.chessboard_n_rows), cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE)
+
+        # If any corners are within BORDER pixels of the screen edge, reject the detection by setting ok to false
+        BORDER = 8
+        if not all([(BORDER < x < (w - BORDER)) and (BORDER < y < (h - BORDER)) for (x, y) in corners]):
+            ok = False
+
         if refine and ok:
             corners = cv.FindCornerSubPix(mono, corners, (5,5), (-1,-1), ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
         return (ok, corners)

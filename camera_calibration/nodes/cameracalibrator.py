@@ -369,17 +369,18 @@ class OpenCVCalibrationNode(CalibrationNode):
         cv.CreateTrackbar("scale", "display", 0, 100, self.on_scale)
 
     def on_mouse(self, event, x, y, flags, param):
-        if event == cv.CV_EVENT_LBUTTONDOWN:
+        if self.goodenough and event == cv.CV_EVENT_LBUTTONDOWN:
             if 180 <= y < 280:
                 self.do_calibration()
             elif 280 <= y < 380:
                 self.do_save()
             elif 380 <= y < 480:
                 self.do_upload()
+                rospy.signal_shutdown('Quit')
 
     def waitkey(self):
         k = cv.WaitKey(6)
-        if k == ord('q'):
+        if k in [27, ord('q')]:
             rospy.signal_shutdown('Quit')
         return k
 
@@ -402,7 +403,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         x = self.displaywidth
         self.button(cv.GetSubRect(display, (x,180,100,100)), "CALIBRATE", self.goodenough)
         self.button(cv.GetSubRect(display, (x,280,100,100)), "SAVE", self.calibrated)
-        self.button(cv.GetSubRect(display, (x,380,100,100)), "UPLOAD", self.calibrated)
+        self.button(cv.GetSubRect(display, (x,380,100,100)), "COMMIT", self.calibrated)
 
     def y(self, i):
         return 30 + 50 * i
