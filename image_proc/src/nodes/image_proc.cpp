@@ -70,6 +70,7 @@ private:
   // Error reporting
   ros::WallTimer check_inputs_timer_;
   ros::WallTime last_uncalibrated_error_;
+  ros::WallTime last_color_error_;
 
 public:
 
@@ -141,6 +142,17 @@ public:
     // Process raw image into colorized and/or rectified outputs
     if (!processor_.process(raw_image, model_, processed_images_, flags))
       return;
+
+    // Check that if color is requested, we actually got it
+    static const int WANT_COLOR = Proc::COLOR | Proc::RECT_COLOR;
+    if ((flags & WANT_COLOR) && processed_images_.color_encoding == sensor_msgs::image_encodings::MONO8) {
+      // Complain every 30s
+      ros::WallTime now = ros::WallTime::now();
+      if ((now - last_color_error_).toSec() > 30.0) {
+        ROS_WARN("[image_proc] Color topic requested, but raw image data is grayscale.");
+        last_color_error_ = now;
+      }
+    }
 
     // Publish images
     img_.header.stamp = raw_image->header.stamp;

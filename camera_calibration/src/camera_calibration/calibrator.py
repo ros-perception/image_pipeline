@@ -15,7 +15,7 @@ def cvmat_iterator(cvmat):
 
 class Calibrator:
 
-    def __init__(self, size = (8, 6), dim = .108):
+    def __init__(self, size, dim):
         self.chessboard_n_cols = size[0]
         self.chessboard_n_rows = size[1]
         self.dim = dim
@@ -51,6 +51,12 @@ class Calibrator:
         mono = cv.CreateMat(h, w, cv.CV_8UC1)
         cv.CvtColor(img, mono, cv.CV_BGR2GRAY)
         (ok, corners) = cv.FindChessboardCorners(mono, (self.chessboard_n_cols, self.chessboard_n_rows), cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE)
+
+        # If any corners are within BORDER pixels of the screen edge, reject the detection by setting ok to false
+        BORDER = 8
+        if not all([(BORDER < x < (w - BORDER)) and (BORDER < y < (h - BORDER)) for (x, y) in corners]):
+            ok = False
+
         if refine and ok:
             corners = cv.FindCornerSubPix(mono, corners, (5,5), (-1,-1), ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
         return (ok, corners)
@@ -176,7 +182,8 @@ class MonoCalibrator(Calibrator):
         self.R = cv.CreateMat(3, 3, cv.CV_64FC1)
         self.P = cv.CreateMat(3, 4, cv.CV_64FC1)
         cv.SetIdentity(self.R)
-        cv.SetIdentity(self.P)
+        cv.SetZero(self.P)
+        cv.Copy(self.intrinsics, cv.GetSubRect(self.P, (0, 0, 3, 3)))
 
     def remap(self, src):
         """
@@ -387,7 +394,7 @@ class StereoCalibrator(Calibrator):
         def l2(p0, p1):
             return math.sqrt(sum([(c0 - c1) ** 2 for (c0, c1) in zip(p0, p1)]))
 
-        # Compute the length from each horizontal and vertical lines, and return the mean
+        # Compute the length from each horizontal and vertical line, and return the mean
         cc = self.chessboard_n_cols
         cr = self.chessboard_n_rows
         lengths = (
