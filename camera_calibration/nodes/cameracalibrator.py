@@ -135,7 +135,7 @@ class CalibrationNode:
     def handle_monocular(self, msg):
 
         if self.c == None:
-            self.c = MonoCalibrator(self.chess_size)
+            self.c = MonoCalibrator(self.chess_size, self.dim)
 
         rgb = self.mkgray(msg)
         (self.width, self.height) = cv.GetSize(rgb)
@@ -189,7 +189,7 @@ class CalibrationNode:
 
         (lmsg, rmsg) = msg
         if self.c == None:
-            self.c = StereoCalibrator(self.chess_size)
+            self.c = StereoCalibrator(self.chess_size, self.dim)
         lrgb = self.mkgray(lmsg)
         rrgb = self.mkgray(rmsg)
         (self.width, self.height) = cv.GetSize(lrgb)

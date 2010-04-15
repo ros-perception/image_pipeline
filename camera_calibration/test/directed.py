@@ -25,7 +25,7 @@ class TestDirected(unittest.TestCase):
         return cv.DecodeImageM(imagefiledata)
         
     def test_monocular(self):
-        mc = MonoCalibrator()
+        mc = MonoCalibrator((8,6), .108)
         mc.cal(self.limages)
         if 0:
             cv.NamedWindow("display")
@@ -46,7 +46,7 @@ class TestDirected(unittest.TestCase):
         print self.image_from_archive('wide/left0003.pgm')
         limages = [self.image_from_archive("wide/left%04d.pgm" % i) for i in range(3, 15)]
         rimages = [self.image_from_archive("wide/right%04d.pgm" % i) for i in range(3, 15)]
-        mc = StereoCalibrator((8, 6))
+        mc = StereoCalibrator((8, 6), .108)
         mc.cal(self.limages, self.rimages)
 
         mc.report()
@@ -61,9 +61,9 @@ class TestDirected(unittest.TestCase):
         # Should raise an exception because of lack of input points.
 
         size = (8, 7)
-        sc = StereoCalibrator(size)
+        sc = StereoCalibrator(size, .108)
         self.assertRaises(CalibrationException, lambda: sc.cal(self.limages, self.rimages))
-        mc = MonoCalibrator(size)
+        mc = MonoCalibrator(size, .108)
         self.assertRaises(CalibrationException, lambda: mc.cal(self.limages))
 
 if __name__ == '__main__':
