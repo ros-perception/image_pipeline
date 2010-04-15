@@ -308,10 +308,13 @@ class CalibrationNode:
         print self.c.ost()
         info = self.c.as_message()
         if self.c.is_mono:
-            self.set_camera_info_service(info)
+            response = self.set_camera_info_service(info)
+            assert response.success, "Attempt to set camera info failed: " + response.status_message
         else:
-            self.set_left_camera_info_service(info[0])
-            self.set_right_camera_info_service(info[1])
+            response = self.set_left_camera_info_service(info[0])
+            assert response.success, "Attempt to set camera info failed: " + response.status_message
+            response = self.set_right_camera_info_service(info[1])
+            assert response.success, "Attempt to set camera info failed: " + response.status_message
 
     def set_scale(self, a):
         if self.calibrated:
