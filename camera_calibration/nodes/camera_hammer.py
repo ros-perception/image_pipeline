@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 PKG = 'camera_calibration' # this package name
 import roslib; roslib.load_manifest(PKG)
 
@@ -33,13 +34,23 @@ rospy.init_node('camera_hammer')
 track = CamInfoTracker()
 
 service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"), sensor_msgs.srv.SetCameraInfo)
-for i in range(10):
+for i in range(20):
     m = random_camerainfo()
     print m
     response = service(m)
     print response
-    time.sleep(1)
+    start = rospy.get_time()
+    outcome = False
+    while True:
+        try:
+            outcome = list(track.val.P) == list(m.P)
+        except:
+            pass
+        if outcome:
+            break
+        if rospy.get_time() - start > 5:
+            break
+        rospy.sleep(rospy.Duration(0.1))
     print track.val.P
-    outcome = list(track.val.P) == list(m.P)
     print 'Outcome ====>', outcome
     assert outcome
