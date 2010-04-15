@@ -27,33 +27,21 @@ class TestDirected(unittest.TestCase):
     def test_monocular(self):
         mc = MonoCalibrator((8,6), .108)
         mc.cal(self.limages)
-        if 0:
-            cv.NamedWindow("display")
-            for im in images:
-                (ok, corners) = get_corners(im)
-                if ok:
-                    src = cv.Reshape(mk_image_points([corners]), 2)
-                    rm = mc.remap(cv.GetMat(im))
-
-                    L = list(cvmat_iterator(mc.undistort_points(src)))
-
-                    cv.DrawChessboardCorners(rm, (8, 6), L, True)
-                    cv.ShowImage("display", rm)
-                    if cv.WaitKey() == ord('q'):
-                        assert 0
+        mc.report()
+        self.assert_(len(mc.ost()) > 0)
 
     def test_stereo(self):
-        print self.image_from_archive('wide/left0003.pgm')
         limages = [self.image_from_archive("wide/left%04d.pgm" % i) for i in range(3, 15)]
         rimages = [self.image_from_archive("wide/right%04d.pgm" % i) for i in range(3, 15)]
-        mc = StereoCalibrator((8, 6), .108)
-        mc.cal(self.limages, self.rimages)
+        sc = StereoCalibrator((8, 6), .108)
+        sc.cal(self.limages, self.rimages)
 
-        mc.report()
-        mc.ost()
+        sc.report()
+        sc.ost()
 
-        self.assert_(mc.epipolar1(self.limages[0], self.rimages[0]) < 0.5)
-        self.assertAlmostEqual(mc.chessboard_size(self.limages[0], self.rimages[0]), .108, 2)
+        self.assert_(sc.epipolar1(self.limages[0], self.rimages[0]) < 0.5)
+        self.assertAlmostEqual(sc.chessboard_size(self.limages[0], self.rimages[0]), .108, 2)
+        self.assert_(len(sc.ost()) > 0)
 
     def test_nochecker(self):
 

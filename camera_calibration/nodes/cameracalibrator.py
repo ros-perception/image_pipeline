@@ -61,6 +61,19 @@ class ConsumerThread(threading.Thread):
 class CalibrationNode:
 
     def __init__(self, chess_size, dim):
+        # assume any non-default service names have been set.  Wait for the service to become ready
+        for svcname in ["camera", "left_camera", "right_camera"]:
+            remapped = rospy.remap_name("camera")
+            if remapped != svcname:
+                fullservicename = "%s/set_camera_info" % remapped
+                print "Waiting for service", fullservicename, "..."
+                try:
+                    rospy.wait_for_service(fullservicename, 5)
+                    print "OK"
+                except rospy.ROSException:
+                    print "Service not found"
+                    rospy.signal_shutdown('Quit')
+
         self.chess_size = chess_size
         self.dim = dim
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
@@ -141,9 +154,9 @@ class CalibrationNode:
         (self.width, self.height) = cv.GetSize(rgb)
         scrib = rgb
 
-        scale = int(math.ceil(self.width / 640))
+        scale = math.ceil(self.width / 640.)
         if scale != 1:
-            scrib = cv.CreateMat(self.height / scale, self.width / scale, cv.GetElemType(rgb))
+            scrib = cv.CreateMat(int(self.height / scale), int(self.width / scale), cv.GetElemType(rgb))
             cv.Resize(rgb, scrib)
         else:
             scrib = cv.CloneMat(rgb)
@@ -171,7 +184,7 @@ class CalibrationNode:
 
             src = cv.Reshape(self.c.mk_image_points([corners]), 2)
 
-            cv.DrawChessboardCorners(scrib, self.chess_size, [ (x/scale, y/scale) for (x, y) in cvmat_iterator(src)], True)
+            cv.DrawChessboardCorners(scrib, self.chess_size, [ (int(x/scale), int(y/scale)) for (x, y) in cvmat_iterator(src)], True)
 
             # If the image is a min or max in every parameter, add to the collection
             if any(is_min) or any(is_max):
@@ -355,16 +368,19 @@ class OpenCVCalibrationNode(CalibrationNode):
 
     def on_mouse(self, event, x, y, flags, param):
         if event == cv.CV_EVENT_LBUTTONDOWN:
-            if 180 <= y < 280:
-                self.do_calibration()
-            elif 280 <= y < 380:
-                self.do_save()
-            elif 380 <= y < 480:
-                self.do_upload()
+            if self.goodenough:
+                if 180 <= y < 280:
+                    self.do_calibration()
+            if self.calibrated:
+                if 280 <= y < 380:
+                    self.do_save()
+                elif 380 <= y < 480:
+                    self.do_upload()
+                    rospy.signal_shutdown('Quit')
 
     def waitkey(self):
         k = cv.WaitKey(6)
-        if k == ord('q'):
+        if k in [27, ord('q')]:
             rospy.signal_shutdown('Quit')
         return k
 
@@ -387,7 +403,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         x = self.displaywidth
         self.button(cv.GetSubRect(display, (x,180,100,100)), "CALIBRATE", self.goodenough)
         self.button(cv.GetSubRect(display, (x,280,100,100)), "SAVE", self.calibrated)
-        self.button(cv.GetSubRect(display, (x,380,100,100)), "UPLOAD", self.calibrated)
+        self.button(cv.GetSubRect(display, (x,380,100,100)), "COMMIT", self.calibrated)
 
     def y(self, i):
         return 30 + 50 * i
