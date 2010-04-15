@@ -65,7 +65,7 @@ class CalibrationNode:
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
-                remapped = rospy.remap_name("camera")
+                remapped = rospy.remap_name(svcname)
                 if remapped != svcname:
                     fullservicename = "%s/set_camera_info" % remapped
                     print "Waiting for service", fullservicename, "..."
