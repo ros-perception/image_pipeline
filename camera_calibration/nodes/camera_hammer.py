@@ -34,7 +34,8 @@ rospy.init_node('camera_hammer')
 track = CamInfoTracker()
 
 service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"), sensor_msgs.srv.SetCameraInfo)
-for i in range(20):
+for i in range(1000):
+    print "\nItreation", i
     m = random_camerainfo()
     print m
     response = service(m)
@@ -54,3 +55,4 @@ for i in range(20):
     print track.val.P
     print 'Outcome ====>', outcome
     assert outcome
+    assert response.success
