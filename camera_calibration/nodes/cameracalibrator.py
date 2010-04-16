@@ -58,6 +58,20 @@ class ConsumerThread(threading.Thread):
                     break
             self.function(m)
 
+# Hack message filter to resize (truncate for now) the image, for UI testing.
+class Resizer:
+    def __init__(self, upstream):
+        upstream.registerCallback(self.incoming)
+
+    def registerCallback(self, callback, *args):
+        self.callback = callback
+        self.args = args
+
+    def incoming(self, m):
+        m.width = 320
+        m.height = 240
+        self.callback(m, *self.args)
+
 class CalibrationNode:
 
     def __init__(self, chess_size, dim, service_check):
@@ -83,7 +97,8 @@ class CalibrationNode:
         ts = message_filters.TimeSynchronizer([lsub, rsub], 4)
         ts.registerCallback(self.queue_stereo)
 
-        rospy.Subscriber('image', sensor_msgs.msg.Image, self.queue_monocular)
+        msub = message_filters.Subscriber('image', sensor_msgs.msg.Image)
+        msub.registerCallback(self.queue_monocular)
 
         self.set_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"), sensor_msgs.srv.SetCameraInfo)
         self.set_left_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("left_camera"), sensor_msgs.srv.SetCameraInfo)
@@ -366,7 +381,7 @@ class OpenCVCalibrationNode(CalibrationNode):
 
         CalibrationNode.__init__(self, *args)
         cv.NamedWindow("display")
-        self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 0.20, 1, thickness = 2, line_type = cv.CV_AA)
+        self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 0.20, 1, thickness = 2)
         #self.button = cv.LoadImage("%s/button.jpg" % roslib.packages.get_pkg_dir(PKG))
         cv.SetMouseCallback("display", self.on_mouse)
         cv.CreateTrackbar("scale", "display", 0, 100, self.on_scale)
@@ -422,7 +437,7 @@ class OpenCVCalibrationNode(CalibrationNode):
     def redraw_monocular(self, scrib, _):
         width, height = cv.GetSize(scrib)
 
-        display = cv.CreateMat(height, width + 100, cv.CV_8UC3)
+        display = cv.CreateMat(max(480, height), width + 100, cv.CV_8UC3)
         cv.Copy(scrib, cv.GetSubRect(display, (0,0,width,height)))
         cv.Set(cv.GetSubRect(display, (width,0,100,height)), (255, 255, 255))
 
@@ -451,7 +466,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         self.show(display)
 
     def redraw_stereo(self, lscrib, rscrib, lrgb, rrgb):
-        display = cv.CreateMat(self.height, 2 * self.width + 100, cv.CV_8UC3)
+        display = cv.CreateMat(max(480, self.height), 2 * self.width + 100, cv.CV_8UC3)
         cv.Copy(lscrib, cv.GetSubRect(display, (0,0,self.width,self.height)))
         cv.Copy(rscrib, cv.GetSubRect(display, (self.width,0,self.width,self.height)))
         cv.Set(cv.GetSubRect(display, (2 * self.width,0,100,self.height)), (255, 255, 255))
