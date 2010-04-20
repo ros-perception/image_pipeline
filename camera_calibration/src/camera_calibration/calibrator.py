@@ -4,6 +4,7 @@ import cv
 
 import image_geometry
 import sensor_msgs.msg
+import pickle
 
 class CalibrationException(Exception):
     pass
@@ -128,6 +129,10 @@ class MonoCalibrator(Calibrator):
     is_mono = True
 
     def cal(self, images):
+        goodcorners = self.collect_corners(images)
+        self.cal_fromcorners(goodcorners)
+
+    def collect_corners(self, images):
         """
         :param images: source images containing chessboards
         :type images: list of :class:`cvMat`
@@ -137,9 +142,12 @@ class MonoCalibrator(Calibrator):
         self.size = cv.GetSize(images[0])
         corners = [self.get_corners(i) for i in images]
 
-        good = [co for (im, (ok, co)) in zip(images, corners) if ok]
-        if len(good) == 0:
+        goodcorners = [co for (im, (ok, co)) in zip(images, corners) if ok]
+        if len(goodcorners) == 0:
             raise CalibrationException
+        return goodcorners
+
+    def cal_fromcorners(self, good):
 
         ipts = self.mk_image_points(good)
         opts = self.mk_object_points(len(good))
@@ -153,7 +161,7 @@ class MonoCalibrator(Calibrator):
         intrinsics[0,0] = 1.0
         intrinsics[1,1] = 1.0
         cv.CalibrateCamera2(opts, ipts, npts,
-                   cv.GetSize(images[0]), intrinsics,
+                   self.size, intrinsics,
                    distortion,
                    cv.CreateMat(len(good), 3, cv.CV_32FC1),
                    cv.CreateMat(len(good), 3, cv.CV_32FC1),
@@ -279,6 +287,10 @@ class StereoCalibrator(Calibrator):
 
         Find chessboards in images, and runs the OpenCV calibration solver.
         """
+        goodcorners = self.collect_corners(limages, rimages)
+        self.cal_fromcorners(goodcorners)
+
+    def collect_corners(self, limages, rimages):
         self.size = cv.GetSize(limages[0])
         self.l.cal(limages)
         self.r.cal(rimages)
@@ -290,7 +302,9 @@ class StereoCalibrator(Calibrator):
 
         if len(good) == 0:
             raise CalibrationException
+        return good
 
+    def cal_fromcorners(self, good):
         lipts = self.mk_image_points([l for (l, r) in good])
         ripts = self.mk_image_points([r for (l, r) in good])
         opts = self.mk_object_points(len(good), self.dim)

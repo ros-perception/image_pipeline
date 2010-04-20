@@ -16,6 +16,8 @@ import time
 import Queue
 import threading
 import tarfile
+import pickle
+import random
 import StringIO
 
 import cv
@@ -281,11 +283,13 @@ class CalibrationNode:
         # vv is a list of pairs (p, i) for monocular, and triples (p, l, r) for stereo
         if self.c.is_mono:
             images = [i for (p, i) in vv]
-            self.c.cal(images)
+            corners = self.c.collect_corners(images)
         else:
             limages = [ l for (p, l, r) in vv ]
             rimages = [ r for (p, l, r) in vv ]
-            self.c.cal(limages, rimages)
+            corners = self.c.collect_corners(limages, rimages)
+        pickle.dump((self.c.is_mono, self.c.size, corners), open("/tmp/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
+        self.c.cal_fromcorners(corners)
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
@@ -387,7 +391,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         cv.CreateTrackbar("scale", "display", 0, 100, self.on_scale)
 
     def on_mouse(self, event, x, y, flags, param):
-        if event == cv.CV_EVENT_LBUTTONDOWN:
+        if event == cv.CV_EVENT_LBUTTONDOWN and self.displaywidth < x:
             if self.goodenough:
                 if 180 <= y < 280:
                     self.do_calibration()
