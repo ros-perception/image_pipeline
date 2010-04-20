@@ -5,10 +5,22 @@ rosbuild_init()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
+include(FindPkgConfig)
+if (PKG_CONFIG_FOUND AND UNIX AND NOT APPLE)
+   pkg_check_modules(GTK gtk+-2.0)
+   if (GTK_FOUND)
+      include_directories(${GTK_INCLUDE_DIRS})
+      link_directories(${GTK_LIBRARY_DIRS})
+      add_definitions(-DHAVE_GTK)
+   endif(GTK_FOUND)
+endif(PKG_CONFIG_FOUND AND UNIX AND NOT APPLE)
+
 # Image viewers
 rosbuild_add_executable(image_view src/image_view.cpp)
+target_link_libraries(image_view ${GTK_LIBRARIES})
 
 rosbuild_add_executable(stereo_view src/stereo_view.cpp)
+target_link_libraries(stereo_view ${GTK_LIBRARIES})
 
 # Extra tools (unstable)
 rosbuild_add_executable(extract_images src/extract_images.cpp)

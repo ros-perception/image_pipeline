@@ -43,6 +43,18 @@
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 
+#ifdef HAVE_GTK
+#include <gtk/gtk.h>
+
+// Platform-specific workaround for #3026: image_view doesn't close when
+// closing image window. On platforms using GTK+ we connect this to the
+// window's "destroy" event so that image_view exits.
+static void destroy(GtkWidget *widget, gpointer data)
+{
+  ros::shutdown();
+}
+#endif
+
 class ImageView
 {
 private:
@@ -70,9 +82,14 @@ public:
     std::string format_string;
     local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
     filename_format_.parse(format_string);
-    
-    cvNamedWindow(window_name_.c_str(), autosize ? CV_WINDOW_AUTOSIZE : 0);
-    cvSetMouseCallback(window_name_.c_str(), &ImageView::mouse_cb, this);
+
+    const char* name = window_name_.c_str();
+    cvNamedWindow(name, autosize ? CV_WINDOW_AUTOSIZE : 0);
+    cvSetMouseCallback(name, &ImageView::mouse_cb, this);
+#ifdef HAVE_GTK
+    GtkWidget *widget = GTK_WIDGET( cvGetWindowHandle(name) );
+    g_signal_connect(widget, "destroy", G_CALLBACK(destroy), NULL);
+#endif
     cvStartWindowThread();
 
     image_transport::ImageTransport it(nh);
