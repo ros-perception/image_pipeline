@@ -16,6 +16,8 @@ import time
 import Queue
 import threading
 import tarfile
+import pickle
+import random
 import StringIO
 
 import cv
@@ -58,9 +60,38 @@ class ConsumerThread(threading.Thread):
                     break
             self.function(m)
 
+# Hack message filter to resize (truncate for now) the image, for UI testing.
+class Resizer:
+    def __init__(self, upstream):
+        upstream.registerCallback(self.incoming)
+
+    def registerCallback(self, callback, *args):
+        self.callback = callback
+        self.args = args
+
+    def incoming(self, m):
+        m.width = 320
+        m.height = 240
+        self.callback(m, *self.args)
+
 class CalibrationNode:
 
-    def __init__(self, chess_size, dim):
+    def __init__(self, chess_size, dim, service_check):
+
+        if service_check:
+            # assume any non-default service names have been set.  Wait for the service to become ready
+            for svcname in ["camera", "left_camera", "right_camera"]:
+                remapped = rospy.remap_name(svcname)
+                if remapped != svcname:
+                    fullservicename = "%s/set_camera_info" % remapped
+                    print "Waiting for service", fullservicename, "..."
+                    try:
+                        rospy.wait_for_service(fullservicename, 5)
+                        print "OK"
+                    except rospy.ROSException:
+                        print "Service not found"
+                        rospy.signal_shutdown('Quit')
+
         self.chess_size = chess_size
         self.dim = dim
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
@@ -68,7 +99,8 @@ class CalibrationNode:
         ts = message_filters.TimeSynchronizer([lsub, rsub], 4)
         ts.registerCallback(self.queue_stereo)
 
-        rospy.Subscriber('image', sensor_msgs.msg.Image, self.queue_monocular)
+        msub = message_filters.Subscriber('image', sensor_msgs.msg.Image)
+        msub.registerCallback(self.queue_monocular)
 
         self.set_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"), sensor_msgs.srv.SetCameraInfo)
         self.set_left_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("left_camera"), sensor_msgs.srv.SetCameraInfo)
@@ -141,9 +173,9 @@ class CalibrationNode:
         (self.width, self.height) = cv.GetSize(rgb)
         scrib = rgb
 
-        scale = int(math.ceil(self.width / 640))
+        scale = math.ceil(self.width / 640.)
         if scale != 1:
-            scrib = cv.CreateMat(self.height / scale, self.width / scale, cv.GetElemType(rgb))
+            scrib = cv.CreateMat(int(self.height / scale), int(self.width / scale), cv.GetElemType(rgb))
             cv.Resize(rgb, scrib)
         else:
             scrib = cv.CloneMat(rgb)
@@ -171,7 +203,7 @@ class CalibrationNode:
 
             src = cv.Reshape(self.c.mk_image_points([corners]), 2)
 
-            cv.DrawChessboardCorners(scrib, self.chess_size, [ (x/scale, y/scale) for (x, y) in cvmat_iterator(src)], True)
+            cv.DrawChessboardCorners(scrib, self.chess_size, [ (int(x/scale), int(y/scale)) for (x, y) in cvmat_iterator(src)], True)
 
             # If the image is a min or max in every parameter, add to the collection
             if any(is_min) or any(is_max):
@@ -251,11 +283,13 @@ class CalibrationNode:
         # vv is a list of pairs (p, i) for monocular, and triples (p, l, r) for stereo
         if self.c.is_mono:
             images = [i for (p, i) in vv]
-            self.c.cal(images)
+            corners = self.c.collect_corners(images)
         else:
             limages = [ l for (p, l, r) in vv ]
             rimages = [ r for (p, l, r) in vv ]
-            self.c.cal(limages, rimages)
+            corners = self.c.collect_corners(limages, rimages)
+        pickle.dump((self.c.is_mono, self.c.size, corners), open("/tmp/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
+        self.c.cal_fromcorners(corners)
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
@@ -293,10 +327,13 @@ class CalibrationNode:
         print self.c.ost()
         info = self.c.as_message()
         if self.c.is_mono:
-            self.set_camera_info_service(info)
+            response = self.set_camera_info_service(info)
+            assert response.success, "Attempt to set camera info failed: " + response.status_message
         else:
-            self.set_left_camera_info_service(info[0])
-            self.set_right_camera_info_service(info[1])
+            response = self.set_left_camera_info_service(info[0])
+            assert response.success, "Attempt to set camera info failed: " + response.status_message
+            response = self.set_right_camera_info_service(info[1])
+            assert response.success, "Attempt to set camera info failed: " + response.status_message
 
     def set_scale(self, a):
         if self.calibrated:
@@ -348,23 +385,26 @@ class OpenCVCalibrationNode(CalibrationNode):
 
         CalibrationNode.__init__(self, *args)
         cv.NamedWindow("display")
-        self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 0.20, 1, thickness = 2, line_type = cv.CV_AA)
+        self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 0.20, 1, thickness = 2)
         #self.button = cv.LoadImage("%s/button.jpg" % roslib.packages.get_pkg_dir(PKG))
         cv.SetMouseCallback("display", self.on_mouse)
         cv.CreateTrackbar("scale", "display", 0, 100, self.on_scale)
 
     def on_mouse(self, event, x, y, flags, param):
-        if event == cv.CV_EVENT_LBUTTONDOWN:
-            if 180 <= y < 280:
-                self.do_calibration()
-            elif 280 <= y < 380:
-                self.do_save()
-            elif 380 <= y < 480:
-                self.do_upload()
+        if event == cv.CV_EVENT_LBUTTONDOWN and self.displaywidth < x:
+            if self.goodenough:
+                if 180 <= y < 280:
+                    self.do_calibration()
+            if self.calibrated:
+                if 280 <= y < 380:
+                    self.do_save()
+                elif 380 <= y < 480:
+                    self.do_upload()
+                    rospy.signal_shutdown('Quit')
 
     def waitkey(self):
         k = cv.WaitKey(6)
-        if k == ord('q'):
+        if k in [27, ord('q')]:
             rospy.signal_shutdown('Quit')
         return k
 
@@ -387,7 +427,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         x = self.displaywidth
         self.button(cv.GetSubRect(display, (x,180,100,100)), "CALIBRATE", self.goodenough)
         self.button(cv.GetSubRect(display, (x,280,100,100)), "SAVE", self.calibrated)
-        self.button(cv.GetSubRect(display, (x,380,100,100)), "UPLOAD", self.calibrated)
+        self.button(cv.GetSubRect(display, (x,380,100,100)), "COMMIT", self.calibrated)
 
     def y(self, i):
         return 30 + 50 * i
@@ -401,7 +441,7 @@ class OpenCVCalibrationNode(CalibrationNode):
     def redraw_monocular(self, scrib, _):
         width, height = cv.GetSize(scrib)
 
-        display = cv.CreateMat(height, width + 100, cv.CV_8UC3)
+        display = cv.CreateMat(max(480, height), width + 100, cv.CV_8UC3)
         cv.Copy(scrib, cv.GetSubRect(display, (0,0,width,height)))
         cv.Set(cv.GetSubRect(display, (width,0,100,height)), (255, 255, 255))
 
@@ -430,7 +470,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         self.show(display)
 
     def redraw_stereo(self, lscrib, rscrib, lrgb, rrgb):
-        display = cv.CreateMat(self.height, 2 * self.width + 100, cv.CV_8UC3)
+        display = cv.CreateMat(max(480, self.height), 2 * self.width + 100, cv.CV_8UC3)
         cv.Copy(lscrib, cv.GetSubRect(display, (0,0,self.width,self.height)))
         cv.Copy(rscrib, cv.GetSubRect(display, (self.width,0,self.width,self.height)))
         cv.Set(cv.GetSubRect(display, (2 * self.width,0,100,self.height)), (255, 255, 255))
@@ -482,13 +522,14 @@ def main():
     parser.add_option("-o", "--opencv", dest="web", action="store_false", help="use OpenCV-based GUI for calibration (default)")
     parser.add_option("-s", "--size", default="8x6", help="specify chessboard size as nxm [default: %default]")
     parser.add_option("-q", "--square", default=".108", help="specify chessboard square size in meters [default: %default]")
+    parser.add_option("", "--no-service-check", dest="service_check", action="store_false", default=True, help="disable check for set_camera_info services at startup")
     options, args = parser.parse_args()
     size = tuple([int(c) for c in options.size.split('x')])
     dim = float(options.square)
     if options.web:
         node = WebCalibrationNode(size, dim)
     else:
-        node = OpenCVCalibrationNode(size, dim)
+        node = OpenCVCalibrationNode(size, dim, options.service_check)
     rospy.spin()
 
 if __name__ == "__main__":

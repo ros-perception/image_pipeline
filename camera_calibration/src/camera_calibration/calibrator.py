@@ -4,6 +4,7 @@ import cv
 
 import image_geometry
 import sensor_msgs.msg
+import pickle
 
 class CalibrationException(Exception):
     pass
@@ -51,6 +52,12 @@ class Calibrator:
         mono = cv.CreateMat(h, w, cv.CV_8UC1)
         cv.CvtColor(img, mono, cv.CV_BGR2GRAY)
         (ok, corners) = cv.FindChessboardCorners(mono, (self.chessboard_n_cols, self.chessboard_n_rows), cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE)
+
+        # If any corners are within BORDER pixels of the screen edge, reject the detection by setting ok to false
+        BORDER = 8
+        if not all([(BORDER < x < (w - BORDER)) and (BORDER < y < (h - BORDER)) for (x, y) in corners]):
+            ok = False
+
         if refine and ok:
             corners = cv.FindCornerSubPix(mono, corners, (5,5), (-1,-1), ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
         return (ok, corners)
@@ -122,6 +129,10 @@ class MonoCalibrator(Calibrator):
     is_mono = True
 
     def cal(self, images):
+        goodcorners = self.collect_corners(images)
+        self.cal_fromcorners(goodcorners)
+
+    def collect_corners(self, images):
         """
         :param images: source images containing chessboards
         :type images: list of :class:`cvMat`
@@ -131,9 +142,12 @@ class MonoCalibrator(Calibrator):
         self.size = cv.GetSize(images[0])
         corners = [self.get_corners(i) for i in images]
 
-        good = [co for (im, (ok, co)) in zip(images, corners) if ok]
-        if len(good) == 0:
+        goodcorners = [co for (im, (ok, co)) in zip(images, corners) if ok]
+        if len(goodcorners) == 0:
             raise CalibrationException
+        return goodcorners
+
+    def cal_fromcorners(self, good):
 
         ipts = self.mk_image_points(good)
         opts = self.mk_object_points(len(good))
@@ -147,7 +161,7 @@ class MonoCalibrator(Calibrator):
         intrinsics[0,0] = 1.0
         intrinsics[1,1] = 1.0
         cv.CalibrateCamera2(opts, ipts, npts,
-                   cv.GetSize(images[0]), intrinsics,
+                   self.size, intrinsics,
                    distortion,
                    cv.CreateMat(len(good), 3, cv.CV_32FC1),
                    cv.CreateMat(len(good), 3, cv.CV_32FC1),
@@ -273,6 +287,10 @@ class StereoCalibrator(Calibrator):
 
         Find chessboards in images, and runs the OpenCV calibration solver.
         """
+        goodcorners = self.collect_corners(limages, rimages)
+        self.cal_fromcorners(goodcorners)
+
+    def collect_corners(self, limages, rimages):
         self.size = cv.GetSize(limages[0])
         self.l.cal(limages)
         self.r.cal(rimages)
@@ -284,7 +302,9 @@ class StereoCalibrator(Calibrator):
 
         if len(good) == 0:
             raise CalibrationException
+        return good
 
+    def cal_fromcorners(self, good):
         lipts = self.mk_image_points([l for (l, r) in good])
         ripts = self.mk_image_points([r for (l, r) in good])
         opts = self.mk_object_points(len(good), self.dim)
@@ -434,7 +454,7 @@ class StereoCalibrator(Calibrator):
         def l2(p0, p1):
             return math.sqrt(sum([(c0 - c1) ** 2 for (c0, c1) in zip(p0, p1)]))
 
-        # Compute the length from each horizontal and vertical lines, and return the mean
+        # Compute the length from each horizontal and vertical line, and return the mean
         cc = self.chessboard_n_cols
         cr = self.chessboard_n_rows
         lengths = (
