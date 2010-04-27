@@ -56,7 +56,7 @@ class CameraCheckerNode:
         self.chess_size = chess_size
         self.dim = dim
 
-        image_topic = rospy.resolve_name("monocular") + "/" + rospy.resolve_name("image")
+        image_topic = rospy.resolve_name("monocular") + rospy.resolve_name("image")
         camera_topic = rospy.resolve_name("monocular") + "/" + "camera_info"
 
         tosync_mono = [
@@ -67,9 +67,9 @@ class CameraCheckerNode:
         tsm = message_filters.TimeSynchronizer([message_filters.Subscriber(topic, type) for (topic, type) in tosync_mono], 10)
         tsm.registerCallback(self.queue_monocular)
 
-        left_topic = rospy.resolve_name("stereo") + "/left/" + rospy.resolve_name("image")
+        left_topic = rospy.resolve_name("stereo") + "/left" + rospy.resolve_name("image")
         left_camera_topic = rospy.resolve_name("stereo") + "/left/" + "camera_info"
-        right_topic = rospy.resolve_name("stereo") + "/right/" + rospy.resolve_name("image")
+        right_topic = rospy.resolve_name("stereo") + "/right" + rospy.resolve_name("image")
         right_camera_topic = rospy.resolve_name("stereo") + "/right/" + "camera_info"
                  
         tosync_stereo = [
