@@ -321,6 +321,17 @@ class CalibrationNode:
         tf.close()
         print "Wrote calibration data to", filename
 
+    def check_set_camera_info(self, response):
+        if not response.success:
+            for i in range(10):
+                print "!" * 80
+            print
+            print "Attempt to set camera info failed: " + response.status_message
+            print
+            for i in range(10):
+                print "!" * 80
+            print
+
     def do_upload(self):
         vv = list(self.db.values())
         self.c.report()
@@ -328,12 +339,12 @@ class CalibrationNode:
         info = self.c.as_message()
         if self.c.is_mono:
             response = self.set_camera_info_service(info)
-            assert response.success, "Attempt to set camera info failed: " + response.status_message
+            self.check_set_camera_info(response)
         else:
             response = self.set_left_camera_info_service(info[0])
-            assert response.success, "Attempt to set camera info failed: " + response.status_message
+            self.check_set_camera_info(response)
             response = self.set_right_camera_info_service(info[1])
-            assert response.success, "Attempt to set camera info failed: " + response.status_message
+            self.check_set_camera_info(response)
 
     def set_scale(self, a):
         if self.calibrated:
