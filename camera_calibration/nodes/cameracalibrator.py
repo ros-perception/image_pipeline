@@ -438,7 +438,7 @@ class OpenCVCalibrationNode(CalibrationNode):
             i += 1
         cv.SaveImage("/tmp/dump%d.png" % i, im)
 
-    def redraw_monocular(self, scrib, _):
+    def redraw_monocular(self, scrib, rgb):
         width, height = cv.GetSize(scrib)
 
         display = cv.CreateMat(max(480, height), width + 100, cv.CV_8UC3)
@@ -465,7 +465,14 @@ class OpenCVCalibrationNode(CalibrationNode):
                             4)
 
         else:
-            cv.PutText(display, "acc.", (width, self.y(0)), self.font, (0,0,0))
+            cv.PutText(display, "lin.", (width, self.y(0)), self.font, (0,0,0))
+            linerror = self.c.linear_error(rgb)
+            if linerror == -1:
+                msg = "?"
+            else:
+                msg = "%.2f" % linerror
+                print "linear", linerror
+            cv.PutText(display, msg, (width, self.y(1)), self.font, (0,0,0))
 
         self.show(display)
 
