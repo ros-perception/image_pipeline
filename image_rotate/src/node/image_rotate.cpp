@@ -18,12 +18,17 @@ class ImageRotater
 
   image_transport::Publisher img_pub_;
   image_transport::Subscriber img_sub_;
+  image_transport::CameraSubscriber cam_sub_;
 
   sensor_msgs::CvBridge bridge_;
 
   tf::Stamped<tf::Vector3> target_vector_;
   tf::Stamped<tf::Vector3> reference_vector_;
+    
+  image_transport::ImageTransport it_;
+  ros::NodeHandle nh_;
 
+  int subscriber_count_;
   double angle_;
   ros::Time prev_stamp_;
 
@@ -32,6 +37,11 @@ class ImageRotater
     config_ = new_config;
     target_vector_.setValue(config_.target_x, config_.target_y, config_.target_z);
     reference_vector_.setValue(config_.reference_x, config_.reference_y, config_.reference_z);
+    if (subscriber_count_)
+    { // @todo Could do this without an interruption at some point.
+      unsubscribe();
+      subscribe();
+    }
   }
 
   const std::string &frameWithDefault(const std::string &frame, const std::string &image_frame)
@@ -41,30 +51,41 @@ class ImageRotater
     return frame;
   }
 
+  void imageCallbackWithInfo(const sensor_msgs::ImageConstPtr& msg, const sensor_msgs::CameraInfoConstPtr& cam_info)
+  {
+    do_work(msg, cam_info->header.frame_id);
+  }
+  
   void imageCallback(const sensor_msgs::ImageConstPtr& msg)
   {
+    do_work(msg, msg->header.frame_id);
+  }
 
+  void do_work(const sensor_msgs::ImageConstPtr& msg, const std::string input_frame_from_msg)
+  {
     try
     {
+      std::string input_frame_id = frameWithDefault(config_.input_frame_id, input_frame_from_msg);
+
       // Transform the target vector into the image frame.
       target_vector_.stamp_ = msg->header.stamp;
-      target_vector_.frame_id_ = frameWithDefault(config_.target_frame_id, msg->header.frame_id);
+      target_vector_.frame_id_ = frameWithDefault(config_.target_frame_id, input_frame_id);
       tf::Stamped<tf::Vector3> target_vector_transformed;
-      tf_sub_.waitForTransform(msg->header.frame_id, msg->header.stamp,
+      tf_sub_.waitForTransform(input_frame_id, msg->header.stamp,
                                target_vector_.frame_id_, target_vector_.stamp_,
-                               msg->header.frame_id, ros::Duration(0.2));
-      tf_sub_.transformVector(msg->header.frame_id, msg->header.stamp, target_vector_,
-                              msg->header.frame_id, target_vector_transformed);
+                               input_frame_id, ros::Duration(0.2));
+      tf_sub_.transformVector(input_frame_id, msg->header.stamp, target_vector_,
+                              input_frame_id, target_vector_transformed);
 
       // Transform the reference vector into the image frame.
       reference_vector_.stamp_ = msg->header.stamp;
-      reference_vector_.frame_id_ = frameWithDefault(config_.reference_frame_id, msg->header.frame_id);
+      reference_vector_.frame_id_ = frameWithDefault(config_.reference_frame_id, input_frame_id);
       tf::Stamped<tf::Vector3> reference_vector_transformed;
-      tf_sub_.waitForTransform(msg->header.frame_id, msg->header.stamp,
+      tf_sub_.waitForTransform(input_frame_id, msg->header.stamp,
                                reference_vector_.frame_id_, reference_vector_.stamp_,
-                               msg->header.frame_id, ros::Duration(0.01));
-      tf_sub_.transformVector(msg->header.frame_id, msg->header.stamp, reference_vector_,
-                              msg->header.frame_id, reference_vector_transformed);
+                               input_frame_id, ros::Duration(0.01));
+      tf_sub_.transformVector(input_frame_id, msg->header.stamp, reference_vector_,
+                              input_frame_id, reference_vector_transformed);
 
       //ROS_INFO("target: %f %f %f", target_vector_.x(), target_vector_.y(), target_vector_.z());
       //ROS_INFO("target_transformed: %f %f %f", target_vector_transformed.x(), target_vector_transformed.y(), target_vector_transformed.z());
@@ -158,12 +179,44 @@ class ImageRotater
     prev_stamp_ = msg->header.stamp;
   }
 
-public:
-  ImageRotater(ros::NodeHandle nh = ros::NodeHandle()) : angle_(0), prev_stamp_(0, 0)
+  void subscribe()
   {
-    image_transport::ImageTransport it(nh);
-    img_sub_ = it.subscribe("image", 1, &ImageRotater::imageCallback, this);
-    img_pub_ = it.advertise("image_rotated", 1);
+    ROS_DEBUG("Subscribing to image topic.");
+    if (config_.use_camera_info && config_.input_frame_id.empty())
+      cam_sub_ = it_.subscribeCamera("image", 3, &ImageRotater::imageCallbackWithInfo, this);
+    else
+      img_sub_ = it_.subscribe("image", 3, &ImageRotater::imageCallback, this);
+  }
+
+  void unsubscribe()
+  {
+      ROS_DEBUG("Unsubscribing from image topic.");
+      img_sub_.shutdown();
+      cam_sub_.shutdown();
+  }
+
+  void connectCb(const image_transport::SingleSubscriberPublisher& ssp)
+  {
+    if (subscriber_count_++ == 0) {
+      subscribe();
+    }
+  }
+
+  void disconnectCb(const image_transport::SingleSubscriberPublisher&)
+  {
+    subscriber_count_--;
+    if (subscriber_count_ == 0) {
+      unsubscribe();
+    }
+  }
+
+public:
+  ImageRotater(ros::NodeHandle nh = ros::NodeHandle()) : it_(nh), nh_(nh), subscriber_count_(0), angle_(0), prev_stamp_(0, 0)
+  {
+    image_transport::SubscriberStatusCallback connect_cb    = boost::bind(&ImageRotater::connectCb, this, _1);
+    image_transport::SubscriberStatusCallback disconnect_cb = boost::bind(&ImageRotater::disconnectCb, this, _1);
+    img_pub_ = image_transport::ImageTransport(ros::NodeHandle(nh_, "rotated")).advertise("image", 1, connect_cb, disconnect_cb);
+
     dynamic_reconfigure::Server<image_rotate::ImageRotateConfig>::CallbackType f =
       boost::bind(&ImageRotater::reconfigureCallback, this, _1, _2);
     srv.setCallback(f);
