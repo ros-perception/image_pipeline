@@ -1,0 +1,37 @@
+<package>
+  <description brief="Node to rotate an image stream.">
+    <p>
+      Contains a node that rotates an image stream in a way that minimizes
+      the angle between a vector in some arbitrary frame and a vector in the
+      camera frame. The frame of the outgoing image is published by the node.
+    </p>
+    <p>
+      This node is intended to allow camera images to be visualized in an
+      orientation that is more intuitive, than the hardware-constrained
+      orientation of the physical camera. This is particularly helpful, for
+      example, to show images from the PR2's forearm cameras with a
+      consistent up direction, despite the fact that the forearms need to
+      rotate in arbitrary ways during manipulation.
+    </p>
+    <p>
+      It is not recommended to use the output from this node for further
+      computation, as it interpolates the source image, introduces black
+      borders, and does not output a camera_info.
+    </p>
+  </description>
+  <author>Blaise Gassend</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/image_rotate</url>
+  <depend package="tf"/>
+  <depend package="opencv2"/>
+  <depend package="roscpp"/>
+  <depend package="dynamic_reconfigure"/>
+  <depend package="geometry_msgs"/>
+  <depend package="image_transport"/>
+  <depend package="cv_bridge"/>
+  <depend package="sensor_msgs"/>
+  <depend package="std_msgs"/>
+</package>
+
+
