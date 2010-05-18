@@ -23,7 +23,7 @@ class ImageRotater
   sensor_msgs::CvBridge bridge_;
 
   tf::Stamped<tf::Vector3> target_vector_;
-  tf::Stamped<tf::Vector3> reference_vector_;
+  tf::Stamped<tf::Vector3> source_vector_;
     
   image_transport::ImageTransport it_;
   ros::NodeHandle nh_;
@@ -36,7 +36,7 @@ class ImageRotater
   {
     config_ = new_config;
     target_vector_.setValue(config_.target_x, config_.target_y, config_.target_z);
-    reference_vector_.setValue(config_.reference_x, config_.reference_y, config_.reference_z);
+    source_vector_.setValue(config_.source_x, config_.source_y, config_.source_z);
     if (subscriber_count_)
     { // @todo Could do this without an interruption at some point.
       unsubscribe();
@@ -77,28 +77,28 @@ class ImageRotater
       tf_sub_.transformVector(input_frame_id, msg->header.stamp, target_vector_,
                               input_frame_id, target_vector_transformed);
 
-      // Transform the reference vector into the image frame.
-      reference_vector_.stamp_ = msg->header.stamp;
-      reference_vector_.frame_id_ = frameWithDefault(config_.reference_frame_id, input_frame_id);
-      tf::Stamped<tf::Vector3> reference_vector_transformed;
+      // Transform the source vector into the image frame.
+      source_vector_.stamp_ = msg->header.stamp;
+      source_vector_.frame_id_ = frameWithDefault(config_.source_frame_id, input_frame_id);
+      tf::Stamped<tf::Vector3> source_vector_transformed;
       tf_sub_.waitForTransform(input_frame_id, msg->header.stamp,
-                               reference_vector_.frame_id_, reference_vector_.stamp_,
+                               source_vector_.frame_id_, source_vector_.stamp_,
                                input_frame_id, ros::Duration(0.01));
-      tf_sub_.transformVector(input_frame_id, msg->header.stamp, reference_vector_,
-                              input_frame_id, reference_vector_transformed);
+      tf_sub_.transformVector(input_frame_id, msg->header.stamp, source_vector_,
+                              input_frame_id, source_vector_transformed);
 
       //ROS_INFO("target: %f %f %f", target_vector_.x(), target_vector_.y(), target_vector_.z());
       //ROS_INFO("target_transformed: %f %f %f", target_vector_transformed.x(), target_vector_transformed.y(), target_vector_transformed.z());
-      //ROS_INFO("reference: %f %f %f", reference_vector_.x(), reference_vector_.y(), reference_vector_.z());
-      //ROS_INFO("reference_transformed: %f %f %f", reference_vector_transformed.x(), reference_vector_transformed.y(), reference_vector_transformed.z());
+      //ROS_INFO("source: %f %f %f", source_vector_.x(), source_vector_.y(), source_vector_.z());
+      //ROS_INFO("source_transformed: %f %f %f", source_vector_transformed.x(), source_vector_transformed.y(), source_vector_transformed.z());
 
       // Calculate the angle of the rotation.
       double angle = angle_;
       if ((target_vector_transformed.x()    != 0 || target_vector_transformed.y()    != 0) &&
-          (reference_vector_transformed.x() != 0 || reference_vector_transformed.y() != 0))
+          (source_vector_transformed.x() != 0 || source_vector_transformed.y() != 0))
       {
         angle = atan2(target_vector_transformed.y(), target_vector_transformed.x());
-        angle -= atan2(reference_vector_transformed.y(), reference_vector_transformed.x());
+        angle -= atan2(source_vector_transformed.y(), source_vector_transformed.x());
       }
 
       // Rate limit the rotation.
