@@ -7,7 +7,7 @@
     </p>
     <p>
       This node is intended to allow camera images to be visualized in an
-      orientation that is more intuitive, than the hardware-constrained
+      orientation that is more intuitive than the hardware-constrained
       orientation of the physical camera. This is particularly helpful, for
       example, to show images from the PR2's forearm cameras with a
       consistent up direction, despite the fact that the forearms need to
