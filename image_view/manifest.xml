@@ -14,4 +14,7 @@
   <depend package="roscpp"/>
   <depend package="image_transport"/>
   <depend package="camera_calibration_parsers"/>
+  <platform os="ubuntu" version="9.04"/>
+  <platform os="ubuntu" version="9.10"/>
+  <platform os="ubuntu" version="10.04"/>
 </package>

@@ -15,4 +15,7 @@
     <rosbagmigration rule_file="migration_rules/stereo_msgs.bmr"/>
   </export>
 
+  <platform os="ubuntu" version="9.04"/>
+  <platform os="ubuntu" version="9.10"/>
+  <platform os="ubuntu" version="10.04"/>
 </package>
