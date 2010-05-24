@@ -247,6 +247,44 @@ class MonoCalibrator(Calibrator):
     def ost(self):
         return self.lrost("left", self.distortion, self.intrinsics, self.R, self.P)
 
+
+    def linear_error(self, im):
+
+        """
+        :param im: source image containing chessboard
+        :type li: :class:`cvMat`
+
+        Applies current calibration to image, finds the checkerbard, and returns the linear error.
+        Returns -1 if checkerboard not found.
+
+        """
+
+        (ok, corners) = self.get_corners(im)
+        if not ok:
+            return -1
+        if 1:
+            src = cv.Reshape(self.mk_image_points([corners]), 2)
+            P = list(cvmat_iterator(self.undistort_points(src)))
+        else:
+            src = cv.Reshape(self.mk_image_points([corners]), 2)
+            P = list(cvmat_iterator(src))
+        # P is checkerboard vertices as a list of (x,y) image points
+
+        def pt2line(x0, y0, x1, y1, x2, y2):
+            """ point is (x0, y0), line is (x1, y1, x2, y2) """
+            return abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) / math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+        cc = self.chessboard_n_cols
+        cr = self.chessboard_n_rows
+        errors = []
+        for r in range(cr):
+            (x1, y1) = P[(cc * r) + 0]
+            (x2, y2) = P[(cc * r) + cc - 1]
+            for i in range(1, cc - 1):
+                (x0, y0) = P[(cc * r) + i]
+                errors.append(pt2line(x0, y0, x1, y1, x2, y2))
+        return math.sqrt(sum([e**2 for e in errors]) / len(errors))
+
 class CalibrationException(Exception):
     pass
 
@@ -408,6 +446,9 @@ class StereoCalibrator(Calibrator):
         :type li: :class:`cvMat`
         :param ri: source left image containing chessboard
         :type ri: :class:`cvMat`
+
+        Applies current calibration to stereo pair (li, ri), finds the checkerbard, and returns their epipolar error.
+        Returns -1 if checkerboard not found.
 
         """
 
