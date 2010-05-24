@@ -1,5 +1,4 @@
 #include "stereo_image_proc/processor.h"
-#include "stereo_image_proc/stereolib.h"
 #include <sensor_msgs/image_encodings.h>
 #include <cmath>
 #include <limits>
@@ -55,67 +54,8 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
   static const int DPP = 16; // disparities per pixel
   static const double inv_dpp = 1.0 / DPP;
 
-  int16_t bad_value = 0;
-  if (disparity_algorithm_ == OPENCV_BLOCK_MATCHER) {
-    // Block matcher produces 16-bit signed (fixed point) disparity image
-    block_matcher_(left_rect, right_rect, disparity16_);
-
-    // Explicitly mark border as invalid. This should already be fixed in recent OpenCV revisions.
-    /// @todo Remove when opencv2 revision gets bumped.
-    bad_value = (getMinDisparity() - 1) * DPP;
-    disparity16_.row(0).setTo( cv::Scalar(bad_value) );
-    disparity16_.row(disparity16_.rows - 1).setTo( cv::Scalar(bad_value) );
-    disparity16_.col(0).setTo( cv::Scalar(bad_value) );
-    disparity16_.col(disparity16_.cols - 1).setTo( cv::Scalar(bad_value) );
-  }
-  else if (disparity_algorithm_ == WG_BLOCK_MATCHER) {
-    // parameters
-    int xim = left_rect.cols;
-    int yim = left_rect.rows;
-    int ftzero = getPreFilterCap();
-    int dlen = getDisparityRange();
-    int corr = getCorrelationWindowSize();
-    int tthresh = getTextureThreshold();
-    int uthresh = (int)(getUniquenessRatio() + 0.5f);
-
-    // allocate memory
-    left_feature_.create(yim, xim);            // left feature image
-    right_feature_.create(yim, xim);           // right feature image
-    disp_buffer_.create(yim, 2*dlen*(corr+5)); // local storage for the algorithm
-    disparity16_.create(yim, xim);             // output, need to allocate explicitly here
-
-    // buffer pointers
-    int16_t* imDisp = disparity16_[0];
-    uint8_t* lim  = const_cast<uint8_t*>(left_rect.ptr<uint8_t>());
-    uint8_t* rim  = const_cast<uint8_t*>(right_rect.ptr<uint8_t>());
-    uint8_t* flim = left_feature_[0];
-    uint8_t* frim = right_feature_[0];
-    uint8_t* buf  = disp_buffer_[0];
-
-    // prefilter
-    do_prefilter(lim, flim, xim, yim, ftzero, buf);
-    do_prefilter(rim, frim, xim, yim, ftzero, buf);
-
-    // clear disparity buffer
-    memset(imDisp, 0, xim*yim*sizeof(int16_t));
-
-    // do block matching
-    do_stereo(flim, frim, imDisp, NULL, xim, yim, ftzero, corr, corr, dlen, tthresh, uthresh, buf);
-    bad_value = getMinDisparity(); // for speckle filtering
-
-    // do speckle filtering
-    labels_.create(disparity16_.size());
-    wavefront_.create(disparity16_.size());
-    region_types_.create(disparity16_.size());
-    int speckle_size = getSpeckleSize(); // actually region size
-    int speckle_diff = getSpeckleRange();
-    do_speckle(disparity16_[0], bad_value, disparity16_.cols, disparity16_.rows, speckle_diff,
-               speckle_size, labels_[0], wavefront_[0], region_types_[0]);
-  }
-  else {
-    ROS_FATAL("Unknown disparity algorithm value [%d]", disparity_algorithm_);
-    ROS_BREAK();
-  }
+  // Block matcher produces 16-bit signed (fixed point) disparity image
+  block_matcher_(left_rect, right_rect, disparity16_);
 
   // Fill in DisparityImage image data, converting to 32-bit float
   sensor_msgs::Image& dimage = disparity.image;

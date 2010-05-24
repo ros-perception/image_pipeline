@@ -21,15 +21,9 @@ struct StereoImageSet
 class StereoProcessor
 {
 public:
-  enum {
-    OPENCV_BLOCK_MATCHER,
-    WG_BLOCK_MATCHER
-  };
-
   
   StereoProcessor()
-    : disparity_algorithm_(WG_BLOCK_MATCHER),
-      block_matcher_(cv::StereoBM::BASIC_PRESET)
+    : block_matcher_(cv::StereoBM::BASIC_PRESET)
   {
   }
 
@@ -51,9 +45,6 @@ public:
     STEREO_ALL = DISPARITY | POINT_CLOUD | POINT_CLOUD2,
     ALL = LEFT_ALL | RIGHT_ALL | STEREO_ALL
   };
-
-  int getDisparityAlgorithm() const { return disparity_algorithm_; }
-  void setDisparityAlgorithm(int alg) { disparity_algorithm_ = alg; }
 
   int getInterpolation() const;
   void setInterpolation(int interp);
@@ -99,7 +90,6 @@ public:
 
 private:
   image_proc::Processor mono_processor_;
-  int disparity_algorithm_;
   
   mutable cv::Mat_<int16_t> disparity16_; // scratch buffer for 16-bit signed disparity image
   mutable cv::StereoBM block_matcher_; // contains scratch buffers for block matching
@@ -109,10 +99,6 @@ private:
   mutable cv::Mat_<uint8_t> region_types_;
   // scratch buffer for dense point cloud
   mutable cv::Mat_<cv::Vec3f> dense_points_;
-  // scratch buffers for stereolib functions (if not using OpenCV)
-  mutable cv::Mat_<uint8_t> left_feature_;
-  mutable cv::Mat_<uint8_t> right_feature_;
-  mutable cv::Mat_<uint8_t> disp_buffer_;
 
   void processDisparity(const cv::Mat& left_rect, const cv::Mat& right_rect,
                         const image_geometry::StereoCameraModel& model,
