@@ -390,10 +390,10 @@ class StereoCalibrator(Calibrator):
                          self.lR, self.rR, self.lP, self.rP,
                          alpha = a)
         
-        self.lmapx = cv.CreateImage((640, 480), cv.IPL_DEPTH_32F, 1)
-        self.lmapy = cv.CreateImage((640, 480), cv.IPL_DEPTH_32F, 1)
-        self.rmapx = cv.CreateImage((640, 480), cv.IPL_DEPTH_32F, 1)
-        self.rmapy = cv.CreateImage((640, 480), cv.IPL_DEPTH_32F, 1)
+        self.lmapx = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
+        self.lmapy = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
+        self.rmapx = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
+        self.rmapy = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
         cv.InitUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.lR, self.lP, self.lmapx, self.lmapy)
         cv.InitUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.rR, self.rP, self.rmapx, self.rmapy)
 
