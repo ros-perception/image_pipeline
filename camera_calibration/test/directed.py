@@ -24,11 +24,25 @@ class TestDirected(unittest.TestCase):
         cv.SetData(imagefiledata, filedata, len(filedata))
         return cv.DecodeImageM(imagefiledata)
         
+    def assert_good_mono(self, c):
+        c.report()
+        self.assert_(len(c.ost()) > 0)
+        lin_err = c.linear_error(self.limages[0])
+        self.assert_(0.0 < lin_err)
+        self.assert_(lin_err < 1.0)
+
     def test_monocular(self):
+        # Run the calibrator, produce a calibration, check it
         mc = MonoCalibrator((8,6), .108)
         mc.cal(self.limages)
-        mc.report()
-        self.assert_(len(mc.ost()) > 0)
+        self.assert_good_mono(mc)
+
+        # Make another calibration, import previous calibration as a message,
+        # and assert that the new one is good.
+
+        mc2 = MonoCalibrator((8,6), .108)
+        mc2.from_message(mc.as_message())
+        self.assert_good_mono(mc2)
 
     def test_stereo(self):
         limages = [self.image_from_archive("wide/left%04d.pgm" % i) for i in range(3, 15)]
