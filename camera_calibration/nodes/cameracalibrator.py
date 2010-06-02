@@ -68,9 +68,25 @@ class Resizer:
         self.args = args
 
     def incoming(self, m):
-        m.width = 320
-        m.height = 240
-        self.callback(m, *self.args)
+
+        # cv.CV_BayerRG2BGR, bayer_bggr8
+
+        br = cv_bridge.CvBridge()
+        m.encoding = "mono8"
+        raw = br.imgmsg_to_cv(m)
+        rgb = cv.CreateMat(raw.rows, raw.cols, cv.CV_8UC3)
+        mono = cv.CreateMat(raw.rows, raw.cols, cv.CV_8UC1)
+
+        cv.CvtColor(raw, rgb, cv.CV_BayerRG2BGR)
+        cv.CvtColor(rgb, mono, cv.CV_BGR2GRAY)
+        cv.CvtColor(mono, rgb, cv.CV_GRAY2BGR)
+
+        smaller = cv.CreateMat(raw.rows / 2, raw.cols / 2, cv.CV_8UC1)
+        cv.Resize(mono, smaller)
+
+        m2 = br.cv_to_imgmsg(smaller)
+        m2.header = m.header
+        self.callback(m2, *self.args)
 
 class CalibrationNode:
 
@@ -92,11 +108,17 @@ class CalibrationNode:
         self.dim = dim
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
-        ts = message_filters.TimeSynchronizer([lsub, rsub], 4)
+        if 1:
+            ts = message_filters.TimeSynchronizer([lsub, rsub], 4)
+        else:
+            ts = message_filters.TimeSynchronizer([Resizer(lsub), Resizer(rsub)], 4)
         ts.registerCallback(self.queue_stereo)
 
         msub = message_filters.Subscriber('image', sensor_msgs.msg.Image)
-        msub.registerCallback(self.queue_monocular)
+        if 1:
+            msub.registerCallback(self.queue_monocular)
+        else:
+            Resizer(msub).registerCallback(self.queue_monocular)
 
         self.set_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"), sensor_msgs.srv.SetCameraInfo)
         self.set_left_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("left_camera"), sensor_msgs.srv.SetCameraInfo)
@@ -315,6 +337,17 @@ class CalibrationNode:
         tf.close()
         print "Wrote calibration data to", filename
 
+    def check_set_camera_info(self, response):
+        if not response.success:
+            for i in range(10):
+                print "!" * 80
+            print
+            print "Attempt to set camera info failed: " + response.status_message
+            print
+            for i in range(10):
+                print "!" * 80
+            print
+
     def do_upload(self):
         vv = list(self.db.values())
         self.c.report()
@@ -322,12 +355,12 @@ class CalibrationNode:
         info = self.c.as_message()
         if self.c.is_mono:
             response = self.set_camera_info_service(info)
-            assert response.success, "Attempt to set camera info failed: " + response.status_message
+            self.check_set_camera_info(response)
         else:
             response = self.set_left_camera_info_service(info[0])
-            assert response.success, "Attempt to set camera info failed: " + response.status_message
+            self.check_set_camera_info(response)
             response = self.set_right_camera_info_service(info[1])
-            assert response.success, "Attempt to set camera info failed: " + response.status_message
+            self.check_set_camera_info(response)
 
     def set_scale(self, a):
         if self.calibrated:
@@ -432,10 +465,11 @@ class OpenCVCalibrationNode(CalibrationNode):
             i += 1
         cv.SaveImage("/tmp/dump%d.png" % i, im)
 
-    def redraw_monocular(self, scrib, _):
+    def redraw_monocular(self, scrib, rgb):
         width, height = cv.GetSize(scrib)
 
         display = cv.CreateMat(max(480, height), width + 100, cv.CV_8UC3)
+        cv.Zero(display)
         cv.Copy(scrib, cv.GetSubRect(display, (0,0,width,height)))
         cv.Set(cv.GetSubRect(display, (width,0,100,height)), (255, 255, 255))
 
@@ -459,12 +493,20 @@ class OpenCVCalibrationNode(CalibrationNode):
                             4)
 
         else:
-            cv.PutText(display, "acc.", (width, self.y(0)), self.font, (0,0,0))
+            cv.PutText(display, "lin.", (width, self.y(0)), self.font, (0,0,0))
+            linerror = self.c.linear_error(rgb)
+            if linerror == -1:
+                msg = "?"
+            else:
+                msg = "%.2f" % linerror
+                print "linear", linerror
+            cv.PutText(display, msg, (width, self.y(1)), self.font, (0,0,0))
 
         self.show(display)
 
     def redraw_stereo(self, lscrib, rscrib, lrgb, rrgb):
         display = cv.CreateMat(max(480, self.height), 2 * self.width + 100, cv.CV_8UC3)
+        cv.Zero(display)
         cv.Copy(lscrib, cv.GetSubRect(display, (0,0,self.width,self.height)))
         cv.Copy(rscrib, cv.GetSubRect(display, (self.width,0,self.width,self.height)))
         cv.Set(cv.GetSubRect(display, (2 * self.width,0,100,self.height)), (255, 255, 255))
