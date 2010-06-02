@@ -55,13 +55,6 @@ class TestDirected(unittest.TestCase):
             mc.cal(self.l[dim])
             self.assert_good_mono(mc, dim)
 
-            # Make another calibration, import previous calibration as a message,
-            # and assert that the new one is good.
-
-            mc2 = MonoCalibrator((8,6), .108)
-            mc2.from_message(mc.as_message())
-            self.assert_good_mono(mc2, dim)
-
     def test_stereo(self):
         for dim in self.sizes:
             sc = StereoCalibrator((8, 6), .108)
@@ -80,12 +73,6 @@ class TestDirected(unittest.TestCase):
             self.assertEqual(cv.GetSize(img), cv.GetSize(flat))
             flat = sc.rremap(img)
             self.assertEqual(cv.GetSize(img), cv.GetSize(flat))
-
-            sc2 = StereoCalibrator((8, 6), .108)
-            sc2.from_message(sc.as_message())
-            # sc2.set_alpha(1.0)
-            sc2.report()
-            self.assert_(len(sc2.ost()) > 0)
 
     def test_nochecker(self):
 
