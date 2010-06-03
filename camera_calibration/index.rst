@@ -15,4 +15,4 @@ http://opencv.willowgarage.com/documentation/camera_calibration_and_3d_reconstru
     :members: cal, set_alpha, remap, undistort_points, as_message, from_message
 
 .. autoclass:: camera_calibration.calibrator.StereoCalibrator
-    :members: cal, set_alpha, as_message, from_message
+    :members: cal, set_alpha, lremap, rremap, as_message, from_message
