@@ -88,18 +88,6 @@ public:
                const image_geometry::StereoCameraModel& model,
                StereoImageSet& output, int flags) const;
 
-private:
-  image_proc::Processor mono_processor_;
-  
-  mutable cv::Mat_<int16_t> disparity16_; // scratch buffer for 16-bit signed disparity image
-  mutable cv::StereoBM block_matcher_; // contains scratch buffers for block matching
-  // scratch buffers for speckle filtering
-  mutable cv::Mat_<uint32_t> labels_;
-  mutable cv::Mat_<uint32_t> wavefront_;
-  mutable cv::Mat_<uint8_t> region_types_;
-  // scratch buffer for dense point cloud
-  mutable cv::Mat_<cv::Vec3f> dense_points_;
-
   void processDisparity(const cv::Mat& left_rect, const cv::Mat& right_rect,
                         const image_geometry::StereoCameraModel& model,
                         stereo_msgs::DisparityImage& disparity) const;
@@ -112,6 +100,18 @@ private:
                       const cv::Mat& color, const std::string& encoding,
                       const image_geometry::StereoCameraModel& model,
                       sensor_msgs::PointCloud2& points) const;
+
+private:
+  image_proc::Processor mono_processor_;
+  
+  mutable cv::Mat_<int16_t> disparity16_; // scratch buffer for 16-bit signed disparity image
+  mutable cv::StereoBM block_matcher_; // contains scratch buffers for block matching
+  // scratch buffers for speckle filtering
+  mutable cv::Mat_<uint32_t> labels_;
+  mutable cv::Mat_<uint32_t> wavefront_;
+  mutable cv::Mat_<uint8_t> region_types_;
+  // scratch buffer for dense point cloud
+  mutable cv::Mat_<cv::Vec3f> dense_points_;
 };
 
 
