@@ -165,6 +165,16 @@ public:
       publishImage(pub_color_, processed_images_.color, processed_images_.color_encoding);
     if (flags & Proc::RECT_COLOR)
       publishImage(pub_rect_color_, processed_images_.rect_color, processed_images_.color_encoding);
+
+    // If we've aliased memory belonging to raw_image and the encoding of the image stream changes,
+    // we could crash! See https://code.ros.org/trac/ros-pkg/ticket/4252
+    clearIfAliased(processed_images_.mono);
+    clearIfAliased(processed_images_.color);
+  }
+
+  void clearIfAliased(cv::Mat& mat)
+  {
+    if (mat.data && !mat.refcount) mat = cv::Mat();
   }
 
   void publishImage(const image_transport::Publisher& pub, const cv::Mat& image, const std::string& encoding)
