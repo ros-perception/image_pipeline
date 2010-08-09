@@ -183,15 +183,19 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
   points.fields.resize (4);
   points.fields[0].name = "x";
   points.fields[0].offset = 0;
+  points.fields[0].count = 1;
   points.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
   points.fields[1].name = "y";
   points.fields[1].offset = 4;
+  points.fields[1].count = 1;
   points.fields[1].datatype = sensor_msgs::PointField::FLOAT32;
   points.fields[2].name = "z";
   points.fields[2].offset = 8;
+  points.fields[2].count = 1;
   points.fields[2].datatype = sensor_msgs::PointField::FLOAT32;
   points.fields[3].name = "rgb";
   points.fields[3].offset = 12;
+  points.fields[3].count = 1;
   points.fields[3].datatype = sensor_msgs::PointField::FLOAT32;
   //points.is_bigendian = false; ???
   points.point_step = 16;
