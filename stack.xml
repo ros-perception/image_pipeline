@@ -13,5 +13,6 @@
   <depend stack="image_common" /> <!-- image_transport, camera_calibration_parsers -->
   <depend stack="ros" /> <!-- rospy, std_srvs, roscpp, message_filters, rosbagmigration -->
   <depend stack="vision_opencv" /> <!-- opencv2, image_geometry, cv_bridge -->
+  <depend stack="geometry" /> <!-- tf -->
 
 </stack>
