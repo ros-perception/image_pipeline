@@ -1,12 +1,9 @@
-#include "trac_stereo/processor.h"
-#include "OpenCVImageAdapter.h"
-#include "Openvis3d.h"
+#include "stereo_image_proc/processor.h"
 #include <sensor_msgs/image_encodings.h>
 #include <cmath>
 #include <limits>
-#include "svsclass.h"
 
-namespace trac_stereo {
+namespace stereo_image_proc {
 
 bool StereoProcessor::process(const sensor_msgs::ImageConstPtr& left_raw,
                               const sensor_msgs::ImageConstPtr& right_raw,
@@ -49,7 +46,7 @@ bool StereoProcessor::process(const sensor_msgs::ImageConstPtr& left_raw,
   return true;
 }
 
-void StereoProcessor::processDisparity(cv::Mat& left_rect, cv::Mat& right_rect,
+void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& right_rect,
                                        const image_geometry::StereoCameraModel& model,
                                        stereo_msgs::DisparityImage& disparity) const
 {
@@ -57,9 +54,8 @@ void StereoProcessor::processDisparity(cv::Mat& left_rect, cv::Mat& right_rect,
   static const int DPP = 16; // disparities per pixel
   static const double inv_dpp = 1.0 / DPP;
 
-
-
-  disparity16_=cv::Mat::zeros(left_rect.rows,left_rect.cols,CV_16S);
+  // Block matcher produces 16-bit signed (fixed point) disparity image
+  block_matcher_(left_rect, right_rect, disparity16_);
 
   // Fill in DisparityImage image data, converting to 32-bit float
   sensor_msgs::Image& dimage = disparity.image;
@@ -71,7 +67,7 @@ void StereoProcessor::processDisparity(cv::Mat& left_rect, cv::Mat& right_rect,
   cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
   // We convert from fixed-point to float disparity and also adjust for any x-offset between
   // the principal points: d = d_fp*inv_dpp - (cx_l - cx_r)
-  disparity16_.convertTo(dmat, dmat.type(), 1, -(model.left().cx() - model.right().cx()));
+  disparity16_.convertTo(dmat, dmat.type(), inv_dpp, -(model.left().cx() - model.right().cx()));
   ROS_ASSERT(dmat.data == &dimage.data[0]);
   /// @todo is_bigendian? :)
 
@@ -86,44 +82,6 @@ void StereoProcessor::processDisparity(cv::Mat& left_rect, cv::Mat& right_rect,
   disparity.max_disparity = getMinDisparity() + getDisparityRange() - 1;
   disparity.delta_d = inv_dpp;
 }
-
-
-// void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& right_rect,
-//                                        const image_geometry::StereoCameraModel& model,
-//                                        stereo_msgs::DisparityImage& disparity) const
-// {
-//   // Fixed-point disparity is 16 times the true value: d = d_fp / 16.0 = x_l - x_r.
-//   static const int DPP = 16; // disparities per pixel
-//   static const double inv_dpp = 1.0 / DPP;
-
-//   // Block matcher produces 16-bit signed (fixed point) disparity image
-//   block_matcher_(left_rect, right_rect, disparity16_);
-
-//   // Fill in DisparityImage image data, converting to 32-bit float
-//   sensor_msgs::Image& dimage = disparity.image;
-//   dimage.height = disparity16_.rows;
-//   dimage.width = disparity16_.cols;
-//   dimage.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-//   dimage.step = dimage.width * sizeof(float);
-//   dimage.data.resize(dimage.step * dimage.height);
-//   cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
-//   // We convert from fixed-point to float disparity and also adjust for any x-offset between
-//   // the principal points: d = d_fp*inv_dpp - (cx_l - cx_r)
-//   disparity16_.convertTo(dmat, dmat.type(), inv_dpp, -(model.left().cx() - model.right().cx()));
-//   ROS_ASSERT(dmat.data == &dimage.data[0]);
-//   /// @todo is_bigendian? :)
-
-//   // Stereo parameters
-//   disparity.f = model.right().fx();
-//   disparity.T = model.baseline();
-
-//   /// @todo Window of (potentially) valid disparities
-
-//   // Disparity search range
-//   disparity.min_disparity = getMinDisparity();
-//   disparity.max_disparity = getMinDisparity() + getDisparityRange() - 1;
-//   disparity.delta_d = inv_dpp;
-// }
 
 inline bool isValidPoint(const cv::Vec3f& pt)
 {
@@ -313,4 +271,4 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
   }
 }
 
-} //namespace trac_stereo
+} //namespace stereo_image_proc
