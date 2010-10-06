@@ -243,7 +243,7 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
       for (int32_t v = 0; v < dense_points_.cols; ++v, ++i) {
         if (isValidPoint(dense_points_(u,v))) {
           const cv::Vec3b& rgb = color.at<cv::Vec3b>(u,v);
-          int32_t rgb_packed = (rgb[0] << 16) | (rgb[1] << 8) | rgb[0];
+          int32_t rgb_packed = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
           memcpy (&points.data[i * points.point_step + 12], &rgb_packed, sizeof (int32_t));
         }
         else {
