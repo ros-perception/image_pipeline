@@ -132,6 +132,8 @@ class CameraCheckerNode:
                     (x0, y0) = C[(cc * r) + i]
                     errors.append(pt2line(x0, y0, x1, y1, x2, y2))
             print "error", math.sqrt(sum([e**2 for e in errors]) / len(errors)), "pixels"
+        else:
+            print 'no chessboard'
 
     def handle_stereo(self, msg):
 
