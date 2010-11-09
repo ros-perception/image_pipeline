@@ -344,29 +344,36 @@ class CalibrationNode:
         print "Wrote calibration data to", filename
 
     def check_set_camera_info(self, response):
-        if not response.success:
-            for i in range(10):
-                print "!" * 80
-            print
-            print "Attempt to set camera info failed: " + response.status_message
-            print
-            for i in range(10):
-                print "!" * 80
-            print
+        if response.success:
+            return True
+
+        for i in range(10):
+            print "!" * 80
+        print
+        print "Attempt to set camera info failed: " + response.status_message
+        print
+        for i in range(10):
+            print "!" * 80
+        print
+        rospy.logerr('Unable to set camera info for calibration. Failure message: %s' % response.status_message)
+        return False
 
     def do_upload(self):
         vv = list(self.db.values())
         self.c.report()
         print self.c.ost()
         info = self.c.as_message()
+
+        rv = True
         if self.c.is_mono:
             response = self.set_camera_info_service(info)
-            self.check_set_camera_info(response)
+            rv = self.check_set_camera_info(response)
         else:
             response = self.set_left_camera_info_service(info[0])
-            self.check_set_camera_info(response)
+            rv = rv and self.check_set_camera_info(response)
             response = self.set_right_camera_info_service(info[1])
-            self.check_set_camera_info(response)
+            rv = rv and self.check_set_camera_info(response)
+        return rv
 
     def set_scale(self, a):
         if self.calibrated:
@@ -432,8 +439,11 @@ class OpenCVCalibrationNode(CalibrationNode):
                 if 280 <= y < 380:
                     self.do_save()
                 elif 380 <= y < 480:
-                    self.do_upload()
-                    rospy.signal_shutdown('Quit')
+                    # Only shut down if we set camera info correctly, #3993
+                    if self.do_upload():
+                        rospy.signal_shutdown('Quit')
+                        
+                        
 
     def waitkey(self):
         k = cv.WaitKey(6)
