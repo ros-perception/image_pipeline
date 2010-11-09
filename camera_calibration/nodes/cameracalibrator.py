@@ -46,6 +46,36 @@ def lmax(seq1, seq2):
     """ Pairwise maximum of two sequences """
     return [max(a, b) for (a, b) in zip(seq1, seq2)]
 
+def dist(p1, p2):
+    """
+    Distance bwt two points. p1 = (x, y), p2 = (x, y)
+    """
+    return math.sqrt(math.pow(p1[0] - p2[0], 2) + math.pow(p1[1] - p2[1], 2))
+
+def get_skew(corners, dim):
+    """
+    Get skew for given checkerboard detection. 
+    Return skew (0.0 - no skew). 
+    Skew is 5 * abs(log( diagonal_1 / diagonal_2 ) )
+    Scale to match other parameters
+    """
+    xdim = dim[0]
+    ydim = dim[1]
+
+    if len(corners) != xdim * ydim:
+        raise Exception("Invalid number of corners! %d corners. X: %d, Y: %d" % (len(corners),
+                                                                                 xdim, ydim))
+
+    down_left = corners[0]
+    down_right = corners[xdim - 1]
+    up_left = corners[- ydim ]
+    up_right = corners[-1]
+
+    diag1 = dist(down_left, up_right)
+    diag2 = dist(down_right, up_left)
+
+    return 5 * abs(math.log(diag1 / diag2 ))
+
 class ConsumerThread(threading.Thread):
     def __init__(self, queue, function):
         threading.Thread.__init__(self)
@@ -183,7 +213,7 @@ class CalibrationNode:
             Ps = [v[0] for v in self.db.values()]
             Pmins = reduce(lmin, Ps)
             Pmaxs = reduce(lmax, Ps)
-            if reduce(operator.__mul__, [(hi - lo) for (lo, hi) in zip(Pmins, Pmaxs)]) > .1:
+            if reduce(operator.__mul__, [min((hi - lo), 1.0) for (lo, hi) in zip(Pmins, Pmaxs)]) > .05:
                 self.goodenough = True
 
     def handle_monocular(self, msg):
@@ -211,7 +241,8 @@ class CalibrationNode:
             p_x = mean(Xs) / self.width
             p_y = mean(Ys) / self.height
             p_size = (max(Xs) - min(Xs)) / self.width
-            params = [p_x, p_y, p_size]
+            skew = get_skew(corners, self.chess_size)
+            params = [p_x, p_y, p_size, skew]
             if self.p_mins == None:
                 self.p_mins = params
             else:
@@ -227,7 +258,7 @@ class CalibrationNode:
 
             cv.DrawChessboardCorners(scrib, self.chess_size, [ (int(x/scale), int(y/scale)) for (x, y) in cvmat_iterator(src)], True)
 
-            # If the image is a min or max in every parameter, add to the collection
+            # If the image is a min or max in any parameter, add to the collection
             if any(is_min) or any(is_max):
                 self.db[str(is_min + is_max)] = (params, rgb)
 
@@ -273,7 +304,8 @@ class CalibrationNode:
                 p_x = mean(Xs) / self.width
                 p_y = mean(Ys) / self.height
                 p_size = (max(Xs) - min(Xs)) / self.width
-                params = [p_x, p_y, p_size]
+                skew = get_skew(lcorners, self.chess_size)
+                params = [p_x, p_y, p_size, skew]
                 if self.p_mins == None:
                     self.p_mins = params
                 else:
@@ -291,7 +323,7 @@ class CalibrationNode:
                         src = udm(src)
                     cv.DrawChessboardCorners(im, self.chess_size, cvmat_iterator(src), True)
 
-                # If the image is a min or max in every parameter, add to the collection
+                # If the image is a min or max in any parameter, add to the collection
                 if any(is_min) or any(is_max):
                     self.db[str(is_min + is_max)] = (params, lrgb, rrgb)
 
@@ -380,44 +412,6 @@ class CalibrationNode:
             vv = list(self.db.values())
             self.c.set_alpha(a)
 
-class WebCalibrationNode(CalibrationNode):
-    """ Calibration node backend for a web-based UI """
-
-    def __init__(self, *args):
-        CalibrationNode.__init__(self, *args)
-        self.img_pub = rospy.Publisher("calibration_image", sensor_msgs.msg.Image)
-        self.meta_pub = rospy.Publisher("calibration_meta", String)
-        self.calibration_done = rospy.Service('calibration_done', Empty, self.calibrate)
-
-    def calibrate(self, req):
-        self.do_calibration()
-
-    def publish_meta(self):
-        if not self.calibrated:
-            if len(self.db) != 0:
-                # Report dimensions of the n-polytope
-                Ps = [v[0] for v in self.db.values()]
-                Pmins = reduce(lmin, Ps)
-                Pmaxs = reduce(lmax, Ps)
-                vals = ['%s:%s:%s' % (label, lo, hi) for (label, lo, hi) in zip(["X", "Y", "Size"], Pmins, Pmaxs)]
-                self.meta_pub.publish(String(",".join(vals)))
-
-    def redraw_monocular(self, scrib, _):
-        msg = self.br.cv_to_imgmsg(scrib, "bgr8")
-        msg.header.stamp = rospy.rostime.get_rostime()
-        self.img_pub.publish(msg)
-        self.publish_meta()
-                   
-
-    def redraw_stereo(self, lscrib, rscrib, lrgb, rrgb):
-        display = cv.CreateMat(lscrib.height, lscrib.width + rscrib.width, cv.CV_8UC3)
-        cv.Copy(lscrib, cv.GetSubRect(display, (0,0,lscrib.width,lscrib.height)))
-        cv.Copy(rscrib, cv.GetSubRect(display, (lscrib.width,0,rscrib.width,rscrib.height)))
-        msg = self.br.cv_to_imgmsg(display, "bgr8")
-        msg.header.stamp = rospy.rostime.get_rostime()
-        self.img_pub.publish(msg)
-        self.publish_meta()
-
 class OpenCVCalibrationNode(CalibrationNode):
     """ Calibration node with an OpenCV Gui """
 
@@ -473,7 +467,8 @@ class OpenCVCalibrationNode(CalibrationNode):
         self.button(cv.GetSubRect(display, (x,380,100,100)), "COMMIT", self.calibrated)
 
     def y(self, i):
-        return 30 + 50 * i
+        """Set up right-side images"""
+        return 30 + 40 * i
         
     def screendump(self, im):
         i = 0
@@ -499,7 +494,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 Pmaxs = reduce(lmax, Ps)
                 ranges = [(x-n) for (x, n) in zip(Pmaxs, Pmins)]
 
-                for i, (label, lo, hi) in enumerate(zip(["X", "Y", "Size"], Pmins, Pmaxs)):
+                for i, (label, lo, hi) in enumerate(zip(["X", "Y", "Size", "Skew"], Pmins, Pmaxs)):
                     (w,_),_ = cv.GetTextSize(label, self.font)
                     cv.PutText(display, label, (width + (100 - w) / 2, self.y(i)), self.font, (0,0,0))
                     cv.Line(display,
@@ -511,7 +506,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         else:
             cv.PutText(display, "lin.", (width, self.y(0)), self.font, (0,0,0))
             linerror = self.c.linear_error(rgb)
-            if linerror == -1:
+            if linerror < 0:
                 msg = "?"
             else:
                 msg = "%.2f" % linerror
@@ -535,11 +530,14 @@ class OpenCVCalibrationNode(CalibrationNode):
                 Ps = [v[0] for v in self.db.values()]
                 Pmins = reduce(lmin, Ps)
                 Pmaxs = reduce(lmax, Ps)
-                ranges = [(x-n) for (x, n) in zip(Pmaxs, Pmins)]
-                for i, (label, lo, hi) in enumerate(zip(["X", "Y", "Size"], Pmins, Pmaxs)):
+                #ranges = [(x-n) for (x, n) in zip(Pmaxs, Pmins)]
+                for i, (label, lo, hi) in enumerate(zip(["X", "Y", "Size", "Skew"], Pmins, Pmaxs)):
+                    # Clip values to prevent out-of-bounds lines
+                    lo = min(max(lo, 0.0), 1.0)
+                    hi = min(max(hi, 0.0), 1.0)
+
                     (width,_),_ = cv.GetTextSize(label, self.font)
                     cv.PutText(display, label, (2 * self.width + (100 - width) / 2, self.y(i)), self.font, (0,0,0))
-                    #print label, hi, lo
                     cv.Line(display,
                             (int(2 * self.width + lo * 100), self.y(i) + 20),
                             (int(2 * self.width + hi * 100), self.y(i) + 20),
@@ -568,7 +566,6 @@ class OpenCVCalibrationNode(CalibrationNode):
 
 def main():
     from optparse import OptionParser
-    rospy.init_node('cameracalibrator')
     parser = OptionParser()
     parser.add_option("-w", "--web", dest="web", action="store_true", default=False, help="create backend for web-based calibration")
     parser.add_option("-o", "--opencv", dest="web", action="store_false", help="use OpenCV-based GUI for calibration (default)")
@@ -578,10 +575,9 @@ def main():
     options, args = parser.parse_args()
     size = tuple([int(c) for c in options.size.split('x')])
     dim = float(options.square)
-    if options.web:
-        node = WebCalibrationNode(size, dim)
-    else:
-        node = OpenCVCalibrationNode(size, dim, options.service_check)
+
+    rospy.init_node('cameracalibrator') 
+    node = OpenCVCalibrationNode(size, dim, options.service_check)
     rospy.spin()
 
 if __name__ == "__main__":
