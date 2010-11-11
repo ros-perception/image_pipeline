@@ -43,8 +43,8 @@ class ConsumerThread(threading.Thread):
         self.function = function
 
     def run(self):
-        while True:
-            while True:
+        while not rospy.is_shutdown():
+            while not rospy.is_shutdown():
                 m = self.queue.get()
                 if self.queue.empty():
                     break
