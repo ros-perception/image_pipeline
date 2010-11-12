@@ -1,11 +1,11 @@
 <package>
   <description>Stereo and single image rectification and disparity processing.</description>
-  <author>Kurt Konolige, Jeremy Leibs, Patrick Mihelich</author>
+  <author>Patrick Mihelich, Kurt Konolige, Jeremy Leibs</author>
   <license>BSD</license>
   <review status="Doc reviewed" notes="Jan 4, 2010"/>
   <url>http://www.ros.org/wiki/stereo_image_proc</url>
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lstereo_image_proc" />
+    <cpp cflags="-I${prefix}/include -I${prefix}/cfg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lstereo_image_proc" />
   </export>
   <depend package="roscpp"/>
   <depend package="message_filters"/>

@@ -6,8 +6,14 @@ import rospy
 import cv
 import unittest
 import tarfile
+import copy
 
-from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, CalibrationException
+from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo
+
+board = ChessboardInfo()
+board.n_cols = 8
+board.n_rows = 6
+board.dim = 0.108
 
 class TestDirected(unittest.TestCase):
 
@@ -50,7 +56,7 @@ class TestDirected(unittest.TestCase):
 
     def test_monocular(self):
         # Run the calibrator, produce a calibration, check it
-        mc = MonoCalibrator((8,6), .108)
+        mc = MonoCalibrator([ board ])
         for dim in self.sizes:
             mc.cal(self.l[dim])
             self.assert_good_mono(mc, dim)
@@ -58,13 +64,13 @@ class TestDirected(unittest.TestCase):
             # Make another calibration, import previous calibration as a message,
             # and assert that the new one is good.
 
-            mc2 = MonoCalibrator((8,6), .108)
+            mc2 = MonoCalibrator([board])
             mc2.from_message(mc.as_message())
             self.assert_good_mono(mc2, dim)
 
     def test_stereo(self):
         for dim in self.sizes:
-            sc = StereoCalibrator((8, 6), .108)
+            sc = StereoCalibrator([board])
             sc.cal(self.l[dim], self.r[dim])
 
             sc.report()
@@ -81,7 +87,7 @@ class TestDirected(unittest.TestCase):
             flat = sc.rremap(img)
             self.assertEqual(cv.GetSize(img), cv.GetSize(flat))
 
-            sc2 = StereoCalibrator((8, 6), .108)
+            sc2 = StereoCalibrator([board])
             sc2.from_message(sc.as_message())
             # sc2.set_alpha(1.0)
             sc2.report()
@@ -91,11 +97,13 @@ class TestDirected(unittest.TestCase):
 
         # Run with same images, but looking for an incorrect chessboard size (8, 7).
         # Should raise an exception because of lack of input points.
+        new_board = copy.deepcopy(board)
+        new_board.n_cols = 8
+        new_board.n_rows = 7
 
-        size = (8, 7)
-        sc = StereoCalibrator(size, .108)
+        sc = StereoCalibrator([new_board])
         self.assertRaises(CalibrationException, lambda: sc.cal(self.limages, self.rimages))
-        mc = MonoCalibrator(size, .108)
+        mc = MonoCalibrator([new_board])
         self.assertRaises(CalibrationException, lambda: mc.cal(self.limages))
 
 if __name__ == '__main__':
