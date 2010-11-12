@@ -201,7 +201,7 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
   points.point_step = 16;
   points.row_step = points.point_step * points.width;
   points.data.resize (points.row_step * points.height);
-  points.is_dense = true;
+  points.is_dense = false; // there may be invalid points
  
   float bad_point = std::numeric_limits<float>::quiet_NaN ();
   int i = 0;
