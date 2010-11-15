@@ -129,7 +129,7 @@ def _get_corners(img, board, refine = True):
 
 def _get_total_num_pts(boards):
     rv = 0
-    for i, b in enumerate(boards):
+    for b in boards:
         rv += b.n_cols * b.n_rows
     return rv
 
@@ -182,37 +182,39 @@ class Calibrator:
                 return True
         return False
 
-    # TODO Fix for new chessboards
     def mk_object_points(self, boards, use_board_size = False):
         opts = cv.CreateMat(_get_total_num_pts(boards), 3, cv.CV_32FC1)
+        idx = 0
         for i, b in enumerate(boards):
             num_pts = b.n_cols * b.n_rows
             for j in range(num_pts):
                 if use_board_size:
-                    opts[i * num_pts + j, 0] = (j / b.n_cols) * b.dim
-                    opts[i * num_pts + j, 1] = (j % b.n_cols) * b.dim
-                    opts[i * num_pts + j, 2] = 0
+                    opts[idx + j, 0] = (j / b.n_cols) * b.dim
+                    opts[idx + j, 1] = (j % b.n_cols) * b.dim
+                    opts[idx + j, 2] = 0
                 else:
-                    opts[i * num_pts + j, 0] = (j / b.n_cols) * 1.0
-                    opts[i * num_pts + j, 1] = (j % b.n_cols) * 1.0
-                    opts[i * num_pts + j, 2] = 0
+                    opts[idx + j, 0] = (j / b.n_cols) * 1.0
+                    opts[idx + j, 1] = (j % b.n_cols) * 1.0
+                    opts[idx + j, 2] = 0
+            idx += num_pts
         return opts
 
-    # TODO Fix for new chessboards (May be done...)
-    # Fix for stereo....
     def mk_image_points(self, good):
         total_pts = _get_total_num_pts( [ b for (_, b) in good ] )
         ipts = cv.CreateMat(total_pts, 2, cv.CV_32FC1)
 
+        idx = 0
         for (i, g) in enumerate(good):
             (corners, board) = g
             num_pts = board.n_cols * board.n_rows
             for j in range(len(corners)):
-                ipts[i * num_pts + j, 0] = corners[j][0]
-                ipts[i * num_pts + j, 1] = corners[j][1]
+                ipts[idx + j, 0] = corners[j][0]
+                ipts[idx + j, 1] = corners[j][1]
+
+            idx += num_pts
+
         return ipts
 
-    # TODO Fix for new chessboards
     def mk_point_counts(self, boards):
         npts = cv.CreateMat(len(boards), 1, cv.CV_32SC1)
         for i, board in enumerate(boards):
@@ -306,9 +308,11 @@ class Calibrator:
             vv = list(self.db.values())
             self.set_alpha(a)
 
-def _image_from_archive(archive, name):
+def image_from_archive(archive, name):
     """
-    Load image PGM file from tar archive
+    Load image PGM file from tar archive. 
+
+    Used for tarfile loading and unit test.
     """
     member = archive.getmember(name)
     filedata = archive.extractfile(member).read()
@@ -392,7 +396,7 @@ class MonoCalibrator(Calibrator):
 
         goodcorners = [(co, b) for (im, (ok, co, b)) in zip(images, corners) if ok]
         if len(goodcorners) == 0:
-            raise CalibrationException
+            raise CalibrationException("No corners found in images!")
         return goodcorners
 
     def cal_fromcorners(self, good):
@@ -636,7 +640,8 @@ class MonoCalibrator(Calibrator):
 
     def do_tarfile_calibration(self, filename):
         archive = tarfile.open(filename, 'r')
-        limages = [ _image_from_archive(archive, f) for f in archive.getnames() if (f.startswith('left') and f.endswith('.pgm')) ]
+
+        limages = [ image_from_archive(archive, f) for f in archive.getnames() if (f.startswith('left') and (f.endswith('.pgm') or f.endswith('png'))) ]
 
         self.cal(limages)
 
@@ -683,7 +688,7 @@ class StereoCalibrator(Calibrator):
         good = [(lco, rco, b) for ((lok, lco, b), (rok, rco, br)) in zip( lcorners, rcorners) if (lok and rok)]
 
         if len(good) == 0:
-            raise CalibrationException
+            raise CalibrationException("No corners found in images!")
         return good
 
     def cal_fromcorners(self, good):
@@ -970,7 +975,12 @@ class StereoCalibrator(Calibrator):
 
     def do_tarfile_calibration(self, filename):
         archive = tarfile.open(filename, 'r')
-        limages = [ _image_from_archive(archive, f) for f in archive.getnames() if (f.startswith('left') and f.endswith('.pgm')) ]
-        rimages = [ _image_from_archive(archive, f) for f in archive.getnames() if (f.startswith('right') and f.endswith('.pgm')) ]
+        limages = [ image_from_archive(archive, f) for f in archive.getnames() if (f.startswith('left') and (f.endswith('pgm') or f.endswith('png'))) ]
+        rimages = [ image_from_archive(archive, f) for f in archive.getnames() if (f.startswith('right') and (f.endswith('pgm') or f.endswith('png'))) ]
+
+        if not len(limages) == len(rimages):
+            raise CalibrationException("Left, right images don't match. %d left images, %d right" % (len(limages), len(rimages)))
+        
+        ##\todo Check that the filenames match and stuff
 
         self.cal(limages, rimages)

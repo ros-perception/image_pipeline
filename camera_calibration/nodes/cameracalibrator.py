@@ -327,9 +327,9 @@ def main():
     from optparse import OptionParser
     parser = OptionParser()
     parser.add_option("-s", "--size", default=[], action="append", dest="size",
-                      help="specify chessboard size as NxM [default: 8x6")
+                      help="specify chessboard size as NxM [default: 8x6]")
     parser.add_option("-q", "--square", default=[], action="append", dest="square",
-                      help="specify chessboard square size in meters [default: 0.108")
+                      help="specify chessboard square size in meters [default: 0.108]")
     parser.add_option("", "--no-service-check", dest="service_check", action="store_false", default=True, help="disable check for set_camera_info services at startup")
     options, args = parser.parse_args()
 
@@ -339,8 +339,8 @@ def main():
         parser.error("Number of size and square inputs must be the same!")
     
     if not options.square:
-        options.square.append("8x6")
-        options.size.append("0.108")
+        options.square.append("0.108")
+        options.size.append("8x6")
 
     boards = []
     for (sz, sq) in zip(options.size, options.square):

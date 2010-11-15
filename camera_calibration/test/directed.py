@@ -41,8 +41,9 @@ import cv
 import unittest
 import tarfile
 import copy
+import os, sys
 
-from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo
+from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo, image_from_archive
 
 board = ChessboardInfo()
 board.n_cols = 8
@@ -53,8 +54,8 @@ class TestDirected(unittest.TestCase):
     def setUp(self):
         self.mydir = roslib.packages.get_pkg_dir(PKG)
         self.tar = tarfile.open('%s/camera_calibration.tar.gz' % self.mydir, 'r')
-        self.limages = [self.image_from_archive("wide/left%04d.pgm" % i) for i in range(3, 15)]
-        self.rimages = [self.image_from_archive("wide/right%04d.pgm" % i) for i in range(3, 15)]
+        self.limages = [image_from_archive(self.tar, "wide/left%04d.pgm" % i) for i in range(3, 15)]
+        self.rimages = [image_from_archive(self.tar, "wide/right%04d.pgm" % i) for i in range(3, 15)]
         self.l = {}
         self.r = {}
         self.sizes = [(320,240), (640,480), (800,600), (1024,768)]
@@ -68,14 +69,7 @@ class TestDirected(unittest.TestCase):
                 cv.Resize(ri, rri)
                 self.l[dim].append(rli)
                 self.r[dim].append(rri)
-
-    def image_from_archive(self, name):
-        member = self.tar.getmember(name)
-        filedata = self.tar.extractfile(member).read()
-        imagefiledata = cv.CreateMat(1, len(filedata), cv.CV_8UC1)
-        cv.SetData(imagefiledata, filedata, len(filedata))
-        return cv.DecodeImageM(imagefiledata)
-        
+                
     def assert_good_mono(self, c, dim):
         c.report()
         self.assert_(len(c.ost()) > 0)
@@ -137,6 +131,7 @@ class TestDirected(unittest.TestCase):
         self.assertRaises(CalibrationException, lambda: sc.cal(self.limages, self.rimages))
         mc = MonoCalibrator([new_board])
         self.assertRaises(CalibrationException, lambda: mc.cal(self.limages))
+
 
 if __name__ == '__main__':
     if 1:
