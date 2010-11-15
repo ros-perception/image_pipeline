@@ -359,4 +359,8 @@ def main():
     rospy.spin()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception, e:
+        import traceback
+        traceback.print_exc()

@@ -41,6 +41,9 @@ import cv_bridge
 import image_geometry
 import sensor_msgs.msg
 import pickle
+import tarfile
+import StringIO
+import time
 
 class CalibrationException(Exception):
     pass
