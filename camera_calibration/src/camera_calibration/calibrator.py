@@ -633,7 +633,7 @@ class MonoCalibrator(Calibrator):
 
     def do_tarfile_calibration(self, filename):
         archive = tarfile.open(filename, 'r')
-        limages = [ self.image_from_archive(f) for f in archive.getnames() if (f.startswith('left') and f.endswith('.pgm')) ]
+        limages = [ _image_from_archive(archive, f) for f in archive.getnames() if (f.startswith('left') and f.endswith('.pgm')) ]
 
         self.cal(limages)
 
@@ -967,7 +967,7 @@ class StereoCalibrator(Calibrator):
 
     def do_tarfile_calibration(self, filename):
         archive = tarfile.open(filename, 'r')
-        limages = [ self.image_from_archive(f) for f in archive.getnames() if (f.startswith('left') and f.endswith('.pgm')) ]
-        rimages = [ self.image_from_archive(f) for f in archive.getnames() if (f.startswith('right') and f.endswith('.pgm')) ]
+        limages = [ _image_from_archive(archive, f) for f in archive.getnames() if (f.startswith('left') and f.endswith('.pgm')) ]
+        rimages = [ _image_from_archive(archive, f) for f in archive.getnames() if (f.startswith('right') and f.endswith('.pgm')) ]
 
         self.cal(limages, rimages)
