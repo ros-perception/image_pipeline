@@ -325,7 +325,7 @@ class OpenCVCalibrationNode(CalibrationNode):
 
 def main():
     from optparse import OptionParser
-    parser = OptionParser()
+    parser = OptionParser("%prog --size SIZE1 --square SQUARE1 [ --size SIZE2 --square SQUARE2 ]")
     parser.add_option("-s", "--size", default=[], action="append", dest="size",
                       help="specify chessboard size as NxM [default: 8x6]")
     parser.add_option("-q", "--square", default=[], action="append", dest="square",
