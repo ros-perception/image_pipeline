@@ -104,7 +104,7 @@ public:
 
   void imageCb(const sensor_msgs::ImageConstPtr& msg)
   {
-    boost::lock_guard<boost::mutex> guard(image_mutex_);
+    image_mutex_.lock();
 
     // May want to view raw bayer data
     // NB: This is hacky, but should be OK since we have only one image CB.
@@ -115,11 +115,16 @@ public:
     last_msg_ = msg;
     try {
       last_image_ = img_bridge_.imgMsgToCv(msg, "bgr8");
-      cv::imshow(window_name_, last_image_);
     }
     catch (sensor_msgs::CvBridgeException& e) {
       ROS_ERROR("Unable to convert %s image to bgr8", msg->encoding.c_str());
     }
+
+    // Must release the mutex before calling cv::imshow, or can deadlock against
+    // OpenCV's window mutex.
+    image_mutex_.unlock();
+    if (!last_image_.empty())
+      cv::imshow(window_name_, last_image_);
   }
 
   static void mouseCb(int event, int x, int y, int flags, void* param)

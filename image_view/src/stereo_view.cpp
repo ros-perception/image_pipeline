@@ -410,7 +410,7 @@ public:
   void imageCb(const sensor_msgs::ImageConstPtr& left, const sensor_msgs::ImageConstPtr& right,
                const stereo_msgs::DisparityImageConstPtr& disparity_msg)
   {
-    boost::lock_guard<boost::mutex> guard(image_mutex_);
+    image_mutex_.lock();
 
     // May want to view raw bayer data
     if (left->encoding.find("bayer") != std::string::npos)
@@ -452,8 +452,13 @@ public:
       }
     }
 
-    cv::imshow("left", last_left_image_);
-    cv::imshow("right", last_right_image_);
+    // Must release the mutex before calling cv::imshow, or can deadlock against
+    // OpenCV's window mutex.
+    image_mutex_.unlock();
+    if (!last_left_image_.empty())
+      cv::imshow("left", last_left_image_);
+    if (!last_right_image_.empty())
+      cv::imshow("right", last_right_image_);
     cv::imshow("disparity", disparity_color_);
   }
 
