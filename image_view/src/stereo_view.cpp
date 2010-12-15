@@ -32,8 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/highgui/highgui.hpp>
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -330,13 +329,13 @@ void increment(int* value)
 class StereoView
 {
 private:
-  image_transport::ImageTransport it_;
   image_transport::SubscriberFilter left_sub_, right_sub_;
   message_filters::Subscriber<stereo_msgs::DisparityImage> disparity_sub_;
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image,
                                     stereo_msgs::DisparityImage> sync_;
   
-  sensor_msgs::ImageConstPtr last_left_, last_right_;
+  sensor_msgs::ImageConstPtr last_left_msg_, last_right_msg_;
+  cv::Mat last_left_image_, last_right_image_;
   sensor_msgs::CvBridge left_bridge_, right_bridge_;
   cv::Mat_<cv::Vec3b> disparity_color_;
   boost::mutex image_mutex_;
@@ -348,10 +347,11 @@ private:
   int left_received_, right_received_, disp_received_, all_received_;
 
 public:
-  StereoView(ros::NodeHandle& nh)
-    : it_(nh), sync_(3), filename_format_(""), save_count_(0),
+  StereoView()
+    : sync_(3), filename_format_(""), save_count_(0),
       left_received_(0), right_received_(0), disp_received_(0), all_received_(0)
   {
+    // Read local parameters
     ros::NodeHandle local_nh("~");
     bool autosize;
     local_nh.param("autosize", autosize, true);
@@ -359,12 +359,13 @@ public:
     std::string format_string;
     local_nh.param("filename_format", format_string, std::string("%s%04i.pgm"));
     filename_format_.parse(format_string);
-    
-    cvNamedWindow("left", autosize ? CV_WINDOW_AUTOSIZE : 0);
-    cvNamedWindow("right", autosize ? CV_WINDOW_AUTOSIZE : 0);
-    cvNamedWindow("disparity", autosize ? CV_WINDOW_AUTOSIZE : 0);
-    cvSetMouseCallback("left",  &StereoView::mouseCB, this);
-    cvSetMouseCallback("right", &StereoView::mouseCB, this);
+
+    // Do GUI window setup
+    cv::namedWindow("left", autosize ? CV_WINDOW_AUTOSIZE : 0);
+    cv::namedWindow("right", autosize ? CV_WINDOW_AUTOSIZE : 0);
+    cv::namedWindow("disparity", autosize ? CV_WINDOW_AUTOSIZE : 0);
+    cvSetMouseCallback("left",  &StereoView::mouseCb, this);
+    cvSetMouseCallback("right", &StereoView::mouseCb, this);
 #ifdef HAVE_GTK
     g_signal_connect(GTK_WIDGET( cvGetWindowHandle("left") ),
                      "destroy", G_CALLBACK(destroy), NULL);
@@ -375,17 +376,22 @@ public:
 #endif
     cvStartWindowThread();
 
+    // Resolve topic names
+    ros::NodeHandle nh;
     std::string stereo_ns = nh.resolveName("stereo");
     std::string left_topic = ros::names::clean(stereo_ns + "/left/" + nh.resolveName("image"));
     std::string right_topic = ros::names::clean(stereo_ns + "/right/" + nh.resolveName("image"));
     std::string disparity_topic = ros::names::clean(stereo_ns + "/disparity");
     ROS_INFO("Subscribing to:\n\t* %s\n\t* %s\n\t* %s", left_topic.c_str(), right_topic.c_str(),
              disparity_topic.c_str());
-    left_sub_.subscribe(it_, left_topic, 3);
-    right_sub_.subscribe(it_, right_topic, 3);
+
+    // Subscribe to synchronized topics
+    image_transport::ImageTransport it(nh);
+    left_sub_.subscribe(it, left_topic, 3);
+    right_sub_.subscribe(it, right_topic, 3);
     disparity_sub_.subscribe(nh, disparity_topic, 3);
     sync_.connectInput(left_sub_, right_sub_, disparity_sub_);
-    sync_.registerCallback(boost::bind(&StereoView::imageCB, this, _1, _2, _3));
+    sync_.registerCallback(boost::bind(&StereoView::imageCb, this, _1, _2, _3));
 
     // Complain every 30s if the topics appear unsynchronized
     left_sub_.registerCallback(boost::bind(increment, &left_received_));
@@ -398,38 +404,31 @@ public:
 
   ~StereoView()
   {
-    cvDestroyWindow("left");
-    cvDestroyWindow("right");
+    cvDestroyAllWindows();
   }
 
-  void showImage(const char* window, const sensor_msgs::Image& img,
-                 sensor_msgs::CvBridge& bridge)
-  {
-    // May want to view raw bayer data
-    if (img.encoding.find("bayer") != std::string::npos)
-      const_cast<sensor_msgs::Image&>(img).encoding = enc::MONO8;
-
-    if (img.encoding == enc::MONO8 && bridge.fromImage(img, enc::MONO8))
-      cvShowImage(window, bridge.toIpl());
-    else if (bridge.fromImage(img, enc::BGR8))
-      cvShowImage(window, bridge.toIpl());
-    else
-      ROS_ERROR("[stereo_view] Unable to convert %s image to bgr8", img.encoding.c_str());
-  }
-
-  void imageCB(const sensor_msgs::ImageConstPtr& left, const sensor_msgs::ImageConstPtr& right,
+  void imageCb(const sensor_msgs::ImageConstPtr& left, const sensor_msgs::ImageConstPtr& right,
                const stereo_msgs::DisparityImageConstPtr& disparity_msg)
   {
-    {
-      boost::lock_guard<boost::mutex> guard(image_mutex_);
-    
-      // Hang on to message pointers for sake of mouse_cb
-      last_left_ = left;
-      last_right_ = right;
-    }
+    boost::lock_guard<boost::mutex> guard(image_mutex_);
 
-    showImage("left", *left, left_bridge_);
-    showImage("right", *right, right_bridge_);
+    // May want to view raw bayer data
+    if (left->encoding.find("bayer") != std::string::npos)
+      boost::const_pointer_cast<sensor_msgs::Image>(left)->encoding = "mono8";
+    if (right->encoding.find("bayer") != std::string::npos)
+      boost::const_pointer_cast<sensor_msgs::Image>(right)->encoding = "mono8";
+
+    // Hang on to image data for sake of mouseCb
+    last_left_msg_ = left;
+    last_right_msg_ = right;
+    try {
+      last_left_image_ = left_bridge_.imgMsgToCv(left, "bgr8");
+      last_right_image_ = right_bridge_.imgMsgToCv(right, "bgr8");
+    }
+    catch (sensor_msgs::CvBridgeException& e) {
+      ROS_ERROR("Unable to convert one of '%s' or '%s' to 'bgr8'",
+                left->encoding.c_str(), right->encoding.c_str());
+    }
 
     // Colormap and display the disparity image
     float min_disparity = disparity_msg->min_disparity;
@@ -453,21 +452,23 @@ public:
       }
     }
 
+    cv::imshow("left", last_left_image_);
+    cv::imshow("right", last_right_image_);
     cv::imshow("disparity", disparity_color_);
   }
 
-  void saveImage(const char* prefix, const IplImage* image)
+  void saveImage(const char* prefix, const cv::Mat& image)
   {
-    if (image) {
+    if (!image.empty()) {
       std::string filename = (filename_format_ % prefix % save_count_).str();
-      cvSaveImage(filename.c_str(), image);
-      ROS_INFO("[stereo_view] Saved image %s", filename.c_str());
+      cv::imwrite(filename, image);
+      ROS_INFO("Saved image %s", filename.c_str());
     } else {
-      ROS_WARN("[stereo_view] Couldn't save image, no data!");
+      ROS_WARN("Couldn't save %s image, no data!", prefix);
     }
   }
   
-  static void mouseCB(int event, int x, int y, int flags, void* param)
+  static void mouseCb(int event, int x, int y, int flags, void* param)
   {
     if (event != CV_EVENT_LBUTTONDOWN)
       return;
@@ -475,8 +476,8 @@ public:
     StereoView *sv = (StereoView*)param;
     boost::lock_guard<boost::mutex> guard(sv->image_mutex_);
 
-    sv->saveImage("left", sv->left_bridge_.toIpl());
-    sv->saveImage("right", sv->right_bridge_.toIpl());
+    sv->saveImage("left",  sv->last_left_image_);
+    sv->saveImage("right", sv->last_right_image_);
     sv->save_count_++;
   }
 
@@ -501,18 +502,17 @@ public:
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "stereo_view", ros::init_options::AnonymousName);
-  ros::NodeHandle nh;
   if (ros::names::remap("stereo") == "stereo") {
-    ROS_WARN("[stereo_view] stereo has not been remapped! Example command-line usage:\n"
+    ROS_WARN("'stereo' has not been remapped! Example command-line usage:\n"
              "\t$ rosrun image_view stereo_view stereo:=narrow_stereo image:=image_color");
   }
   if (ros::names::remap("image") == "/image_raw") {
-    ROS_WARN("[stereo_view] There is a delay between when the camera drivers publish the raw "
-             "images and when stereo_image_proc publishes the computed point cloud. stereo_view "
+    ROS_WARN("There is a delay between when the camera drivers publish the raw images and "
+             "when stereo_image_proc publishes the computed point cloud. stereo_view "
              "may fail to synchronize these topics.");
   }
   
-  StereoView view(nh);
+  StereoView view;
   
   ros::spin();
   return 0;
