@@ -244,6 +244,7 @@ class Calibrator:
         """ Used by :meth:`as_message`.  Return a CameraInfo message for the given calibration matrices """
         msg = sensor_msgs.msg.CameraInfo()
         (msg.width, msg.height) = self.size
+        msg.distortion_model = "plumb_bob"
         msg.D = [d[i,0] for i in range(d.rows)]
         while len(msg.D)<5:
 	        msg.D.append(0)
