@@ -33,197 +33,40 @@
 *********************************************************************/
 
 #include <ros/ros.h>
-#include <ros/names.h>
-#include <ros/master.h>
-#include <ros/this_node.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/CameraInfo.h>
-#include <sensor_msgs/fill_image.h>
-#include <image_transport/image_transport.h>
-#include <image_geometry/pinhole_camera_model.h>
-#include <boost/foreach.hpp>
-
-#include "image_proc/processor.h"
-
-class ImageProcNode
-{
-private:
-  ros::NodeHandle nh_;
-  image_transport::ImageTransport it_;
-
-  // Subscriptions
-  image_transport::CameraSubscriber cam_sub_;
-  int subscriber_count_;
-
-  // Publications
-  image_transport::Publisher pub_mono_;
-  image_transport::Publisher pub_rect_;
-  image_transport::Publisher pub_color_;
-  image_transport::Publisher pub_rect_color_;
-
-  // Processing state (OK for these to be members in single-threaded case)
-  image_proc::Processor processor_;
-  image_geometry::PinholeCameraModel model_;
-  image_proc::ImageSet processed_images_;
-  sensor_msgs::Image img_;
-
-  // Error reporting
-  ros::WallTimer check_inputs_timer_;
-  ros::WallTime last_uncalibrated_error_;
-  ros::WallTime last_color_error_;
-
-public:
-
-  ImageProcNode()
-    : it_(nh_),
-      subscriber_count_(0)
-  {
-    // Advertise outputs
-    image_transport::SubscriberStatusCallback connect_cb    = boost::bind(&ImageProcNode::connectCb, this, _1);
-    image_transport::SubscriberStatusCallback disconnect_cb = boost::bind(&ImageProcNode::disconnectCb, this, _1);
-    pub_mono_       = it_.advertise("image_mono", 1, connect_cb, disconnect_cb);
-    pub_rect_       = it_.advertise("image_rect", 1, connect_cb, disconnect_cb);
-    pub_color_      = it_.advertise("image_color", 1, connect_cb, disconnect_cb);
-    pub_rect_color_ = it_.advertise("image_rect_color", 1, connect_cb, disconnect_cb);
-
-    // Print a warning every minute until the camera topics are advertised
-    check_inputs_timer_ = nh_.createWallTimer(ros::WallDuration(60.0),
-                                              boost::bind(&ImageProcNode::checkInputsAdvertised, this));
-    checkInputsAdvertised();
-  }
-
-  void connectCb(const image_transport::SingleSubscriberPublisher& ssp)
-  {
-    if (subscriber_count_++ == 0) {
-      ROS_DEBUG("[image_proc] Subscribing to camera topics");
-      cam_sub_ = it_.subscribeCamera("image_raw", 3, &ImageProcNode::imageCb, this);
-    }
-  }
-
-  void disconnectCb(const image_transport::SingleSubscriberPublisher&)
-  {
-    subscriber_count_--;
-    if (subscriber_count_ == 0) {
-      ROS_DEBUG("[image_proc] Unsubscribing from camera topics");
-      cam_sub_.shutdown();
-    }
-  }
-
-  void imageCb(const sensor_msgs::ImageConstPtr& raw_image, const sensor_msgs::CameraInfoConstPtr& cam_info)
-  {
-    // Compute which outputs are in demand
-    int flags = 0;
-    typedef image_proc::Processor Proc;
-    if (pub_mono_      .getNumSubscribers() > 0) flags |= Proc::MONO;
-    if (pub_rect_      .getNumSubscribers() > 0) flags |= Proc::RECT;
-    if (pub_color_     .getNumSubscribers() > 0) flags |= Proc::COLOR;
-    if (pub_rect_color_.getNumSubscribers() > 0) flags |= Proc::RECT_COLOR;
-    if (!flags) return;
-
-    // Verify camera is actually calibrated if we need to rectify
-    static const int NEED_RECT = Proc::RECT | Proc::RECT_COLOR;
-    if (cam_info->K[0] == 0.0) {
-      if (flags & NEED_RECT) {
-        // Complain every 30s
-        ros::WallTime now = ros::WallTime::now();
-        if ((now - last_uncalibrated_error_).toSec() > 30.0) {
-          ROS_ERROR("[image_proc] Rectified topic requested, but camera is uncalibrated.");
-          last_uncalibrated_error_ = now;
-        }
-      }
-      flags &= ~NEED_RECT;
-      if (!flags) return;
-    }
-    else {
-      // Update the camera model
-      model_.fromCameraInfo(cam_info);
-    }
-    
-    // Process raw image into colorized and/or rectified outputs
-    if (!processor_.process(raw_image, model_, processed_images_, flags))
-      return;
-
-    // Check that if color is requested, we actually got it
-    static const int WANT_COLOR = Proc::COLOR | Proc::RECT_COLOR;
-    if ((flags & WANT_COLOR) && processed_images_.color_encoding == sensor_msgs::image_encodings::MONO8) {
-      // Complain every 30s
-      ros::WallTime now = ros::WallTime::now();
-      if ((now - last_color_error_).toSec() > 30.0) {
-        ROS_WARN("[image_proc] Color topic requested, but raw image data is grayscale.");
-        last_color_error_ = now;
-      }
-    }
-
-    // Publish images
-    img_.header.stamp = raw_image->header.stamp;
-    img_.header.frame_id = raw_image->header.frame_id;
-    if (flags & Proc::MONO)
-      publishImage(pub_mono_, processed_images_.mono, sensor_msgs::image_encodings::MONO8);
-    if (flags & Proc::RECT)
-      publishImage(pub_rect_, processed_images_.rect, sensor_msgs::image_encodings::MONO8);
-    if (flags & Proc::COLOR)
-      publishImage(pub_color_, processed_images_.color, processed_images_.color_encoding);
-    if (flags & Proc::RECT_COLOR)
-      publishImage(pub_rect_color_, processed_images_.rect_color, processed_images_.color_encoding);
-
-    // If we've aliased memory belonging to raw_image and the encoding of the image stream changes,
-    // we could crash! See https://code.ros.org/trac/ros-pkg/ticket/4252
-    clearIfAliased(processed_images_.mono);
-    clearIfAliased(processed_images_.color);
-  }
-
-  void clearIfAliased(cv::Mat& mat)
-  {
-    if (mat.data && !mat.refcount) mat = cv::Mat();
-  }
-
-  void publishImage(const image_transport::Publisher& pub, const cv::Mat& image, const std::string& encoding)
-  {
-    fillImage(img_, encoding, image.rows, image.cols, image.step, const_cast<uint8_t*>(image.data));
-    pub.publish(img_);
-  }
-
-  void checkInputsAdvertised()
-  {
-    ros::master::V_TopicInfo topics;
-    if (!ros::master::getTopics(topics)) return;
-
-    std::string image_topic = nh_.resolveName("image_raw");
-    std::string info_topic  = nh_.resolveName("camera_info");
-    bool have_image = false, have_info = false;
-    BOOST_FOREACH(const ros::master::TopicInfo& info, topics) {
-      have_image = have_image || (info.name == image_topic);
-      have_info = have_info || (info.name == info_topic);
-      if (have_image && have_info) {
-        check_inputs_timer_.stop();
-        return;
-      }
-    }
-    if (!have_image)
-      ROS_WARN("[image_proc] The camera image topic [%s] does not appear to be published yet.", image_topic.c_str());
-    if (!have_info)
-      ROS_WARN("[image_proc] The camera info topic [%s] does not appear to be published yet.", info_topic.c_str());
-  }
-};
+#include <nodelet/loader.h>
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "image_proc", ros::init_options::AnonymousName);
+  ros::init(argc, argv, "image_proc");
 
   // Check for common user errors
   if (ros::names::remap("camera") != "camera") {
-    ROS_WARN("[image_proc] Remapping 'camera' no longer has any effect! Start image_proc in the "
+    ROS_WARN("Remapping 'camera' has no effect! Start image_proc in the "
              "camera namespace instead.\nExample command-line usage:\n"
-             "\t$ ROS_NAMESPACE=%s rosrun image_proc image_proc", ros::names::remap("camera").c_str());
+             "\t$ ROS_NAMESPACE=%s rosrun image_proc image_proc",
+             ros::names::remap("camera").c_str());
   }
   if (ros::this_node::getNamespace() == "/") {
-    ROS_WARN("[image_proc] Started in the global namespace! This is probably wrong. Start image_proc "
+    ROS_WARN("Started in the global namespace! This is probably wrong. Start image_proc "
              "in the camera namespace.\nExample command-line usage:\n"
              "\t$ ROS_NAMESPACE=my_camera rosrun image_proc image_proc");
   }
 
-  ImageProcNode proc;
+  nodelet::Loader manager;
+  nodelet::M_string remappings;
+  nodelet::V_string my_argv;
 
+  // Debayer nodelet, image_raw -> image_mono, image_color
+  manager.load("debayer", "image_proc/debayer", remappings, my_argv);
+
+  // Rectify nodelet, image_mono -> image_rect
+  manager.load("rectify_mono", "image_proc/rectify", remappings, my_argv);
+
+  // Rectify nodelet, image_color -> image_rect_color
+  remappings[ros::names::resolve("image_mono")] = ros::names::resolve("image_color");
+  remappings[ros::names::resolve("image_rect")] = ros::names::resolve("image_rect_color");
+  manager.load("rectify_color", "image_proc/rectify", remappings, my_argv);
+  
   ros::spin();
   return 0;
 }

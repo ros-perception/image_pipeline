@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
+#include <sensor_msgs/Image.h>
 
 namespace image_proc {
 
@@ -12,6 +13,10 @@ public:
   virtual void onInit();
 
 private:
+  void connectCb();
+
+  void imageCb(const sensor_msgs::ImageConstPtr& raw_msg);
+  
   struct Impl;
   boost::shared_ptr<Impl> impl_;
 };

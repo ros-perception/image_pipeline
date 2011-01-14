@@ -13,7 +13,7 @@ struct RectifyNodelet::Impl
   image_transport::ImageTransport it_;
   image_transport::CameraSubscriber sub_camera_;
   image_transport::Publisher pub_rect_;
-  /// @todo May need to allow sharing camera model with stereo processing nodelets
+  /// @todo May want to allow sharing camera model with other nodelets (e.g. stereo processing)
   image_geometry::PinholeCameraModel model_;
   int interpolation_;
 
