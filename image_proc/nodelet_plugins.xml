@@ -1,0 +1,5 @@
+<library path="lib/libimage_proc">
+  <class name="image_proc/debayer" type="image_proc::DebayerNodelet" base_class_type="nodelet::Nodelet">
+    <description>Nodelet to debayer (if needed) a raw camera image stream</description>
+  </class>
+</library>
