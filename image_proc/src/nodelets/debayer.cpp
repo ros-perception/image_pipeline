@@ -1,9 +1,9 @@
 #include "image_proc/nodelets/debayer.h"
+#include "image_proc/advertisement_checker.h"
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/foreach.hpp> // for topic checking only
 
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_DECLARE_CLASS(image_proc, debayer, image_proc::DebayerNodelet, nodelet::Nodelet)
@@ -19,50 +19,28 @@ struct DebayerNodelet::Impl
   image_transport::Subscriber sub_raw_;
   image_transport::Publisher pub_mono_;
   image_transport::Publisher pub_color_;
-  ros::WallTimer check_inputs_timer_;
+  AdvertisementChecker check_inputs_;
   
-  Impl(const ros::NodeHandle& nh)
-    : it_(nh)
+  Impl(const ros::NodeHandle& nh, const std::string& name)
+    : it_(nh),
+      check_inputs_(nh, name)
   {
-  }
-
-  /// @todo Factor topic checking code into a separate class
-  void checkInputsAdvertised()
-  {
-    ros::master::V_TopicInfo topics;
-    if (!ros::master::getTopics(topics)) return;
-
-    std::string image_topic = ros::names::resolve("image_raw");
-    //std::string info_topic  = nh_.resolveName("camera_info");
-    bool have_image = false;//, have_info = false;
-    BOOST_FOREACH(const ros::master::TopicInfo& info, topics) {
-      have_image = have_image || (info.name == image_topic);
-      //have_info = have_info || (info.name == info_topic);
-      if (have_image /*&& have_info*/) {
-        check_inputs_timer_.stop();
-        return;
-      }
-    }
-    if (!have_image)
-      ROS_WARN("[image_proc] The camera image topic [%s] does not appear to be published yet.", image_topic.c_str());
-    //if (!have_info)
-    //  ROS_WARN("[image_proc] The camera info topic [%s] does not appear to be published yet.", info_topic.c_str());
   }
 };
 
 void DebayerNodelet::onInit()
 {
   ros::NodeHandle nh = getNodeHandle();
-  impl_ = boost::make_shared<Impl>(nh);
+  impl_ = boost::make_shared<Impl>(nh, getName());
   typedef image_transport::SubscriberStatusCallback ConnectCB;
   ConnectCB connect_cb = boost::bind(&DebayerNodelet::connectCb, this);
   impl_->pub_mono_  = impl_->it_.advertise("image_mono",  1, connect_cb, connect_cb);
   impl_->pub_color_ = impl_->it_.advertise("image_color", 1, connect_cb, connect_cb);
 
-  // Print a warning every minute until the camera topics are advertised
-  impl_->check_inputs_timer_ = nh.createWallTimer(ros::WallDuration(60.0),
-                                                  boost::bind(&Impl::checkInputsAdvertised, impl_));
-  impl_->checkInputsAdvertised();
+  // Print a warning every minute until the image topic is advertised
+  ros::V_string topics;
+  topics.push_back("image_raw");
+  impl_->check_inputs_.start(topics, 60.0);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
