@@ -1,4 +1,5 @@
 #include "image_proc/nodelets/rectify.h"
+#include "image_proc/advertisement_checker.h"
 #include <image_transport/image_transport.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <cv_bridge/CvBridge.h>
@@ -13,12 +14,14 @@ struct RectifyNodelet::Impl
   image_transport::ImageTransport it_;
   image_transport::CameraSubscriber sub_camera_;
   image_transport::Publisher pub_rect_;
+  AdvertisementChecker check_inputs_;
   /// @todo May want to allow sharing camera model with other nodelets (e.g. stereo processing)
   image_geometry::PinholeCameraModel model_;
   int interpolation_;
 
-  Impl(const ros::NodeHandle& nh)
+  Impl(const ros::NodeHandle& nh, const std::string& name)
     : it_(nh),
+      check_inputs_(nh, name),
       interpolation_(CV_INTER_LINEAR)
   {
   }
@@ -27,11 +30,15 @@ struct RectifyNodelet::Impl
 void RectifyNodelet::onInit()
 {
   ros::NodeHandle nh = getNodeHandle();
-  impl_ = boost::make_shared<Impl>(nh);
+  impl_ = boost::make_shared<Impl>(nh, getName());
   image_transport::SubscriberStatusCallback connect_cb = boost::bind(&RectifyNodelet::connectCb, this);
   impl_->pub_rect_  = impl_->it_.advertise("image_rect",  1, connect_cb, connect_cb);
 
-  /// @todo Check input topics
+  // Print a warning every minute until the input topics are advertised
+  ros::V_string topics;
+  topics.push_back("image_mono");
+  topics.push_back("camera_info");
+  impl_->check_inputs_.start(topics, 60.0);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
