@@ -43,7 +43,7 @@ void AdvertisementChecker::start(const ros::V_string& topics, double duration)
 {
   topics_.clear();
   BOOST_FOREACH(const std::string& topic, topics)
-    topics_.push_back(ros::names::resolve(topic));
+    topics_.push_back(nh_.resolveName(topic));
 
   ros::NodeHandle nh;
   timer_ = nh.createWallTimer(ros::WallDuration(duration),

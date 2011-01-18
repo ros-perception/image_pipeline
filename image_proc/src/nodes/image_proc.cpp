@@ -40,13 +40,15 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "image_proc");
 
   // Check for common user errors
-  if (ros::names::remap("camera") != "camera") {
+  if (ros::names::remap("camera") != "camera")
+  {
     ROS_WARN("Remapping 'camera' has no effect! Start image_proc in the "
              "camera namespace instead.\nExample command-line usage:\n"
              "\t$ ROS_NAMESPACE=%s rosrun image_proc image_proc",
              ros::names::remap("camera").c_str());
   }
-  if (ros::this_node::getNamespace() == "/") {
+  if (ros::this_node::getNamespace() == "/")
+  {
     ROS_WARN("Started in the global namespace! This is probably wrong. Start image_proc "
              "in the camera namespace.\nExample command-line usage:\n"
              "\t$ ROS_NAMESPACE=my_camera rosrun image_proc image_proc");
@@ -63,8 +65,8 @@ int main(int argc, char **argv)
   manager.load("rectify_mono", "image_proc/rectify", remappings, my_argv);
 
   // Rectify nodelet, image_color -> image_rect_color
-  remappings[ros::names::resolve("image_mono")] = ros::names::resolve("image_color");
-  remappings[ros::names::resolve("image_rect")] = ros::names::resolve("image_rect_color");
+  remappings["image_mono"] = "image_color";
+  remappings["image_rect"] = "image_rect_color";
   manager.load("rectify_color", "image_proc/rectify", remappings, my_argv);
   
   ros::spin();
