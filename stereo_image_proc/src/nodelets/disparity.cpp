@@ -1,13 +1,19 @@
 #include "stereo_image_proc/nodelets/disparity.h"
 #include <image_proc/advertisement_checker.h>
+
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
+
 #include <image_geometry/stereo_camera_model.h>
-#include <stereo_msgs/DisparityImage.h>
-#include <sensor_msgs/image_encodings.h>
 #include <opencv2/calib3d/calib3d.hpp>
+
+#include <sensor_msgs/image_encodings.h>
+#include <stereo_msgs/DisparityImage.h>
+
+#include <stereo_image_proc/DisparityConfig.h>
+#include <dynamic_reconfigure/server.h>
 
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_DECLARE_CLASS(stereo_image_proc, disparity,
@@ -33,7 +39,10 @@ struct DisparityNodelet::Impl
   // Publications
   ros::Publisher pub_disparity_;
 
-  /// @todo Dynamic reconfigure
+  // Dynamic reconfigure
+  typedef stereo_image_proc::DisparityConfig Config;
+  typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
+  ReconfigureServer reconfigure_server_;
   
   // Processing state (note: only safe because we're single-threaded!)
   image_geometry::StereoCameraModel model_;
@@ -42,20 +51,43 @@ struct DisparityNodelet::Impl
   // Error reporting
   image_proc::AdvertisementChecker check_inputs_;
 
-  Impl(const ros::NodeHandle& nh, const std::string& name)
+  Impl(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh,
+       const std::string& name)
     : nh_(nh),
       it_(nh),
       sync_(3), /// @todo Parameter for sync queue size
       subscribed_(false),
+      reconfigure_server_(private_nh),
       check_inputs_(nh, name)
   {
+    // Set up dynamic reconfiguration
+    ReconfigureServer::CallbackType f = boost::bind(&Impl::configCallback, this, _1, _2);
+    reconfigure_server_.setCallback(f);
+  }
+
+  void configCallback(Config &config, uint32_t level)
+  {
+    // Tweak all settings to be valid
+    config.prefilter_size |= 0x1; // must be odd
+    config.correlation_window_size |= 0x1; // must be odd
+    config.disparity_range = (config.disparity_range / 16) * 16; // must be multiple of 16
+    
+    block_matcher_.state->preFilterSize       = config.prefilter_size;
+    block_matcher_.state->preFilterCap        = config.prefilter_cap;
+    block_matcher_.state->SADWindowSize       = config.correlation_window_size;
+    block_matcher_.state->minDisparity        = config.min_disparity;
+    block_matcher_.state->numberOfDisparities = config.disparity_range;
+    block_matcher_.state->uniquenessRatio     = config.uniqueness_ratio;
+    block_matcher_.state->textureThreshold    = config.texture_threshold;
+    block_matcher_.state->speckleWindowSize   = config.speckle_size;
+    block_matcher_.state->speckleRange        = config.speckle_range;
   }
 };
 
 void DisparityNodelet::onInit()
 {
   ros::NodeHandle nh = getNodeHandle();
-  impl_ = boost::make_shared<Impl>(nh, getName());
+  impl_ = boost::make_shared<Impl>(nh, getPrivateNodeHandle(), getName());
   ros::SubscriberStatusCallback connect_cb = boost::bind(&DisparityNodelet::connectCb, this);
   impl_->pub_disparity_  = nh.advertise<DisparityImage>("disparity",  1,
                                                         connect_cb, connect_cb);
@@ -124,10 +156,11 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
 
   /// @todo Window of (potentially) valid disparities
 
-  /// @todo Disparity search range
-  //disparity.min_disparity = getMinDisparity();
-  //disparity.max_disparity = getMinDisparity() + getDisparityRange() - 1;
-  //disparity.delta_d = 1.0 / 16; // OpenCV uses 16 disparities per pixel
+  // Disparity search range
+  cv::Ptr<CvStereoBMState> params = impl_->block_matcher_.state;
+  disp_msg->min_disparity = params->minDisparity;
+  disp_msg->max_disparity = params->minDisparity + params->numberOfDisparities - 1;
+  disp_msg->delta_d = 1.0 / 16; // OpenCV uses 16 disparities per pixel
 
   // Create cv::Mat views onto all buffers
   const cv::Mat_<uint8_t> l_image(l_image_msg->height, l_image_msg->width,
