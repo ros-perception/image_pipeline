@@ -60,7 +60,7 @@ void DisparityNodelet::onInit()
                                      "--shutdown-on-close") != argv.end();
 
   // Default window name is the resolved topic name
-  std::string topic = nh.resolveName("disparity");
+  std::string topic = nh.resolveName("image");
   local_nh.param("window_name", window_name_, topic);
 
   bool autosize;

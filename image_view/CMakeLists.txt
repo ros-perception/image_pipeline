@@ -17,16 +17,18 @@ endif(PKG_CONFIG_FOUND AND UNIX AND NOT APPLE)
 
 # Nodelet library
 rosbuild_add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
+target_link_libraries(image_view ${GTK_LIBRARIES})
 
 # Image viewers
 rosbuild_add_executable(image_view_exe src/nodes/image_view.cpp)
-target_link_libraries(image_view_exe ${GTK_LIBRARIES})
 SET_TARGET_PROPERTIES(image_view_exe PROPERTIES OUTPUT_NAME image_view)
+
+rosbuild_add_executable(disparity_view src/nodes/disparity_view.cpp)
 
 rosbuild_add_executable(stereo_view src/stereo_view.cpp)
 target_link_libraries(stereo_view ${GTK_LIBRARIES})
 
 # Extra tools (unstable)
-rosbuild_add_executable(extract_images src/extract_images.cpp)
+rosbuild_add_executable(extract_images src/nodes/extract_images.cpp)
 
-rosbuild_add_executable(image_saver src/image_saver.cpp)
+rosbuild_add_executable(image_saver src/nodes/image_saver.cpp)
