@@ -16,7 +16,7 @@ if (PKG_CONFIG_FOUND AND UNIX AND NOT APPLE)
 endif(PKG_CONFIG_FOUND AND UNIX AND NOT APPLE)
 
 # Nodelet library
-rosbuild_add_library(image_view src/nodelets/image_nodelet.cpp)
+rosbuild_add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
 
 # Image viewers
 rosbuild_add_executable(image_view_exe src/nodes/image_view.cpp)

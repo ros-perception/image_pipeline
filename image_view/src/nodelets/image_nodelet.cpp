@@ -4,10 +4,10 @@
 
 #include <cv_bridge/CvBridge.h>
 #include <opencv2/highgui/highgui.hpp>
+#include "window_thread.h"
 
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
-#include <boost/make_shared.hpp>
 
 #ifdef HAVE_GTK
 #include <gtk/gtk.h>
@@ -35,7 +35,6 @@ namespace image_view {
 
 class ImageNodelet : public nodelet::Nodelet
 {
-  std::string nodelet_name_;
   image_transport::Subscriber sub_;
   sensor_msgs::CvBridge img_bridge_;
 
@@ -66,7 +65,7 @@ ImageNodelet::ImageNodelet()
 
 ImageNodelet::~ImageNodelet()
 {
-  cvDestroyWindow(window_name_.c_str());
+  cv::destroyWindow(window_name_);
 }
 
 void ImageNodelet::onInit()
@@ -101,22 +100,20 @@ void ImageNodelet::onInit()
   local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
   filename_format_.parse(format_string);
 
-  const char* window_name = window_name_.c_str();
-  cv::namedWindow(window_name, autosize ? CV_WINDOW_AUTOSIZE : 0);
-  cvSetMouseCallback(window_name, &ImageNodelet::mouseCb, this);
+  cv::namedWindow(window_name_, autosize ? CV_WINDOW_AUTOSIZE : 0);
+  cv::setMouseCallback(window_name_, &ImageNodelet::mouseCb, this);
   
 #ifdef HAVE_GTK
   // Register appropriate handler for when user closes the display window
-  GtkWidget *widget = GTK_WIDGET( cvGetWindowHandle(window_name) );
+  GtkWidget *widget = GTK_WIDGET( cvGetWindowHandle(window_name_.c_str()) );
   if (shutdown_on_close)
     g_signal_connect(widget, "destroy", G_CALLBACK(destroyNode), NULL);
   else
     g_signal_connect(widget, "destroy", G_CALLBACK(destroyNodelet), &sub_);
 #endif
 
-  // Start OpenCV window thread, if necessary
-  static boost::once_flag cv_thread_flag = BOOST_ONCE_INIT;
-  boost::call_once(cv_thread_flag, &cvStartWindowThread);
+  // Start the OpenCV window thread so we don't have to waitKey() somewhere
+  startWindowThread();
 
   image_transport::ImageTransport it(nh);
   sub_ = it.subscribe(topic, 1, &ImageNodelet::imageCb, this, transport);

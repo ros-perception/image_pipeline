@@ -13,8 +13,6 @@ int main(int argc, char **argv)
   nodelet::M_string remappings;
   nodelet::V_string my_argv(argv + 1, argv + argc);
   my_argv.push_back("--shutdown-on-close"); // Internal
-  for (int i = 0; i < (int)my_argv.size(); ++i)
-    printf("Arg: '%s'\n", my_argv[i].c_str());
 
   manager.load(ros::this_node::getName(), "image_view/image", remappings, my_argv);
 
