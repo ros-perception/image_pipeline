@@ -326,6 +326,7 @@ void increment(int* value)
   ++(*value);
 }
 
+// Note: StereoView is NOT nodelet-based, as it synchronizes the three streams.
 class StereoView
 {
 private:

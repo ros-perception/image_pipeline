@@ -25,7 +25,7 @@ SET_TARGET_PROPERTIES(image_view_exe PROPERTIES OUTPUT_NAME image_view)
 
 rosbuild_add_executable(disparity_view src/nodes/disparity_view.cpp)
 
-rosbuild_add_executable(stereo_view src/stereo_view.cpp)
+rosbuild_add_executable(stereo_view src/nodes/stereo_view.cpp)
 target_link_libraries(stereo_view ${GTK_LIBRARIES})
 
 # Extra tools (unstable)
