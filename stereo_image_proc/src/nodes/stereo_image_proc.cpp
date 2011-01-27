@@ -81,7 +81,7 @@ int main(int argc, char **argv)
              "\t$ ROS_NAMESPACE=my_stereo rosrun stereo_image_proc stereo_image_proc");
   }
 
-  nodelet::Loader manager;
+  nodelet::Loader manager(false);
   nodelet::M_string remappings;
   nodelet::V_string my_argv;
 
@@ -98,6 +98,13 @@ int main(int argc, char **argv)
   // Inputs: left/image_rect_color, left/camera_info, right/camera_info, disparity
   // Outputs: points2
   manager.load("point_cloud2", "stereo_image_proc/point_cloud2", remappings, my_argv);
+
+  // PointCloud (deprecated) nodelet
+  // Inputs: left/image_rect_color, left/camera_info, right/camera_info, disparity
+  // Outputs: points
+  manager.load("point_cloud", "stereo_image_proc/point_cloud", remappings, my_argv);
+
+  /// @todo Would be nice to disable nodelet input checking and consolidate it here
 
   ros::spin();
   return 0;

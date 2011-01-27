@@ -16,7 +16,7 @@ include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 gencfg()
 
 # Nodelet library
-rosbuild_add_library(stereo_image_proc src/libstereo_image_proc/processor.cpp src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp)
+rosbuild_add_library(stereo_image_proc src/libstereo_image_proc/processor.cpp src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp src/nodelets/point_cloud.cpp)
 
 # Standalone node
 rosbuild_add_executable(stereoimageproc_exe src/nodes/stereo_image_proc.cpp)

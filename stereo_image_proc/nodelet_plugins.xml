@@ -8,4 +8,8 @@
     <description>Nodelet to produce XYZRGB PointCloud2 messages</description>
   </class>
 
+  <class name="stereo_image_proc/point_cloud" type="stereo_image_proc::PointCloudNodelet" base_class_type="nodelet::Nodelet">
+    <description>Nodelet to produce XYZRGB PointCloud (deprecated) messages</description>
+  </class>
+
 </library>

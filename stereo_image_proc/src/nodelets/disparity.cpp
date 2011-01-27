@@ -118,6 +118,7 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
                                const ImageConstPtr& r_image_msg,
                                const CameraInfoConstPtr& r_info_msg)
 {
+  /// @todo Convert (share) with new cv_bridge
   assert(l_image_msg->encoding == sensor_msgs::image_encodings::MONO8);
   assert(r_image_msg->encoding == sensor_msgs::image_encodings::MONO8);
 
