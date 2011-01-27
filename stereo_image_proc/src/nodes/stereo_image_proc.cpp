@@ -92,6 +92,7 @@ int main(int argc, char **argv)
   // Disparity nodelet
   // Inputs: left/image_rect, left/camera_info, right/image_rect, right/camera_info
   // Outputs: disparity
+  /// @todo Maybe use ros::this_node::getName() so dynamic_reconfigure looks same
   manager.load("disparity", "stereo_image_proc/disparity", remappings, my_argv);
 
   // PointCloud2 nodelet

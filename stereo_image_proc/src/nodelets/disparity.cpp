@@ -3,7 +3,9 @@
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
 #include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/exact_time.h>
+#include <message_filters/sync_policies/approximate_time.h>
 #include <image_proc/advertisement_checker.h>
 
 #include <image_geometry/stereo_camera_model.h>
@@ -19,17 +21,21 @@ namespace stereo_image_proc {
 
 using namespace sensor_msgs;
 using namespace stereo_msgs;
+using namespace message_filters::sync_policies;
 
 class DisparityNodelet : public nodelet::Nodelet
 {
   boost::shared_ptr<image_transport::ImageTransport> it_;
   
   // Subscriptions
-  /// @todo Implement (optional) approx synch of left and right cameras
   image_transport::SubscriberFilter sub_l_image_, sub_r_image_;
   message_filters::Subscriber<CameraInfo> sub_l_info_, sub_r_info_;
-  typedef message_filters::TimeSynchronizer<Image, CameraInfo, Image, CameraInfo> Sync;
-  boost::shared_ptr<Sync> sync_;
+  typedef ExactTime<Image, CameraInfo, Image, CameraInfo> ExactPolicy;
+  typedef ApproximateTime<Image, CameraInfo, Image, CameraInfo> ApproximatePolicy;
+  typedef message_filters::Synchronizer<ExactPolicy> ExactSync;
+  typedef message_filters::Synchronizer<ApproximatePolicy> ApproximateSync;
+  boost::shared_ptr<ExactSync> exact_sync_;
+  boost::shared_ptr<ApproximateSync> approximate_sync_;
   bool subscribed_;
 
   // Publications
@@ -70,13 +76,32 @@ void DisparityNodelet::onInit()
   pub_disparity_  = nh.advertise<DisparityImage>("disparity",  1,
                                                  connect_cb, connect_cb);
 
-  // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
+  // Synchronize inputs. Topic subscriptions happen on demand in the connection
+  // callback. Optionally do approximate synchronization.
+  bool approx;
+  private_nh.param("approximate_sync", approx, false);
   /// @todo Parameter for sync queue size
-  sync_.reset( new Sync(sub_l_image_, sub_l_info_, sub_r_image_, sub_r_info_, 3) );
-  sync_->registerCallback(boost::bind(&DisparityNodelet::imageCb, this, _1, _2, _3, _4));
+  int queue_size = 3;
+  if (approx)
+  {
+    approximate_sync_.reset( new ApproximateSync(ApproximatePolicy(queue_size),
+                                                 sub_l_image_, sub_l_info_,
+                                                 sub_r_image_, sub_r_info_) );
+    approximate_sync_->registerCallback(boost::bind(&DisparityNodelet::imageCb,
+                                                    this, _1, _2, _3, _4));
+  }
+  else
+  {
+    exact_sync_.reset( new ExactSync(ExactPolicy(queue_size),
+                                     sub_l_image_, sub_l_info_,
+                                     sub_r_image_, sub_r_info_) );
+    exact_sync_->registerCallback(boost::bind(&DisparityNodelet::imageCb,
+                                              this, _1, _2, _3, _4));
+  }
 
   // Set up dynamic reconfiguration
-  ReconfigureServer::CallbackType f = boost::bind(&DisparityNodelet::configCallback, this, _1, _2);
+  ReconfigureServer::CallbackType f = boost::bind(&DisparityNodelet::configCallback,
+                                                  this, _1, _2);
   reconfigure_server_.reset(new ReconfigureServer(private_nh));
   reconfigure_server_->setCallback(f);
 
@@ -104,13 +129,13 @@ void DisparityNodelet::connectCb()
   else if (!subscribed_)
   {
     ros::NodeHandle &nh = getNodeHandle();
+    // Queue size 1 should be OK; the one that matters is the synchronizer queue size.
     sub_l_image_.subscribe(*it_, "left/image_rect", 1);
     sub_l_info_ .subscribe(nh,   "left/camera_info", 1);
     sub_r_image_.subscribe(*it_, "right/image_rect", 1);
     sub_r_info_ .subscribe(nh,   "right/camera_info", 1);
     subscribed_ = true;
   }
-  /// @todo Parameter for queue size
 }
 
 void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
