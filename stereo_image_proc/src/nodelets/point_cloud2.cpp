@@ -1,34 +1,34 @@
-#include "stereo_image_proc/nodelets/point_cloud2.h"
-#include <image_proc/advertisement_checker.h>
+#include <ros/ros.h>
+#include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
+#include <image_proc/advertisement_checker.h>
+
 #include <image_geometry/stereo_camera_model.h>
+
 #include <stereo_msgs/DisparityImage.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/image_encodings.h>
-
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_DECLARE_CLASS(stereo_image_proc, point_cloud2,
-                        stereo_image_proc::PointCloud2Nodelet, nodelet::Nodelet)
 
 namespace stereo_image_proc {
 
 using namespace sensor_msgs;
 using namespace stereo_msgs;
 
-struct PointCloud2Nodelet::Impl
+class PointCloud2Nodelet : public nodelet::Nodelet
 {
-  ros::NodeHandle nh_;
-  image_transport::ImageTransport it_;
+  boost::shared_ptr<image_transport::ImageTransport> it_;
 
   // Subscriptions
   /// @todo Implement (optional) approx synch of left and right cameras
   image_transport::SubscriberFilter sub_l_image_;
   message_filters::Subscriber<CameraInfo> sub_l_info_, sub_r_info_;
   message_filters::Subscriber<DisparityImage> sub_disparity_;
-  message_filters::TimeSynchronizer<Image, CameraInfo, CameraInfo, DisparityImage> sync_;
+  typedef message_filters::TimeSynchronizer<Image, CameraInfo, CameraInfo,
+                                            DisparityImage> Sync;
+  boost::shared_ptr<Sync> sync_;
   bool subscribed_;
 
   // Publications
@@ -39,29 +39,33 @@ struct PointCloud2Nodelet::Impl
   cv::Mat_<cv::Vec3f> points_mat_; // scratch buffer
 
   // Error reporting
-  image_proc::AdvertisementChecker check_inputs_;
+  boost::shared_ptr<image_proc::AdvertisementChecker> check_inputs_;
 
-  Impl(const ros::NodeHandle& nh, const std::string& name)
-    : nh_(nh),
-      it_(nh),
-      sync_(3), /// @todo Parameter for sync queue size
-      subscribed_(false),
-      check_inputs_(nh, name)
-  {
-  }
+  
+  virtual void onInit();
+
+  void connectCb();
+
+  void imageCb(const ImageConstPtr& l_image_msg,
+               const CameraInfoConstPtr& l_info_msg,
+               const CameraInfoConstPtr& r_info_msg,
+               const DisparityImageConstPtr& disp_msg);
 };
 
 void PointCloud2Nodelet::onInit()
 {
-  ros::NodeHandle nh = getNodeHandle();
-  impl_ = boost::make_shared<Impl>(nh, getName());
+  ros::NodeHandle &nh = getNodeHandle();
+  it_.reset(new image_transport::ImageTransport(nh));
+
+  // Monitor whether anyone is subscribed to the output
+  subscribed_ = false;
   ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloud2Nodelet::connectCb, this);
-  impl_->pub_points2_  = nh.advertise<PointCloud2>("points2",  1, connect_cb, connect_cb);
+  pub_points2_  = nh.advertise<PointCloud2>("points2",  1, connect_cb, connect_cb);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
-  impl_->sync_.connectInput(impl_->sub_l_image_, impl_->sub_l_info_,
-                            impl_->sub_r_info_, impl_->sub_disparity_);
-  impl_->sync_.registerCallback(boost::bind(&PointCloud2Nodelet::imageCb, this, _1, _2, _3, _4));
+  /// @todo Parameter for sync queue size
+  sync_.reset( new Sync(sub_l_image_, sub_l_info_, sub_r_info_, sub_disparity_, 5) );
+  sync_->registerCallback(boost::bind(&PointCloud2Nodelet::imageCb, this, _1, _2, _3, _4));
 
   // Print a warning every minute until the input topics are advertised
   ros::V_string topics;
@@ -69,27 +73,29 @@ void PointCloud2Nodelet::onInit()
   topics.push_back("left/camera_info");
   topics.push_back("right/camera_info");
   topics.push_back("disparity");
-  impl_->check_inputs_.start(topics, 60.0);
+  check_inputs_.reset( new image_proc::AdvertisementChecker(nh, getName()) );
+  check_inputs_->start(topics, 60.0);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
 void PointCloud2Nodelet::connectCb()
 {
-  if (impl_->pub_points2_.getNumSubscribers() == 0)
+  if (pub_points2_.getNumSubscribers() == 0)
   {
-    impl_->sub_l_image_  .unsubscribe();
-    impl_->sub_l_info_   .unsubscribe();
-    impl_->sub_r_info_   .unsubscribe();
-    impl_->sub_disparity_.unsubscribe();
-    impl_->subscribed_ = false;
+    sub_l_image_  .unsubscribe();
+    sub_l_info_   .unsubscribe();
+    sub_r_info_   .unsubscribe();
+    sub_disparity_.unsubscribe();
+    subscribed_ = false;
   }
-  else if (!impl_->subscribed_)
+  else if (!subscribed_)
   {
-    impl_->sub_l_image_  .subscribe(impl_->it_, "left/image_rect_color", 1);
-    impl_->sub_l_info_   .subscribe(impl_->nh_, "left/camera_info", 1);
-    impl_->sub_r_info_   .subscribe(impl_->nh_, "right/camera_info", 1);
-    impl_->sub_disparity_.subscribe(impl_->nh_, "disparity", 1);
-    impl_->subscribed_ = true;
+    ros::NodeHandle &nh = getNodeHandle();
+    sub_l_image_  .subscribe(*it_, "left/image_rect_color", 1);
+    sub_l_info_   .subscribe(nh,   "left/camera_info", 1);
+    sub_r_info_   .subscribe(nh,   "right/camera_info", 1);
+    sub_disparity_.subscribe(nh,   "disparity", 1);
+    subscribed_ = true;
   }
   /// @todo Parameter for queue size
 }
@@ -107,16 +113,17 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
                                  const DisparityImageConstPtr& disp_msg)
 {
   // Update the camera model
-  impl_->model_.fromCameraInfo(l_info_msg, r_info_msg);
+  model_.fromCameraInfo(l_info_msg, r_info_msg);
 
   // Calculate dense point cloud
   const Image& dimage = disp_msg->image;
   const cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
-  impl_->model_.projectDisparityImageTo3d(dmat, impl_->points_mat_, true);
-  cv::Mat_<cv::Vec3f> mat = impl_->points_mat_;
+  model_.projectDisparityImageTo3d(dmat, points_mat_, true);
+  cv::Mat_<cv::Vec3f> mat = points_mat_;
 
   // Fill in new PointCloud2 message
   PointCloud2Ptr points_msg = boost::make_shared<PointCloud2>();
+  points_msg->header = disp_msg->header;
   points_msg->height = mat.rows;
   points_msg->width  = mat.cols;
   points_msg->fields.resize (4);
@@ -241,6 +248,13 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
                             "Could not fill color channel of the point cloud, "
                             "unrecognized encoding '%s'", encoding.c_str());
   }
+
+  pub_points2_.publish(points_msg);
 }
 
 } // namespace stereo_image_proc
+
+// Register nodelet
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_DECLARE_CLASS(stereo_image_proc, point_cloud2,
+                        stereo_image_proc::PointCloud2Nodelet, nodelet::Nodelet)
