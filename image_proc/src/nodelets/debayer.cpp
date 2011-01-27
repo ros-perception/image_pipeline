@@ -1,55 +1,57 @@
-#include "image_proc/nodelets/debayer.h"
-#include "image_proc/advertisement_checker.h"
+#include <ros/ros.h>
+#include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
+#include <image_proc/advertisement_checker.h>
+
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <boost/make_shared.hpp>
 
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_DECLARE_CLASS(image_proc, debayer, image_proc::DebayerNodelet, nodelet::Nodelet)
+#include <boost/make_shared.hpp>
 
 namespace image_proc {
 
 namespace enc = sensor_msgs::image_encodings;
 
-/// @todo Replace the more exotic rosconsole macros with nodelet ones once they exist
-struct DebayerNodelet::Impl
+class DebayerNodelet : public nodelet::Nodelet
 {
-  image_transport::ImageTransport it_;
+  boost::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::Subscriber sub_raw_;
   image_transport::Publisher pub_mono_;
   image_transport::Publisher pub_color_;
-  AdvertisementChecker check_inputs_;
-  
-  Impl(const ros::NodeHandle& nh, const std::string& name)
-    : it_(nh),
-      check_inputs_(nh, name)
-  {
-  }
+  boost::shared_ptr<AdvertisementChecker> check_inputs_;
+
+  virtual void onInit();
+
+  void connectCb();
+
+  void imageCb(const sensor_msgs::ImageConstPtr& raw_msg);
 };
 
 void DebayerNodelet::onInit()
 {
-  ros::NodeHandle nh = getNodeHandle();
-  impl_ = boost::make_shared<Impl>(nh, getName());
+  ros::NodeHandle &nh = getNodeHandle();
+  it_.reset(new image_transport::ImageTransport(nh));
+
+  // Monitor whether anyone is subscribed to the output
   typedef image_transport::SubscriberStatusCallback ConnectCB;
   ConnectCB connect_cb = boost::bind(&DebayerNodelet::connectCb, this);
-  impl_->pub_mono_  = impl_->it_.advertise("image_mono",  1, connect_cb, connect_cb);
-  impl_->pub_color_ = impl_->it_.advertise("image_color", 1, connect_cb, connect_cb);
+  pub_mono_  = it_->advertise("image_mono",  1, connect_cb, connect_cb);
+  pub_color_ = it_->advertise("image_color", 1, connect_cb, connect_cb);
 
   // Print a warning every minute until the image topic is advertised
   ros::V_string topics;
   topics.push_back("image_raw");
-  impl_->check_inputs_.start(topics, 60.0);
+  check_inputs_.reset( new AdvertisementChecker(nh, getName()) );
+  check_inputs_->start(topics, 60.0);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
 void DebayerNodelet::connectCb()
 {
-  if (impl_->pub_mono_.getNumSubscribers() == 0 && impl_->pub_color_.getNumSubscribers() == 0)
-    impl_->sub_raw_.shutdown();
-  else if (!impl_->sub_raw_)
-    impl_->sub_raw_ = impl_->it_.subscribe("image_raw", 3, &DebayerNodelet::imageCb, this);
+  if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0)
+    sub_raw_.shutdown();
+  else if (!sub_raw_)
+    sub_raw_ = it_->subscribe("image_raw", 3, &DebayerNodelet::imageCb, this);
   /// @todo Parameter for queue size
 }
 
@@ -59,23 +61,23 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
   if (raw_msg->encoding == enc::MONO8)
   {
     // Warn if the user asked for color
-    if (impl_->pub_color_.getNumSubscribers() > 0)
+    if (pub_color_.getNumSubscribers() > 0)
     {
-      ROS_WARN_THROTTLE_NAMED(30, getName(),
-                              "Color topic '%s' requested, but raw image data from topic '%s' is grayscale",
-                              impl_->pub_color_.getTopic().c_str(), impl_->sub_raw_.getTopic().c_str());
+      NODELET_WARN_THROTTLE(30, 
+                            "Color topic '%s' requested, but raw image data from topic '%s' is grayscale",
+                            pub_color_.getTopic().c_str(), sub_raw_.getTopic().c_str());
     }
-    impl_->pub_mono_.publish(raw_msg);
-    impl_->pub_color_.publish(raw_msg);
+    pub_mono_.publish(raw_msg);
+    pub_color_.publish(raw_msg);
     return;
   }
 
   // 8UC3 does not specify a color encoding. Is it BGR, RGB, HSV, XYZ, LUV...?
   if (raw_msg->encoding == enc::TYPE_8UC3) {
-    ROS_ERROR_THROTTLE_NAMED(30, getName(),
-                             "Raw image topic '%s' has ambiguous encoding '8UC3'. The "
-                             "source should set the encoding to 'bgr8' or 'rgb8'.",
-                             impl_->sub_raw_.getTopic().c_str());
+    NODELET_ERROR_THROTTLE(30,
+                           "Raw image topic '%s' has ambiguous encoding '8UC3'. The "
+                           "source should set the encoding to 'bgr8' or 'rgb8'.",
+                           sub_raw_.getTopic().c_str());
     return;
   }
 
@@ -95,9 +97,8 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
     else if (raw_msg->encoding == enc::BAYER_GRBG8)
       code = CV_BayerGB2BGR;
     else {
-      ROS_ERROR_THROTTLE_NAMED(30, getName(),
-                               "Raw image topic '%s' has unsupported encoding '%s'",
-                               impl_->sub_raw_.getTopic().c_str(), raw_msg->encoding.c_str());
+      NODELET_ERROR_THROTTLE(30, "Raw image topic '%s' has unsupported encoding '%s'",
+                             sub_raw_.getTopic().c_str(), raw_msg->encoding.c_str());
       return;
     }
 
@@ -123,16 +124,15 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
   // The only remaining encodings we handle are RGB8 and BGR8
   else if (raw_msg->encoding != enc::RGB8 && raw_msg->encoding != enc::BGR8)
   {
-    ROS_ERROR_THROTTLE_NAMED(30, getName(),
-                             "Raw image topic '%s' has unsupported encoding '%s'",
-                             impl_->sub_raw_.getTopic().c_str(), raw_msg->encoding.c_str());
+    NODELET_ERROR_THROTTLE(30, "Raw image topic '%s' has unsupported encoding '%s'",
+                           sub_raw_.getTopic().c_str(), raw_msg->encoding.c_str());
     return;
   }
 
-  impl_->pub_color_.publish(color_msg);
+  pub_color_.publish(color_msg);
 
   // Create monochrome image if needed
-  if (impl_->pub_mono_.getNumSubscribers() > 0)
+  if (pub_mono_.getNumSubscribers() > 0)
   {
     sensor_msgs::ImagePtr gray_msg = boost::make_shared<sensor_msgs::Image>();
     gray_msg->header   = raw_msg->header;
@@ -149,8 +149,12 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
     int code = (color_msg->encoding == enc::BGR8) ? CV_BGR2GRAY : CV_RGB2GRAY;
     cv::cvtColor(color, gray, code);
 
-    impl_->pub_mono_.publish(gray_msg);
+    pub_mono_.publish(gray_msg);
   }
 }
 
 } // namespace image_proc
+
+// Register nodelet
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_DECLARE_CLASS(image_proc, debayer, image_proc::DebayerNodelet, nodelet::Nodelet)

@@ -1,53 +1,57 @@
-#include "image_proc/nodelets/rectify.h"
-#include "image_proc/advertisement_checker.h"
+#include <ros/ros.h>
+#include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
+#include <image_proc/advertisement_checker.h>
+
 #include <image_geometry/pinhole_camera_model.h>
 #include <cv_bridge/CvBridge.h>
 
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_DECLARE_CLASS(image_proc, rectify, image_proc::RectifyNodelet, nodelet::Nodelet)
-
 namespace image_proc {
 
-struct RectifyNodelet::Impl
+class RectifyNodelet : public nodelet::Nodelet
 {
-  image_transport::ImageTransport it_;
+  boost::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::CameraSubscriber sub_camera_;
   image_transport::Publisher pub_rect_;
-  AdvertisementChecker check_inputs_;
-  /// @todo May want to allow sharing camera model with other nodelets (e.g. stereo processing)
+  boost::shared_ptr<AdvertisementChecker> check_inputs_;
   image_geometry::PinholeCameraModel model_;
-  int interpolation_;
+  int interpolation_; /// @todo dynamic_reconfigure for interpolation
 
-  Impl(const ros::NodeHandle& nh, const std::string& name)
-    : it_(nh),
-      check_inputs_(nh, name),
-      interpolation_(CV_INTER_LINEAR)
-  {
-  }
+  virtual void onInit();
+
+  void connectCb();
+
+  void imageCb(const sensor_msgs::ImageConstPtr& image_msg,
+               const sensor_msgs::CameraInfoConstPtr& info_msg);
+  
+public:
+  RectifyNodelet() : interpolation_(CV_INTER_LINEAR) {}
 };
 
 void RectifyNodelet::onInit()
 {
   ros::NodeHandle nh = getNodeHandle();
-  impl_ = boost::make_shared<Impl>(nh, getName());
+  it_.reset(new image_transport::ImageTransport(nh));
+
+  // Monitor whether anyone is subscribed to the output
   image_transport::SubscriberStatusCallback connect_cb = boost::bind(&RectifyNodelet::connectCb, this);
-  impl_->pub_rect_  = impl_->it_.advertise("image_rect",  1, connect_cb, connect_cb);
+  pub_rect_  = it_->advertise("image_rect",  1, connect_cb, connect_cb);
 
   // Print a warning every minute until the input topics are advertised
   ros::V_string topics;
   topics.push_back("image_mono");
   topics.push_back("camera_info");
-  impl_->check_inputs_.start(topics, 60.0);
+  check_inputs_.reset( new AdvertisementChecker(nh, getName()) );
+  check_inputs_->start(topics, 60.0);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
 void RectifyNodelet::connectCb()
 {
-  if (impl_->pub_rect_.getNumSubscribers() == 0)
-    impl_->sub_camera_.shutdown();
-  else if (!impl_->sub_camera_)
-    impl_->sub_camera_ = impl_->it_.subscribeCamera("image_mono", 3, &RectifyNodelet::imageCb, this);
+  if (pub_rect_.getNumSubscribers() == 0)
+    sub_camera_.shutdown();
+  else if (!sub_camera_)
+    sub_camera_ = it_->subscribeCamera("image_mono", 3, &RectifyNodelet::imageCb, this);
   /// @todo Parameter for queue size
 }
 
@@ -56,22 +60,21 @@ void RectifyNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
 {
   // Verify camera is actually calibrated
   if (info_msg->K[0] == 0.0) {
-    ROS_ERROR_THROTTLE_NAMED(30, getName(),
-                             "Rectified topic '%s' requested but camera publishing '%s' "
-                             "is uncalibrated", impl_->pub_rect_.getTopic().c_str(),
-                             impl_->sub_camera_.getInfoTopic().c_str());
+    NODELET_ERROR_THROTTLE(30, "Rectified topic '%s' requested but camera publishing '%s' "
+                           "is uncalibrated", pub_rect_.getTopic().c_str(),
+                           sub_camera_.getInfoTopic().c_str());
     return;
   }
 
   // If zero distortion, just pass the message along
   if (info_msg->D.empty() || info_msg->D[0] == 0.0)
   {
-    impl_->pub_rect_.publish(image_msg);
+    pub_rect_.publish(image_msg);
     return;
   }
 
   // Update the camera model
-  impl_->model_.fromCameraInfo(info_msg);
+  model_.fromCameraInfo(info_msg);
   
   // Allocate new rectified image message
   sensor_msgs::ImagePtr rect_msg = boost::make_shared<sensor_msgs::Image>();
@@ -88,8 +91,12 @@ void RectifyNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   cv::Mat rect = rect_bridge.imgMsgToCv(rect_msg);
 
   // Rectify and publish
-  impl_->model_.rectifyImage(image, rect, impl_->interpolation_);
-  impl_->pub_rect_.publish(rect_msg);
+  model_.rectifyImage(image, rect, interpolation_);
+  pub_rect_.publish(rect_msg);
 }
 
 } // namespace image_proc
+
+// Register nodelet
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_DECLARE_CLASS(image_proc, rectify, image_proc::RectifyNodelet, nodelet::Nodelet)

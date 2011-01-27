@@ -54,7 +54,7 @@ int main(int argc, char **argv)
              "\t$ ROS_NAMESPACE=my_camera rosrun image_proc image_proc");
   }
 
-  nodelet::Loader manager;
+  nodelet::Loader manager(false);
   nodelet::M_string remappings;
   nodelet::V_string my_argv;
 
@@ -68,6 +68,8 @@ int main(int argc, char **argv)
   remappings["image_mono"] = "image_color";
   remappings["image_rect"] = "image_rect_color";
   manager.load("rectify_color", "image_proc/rectify", remappings, my_argv);
+
+  /// @todo Would be nice to disable nodelet input checking and consolidate it here
   
   ros::spin();
   return 0;
