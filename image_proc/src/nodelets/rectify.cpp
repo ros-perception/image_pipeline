@@ -16,6 +16,7 @@ class RectifyNodelet : public nodelet::Nodelet
   boost::shared_ptr<AdvertisementChecker> check_inputs_;
   image_geometry::PinholeCameraModel model_;
   int interpolation_; /// @todo dynamic_reconfigure for interpolation
+  int queue_size_;
 
   virtual void onInit();
 
@@ -30,8 +31,12 @@ public:
 
 void RectifyNodelet::onInit()
 {
-  ros::NodeHandle nh = getNodeHandle();
+  ros::NodeHandle &nh = getNodeHandle();
+  ros::NodeHandle &private_nh = getPrivateNodeHandle();
   it_.reset(new image_transport::ImageTransport(nh));
+
+  // Read parameters
+  private_nh.param("queue_size", queue_size_, 5);
 
   // Monitor whether anyone is subscribed to the output
   image_transport::SubscriberStatusCallback connect_cb = boost::bind(&RectifyNodelet::connectCb, this);
@@ -51,8 +56,7 @@ void RectifyNodelet::connectCb()
   if (pub_rect_.getNumSubscribers() == 0)
     sub_camera_.shutdown();
   else if (!sub_camera_)
-    sub_camera_ = it_->subscribeCamera("image_mono", 3, &RectifyNodelet::imageCb, this);
-  /// @todo Parameter for queue size
+    sub_camera_ = it_->subscribeCamera("image_mono", queue_size_, &RectifyNodelet::imageCb, this);
 }
 
 void RectifyNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,

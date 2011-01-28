@@ -54,20 +54,34 @@ int main(int argc, char **argv)
              "\t$ ROS_NAMESPACE=my_camera rosrun image_proc image_proc");
   }
 
-  nodelet::Loader manager(false);
+  // Shared parameters to be propagated to nodelet private namespaces
+  ros::NodeHandle private_nh("~");
+  XmlRpc::XmlRpcValue shared_params;
+  int queue_size;
+  if (private_nh.getParam("queue_size", queue_size))
+    shared_params["queue_size"] = queue_size;
+
+  nodelet::Loader manager(false); // Don't bring up the manager ROS API
   nodelet::M_string remappings;
   nodelet::V_string my_argv;
 
   // Debayer nodelet, image_raw -> image_mono, image_color
-  manager.load("debayer", "image_proc/debayer", remappings, my_argv);
+  std::string debayer_name = ros::this_node::getName() + "_debayer";
+  manager.load(debayer_name, "image_proc/debayer", remappings, my_argv);
 
   // Rectify nodelet, image_mono -> image_rect
-  manager.load("rectify_mono", "image_proc/rectify", remappings, my_argv);
+  std::string rectify_mono_name = ros::this_node::getName() + "_rectify_mono";
+  if (shared_params.valid())
+    ros::param::set(rectify_mono_name, shared_params);
+  manager.load(rectify_mono_name, "image_proc/rectify", remappings, my_argv);
 
   // Rectify nodelet, image_color -> image_rect_color
   remappings["image_mono"] = "image_color";
   remappings["image_rect"] = "image_rect_color";
-  manager.load("rectify_color", "image_proc/rectify", remappings, my_argv);
+  std::string rectify_color_name = ros::this_node::getName() + "_rectify_color";
+  if (shared_params.valid())
+    ros::param::set(rectify_color_name, shared_params);
+  manager.load(rectify_color_name, "image_proc/rectify", remappings, my_argv);
 
   /// @todo Would be nice to disable nodelet input checking and consolidate it here
   

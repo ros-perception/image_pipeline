@@ -51,8 +51,7 @@ void DebayerNodelet::connectCb()
   if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0)
     sub_raw_.shutdown();
   else if (!sub_raw_)
-    sub_raw_ = it_->subscribe("image_raw", 3, &DebayerNodelet::imageCb, this);
-  /// @todo Parameter for queue size
+    sub_raw_ = it_->subscribe("image_raw", 1, &DebayerNodelet::imageCb, this);
 }
 
 void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
