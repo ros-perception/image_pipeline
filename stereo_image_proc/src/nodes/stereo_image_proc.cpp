@@ -45,21 +45,24 @@ void loadMonocularNodelets(nodelet::Loader& manager, const std::string& side)
   remappings["image_raw"]   = side + "/image_raw";
   remappings["image_mono"]  = side + "/image_mono";
   remappings["image_color"] = side + "/image_color";
-  manager.load("debayer_" + side, "image_proc/debayer", remappings, my_argv);
+  manager.load(ros::this_node::getName() + "_debayer_" + side,
+               "image_proc/debayer", remappings, my_argv);
 
   // Rectify nodelet: image_mono -> image_rect
   remappings.clear();
   remappings["image_mono"]  = side + "/image_mono";
   remappings["camera_info"] = side + "/camera_info";
   remappings["image_rect"]  = side + "/image_rect";
-  manager.load("rectify_mono_" + side, "image_proc/rectify", remappings, my_argv);
+  manager.load(ros::this_node::getName() + "_rectify_mono_" + side,
+               "image_proc/rectify", remappings, my_argv);
 
   // Rectify nodelet: image_color -> image_rect_color
   remappings.clear();
   remappings["image_mono"]  = side + "/image_color";
   remappings["camera_info"] = side + "/camera_info";
   remappings["image_rect"]  = side + "/image_rect_color";
-  manager.load("rectify_color_" + side, "image_proc/rectify", remappings, my_argv);
+  manager.load(ros::this_node::getName() + "_rectify_color_" + side,
+               "image_proc/rectify", remappings, my_argv);
 }
 
 int main(int argc, char **argv)
@@ -81,7 +84,24 @@ int main(int argc, char **argv)
              "\t$ ROS_NAMESPACE=my_stereo rosrun stereo_image_proc stereo_image_proc");
   }
 
-  nodelet::Loader manager(false);
+  // Nodelet names, which they use for parameter lookup
+  /// @todo Would be nicer to make these sub-namespaces, but see #4460.
+  // NOTE: Using node name for the disparity nodelet because it is the only one using
+  // dynamic_reconfigure so far, and this makes us backwards-compatible with cturtle.
+  std::string disparity_name    = ros::this_node::getName();
+  std::string point_cloud2_name = ros::this_node::getName() + "_point_cloud2";
+  std::string point_cloud_name  = ros::this_node::getName() + "_point_cloud";
+
+  // Propogate shared parameters (approximate_sync) to nodelet private namespaces
+  ros::NodeHandle private_nh("~");
+  bool approx;
+  if (private_nh.getParam("approximate_sync", approx))
+  {
+    ros::NodeHandle(point_cloud2_name).setParam("approximate_sync", approx);
+    ros::NodeHandle(point_cloud_name) .setParam("approximate_sync", approx);
+  }
+
+  nodelet::Loader manager(false); // Don't bring up the manager ROS API
   nodelet::M_string remappings;
   nodelet::V_string my_argv;
 
@@ -92,18 +112,17 @@ int main(int argc, char **argv)
   // Disparity nodelet
   // Inputs: left/image_rect, left/camera_info, right/image_rect, right/camera_info
   // Outputs: disparity
-  /// @todo Maybe use ros::this_node::getName() so dynamic_reconfigure looks same
-  manager.load("disparity", "stereo_image_proc/disparity", remappings, my_argv);
+  manager.load(disparity_name, "stereo_image_proc/disparity", remappings, my_argv);
 
   // PointCloud2 nodelet
   // Inputs: left/image_rect_color, left/camera_info, right/camera_info, disparity
   // Outputs: points2
-  manager.load("point_cloud2", "stereo_image_proc/point_cloud2", remappings, my_argv);
+  manager.load(point_cloud2_name, "stereo_image_proc/point_cloud2", remappings, my_argv);
 
   // PointCloud (deprecated) nodelet
   // Inputs: left/image_rect_color, left/camera_info, right/camera_info, disparity
   // Outputs: points
-  manager.load("point_cloud", "stereo_image_proc/point_cloud", remappings, my_argv);
+  manager.load(point_cloud_name, "stereo_image_proc/point_cloud", remappings, my_argv);
 
   /// @todo Would be nice to disable nodelet input checking and consolidate it here
 
