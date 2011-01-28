@@ -70,10 +70,10 @@ void PointCloud2Nodelet::onInit()
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection
   // callback. Optionally do approximate synchronization.
+  int queue_size;
+  private_nh.param("queue_size", queue_size, 5);
   bool approx;
   private_nh.param("approximate_sync", approx, false);
-  /// @todo Parameter for sync queue size
-  int queue_size = 3;
   if (approx)
   {
     approximate_sync_.reset( new ApproximateSync(ApproximatePolicy(queue_size),
