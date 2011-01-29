@@ -55,6 +55,7 @@ import StringIO
 import cv
 
 import message_filters
+from camera_calibration.approxsync import ApproximateSynchronizer
 
 ID_LOAD=101
 ID_SAVE=102
@@ -83,7 +84,7 @@ class ConsumerThread(threading.Thread):
 
 
 class CalibrationNode:
-    def __init__(self, boards, service_check = True):
+    def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -101,7 +102,7 @@ class CalibrationNode:
         self._boards = boards
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
-        ts = message_filters.TimeSynchronizer([lsub, rsub], 4)
+        ts = synchronizer([lsub, rsub], 4)
         ts.registerCallback(self.queue_stereo)
 
         msub = message_filters.Subscriber('image', sensor_msgs.msg.Image)
@@ -323,6 +324,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         if self.waitkey() == ord('s'):
             self.screendump(im)
 
+
 def main():
     from optparse import OptionParser
     parser = OptionParser("%prog --size SIZE1 --square SQUARE1 [ --size SIZE2 --square SQUARE2 ]")
@@ -331,6 +333,7 @@ def main():
     parser.add_option("-q", "--square", default=[], action="append", dest="square",
                       help="specify chessboard square size in meters [default: 0.108]")
     parser.add_option("", "--no-service-check", dest="service_check", action="store_false", default=True, help="disable check for set_camera_info services at startup")
+    parser.add_option("", "--approximate", dest="approximate", type="float", default=0.0, help="Use approximate time synchronizer for incoming stereo images")
     options, args = parser.parse_args()
 
     rospy.init_node('cameracalibrator') 
@@ -355,7 +358,11 @@ def main():
     if not boards:
         parser.error("Must supply at least one chessboard")
 
-    node = OpenCVCalibrationNode(boards, options.service_check)
+    if options.approximate == 0.0:
+        sync = message_filters.TimeSynchronizer
+    else:
+        sync = functools.partial(ApproximateSynchronizer, options.approximate)
+    node = OpenCVCalibrationNode(boards, options.service_check, sync)
     rospy.spin()
 
 if __name__ == "__main__":

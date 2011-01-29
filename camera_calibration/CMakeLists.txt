@@ -21,6 +21,9 @@ rosbuild_add_boost_directories()
 # Unit test of calibrator.py
 rosbuild_add_pyunit(test/directed.py)
 
+# Unit test of the approximate synchronizer
+rosbuild_add_pyunit(test/testapproxsync.py)
+
 # Tests simple calibration dataset
 rosbuild_download_test_data(http://pr.willowgarage.com/data/camera_calibration/camera_calibration.tar.gz camera_calibration.tar.gz 6da43ea314640a4c15dd7a90cbc3aee0)
 
