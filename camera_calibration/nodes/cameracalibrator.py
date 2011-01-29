@@ -51,6 +51,7 @@ import tarfile
 import pickle
 import random
 import StringIO
+import functools
 
 import cv
 
