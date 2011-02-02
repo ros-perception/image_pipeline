@@ -41,7 +41,9 @@
 #include <cv_bridge/CvBridge.h>
 
 #include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/exact_time.h>
+#include <message_filters/sync_policies/approximate_time.h>
 #include <image_transport/subscriber_filter.h>
 
 #include <boost/thread.hpp>
@@ -326,18 +328,27 @@ void increment(int* value)
   ++(*value);
 }
 
+using namespace sensor_msgs;
+using namespace stereo_msgs;
+using namespace message_filters::sync_policies;
+
 // Note: StereoView is NOT nodelet-based, as it synchronizes the three streams.
 class StereoView
 {
 private:
   image_transport::SubscriberFilter left_sub_, right_sub_;
-  message_filters::Subscriber<stereo_msgs::DisparityImage> disparity_sub_;
-  message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image,
-                                    stereo_msgs::DisparityImage> sync_;
+  message_filters::Subscriber<DisparityImage> disparity_sub_;
+  typedef ExactTime<Image, Image, DisparityImage> ExactPolicy;
+  typedef ApproximateTime<Image, Image, DisparityImage> ApproximatePolicy;
+  typedef message_filters::Synchronizer<ExactPolicy> ExactSync;
+  typedef message_filters::Synchronizer<ApproximatePolicy> ApproximateSync;
+  boost::shared_ptr<ExactSync> exact_sync_;
+  boost::shared_ptr<ApproximateSync> approximate_sync_;
+  int queue_size_;
   
-  sensor_msgs::ImageConstPtr last_left_msg_, last_right_msg_;
+  ImageConstPtr last_left_msg_, last_right_msg_;
   cv::Mat last_left_image_, last_right_image_;
-  sensor_msgs::CvBridge left_bridge_, right_bridge_;
+  CvBridge left_bridge_, right_bridge_;
   cv::Mat_<cv::Vec3b> disparity_color_;
   boost::mutex image_mutex_;
   
@@ -349,7 +360,7 @@ private:
 
 public:
   StereoView()
-    : sync_(3), filename_format_(""), save_count_(0),
+    : filename_format_(""), save_count_(0),
       left_received_(0), right_received_(0), disp_received_(0), all_received_(0)
   {
     // Read local parameters
@@ -386,21 +397,35 @@ public:
     ROS_INFO("Subscribing to:\n\t* %s\n\t* %s\n\t* %s", left_topic.c_str(), right_topic.c_str(),
              disparity_topic.c_str());
 
-    // Subscribe to synchronized topics
+    // Subscribe to three input topics.
     image_transport::ImageTransport it(nh);
-    left_sub_.subscribe(it, left_topic, 3);
-    right_sub_.subscribe(it, right_topic, 3);
-    disparity_sub_.subscribe(nh, disparity_topic, 3);
-    sync_.connectInput(left_sub_, right_sub_, disparity_sub_);
-    sync_.registerCallback(boost::bind(&StereoView::imageCb, this, _1, _2, _3));
+    left_sub_.subscribe(it, left_topic, 1);
+    right_sub_.subscribe(it, right_topic, 1);
+    disparity_sub_.subscribe(nh, disparity_topic, 1);
 
     // Complain every 30s if the topics appear unsynchronized
     left_sub_.registerCallback(boost::bind(increment, &left_received_));
     right_sub_.registerCallback(boost::bind(increment, &right_received_));
     disparity_sub_.registerCallback(boost::bind(increment, &disp_received_));
-    sync_.registerCallback(boost::bind(increment, &all_received_));
-    check_synced_timer_ = nh.createWallTimer(ros::WallDuration(30.0),
+    check_synced_timer_ = nh.createWallTimer(ros::WallDuration(15.0),
                                              boost::bind(&StereoView::checkInputsSynchronized, this));
+
+    // Synchronize input topics. Optionally do approximate synchronization.
+    local_nh.param("queue_size", queue_size_, 5);
+    bool approx;
+    local_nh.param("approximate_sync", approx, false);
+    if (approx)
+    {
+      approximate_sync_.reset( new ApproximateSync(ApproximatePolicy(queue_size_),
+                                                   left_sub_, right_sub_, disparity_sub_) );
+      approximate_sync_->registerCallback(boost::bind(&StereoView::imageCb, this, _1, _2, _3));
+    }
+    else
+    {
+      exact_sync_.reset( new ExactSync(ExactPolicy(queue_size_),
+                                       left_sub_, right_sub_, disparity_sub_) );
+      exact_sync_->registerCallback(boost::bind(&StereoView::imageCb, this, _1, _2, _3));
+    }
   }
 
   ~StereoView()
@@ -408,16 +433,18 @@ public:
     cvDestroyAllWindows();
   }
 
-  void imageCb(const sensor_msgs::ImageConstPtr& left, const sensor_msgs::ImageConstPtr& right,
-               const stereo_msgs::DisparityImageConstPtr& disparity_msg)
+  void imageCb(const ImageConstPtr& left, const ImageConstPtr& right,
+               const DisparityImageConstPtr& disparity_msg)
   {
+    ++all_received_; // For error checking
+    
     image_mutex_.lock();
 
     // May want to view raw bayer data
     if (left->encoding.find("bayer") != std::string::npos)
-      boost::const_pointer_cast<sensor_msgs::Image>(left)->encoding = "mono8";
+      boost::const_pointer_cast<Image>(left)->encoding = "mono8";
     if (right->encoding.find("bayer") != std::string::npos)
-      boost::const_pointer_cast<sensor_msgs::Image>(right)->encoding = "mono8";
+      boost::const_pointer_cast<Image>(right)->encoding = "mono8";
 
     // Hang on to image data for sake of mouseCb
     last_left_msg_ = left;
@@ -426,7 +453,7 @@ public:
       last_left_image_ = left_bridge_.imgMsgToCv(left, "bgr8");
       last_right_image_ = right_bridge_.imgMsgToCv(right, "bgr8");
     }
-    catch (sensor_msgs::CvBridgeException& e) {
+    catch (CvBridgeException& e) {
       ROS_ERROR("Unable to convert one of '%s' or '%s' to 'bgr8'",
                 left->encoding.c_str(), right->encoding.c_str());
     }
@@ -476,7 +503,12 @@ public:
   
   static void mouseCb(int event, int x, int y, int flags, void* param)
   {
-    if (event != CV_EVENT_LBUTTONDOWN)
+    if (event == CV_EVENT_LBUTTONDOWN)
+    {
+      ROS_WARN_ONCE("Left-clicking no longer saves images. Right-click instead.");
+      return;
+    }
+    if (event != CV_EVENT_RBUTTONDOWN)
       return;
     
     StereoView *sv = (StereoView*)param;
@@ -490,17 +522,23 @@ public:
   void checkInputsSynchronized()
   {
     int threshold = 3 * all_received_;
-    if (left_received_ > threshold || right_received_ > threshold || disp_received_ > threshold) {
+    if (left_received_ >= threshold || right_received_ >= threshold || disp_received_ >= threshold) {
       ROS_WARN("[stereo_view] Low number of synchronized left/right/disparity triplets received.\n"
-               "Left images received: %d\n"
-               "Right images received: %d\n"
-               "Disparity images received: %d\n"
+               "Left images received:      %d (topic '%s')\n"
+               "Right images received:     %d (topic '%s')\n"
+               "Disparity images received: %d (topic '%s')\n"
                "Synchronized triplets: %d\n"
                "Possible issues:\n"
                "\t* stereo_image_proc is not running.\n"
+               "\t  Does `rosnode info %s` show any connections?\n"
                "\t* The cameras are not synchronized.\n"
-               "\t* The network is too slow. One or more images are dropped from each triplet.",
-               left_received_, right_received_, disp_received_, all_received_);
+               "\t  Try restarting stereo_view with parameter _approximate_sync:=True\n"
+               "\t* The network is too slow. One or more images are dropped from each triplet.\n"
+               "\t  Try restarting stereo_view, increasing parameter 'queue_size' (currently %d)",
+               left_received_, left_sub_.getTopic().c_str(),
+               right_received_, right_sub_.getTopic().c_str(),
+               disp_received_, disparity_sub_.getTopic().c_str(),
+               all_received_, ros::this_node::getName().c_str(), queue_size_);
     }
   }
 };
