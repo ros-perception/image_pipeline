@@ -359,7 +359,7 @@ private:
   int left_received_, right_received_, disp_received_, all_received_;
 
 public:
-  StereoView()
+  StereoView(const std::string& transport)
     : filename_format_(""), save_count_(0),
       left_received_(0), right_received_(0), disp_received_(0), all_received_(0)
   {
@@ -369,15 +369,17 @@ public:
     local_nh.param("autosize", autosize, true);
     
     std::string format_string;
-    local_nh.param("filename_format", format_string, std::string("%s%04i.pgm"));
+    local_nh.param("filename_format", format_string, std::string("%s%04i.jpg"));
     filename_format_.parse(format_string);
 
     // Do GUI window setup
-    cv::namedWindow("left", autosize ? CV_WINDOW_AUTOSIZE : 0);
-    cv::namedWindow("right", autosize ? CV_WINDOW_AUTOSIZE : 0);
-    cv::namedWindow("disparity", autosize ? CV_WINDOW_AUTOSIZE : 0);
-    cvSetMouseCallback("left",  &StereoView::mouseCb, this);
-    cvSetMouseCallback("right", &StereoView::mouseCb, this);
+    int flags = autosize ? CV_WINDOW_AUTOSIZE : 0;
+    cv::namedWindow("left", flags);
+    cv::namedWindow("right", flags);
+    cv::namedWindow("disparity", flags);
+    cvSetMouseCallback("left",      &StereoView::mouseCb, this);
+    cvSetMouseCallback("right",     &StereoView::mouseCb, this);
+    cvSetMouseCallback("disparity", &StereoView::mouseCb, this);
 #ifdef HAVE_GTK
     g_signal_connect(GTK_WIDGET( cvGetWindowHandle("left") ),
                      "destroy", G_CALLBACK(destroy), NULL);
@@ -399,8 +401,8 @@ public:
 
     // Subscribe to three input topics.
     image_transport::ImageTransport it(nh);
-    left_sub_.subscribe(it, left_topic, 1);
-    right_sub_.subscribe(it, right_topic, 1);
+    left_sub_.subscribe(it, left_topic, 1, transport);
+    right_sub_.subscribe(it, right_topic, 1, transport);
     disparity_sub_.subscribe(nh, disparity_topic, 1);
 
     // Complain every 30s if the topics appear unsynchronized
@@ -516,6 +518,7 @@ public:
 
     sv->saveImage("left",  sv->last_left_image_);
     sv->saveImage("right", sv->last_right_image_);
+    sv->saveImage("disp",  sv->disparity_color_);
     sv->save_count_++;
   }
 
@@ -553,10 +556,11 @@ int main(int argc, char **argv)
   if (ros::names::remap("image") == "/image_raw") {
     ROS_WARN("There is a delay between when the camera drivers publish the raw images and "
              "when stereo_image_proc publishes the computed point cloud. stereo_view "
-             "may fail to synchronize these topics.");
+             "may fail to synchronize these topics without a large queue_size.");
   }
-  
-  StereoView view;
+
+  std::string transport = argc > 1 ? argv[1] : "raw";
+  StereoView view(transport);
   
   ros::spin();
   return 0;
