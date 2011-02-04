@@ -32,6 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import rospy
 import message_filters
 import threading
 import itertools
@@ -43,7 +44,7 @@ class ApproximateSynchronizer(message_filters.SimpleFilter):
         self.connectInput(fs)
         self.queue_size = queue_size
         self.lock = threading.Lock()
-        self.slop = slop
+        self.slop = rospy.Duration.from_sec(slop)
 
     def connectInput(self, fs):
         self.queues = [{} for f in fs]
@@ -69,5 +70,8 @@ class ApproximateSynchronizer(message_filters.SimpleFilter):
                     msgs = [q[t] for q,t in zip(self.queues, vv)]
                     self.signalMessage(*msgs)
                     for q in self.queues:
-                        del q[t]
+                        try:
+                            del q[t]
+                        except KeyError:
+                            pass # TODO: this is awful
         self.lock.release()
