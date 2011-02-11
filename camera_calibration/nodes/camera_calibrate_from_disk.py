@@ -6,7 +6,7 @@ import roslib; roslib.load_manifest(PKG)
 import os.path
 import sys
 import cv
-from camera_calibration.calibrator import MonoCalibrator 
+from camera_calibration.calibrator import MonoCalibrator, ChessboardInfo
 
 def main(args):
   from optparse import OptionParser
@@ -22,17 +22,24 @@ def main(args):
     if os.path.isfile(fname):
       img = cv.LoadImage(fname)
       if img is None:
-        print "[WARN] Couldn't open image " + fname + "!"
+        print >> sys.stderr, "[WARN] Couldn't open image " + fname + "!"
         sys.exit(1)
       else:
         print "[INFO] Loaded " + fname + " (" + str(img.width) + "x" + str(img.height) + ")"
 
       images.append(img)
-  mc = MonoCalibrator(size, dim)
+
+  cboard = ChessboardInfo()
+  cboard.dim = dim
+  cboard.n_cols = size[0]
+  cboard.n_rows = size[1]
+  
+  mc = MonoCalibrator([cboard])
   mc.cal(images)
   print mc.as_message()
 
 if __name__ == "__main__":
+  print >> sys.stderr, 'This script is deprecated. Use tarfile calibration instead'
   if len(sys.argv) >= 2:
     main(sys.argv[1:])
 

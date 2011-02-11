@@ -1,7 +1,0 @@
-/**
-\mainpage
-\htmlinclude manifest.html
-
-\b stereo_msgs contains messages for representing stereo-related data.
-
-*/

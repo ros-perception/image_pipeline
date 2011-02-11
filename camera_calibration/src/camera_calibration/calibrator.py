@@ -1,3 +1,37 @@
+#!/usr/bin/env python
+#
+# Software License Agreement (BSD License)
+#
+# Copyright (c) 2009, Willow Garage, Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#  * Neither the name of the Willow Garage nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
 import math
 import operator
 
@@ -7,6 +41,9 @@ import cv_bridge
 import image_geometry
 import sensor_msgs.msg
 import pickle
+import tarfile
+import StringIO
+import time
 
 class CalibrationException(Exception):
     pass
@@ -92,7 +129,7 @@ def _get_corners(img, board, refine = True):
 
 def _get_total_num_pts(boards):
     rv = 0
-    for i, b in enumerate(boards):
+    for b in boards:
         rv += b.n_cols * b.n_rows
     return rv
 
@@ -145,37 +182,39 @@ class Calibrator:
                 return True
         return False
 
-    # TODO Fix for new chessboards
     def mk_object_points(self, boards, use_board_size = False):
         opts = cv.CreateMat(_get_total_num_pts(boards), 3, cv.CV_32FC1)
+        idx = 0
         for i, b in enumerate(boards):
             num_pts = b.n_cols * b.n_rows
             for j in range(num_pts):
                 if use_board_size:
-                    opts[i * num_pts + j, 0] = (j / b.n_cols) * b.dim
-                    opts[i * num_pts + j, 1] = (j % b.n_cols) * b.dim
-                    opts[i * num_pts + j, 2] = 0
+                    opts[idx + j, 0] = (j / b.n_cols) * b.dim
+                    opts[idx + j, 1] = (j % b.n_cols) * b.dim
+                    opts[idx + j, 2] = 0
                 else:
-                    opts[i * num_pts + j, 0] = (j / b.n_cols) * 1.0
-                    opts[i * num_pts + j, 1] = (j % b.n_cols) * 1.0
-                    opts[i * num_pts + j, 2] = 0
+                    opts[idx + j, 0] = (j / b.n_cols) * 1.0
+                    opts[idx + j, 1] = (j % b.n_cols) * 1.0
+                    opts[idx + j, 2] = 0
+            idx += num_pts
         return opts
 
-    # TODO Fix for new chessboards (May be done...)
-    # Fix for stereo....
     def mk_image_points(self, good):
         total_pts = _get_total_num_pts( [ b for (_, b) in good ] )
         ipts = cv.CreateMat(total_pts, 2, cv.CV_32FC1)
 
+        idx = 0
         for (i, g) in enumerate(good):
             (corners, board) = g
             num_pts = board.n_cols * board.n_rows
             for j in range(len(corners)):
-                ipts[i * num_pts + j, 0] = corners[j][0]
-                ipts[i * num_pts + j, 1] = corners[j][1]
+                ipts[idx + j, 0] = corners[j][0]
+                ipts[idx + j, 1] = corners[j][1]
+
+            idx += num_pts
+
         return ipts
 
-    # TODO Fix for new chessboards
     def mk_point_counts(self, boards):
         npts = cv.CreateMat(len(boards), 1, cv.CV_32SC1)
         for i, board in enumerate(boards):
@@ -205,6 +244,7 @@ class Calibrator:
         """ Used by :meth:`as_message`.  Return a CameraInfo message for the given calibration matrices """
         msg = sensor_msgs.msg.CameraInfo()
         (msg.width, msg.height) = self.size
+        msg.distortion_model = "plumb_bob"
         msg.D = [d[i,0] for i in range(d.rows)]
         while len(msg.D)<5:
 	        msg.D.append(0)
@@ -262,10 +302,24 @@ class Calibrator:
         tf.close()
         print "Wrote calibration data to", filename
         
+
+
     def set_scale(self, a):
         if self.calibrated:
             vv = list(self.db.values())
             self.set_alpha(a)
+
+def image_from_archive(archive, name):
+    """
+    Load image PGM file from tar archive. 
+
+    Used for tarfile loading and unit test.
+    """
+    member = archive.getmember(name)
+    filedata = archive.extractfile(member).read()
+    imagefiledata = cv.CreateMat(1, len(filedata), cv.CV_8UC1)
+    cv.SetData(imagefiledata, filedata, len(filedata))
+    return cv.DecodeImageM(imagefiledata)
 
 class ImageDrawable(object):
     """
@@ -343,7 +397,7 @@ class MonoCalibrator(Calibrator):
 
         goodcorners = [(co, b) for (im, (ok, co, b)) in zip(images, corners) if ok]
         if len(goodcorners) == 0:
-            raise CalibrationException
+            raise CalibrationException("No corners found in images!")
         return goodcorners
 
     def cal_fromcorners(self, good):
@@ -585,7 +639,12 @@ class MonoCalibrator(Calibrator):
 
         taradd('ost.txt', self.ost())
 
+    def do_tarfile_calibration(self, filename):
+        archive = tarfile.open(filename, 'r')
 
+        limages = [ image_from_archive(archive, f) for f in archive.getnames() if (f.startswith('left') and (f.endswith('.pgm') or f.endswith('png'))) ]
+
+        self.cal(limages)
 
 class StereoCalibrator(Calibrator):
     """
@@ -630,7 +689,7 @@ class StereoCalibrator(Calibrator):
         good = [(lco, rco, b) for ((lok, lco, b), (rok, rco, br)) in zip( lcorners, rcorners) if (lok and rok)]
 
         if len(good) == 0:
-            raise CalibrationException
+            raise CalibrationException("No corners found in images!")
         return good
 
     def cal_fromcorners(self, good):
@@ -914,3 +973,15 @@ class StereoCalibrator(Calibrator):
             taradd(name, cv.EncodeImage(".png", im).tostring())
 
         taradd('ost.txt', self.ost())
+
+    def do_tarfile_calibration(self, filename):
+        archive = tarfile.open(filename, 'r')
+        limages = [ image_from_archive(archive, f) for f in archive.getnames() if (f.startswith('left') and (f.endswith('pgm') or f.endswith('png'))) ]
+        rimages = [ image_from_archive(archive, f) for f in archive.getnames() if (f.startswith('right') and (f.endswith('pgm') or f.endswith('png'))) ]
+
+        if not len(limages) == len(rimages):
+            raise CalibrationException("Left, right images don't match. %d left images, %d right" % (len(limages), len(rimages)))
+        
+        ##\todo Check that the filenames match and stuff
+
+        self.cal(limages, rimages)

@@ -1,4 +1,36 @@
 #!/usr/bin/python
+#
+# Software License Agreement (BSD License)
+#
+# Copyright (c) 2009, Willow Garage, Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#  * Neither the name of the Willow Garage nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 PKG = 'camera_calibration' # this package name
 import roslib; roslib.load_manifest(PKG)
@@ -19,10 +51,12 @@ import tarfile
 import pickle
 import random
 import StringIO
+import functools
 
 import cv
 
 import message_filters
+from camera_calibration.approxsync import ApproximateSynchronizer
 
 ID_LOAD=101
 ID_SAVE=102
@@ -51,7 +85,7 @@ class ConsumerThread(threading.Thread):
 
 
 class CalibrationNode:
-    def __init__(self, boards, service_check = True):
+    def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -69,7 +103,7 @@ class CalibrationNode:
         self._boards = boards
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
-        ts = message_filters.TimeSynchronizer([lsub, rsub], 4)
+        ts = synchronizer([lsub, rsub], 4)
         ts.registerCallback(self.queue_stereo)
 
         msub = message_filters.Subscriber('image', sensor_msgs.msg.Image)
@@ -291,14 +325,16 @@ class OpenCVCalibrationNode(CalibrationNode):
         if self.waitkey() == ord('s'):
             self.screendump(im)
 
+
 def main():
     from optparse import OptionParser
-    parser = OptionParser()
+    parser = OptionParser("%prog --size SIZE1 --square SQUARE1 [ --size SIZE2 --square SQUARE2 ]")
     parser.add_option("-s", "--size", default=[], action="append", dest="size",
-                      help="specify chessboard size as NxM [default: 8x6")
+                      help="specify chessboard size as NxM [default: 8x6]")
     parser.add_option("-q", "--square", default=[], action="append", dest="square",
-                      help="specify chessboard square size in meters [default: 0.108")
+                      help="specify chessboard square size in meters [default: 0.108]")
     parser.add_option("", "--no-service-check", dest="service_check", action="store_false", default=True, help="disable check for set_camera_info services at startup")
+    parser.add_option("", "--approximate", dest="approximate", type="float", default=0.0, help="Use approximate time synchronizer for incoming stereo images")
     options, args = parser.parse_args()
 
     rospy.init_node('cameracalibrator') 
@@ -307,8 +343,8 @@ def main():
         parser.error("Number of size and square inputs must be the same!")
     
     if not options.square:
-        options.square.append("8x6")
-        options.size.append("0.108")
+        options.square.append("0.108")
+        options.size.append("8x6")
 
     boards = []
     for (sz, sq) in zip(options.size, options.square):
@@ -323,8 +359,16 @@ def main():
     if not boards:
         parser.error("Must supply at least one chessboard")
 
-    node = OpenCVCalibrationNode(boards, options.service_check)
+    if options.approximate == 0.0:
+        sync = message_filters.TimeSynchronizer
+    else:
+        sync = functools.partial(ApproximateSynchronizer, options.approximate)
+    node = OpenCVCalibrationNode(boards, options.service_check, sync)
     rospy.spin()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception, e:
+        import traceback
+        traceback.print_exc()

@@ -23,7 +23,7 @@ import cv
 import message_filters
 import image_geometry
 
-from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator
+from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, ChessboardInfo
 
 def mean(seq):
     return sum(seq) / len(seq)
@@ -53,8 +53,10 @@ class ConsumerThread(threading.Thread):
 class CameraCheckerNode:
 
     def __init__(self, chess_size, dim):
-        self.chess_size = chess_size
-        self.dim = dim
+        self.board = ChessboardInfo()
+        self.board.n_cols = chess_size[0]
+        self.board.n_rows = chess_size[1]
+        self.board.dim = dim
 
         image_topic = rospy.resolve_name("monocular") + "/image_rect"
         camera_topic = rospy.resolve_name("monocular") + "/camera_info"
@@ -95,7 +97,7 @@ class CameraCheckerNode:
         sth.setDaemon(True)
         sth.start()
 
-        self.mc = MonoCalibrator(self.chess_size, self.dim)
+        self.mc = MonoCalibrator([self.board])
 
     def queue_monocular(self, msg, cmsg):
         self.q_mono.put((msg, cmsg))
@@ -107,9 +109,9 @@ class CameraCheckerNode:
         return self.br.imgmsg_to_cv(msg, "bgr8")
 
     def image_corners(self, im):
-        (ok, corners) = self.mc.get_corners(im)
+        (ok, corners, b) = self.mc.get_corners(im)
         if ok:
-            return list(cvmat_iterator(cv.Reshape(self.mc.mk_image_points([corners]), 2)))
+            return list(cvmat_iterator(cv.Reshape(self.mc.mk_image_points([(corners, b)]), 2)))
         else:
             return None
 
@@ -122,8 +124,8 @@ class CameraCheckerNode:
         rgb = self.mkgray(image)
         C = self.image_corners(rgb)
         if C:
-            cc = self.mc.chessboard_n_cols
-            cr = self.mc.chessboard_n_rows
+            cc = self.board.n_cols
+            cr = self.board.n_rows
             errors = []
             for r in range(cr):
                 (x1, y1) = C[(cc * r) + 0]
@@ -141,7 +143,7 @@ class CameraCheckerNode:
         lrgb = self.mkgray(lmsg)
         rrgb = self.mkgray(rmsg)
 
-        sc = StereoCalibrator(self.chess_size, self.dim)
+        sc = StereoCalibrator([self.board])
 
         L = self.image_corners(lrgb)
         R = self.image_corners(rrgb)
@@ -157,8 +159,8 @@ class CameraCheckerNode:
                 return math.sqrt(sum([(c0 - c1) ** 2 for (c0, c1) in zip(p0, p1)]))
 
             # Compute the length from each horizontal and vertical lines, and return the mean
-            cc = self.mc.chessboard_n_cols
-            cr = self.mc.chessboard_n_rows
+            cc = self.board.n_cols
+            cr = self.board.n_rows
             lengths = (
                 [l2(pt3d[cc * r + 0], pt3d[cc * r + (cc - 1)]) / (cc - 1) for r in range(cr)] +
                 [l2(pt3d[c + 0], pt3d[c + (cc * (cr - 1))]) / (cr - 1) for c in range(cc)])
