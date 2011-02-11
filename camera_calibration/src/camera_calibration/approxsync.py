@@ -73,5 +73,5 @@ class ApproximateSynchronizer(message_filters.SimpleFilter):
                         try:
                             del q[t]
                         except KeyError:
-                            pass # TODO: this is awful
+                            pass # TODO: why can del q[t] fail?
         self.lock.release()

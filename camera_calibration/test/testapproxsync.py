@@ -82,8 +82,8 @@ class TestApproxSync(unittest.TestCase):
         for N in range(1, 10):
             m0 = MockFilter()
             m1 = MockFilter()
-            seq0 = [MockMessage(t, random.random()) for t in range(N)]
-            seq1 = [MockMessage(t, random.random()) for t in range(N)]
+            seq0 = [MockMessage(rospy.Time(t), random.random()) for t in range(N)]
+            seq1 = [MockMessage(rospy.Time(t), random.random()) for t in range(N)]
             # random.shuffle(seq0)
             ts = ApproximateSynchronizer(0.1, [m0, m1], N)
             ts.registerCallback(self.cb_collector_2msg)
