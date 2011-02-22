@@ -1,3 +1,7 @@
- - builder: sphinx
-   name: Python API
-   output_dir: python
+ - builder: external
+   external_url: http://www.ros.org/doc/api/camera_calibration/html/python-permanent/
+   external_label: Python API
+
+# - builder: sphinx
+#  name: Python API
+#  output_dir: python
