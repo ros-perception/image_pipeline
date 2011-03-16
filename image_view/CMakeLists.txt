@@ -12,6 +12,9 @@ if (PKG_CONFIG_FOUND AND UNIX AND NOT APPLE)
       include_directories(${GTK_INCLUDE_DIRS})
       link_directories(${GTK_LIBRARY_DIRS})
       add_definitions(-DHAVE_GTK)
+      # Hack around gdk-pixbuf move issues for now
+      # http://ubuntuforums.org/showthread.php?t=1596930
+      include_directories(/usr/include/gdk-pixbuf-2.0)
    endif(GTK_FOUND)
 endif(PKG_CONFIG_FOUND AND UNIX AND NOT APPLE)
 
