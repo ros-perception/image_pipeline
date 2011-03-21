@@ -43,19 +43,29 @@ void loadMonocularNodelets(nodelet::Loader& manager, const std::string& side,
 {
   nodelet::M_string remappings;
   nodelet::V_string my_argv;
+
+  // Explicitly resolve global remappings (wg-ros-pkg #5055).
+  // Otherwise the internal remapping 'image_raw' -> 'left/image_raw' can hide a
+  // global remapping from the launch file or command line.
+  std::string image_raw_topic        = ros::names::resolve(side + "/image_raw");
+  std::string image_mono_topic       = ros::names::resolve(side + "/image_mono");
+  std::string image_color_topic      = ros::names::resolve(side + "/image_color");
+  std::string image_rect_topic       = ros::names::resolve(side + "/image_rect");
+  std::string image_rect_color_topic = ros::names::resolve(side + "/image_rect_color");
+  std::string camera_info_topic      = ros::names::resolve(side + "/camera_info");
   
   // Debayer nodelet: image_raw -> image_mono, image_color
-  remappings["image_raw"]   = side + "/image_raw";
-  remappings["image_mono"]  = side + "/image_mono";
-  remappings["image_color"] = side + "/image_color";
+  remappings["image_raw"]   = image_raw_topic;
+  remappings["image_mono"]  = image_mono_topic;
+  remappings["image_color"] = image_color_topic;
   std::string debayer_name = ros::this_node::getName() + "_debayer_" + side;
   manager.load(debayer_name, "image_proc/debayer", remappings, my_argv);
 
   // Rectify nodelet: image_mono -> image_rect
   remappings.clear();
-  remappings["image_mono"]  = side + "/image_mono";
-  remappings["camera_info"] = side + "/camera_info";
-  remappings["image_rect"]  = side + "/image_rect";
+  remappings["image_mono"]  = image_mono_topic;
+  remappings["camera_info"] = camera_info_topic;
+  remappings["image_rect"]  = image_rect_topic;
   std::string rectify_mono_name = ros::this_node::getName() + "_rectify_mono_" + side;
   if (rectify_params.valid())
     ros::param::set(rectify_mono_name, rectify_params);
@@ -63,9 +73,9 @@ void loadMonocularNodelets(nodelet::Loader& manager, const std::string& side,
 
   // Rectify nodelet: image_color -> image_rect_color
   remappings.clear();
-  remappings["image_mono"]  = side + "/image_color";
-  remappings["camera_info"] = side + "/camera_info";
-  remappings["image_rect"]  = side + "/image_rect_color";
+  remappings["image_mono"]  = image_color_topic;
+  remappings["camera_info"] = camera_info_topic;
+  remappings["image_rect"]  = image_rect_color_topic;
   std::string rectify_color_name = ros::this_node::getName() + "_rectify_color_" + side;
   if (rectify_params.valid())
     ros::param::set(rectify_color_name, rectify_params);

@@ -76,8 +76,9 @@ int main(int argc, char **argv)
   manager.load(rectify_mono_name, "image_proc/rectify", remappings, my_argv);
 
   // Rectify nodelet, image_color -> image_rect_color
-  remappings["image_mono"] = "image_color";
-  remappings["image_rect"] = "image_rect_color";
+  // NOTE: Explicitly resolve any global remappings here, so they don't get hidden.
+  remappings["image_mono"] = ros::names::resolve("image_color");
+  remappings["image_rect"] = ros::names::resolve("image_rect_color");
   std::string rectify_color_name = ros::this_node::getName() + "_rectify_color";
   if (shared_params.valid())
     ros::param::set(rectify_color_name, shared_params);
