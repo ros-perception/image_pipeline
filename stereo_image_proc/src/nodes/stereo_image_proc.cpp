@@ -34,15 +34,13 @@
 
 #include <ros/ros.h>
 #include <nodelet/loader.h>
-
-/// @todo Would be nicer to make the nodelet names sub-namespaces of the
-/// stereo_image_proc node, but see #4460.
+#include <image_proc/advertisement_checker.h>
 
 void loadMonocularNodelets(nodelet::Loader& manager, const std::string& side,
-                           const XmlRpc::XmlRpcValue& rectify_params)
+                           const XmlRpc::XmlRpcValue& rectify_params,
+                           const nodelet::V_string& my_argv)
 {
   nodelet::M_string remappings;
-  nodelet::V_string my_argv;
 
   // Explicitly resolve global remappings (wg-ros-pkg #5055).
   // Otherwise the internal remapping 'image_raw' -> 'left/image_raw' can hide a
@@ -111,10 +109,11 @@ int main(int argc, char **argv)
   nodelet::Loader manager(false); // Don't bring up the manager ROS API
   nodelet::M_string remappings;
   nodelet::V_string my_argv;
+  my_argv.push_back("--no-input-checks"); // Avoid redundant topic advertisement checks
 
   // Load equivalents of image_proc for left and right cameras
-  loadMonocularNodelets(manager, "left",  shared_params);
-  loadMonocularNodelets(manager, "right", shared_params);
+  loadMonocularNodelets(manager, "left",  shared_params, my_argv);
+  loadMonocularNodelets(manager, "right", shared_params, my_argv);
 
   // Stereo nodelets also need to know the synchronization policy
   bool approx_sync;
@@ -145,7 +144,14 @@ int main(int argc, char **argv)
     ros::param::set(point_cloud_name, shared_params);
   manager.load(point_cloud_name, "stereo_image_proc/point_cloud", remappings, my_argv);
 
-  /// @todo Would be nice to disable nodelet input checking and consolidate it here
+  // Check for only the original camera topics
+  ros::V_string topics;
+  topics.push_back(ros::names::resolve("left/image_raw"));
+  topics.push_back(ros::names::resolve("left/camera_info"));
+  topics.push_back(ros::names::resolve("right/image_raw"));
+  topics.push_back(ros::names::resolve("right/camera_info"));
+  image_proc::AdvertisementChecker check_inputs(ros::NodeHandle(), ros::this_node::getName());
+  check_inputs.start(topics, 60.0);
 
   ros::spin();
   return 0;

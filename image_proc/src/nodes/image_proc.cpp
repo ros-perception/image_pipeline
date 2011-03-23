@@ -34,6 +34,7 @@
 
 #include <ros/ros.h>
 #include <nodelet/loader.h>
+#include <image_proc/advertisement_checker.h>
 
 int main(int argc, char **argv)
 {
@@ -64,6 +65,7 @@ int main(int argc, char **argv)
   nodelet::Loader manager(false); // Don't bring up the manager ROS API
   nodelet::M_string remappings;
   nodelet::V_string my_argv;
+  my_argv.push_back("--no-input-checks"); // Avoid redundant topic advertisement checks
 
   // Debayer nodelet, image_raw -> image_mono, image_color
   std::string debayer_name = ros::this_node::getName() + "_debayer";
@@ -84,7 +86,12 @@ int main(int argc, char **argv)
     ros::param::set(rectify_color_name, shared_params);
   manager.load(rectify_color_name, "image_proc/rectify", remappings, my_argv);
 
-  /// @todo Would be nice to disable nodelet input checking and consolidate it here
+  // Check for only the original camera topics
+  ros::V_string topics;
+  topics.push_back("image_raw");
+  topics.push_back("camera_info");
+  image_proc::AdvertisementChecker check_inputs(ros::NodeHandle(), ros::this_node::getName());
+  check_inputs.start(topics, 60.0);
   
   ros::spin();
   return 0;
