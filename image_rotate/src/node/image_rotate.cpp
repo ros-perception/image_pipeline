@@ -149,7 +149,7 @@ class ImageRotater
       int max_dim = in_image.cols > in_image.rows ? in_image.cols : in_image.rows;
       int min_dim = in_image.cols < in_image.rows ? in_image.cols : in_image.rows;
       int noblack_dim = min_dim / sqrt(2);
-      int diag_dim = sqrt(pow(in_image.cols, 2) + pow(in_image.rows, 2));
+      int diag_dim = sqrt(in_image.cols*in_image.cols + in_image.rows*in_image.rows);
       int out_size;
       int candidates[] = { noblack_dim, min_dim, max_dim, diag_dim, diag_dim }; // diag_dim repeated to simplify limit case.
       int step = config_.output_image_size;

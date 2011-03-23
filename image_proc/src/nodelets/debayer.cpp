@@ -38,11 +38,19 @@ void DebayerNodelet::onInit()
   pub_mono_  = it_->advertise("image_mono",  1, connect_cb, connect_cb);
   pub_color_ = it_->advertise("image_color", 1, connect_cb, connect_cb);
 
+  // Internal option, to be used by image_proc/stereo_image_proc nodes
+  const std::vector<std::string>& argv = getMyArgv();
+  bool do_input_checks = std::find(argv.begin(), argv.end(),
+                                   "--no-input-checks") == argv.end();
+  
   // Print a warning every minute until the image topic is advertised
-  ros::V_string topics;
-  topics.push_back("image_raw");
-  check_inputs_.reset( new AdvertisementChecker(nh, getName()) );
-  check_inputs_->start(topics, 60.0);
+  if (do_input_checks)
+  {
+    ros::V_string topics;
+    topics.push_back("image_raw");
+    check_inputs_.reset( new AdvertisementChecker(nh, getName()) );
+    check_inputs_->start(topics, 60.0);
+  }
 }
 
 // Handles (un)subscribing when clients (un)subscribe

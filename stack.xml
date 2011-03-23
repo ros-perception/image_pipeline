@@ -14,7 +14,7 @@
   <depend stack="geometry" /> <!-- tf -->
   <depend stack="image_common" /> <!-- image_transport, camera_calibration_parsers -->
   <depend stack="ros" />
-  <depend stack="ros_comm" /> <!-- std_srvs, roscpp, message_filters, std_msgs, rospy -->
+  <depend stack="ros_comm" /> <!-- std_msgs, rospy, std_srvs, roscpp, message_filters -->
   <depend stack="vision_opencv" /> <!-- opencv2, image_geometry, cv_bridge -->
 
 </stack>
