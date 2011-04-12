@@ -168,7 +168,7 @@ class ImageRotater
 
       // Publish the image.
       IplImage out_msg = out_image;
-      sensor_msgs::Image::Ptr out_img = bridge_.cvToImgMsg(&out_msg, "passthrough");
+      sensor_msgs::Image::Ptr out_img = bridge_.cvToImgMsg(&out_msg, msg->encoding);
       out_img->header = msg->header;
       out_img->header.frame_id = transform.child_frame_id_;
       img_pub_.publish(out_img);
