@@ -15,7 +15,7 @@ class RectifyNodelet : public nodelet::Nodelet
   image_transport::Publisher pub_rect_;
   boost::shared_ptr<AdvertisementChecker> check_inputs_;
   image_geometry::PinholeCameraModel model_;
-  int interpolation_; /// @todo dynamic_reconfigure for interpolation
+  int interpolation_;
   int queue_size_;
 
   virtual void onInit();
@@ -24,9 +24,6 @@ class RectifyNodelet : public nodelet::Nodelet
 
   void imageCb(const sensor_msgs::ImageConstPtr& image_msg,
                const sensor_msgs::CameraInfoConstPtr& info_msg);
-  
-public:
-  RectifyNodelet() : interpolation_(CV_INTER_LINEAR) {}
 };
 
 void RectifyNodelet::onInit()
@@ -37,6 +34,13 @@ void RectifyNodelet::onInit()
 
   // Read parameters
   private_nh.param("queue_size", queue_size_, 5);
+  private_nh.param("interpolation", interpolation_, (int)cv::INTER_LINEAR);
+  /// @todo dynamic_reconfigure for interpolation
+  // 0: Nearest neighbor
+  // 1: Linear
+  // 2: Cubic
+  // 3: Area (not supported by remap)
+  // 4: Lanczos4
 
   // Monitor whether anyone is subscribed to the output
   image_transport::SubscriberStatusCallback connect_cb = boost::bind(&RectifyNodelet::connectCb, this);
