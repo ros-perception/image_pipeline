@@ -558,6 +558,7 @@ class MonoCalibrator(Calibrator):
         (self.width, self.height) = cv.GetSize(rgb)
         scrib = rgb
 
+        # Checkerboard detection is done on a smaller image to take less CPU
         scale = math.ceil(self.width / 640.)
         if scale != 1:
             scrib = cv.CreateMat(int(self.height / scale), int(self.width / scale), cv.GetElemType(rgb))
@@ -567,8 +568,12 @@ class MonoCalibrator(Calibrator):
 
         rv.scrib = scrib
 
-        (ok, corners, b) = self.get_corners(rgb, refine = False)
+        (ok, corners, b) = self.get_corners(scrib, refine = False)
         good = [ (corners, b) ]
+        # Scale corners back to full size image
+        if corners:
+            for i in range(len(corners)):
+                corners[i] = (corners[i][0]*scale, corners[i][1]*scale)
         if not ok:
             rv.load_params(self.db)
             return rv
