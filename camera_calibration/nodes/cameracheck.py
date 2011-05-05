@@ -213,5 +213,4 @@ def main():
     rospy.spin()
 
 if __name__ == "__main__":
-    cv.fromarray(numpy.ones([3,3]))
     main()
