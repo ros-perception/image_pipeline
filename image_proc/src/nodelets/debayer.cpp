@@ -65,7 +65,7 @@ void DebayerNodelet::connectCb()
 void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
 {
   // Special case when raw image is already monochrome, as no processing is needed.
-  if (raw_msg->encoding == enc::MONO8)
+  if (raw_msg->encoding == enc::MONO8 || raw_msg->encoding == enc::MONO16)
   {
     // Warn if the user asked for color
     if (pub_color_.getNumSubscribers() > 0)
