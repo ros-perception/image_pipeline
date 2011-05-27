@@ -172,10 +172,20 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   disp_msg->f = model_.right().fx();
   disp_msg->T = model_.baseline();
 
-  /// @todo Window of (potentially) valid disparities
+  // Compute window of (potentially) valid disparities
+  cv::Ptr<CvStereoBMState> params = block_matcher_.state;
+  int border   = params->SADWindowSize / 2;
+  int left   = params->numberOfDisparities + params->minDisparity + border - 1;
+  int wtf = (params->minDisparity >= 0) ? border + params->minDisparity : std::max(border, -params->minDisparity);
+  int right  = disp_msg->image.width - 1 - wtf;
+  int top    = border;
+  int bottom = disp_msg->image.height - 1 - border;
+  disp_msg->valid_window.x_offset = left;
+  disp_msg->valid_window.y_offset = top;
+  disp_msg->valid_window.width    = right - left;
+  disp_msg->valid_window.height   = bottom - top;
 
   // Disparity search range
-  cv::Ptr<CvStereoBMState> params = block_matcher_.state;
   disp_msg->min_disparity = params->minDisparity;
   disp_msg->max_disparity = params->minDisparity + params->numberOfDisparities - 1;
   disp_msg->delta_d = 1.0 / 16; // OpenCV uses 16 disparities per pixel
