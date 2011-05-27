@@ -105,14 +105,22 @@ void DisparityNodelet::onInit()
   reconfigure_server_.reset(new ReconfigureServer(private_nh));
   reconfigure_server_->setCallback(f);
 
+  // Internal option, to be used by image_proc/stereo_image_proc nodes
+  const std::vector<std::string>& argv = getMyArgv();
+  bool do_input_checks = std::find(argv.begin(), argv.end(),
+                                   "--no-input-checks") == argv.end();
+
   // Print a warning every minute until the input topics are advertised
-  ros::V_string topics;
-  topics.push_back("left/image_rect");
-  topics.push_back("left/camera_info");
-  topics.push_back("right/image_rect");
-  topics.push_back("right/camera_info");
-  check_inputs_.reset( new image_proc::AdvertisementChecker(nh, getName()) );
-  check_inputs_->start(topics, 60.0);
+  if (do_input_checks)
+  {
+    ros::V_string topics;
+    topics.push_back("left/image_rect");
+    topics.push_back("left/camera_info");
+    topics.push_back("right/image_rect");
+    topics.push_back("right/camera_info");
+    check_inputs_.reset( new image_proc::AdvertisementChecker(nh, getName()) );
+    check_inputs_->start(topics, 60.0);
+  }
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -164,10 +172,20 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   disp_msg->f = model_.right().fx();
   disp_msg->T = model_.baseline();
 
-  /// @todo Window of (potentially) valid disparities
+  // Compute window of (potentially) valid disparities
+  cv::Ptr<CvStereoBMState> params = block_matcher_.state;
+  int border   = params->SADWindowSize / 2;
+  int left   = params->numberOfDisparities + params->minDisparity + border - 1;
+  int wtf = (params->minDisparity >= 0) ? border + params->minDisparity : std::max(border, -params->minDisparity);
+  int right  = disp_msg->image.width - 1 - wtf;
+  int top    = border;
+  int bottom = disp_msg->image.height - 1 - border;
+  disp_msg->valid_window.x_offset = left;
+  disp_msg->valid_window.y_offset = top;
+  disp_msg->valid_window.width    = right - left;
+  disp_msg->valid_window.height   = bottom - top;
 
   // Disparity search range
-  cv::Ptr<CvStereoBMState> params = block_matcher_.state;
   disp_msg->min_disparity = params->minDisparity;
   disp_msg->max_disparity = params->minDisparity + params->numberOfDisparities - 1;
   disp_msg->delta_d = 1.0 / 16; // OpenCV uses 16 disparities per pixel

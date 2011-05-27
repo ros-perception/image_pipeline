@@ -15,7 +15,7 @@ class RectifyNodelet : public nodelet::Nodelet
   image_transport::Publisher pub_rect_;
   boost::shared_ptr<AdvertisementChecker> check_inputs_;
   image_geometry::PinholeCameraModel model_;
-  int interpolation_; /// @todo dynamic_reconfigure for interpolation
+  int interpolation_;
   int queue_size_;
 
   virtual void onInit();
@@ -24,9 +24,6 @@ class RectifyNodelet : public nodelet::Nodelet
 
   void imageCb(const sensor_msgs::ImageConstPtr& image_msg,
                const sensor_msgs::CameraInfoConstPtr& info_msg);
-  
-public:
-  RectifyNodelet() : interpolation_(CV_INTER_LINEAR) {}
 };
 
 void RectifyNodelet::onInit()
@@ -37,17 +34,32 @@ void RectifyNodelet::onInit()
 
   // Read parameters
   private_nh.param("queue_size", queue_size_, 5);
+  private_nh.param("interpolation", interpolation_, (int)cv::INTER_LINEAR);
+  /// @todo dynamic_reconfigure for interpolation
+  // 0: Nearest neighbor
+  // 1: Linear
+  // 2: Cubic
+  // 3: Area (not supported by remap)
+  // 4: Lanczos4
 
   // Monitor whether anyone is subscribed to the output
   image_transport::SubscriberStatusCallback connect_cb = boost::bind(&RectifyNodelet::connectCb, this);
   pub_rect_  = it_->advertise("image_rect",  1, connect_cb, connect_cb);
 
+  // Internal option, to be used by image_proc/stereo_image_proc nodes
+  const std::vector<std::string>& argv = getMyArgv();
+  bool do_input_checks = std::find(argv.begin(), argv.end(),
+                                   "--no-input-checks") == argv.end();
+  
   // Print a warning every minute until the input topics are advertised
-  ros::V_string topics;
-  topics.push_back("image_mono");
-  topics.push_back("camera_info");
-  check_inputs_.reset( new AdvertisementChecker(nh, getName()) );
-  check_inputs_->start(topics, 60.0);
+  if (do_input_checks)
+  {
+    ros::V_string topics;
+    topics.push_back("image_mono");
+    topics.push_back("camera_info");
+    check_inputs_.reset( new AdvertisementChecker(nh, getName()) );
+    check_inputs_->start(topics, 60.0);
+  }
 }
 
 // Handles (un)subscribing when clients (un)subscribe

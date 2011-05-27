@@ -121,6 +121,13 @@ void DisparityNodelet::imageCb(const stereo_msgs::DisparityImageConstPtr& msg)
     }
   }
 
+  /// @todo For Electric, consider option to draw outline of valid window
+#if 0
+  sensor_msgs::RegionOfInterest valid = msg->valid_window;
+  cv::Point tl(valid.x_offset, valid.y_offset), br(valid.x_offset + valid.width, valid.y_offset + valid.height);
+  cv::rectangle(disparity_color_, tl, br, CV_RGB(255,0,0), 1);
+#endif
+  
   cv::imshow(window_name_, disparity_color_);
 }
 

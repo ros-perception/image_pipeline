@@ -22,6 +22,7 @@ import cv
 
 import message_filters
 import image_geometry
+import numpy
 
 from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, ChessboardInfo
 
@@ -133,7 +134,36 @@ class CameraCheckerNode:
                 for i in range(1, cc - 1):
                     (x0, y0) = C[(cc * r) + i]
                     errors.append(pt2line(x0, y0, x1, y1, x2, y2))
-            print "error", math.sqrt(sum([e**2 for e in errors]) / len(errors)), "pixels"
+            linearity_rms = math.sqrt(sum([e**2 for e in errors]) / len(errors))
+
+            # Add in reprojection check
+            A = cv.CreateMat(3,3,0)
+            image_points = cv.fromarray(numpy.array(C))
+            object_points = cv.fromarray(numpy.zeros([cc*cr, 3]))
+            for i in range(cr):
+                for j in range(cc):
+                    object_points[i*cc + j, 0] = j * self.board.dim
+                    object_points[i*cc + j, 1] = i * self.board.dim
+                    object_points[i*cc + j, 2] = 0.0
+            dist_coeffs = cv.fromarray(numpy.array([ [0.0, 0.0, 0.0, 0.0] ]))
+            camera_matrix = numpy.array( [ [ camera.P[0], camera.P[1], camera.P[2]  ],
+                                           [ camera.P[4], camera.P[5], camera.P[6]  ],
+                                           [ camera.P[8], camera.P[9], camera.P[10] ] ] )
+            rot = cv.CreateMat(3, 1, cv.CV_32FC1)
+            trans = cv.CreateMat(3, 1, cv.CV_32FC1)
+            cv.FindExtrinsicCameraParams2(object_points, image_points, camera_matrix, dist_coeffs, rot, trans)
+            # Convert rotation into a 3x3 Rotation Matrix
+            rot3x3 = cv.CreateMat(3, 3, cv.CV_32FC1)
+            cv.Rodrigues2(rot, rot3x3)
+            # Reproject model points into image
+            object_points_world = numpy.asmatrix(rot3x3) * (numpy.asmatrix(object_points).T) + numpy.asmatrix(trans)
+            reprojected_h = camera_matrix * object_points_world
+            reprojected   = (reprojected_h[0:2, :] / reprojected_h[2, :])
+            reprojection_errors = image_points - reprojected.T
+            reprojection_rms = numpy.sqrt(numpy.sum(numpy.array(reprojection_errors) ** 2) / numpy.product(reprojection_errors.shape))
+
+            # Print the results
+            print "Linearity RMS Error: %.3f Pixels      Reprojection RMS Error: %.3f Pixels" % (linearity_rms, reprojection_rms)
         else:
             print 'no chessboard'
 
