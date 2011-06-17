@@ -122,7 +122,19 @@ def _get_corners(img, board, refine = True):
         ok = False
         
     if refine and ok:
-        corners = cv.FindCornerSubPix(mono, corners, (5,5), (-1,-1), ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
+        # Use a radius of half the minimum distance between corners. This should be large enough to snap to the
+        # correct corner, but not so large as to include a wrong corner in the search window.
+        min_distance = 100000.0
+        for row in range(board.n_rows):
+            for col in range(board.n_cols - 1):
+                index = row*board.n_rows + col
+                min_distance = min(min_distance, _pdist(corners[index], corners[index + 1]))
+        for row in range(board.n_rows - 1):
+            for col in range(board.n_cols):
+                index = row*board.n_rows + col
+                min_distance = min(min_distance, _pdist(corners[index], corners[index + board.n_cols]))
+        radius = math.ceil(min_distance * 0.5)
+        corners = cv.FindCornerSubPix(mono, corners, (radius,radius), (-1,-1), ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
         
     return (ok, corners)
 
@@ -306,7 +318,6 @@ class Calibrator:
 
     def set_scale(self, a):
         if self.calibrated:
-            vv = list(self.db.values())
             self.set_alpha(a)
 
 def image_from_archive(archive, name):
@@ -568,7 +579,7 @@ class MonoCalibrator(Calibrator):
 
         rv.scrib = scrib
 
-        (ok, corners, b) = self.get_corners(scrib, refine = False)
+        (ok, corners, b) = self.get_corners(scrib, refine = True)
         good = [ (corners, b) ]
         # Scale corners back to full size image
         if corners:
@@ -581,6 +592,7 @@ class MonoCalibrator(Calibrator):
         # Compute some parameters for this chessboard
         Xs = [x for (x, y) in corners]
         Ys = [y for (x, y) in corners]
+        # TODO Why mean here? Penalizes use of large chessboards
         p_x = mean(Xs) / self.width
         p_y = mean(Ys) / self.height
         p_size = (max(Xs) - min(Xs)) / self.width
@@ -594,6 +606,7 @@ class MonoCalibrator(Calibrator):
             self.p_maxs = params
         else:
             self.p_maxs = lmax(self.p_maxs, params)
+        # TODO This constantly replaces samples, and can actually cause param variation to decrease
         is_min = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_mins)]
         is_max = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_maxs)]
         
@@ -603,7 +616,11 @@ class MonoCalibrator(Calibrator):
         
         # If the image is a min or max in any parameter, add to the collection
         if any(is_min) or any(is_max):
-            self.db[str(is_min + is_max)] = (params, rgb)
+            #self.db[str(is_min + is_max)] = (params, rgb)
+            # DEBUG
+            key = str(is_min + is_max)
+            self.db[key] = (params, rgb, scrib)
+            #print "Added sample, now have %d (key = %s)" % (len(self.db), key)
             
         if self.calibrated:
             rgb_remapped = self.remap(rgb)
@@ -618,7 +635,7 @@ class MonoCalibrator(Calibrator):
         self.calibrated = True
         vv = list(self.db.values())
         # vv is a list of pairs (p, i) for monocular, and triples (p, l, r) for stereo
-        images = [i for (p, i) in vv]
+        images = [i for (p, i, _) in vv]
         corners = self.collect_corners(images)
         # Dump should only occur if user wants it
         if dump:
@@ -629,7 +646,8 @@ class MonoCalibrator(Calibrator):
         """ Write images and calibration solution to a tarfile object """
         vv = list(self.db.values())
         # vv is a list of pairs (p, i) for monocular, and triples (p, l, r) for stereo
-        ims = [("left-%04d.png" % i, im) for i,(_, im) in enumerate(vv)]
+        ims = [("left-%04d.png" % i, im) for i,(_, im, _) in enumerate(vv)]
+        scribs = [("scrib-%04d.png" % i, scrib) for i,(_, _, scrib) in enumerate(vv)]
 
         def taradd(name, buf):
             s = StringIO.StringIO(buf)
@@ -641,6 +659,9 @@ class MonoCalibrator(Calibrator):
 
         for (name, im) in ims:
             taradd(name, cv.EncodeImage(".png", im).tostring())
+
+        for (name, scrib) in scribs:
+            taradd(name, cv.EncodeImage(".png", scrib).tostring())
 
         taradd('ost.txt', self.ost())
 
