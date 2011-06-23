@@ -85,11 +85,9 @@ def _pdist(p1, p2):
     """
     return math.sqrt(math.pow(p1[0] - p2[0], 2) + math.pow(p1[1] - p2[1], 2))
 
-def _get_skew(corners, board):
+def _get_outside_corners(corners, board):
     """
-    Get skew for given checkerboard detection. 
-    Scaled to [0,1], which 0 = no skew, 1 = high skew
-    Skew is proportional to the divergence of three outside corners from 90 degrees.
+    Return the four corners of the board as a whole, as (up_left, up_right, down_right, down_left).
     """
     xdim = board.n_cols
     ydim = board.n_rows
@@ -98,21 +96,45 @@ def _get_skew(corners, board):
         raise Exception("Invalid number of corners! %d corners. X: %d, Y: %d" % (len(corners),
                                                                                  xdim, ydim))
 
-    up_left = corners[0]
-    up_right = corners[xdim - 1]
-    down_left = corners[-xdim ]
-    down_right = corners[-1]
+    up_left    = numpy.array( corners[0] )
+    up_right   = numpy.array( corners[xdim - 1] )
+    down_right = numpy.array( corners[-1] )
+    down_left  = numpy.array( corners[-xdim] )
+
+    return (up_left, up_right, down_right, down_left)
+
+def _get_skew(corners, board):
+    """
+    Get skew for given checkerboard detection. 
+    Scaled to [0,1], which 0 = no skew, 1 = high skew
+    Skew is proportional to the divergence of three outside corners from 90 degrees.
+    """
+    up_left, up_right, down_right, _ = _get_outside_corners(corners, board)
 
     def angle(a, b, c):
         """
         Return angle between lines ab, bc
         """
-        ab = numpy.array(a) - numpy.array(b)
-        cb = numpy.array(c) - numpy.array(b)
+        ab = a - b
+        cb = c - b
         return math.acos(numpy.dot(ab,cb) / (numpy.linalg.norm(ab) * numpy.linalg.norm(cb)))
 
-    skew = min(1.0, 2. * abs((math.pi / 2.) - angle(down_left, up_left, up_right)))
+    skew = min(1.0, 2. * abs((math.pi / 2.) - angle(up_left, up_right, down_right)))
     return skew
+
+def _get_area(corners, board):
+    """
+    Get 2d image area of the detected checkerboard.
+    The projected checkerboard is assumed to be a convex quadrilateral, and the area computed as
+    |p X q|/2; see http://mathworld.wolfram.com/Quadrilateral.html.
+    """
+    (up_left, up_right, down_right, down_left) = _get_outside_corners(corners, board)
+    a = up_right - up_left
+    b = down_right - up_right
+    c = down_left - down_right
+    p = b + c
+    q = a + b
+    return abs(p[0]*q[1] - p[1]*q[0]) / 2.
 
 def _get_corners(img, board, refine = True):
     """
@@ -167,6 +189,7 @@ class Calibrator:
         self.p_maxs = None
         self.db = {}
         self.goodenough = False
+        self.variation = [0.0, 0.0, 0.0, 0.0]
 
     def mkgray(self, msg):
         """
@@ -193,6 +216,7 @@ class Calibrator:
         return rgb
 
     def compute_goodenough(self):
+        # TODO Check enough variation in each axis separately
         if len(self.db) > 0:
             Ps = [v[0] for v in self.db.values()]
             Pmins = reduce(lmin, Ps)
@@ -597,15 +621,15 @@ class MonoCalibrator(Calibrator):
         # Compute some parameters for this chessboard
         Xs = [x for (x, y) in corners]
         Ys = [y for (x, y) in corners]
-        # TODO Why mean here? Penalizes use of large chessboards
         p_x = mean(Xs) / self.width
         p_y = mean(Ys) / self.height
-        p_size = (max(Xs) - min(Xs)) / self.width
+        p_size = math.sqrt(_get_area(corners, b) / (self.width * self.height))
         skew = _get_skew(corners, b)
         params = [p_x, p_y, p_size, skew]
         print "p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple(params) # DEBUG
         if self.p_mins == None:
-            self.p_mins = params
+            # No reward for small size or skew
+            self.p_mins = [p_x, p_y, 0, 0]
         else:
             self.p_mins = lmin(self.p_mins, params)
         if self.p_maxs == None:
