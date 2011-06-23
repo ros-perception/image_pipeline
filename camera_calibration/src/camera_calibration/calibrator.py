@@ -37,6 +37,8 @@ import operator
 
 import cv
 import cv_bridge
+import numpy
+import numpy.linalg
 
 import image_geometry
 import sensor_msgs.msg
@@ -54,10 +56,10 @@ def cvmat_iterator(cvmat):
             yield cvmat[i,j]
 
 class ChessboardInfo(object):
-    def __init__(self):
-        self.n_cols = 0
-        self.n_rows = 0
-        self.dim = 0.0
+    def __init__(self, n_cols = 0, n_rows = 0, dim = 0.0):
+        self.n_cols = n_cols
+        self.n_rows = n_rows
+        self.dim = dim
 
 def _get_num_pts(good):
     num_pts = 0
@@ -86,9 +88,8 @@ def _pdist(p1, p2):
 def _get_skew(corners, board):
     """
     Get skew for given checkerboard detection. 
-    Return skew (0.0 - no skew). 
-    Skew is 5 * abs(log( diagonal_1 / diagonal_2 ) )
-    Scale to match other parameters
+    Scaled to [0,1], which 0 = no skew, 1 = high skew
+    Skew is proportional to the divergence of three outside corners from 90 degrees.
     """
     xdim = board.n_cols
     ydim = board.n_rows
@@ -97,15 +98,21 @@ def _get_skew(corners, board):
         raise Exception("Invalid number of corners! %d corners. X: %d, Y: %d" % (len(corners),
                                                                                  xdim, ydim))
 
-    down_left = corners[0]
-    down_right = corners[xdim - 1]
-    up_left = corners[- ydim ]
-    up_right = corners[-1]
+    up_left = corners[0]
+    up_right = corners[xdim - 1]
+    down_left = corners[-xdim ]
+    down_right = corners[-1]
 
-    diag1 = _pdist(down_left, up_right)
-    diag2 = _pdist(down_right, up_left)
+    def angle(a, b, c):
+        """
+        Return angle between lines ab, bc
+        """
+        ab = numpy.array(a) - numpy.array(b)
+        cb = numpy.array(c) - numpy.array(b)
+        return math.acos(numpy.dot(ab,cb) / (numpy.linalg.norm(ab) * numpy.linalg.norm(cb)))
 
-    return 5 * abs(math.log(diag1 / diag2 ))
+    skew = min(1.0, 2. * abs((math.pi / 2.) - angle(down_left, up_left, up_right)))
+    return skew
 
 def _get_corners(img, board, refine = True):
     """
@@ -124,7 +131,7 @@ def _get_corners(img, board, refine = True):
     if refine and ok:
         # Use a radius of half the minimum distance between corners. This should be large enough to snap to the
         # correct corner, but not so large as to include a wrong corner in the search window.
-        min_distance = 100000.0
+        min_distance = float("inf")
         for row in range(board.n_rows):
             for col in range(board.n_cols - 1):
                 index = row*board.n_rows + col
@@ -133,7 +140,7 @@ def _get_corners(img, board, refine = True):
             for col in range(board.n_cols):
                 index = row*board.n_rows + col
                 min_distance = min(min_distance, _pdist(corners[index], corners[index + board.n_cols]))
-        radius = math.ceil(min_distance * 0.5)
+        radius = int(math.ceil(min_distance * 0.5))
         corners = cv.FindCornerSubPix(mono, corners, (radius,radius), (-1,-1), ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
         
     return (ok, corners)
@@ -152,7 +159,8 @@ class Calibrator:
     Base class for calibration system
     """
     def __init__(self, boards):
-        self._boards = boards
+        # Make sure n_cols > n_rows to agree with OpenCV CB detector output
+        self._boards = [ChessboardInfo(max(i.n_cols, i.n_rows), min(i.n_cols, i.n_rows), i.dim) for i in boards]
         self.calibrated = False
         self.br = cv_bridge.CvBridge()
         self.p_mins = None
@@ -216,14 +224,11 @@ class Calibrator:
         ipts = cv.CreateMat(total_pts, 2, cv.CV_32FC1)
 
         idx = 0
-        for (i, g) in enumerate(good):
-            (corners, board) = g
-            num_pts = board.n_cols * board.n_rows
+        for (corners, _) in good:
             for j in range(len(corners)):
                 ipts[idx + j, 0] = corners[j][0]
                 ipts[idx + j, 1] = corners[j][1]
-
-            idx += num_pts
+            idx += len(corners)
 
         return ipts
 
@@ -598,6 +603,7 @@ class MonoCalibrator(Calibrator):
         p_size = (max(Xs) - min(Xs)) / self.width
         skew = _get_skew(corners, b)
         params = [p_x, p_y, p_size, skew]
+        print "p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple(params) # DEBUG
         if self.p_mins == None:
             self.p_mins = params
         else:
@@ -619,7 +625,9 @@ class MonoCalibrator(Calibrator):
             #self.db[str(is_min + is_max)] = (params, rgb)
             # DEBUG
             key = str(is_min + is_max)
-            self.db[key] = (params, rgb, scrib)
+            scrib2 = cv.CloneMat(rgb)
+            cv.DrawChessboardCorners(scrib2, (b.n_cols, b.n_rows), cvmat_iterator(src), True)
+            self.db[key] = (params, rgb, scrib2)
             #print "Added sample, now have %d (key = %s)" % (len(self.db), key)
             
         if self.calibrated:

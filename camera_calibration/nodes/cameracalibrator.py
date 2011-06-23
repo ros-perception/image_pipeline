@@ -348,13 +348,8 @@ def main():
 
     boards = []
     for (sz, sq) in zip(options.size, options.square):
-        info = ChessboardInfo()
-        info.dim = float(sq)
         size = tuple([int(c) for c in sz.split('x')])
-        info.n_cols = size[0]
-        info.n_rows = size[1]
-
-        boards.append(info)
+        boards.append(ChessboardInfo(size[0], size[1], float(sq)))
 
     if not boards:
         parser.error("Must supply at least one chessboard")
