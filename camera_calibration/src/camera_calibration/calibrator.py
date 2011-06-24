@@ -241,8 +241,7 @@ class Calibrator:
         min_params = reduce(lmin, all_params)
         max_params = reduce(lmax, all_params)
         # Don't reward small size or skew
-        min_params[2] = 0.
-        min_params[3] = 0.
+        min_params = [min_params[0], min_params[1], 0., 0.]
 
         # For each parameter, judge how much progress has been made toward adequate variation
         progress = [min((hi - lo) / r, 1.0) for (lo, hi, r) in zip(min_params, max_params, self._param_ranges)]
