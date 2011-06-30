@@ -129,6 +129,26 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
     last_image_ = cv::Mat(msg->height, msg->width, CV_8UC1,
                           const_cast<uint8_t*>(&msg->data[0]), msg->step);
   }
+  // We want to scale floating point images so that they display nicely
+  else if(msg->encoding.find("F") != std::string::npos)
+  {
+    cv::Mat float_image_bridge = img_bridge_.imgMsgToCv(msg, "passthrough");
+    cv::Mat_<float> float_image = float_image_bridge;
+    float max_val = 0;
+    for(int i = 0; i < float_image.rows; ++i)
+    {
+      for(int j = 0; j < float_image.cols; ++j)
+      {
+        max_val = std::max(max_val, float_image(i, j));
+      }
+    }
+
+    if(max_val > 0)
+    {
+      float_image /= max_val;
+    }
+    last_image_ = float_image;
+  }
   else
   {
     // Convert to OpenCV native BGR color
