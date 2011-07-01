@@ -282,7 +282,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 msg = "?"
             else:
                 msg = "%.2f" % linerror
-                print "linear", linerror
+                #print "linear", linerror
             cv.PutText(display, msg, (width, self.y(1)), self.font, (0,0,0))
 
         self.show(display)

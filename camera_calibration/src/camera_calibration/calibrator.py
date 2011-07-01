@@ -278,7 +278,7 @@ class Calibrator:
                 ipts[idx + j, 1] = corners[j][1]
             idx += len(corners)
 
-        return ipts
+        return cv.Reshape(ipts, 2)
 
     def mk_point_counts(self, boards):
         npts = cv.CreateMat(len(boards), 1, cv.CV_32SC1)
@@ -474,6 +474,11 @@ class MonoCalibrator(Calibrator):
         self.intrinsics = intrinsics
         self.distortion = distortion
 
+        # R is identity matrix for monocular calibration
+        self.R = cv.CreateMat(3, 3, cv.CV_64FC1)
+        cv.SetIdentity(self.R)
+        self.P = cv.CreateMat(3, 4, cv.CV_64FC1)
+
         self.mapx = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
         self.mapy = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
         self.set_alpha(0.0)
@@ -487,16 +492,11 @@ class MonoCalibrator(Calibrator):
         """
 
         ncm = cv.CreateMat(3, 3, cv.CV_64FC1)
-        R = cv.CreateMat(3, 3, cv.CV_64FC1)
-        cv.SetIdentity(R)
         cv.GetOptimalNewCameraMatrix(self.intrinsics, self.distortion, self.size, a, ncm)
-        cv.InitUndistortRectifyMap(self.intrinsics, self.distortion, R, ncm, self.mapx, self.mapy)
+        cv.InitUndistortRectifyMap(self.intrinsics, self.distortion, self.R, ncm, self.mapx, self.mapy)
 
-        self.R = cv.CreateMat(3, 3, cv.CV_64FC1)
-        self.P = cv.CreateMat(3, 4, cv.CV_64FC1)
-        cv.SetIdentity(self.R)
         cv.SetZero(self.P)
-        cv.Copy(self.intrinsics, cv.GetSubRect(self.P, (0, 0, 3, 3)))
+        cv.Copy(ncm, cv.GetSubRect(self.P, (0, 0, 3, 3)))
 
     def remap(self, src):
         """
@@ -518,7 +518,7 @@ class MonoCalibrator(Calibrator):
         """
 
         dst = cv.CloneMat(src)
-        cv.UndistortPoints(src, dst, self.intrinsics, self.distortion, P = self.intrinsics)
+        cv.UndistortPoints(src, dst, self.intrinsics, self.distortion, R = self.R, P = self.P)
         return dst
 
     def as_message(self):
@@ -553,28 +553,13 @@ class MonoCalibrator(Calibrator):
         return self.lrost("left", self.distortion, self.intrinsics, self.R, self.P)
 
 
-    def linear_error(self, im):
+    def linear_error(self, corners, b):
 
         """
-        :param im: source image containing chessboard
-        :type li: :class:`cvMat`
-
-        Applies current calibration to image, finds the checkerbard, and returns the linear error.
-        Returns -1 if checkerboard not found.
-
+        Returns the linear error for a set of corners detected in the unrectified image.
         """
 
-        (ok, corners, b) = self.get_corners(im)
-        good = [ (corners, b) ]
-
-        if not ok:
-            return -1
-        if 1:
-            src = cv.Reshape(self.mk_image_points(good), 2)
-            P = list(cvmat_iterator(self.undistort_points(src)))
-        else:
-            src = cv.Reshape(self.mk_image_points(good), 2)
-            P = list(cvmat_iterator(src))
+        P = list(corners)
         # P is checkerboard vertices as a list of (x,y) image points
 
         def pt2line(x0, y0, x1, y1, x2, y2):
@@ -597,65 +582,89 @@ class MonoCalibrator(Calibrator):
         """
         Returns a MonoDrawable message with image data
         """
-        rv = MonoDrawable()
-
         rgb = self.mkgray(msg)
+        # TODO width, height should be local vars
         (self.width, self.height) = cv.GetSize(rgb)
         scrib = rgb
 
-        # Checkerboard detection is too expensive on a large image, so scale it down to VGA size
-        scale = math.ceil(self.width / 640.)
-        if scale != 1:
+        # Checkerboard detection is too expensive on a large image, so scale it down to ~VGA size
+        scale = math.sqrt( (self.width*self.height) / (640.*480.) )
+        if scale > 1.0:
             scrib = cv.CreateMat(int(self.height / scale), int(self.width / scale), cv.GetElemType(rgb))
             cv.Resize(rgb, scrib)
         else:
             scrib = cv.CloneMat(rgb)
-        rv.scrib = scrib
+        # Due to rounding, actual horizontal/vertical scaling may differ slightly
+        x_scale = float(self.width) / scrib.cols
+        y_scale = float(self.height) / scrib.rows
 
         # Detect checkerboard
-        (ok, corners, b) = self.get_corners(scrib, refine = True)
-        if not ok or not corners:
-            rv.params = self.compute_goodenough()
-            return rv
-
-        # Draw corners onto display image while they're still (potentially) scaled down
-        good = (corners, b)
-        src = cv.Reshape(self.mk_image_points([good]), 2)
-        cv.DrawChessboardCorners(scrib, (b.n_cols, b.n_rows), cvmat_iterator(src), True)
+        (ok, downsampled_corners, b) = self.get_corners(scrib, refine = True)
+        found_checkerboard = ok and downsampled_corners # TODO Should just need ok?
+        linear_error = -1
 
         # Scale corners back to full size image
-        corners = [(c[0]*scale, c[1]*scale) for c in corners]
+        corners = None
+        corners_unrefined = None
+        if found_checkerboard:
+            corners = [(c[0]*x_scale, c[1]*y_scale) for c in downsampled_corners]
+            #corners_unrefined = [(c[0]*x_scale, c[1]*y_scale) for c in downsampled_corners]
+            # TODO Put this logic in _get_corners
+            #mono = cv.CreateMat(rgb.rows, rgb.cols, cv.CV_8UC1)
+            #cv.CvtColor(rgb, mono, cv.CV_BGR2GRAY)
+            #radius = int(math.ceil(scale))
+            #corners = cv.FindCornerSubPix(mono, corners_unrefined, (radius,radius), (-1,-1), ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
+            #corners = cv.FindCornerSubPix(mono, corners_unrefined, (radius,radius), (-1,-1), (cv.CV_TERMCRIT_ITER, 30, 0))
 
-        # Compute some parameters for this chessboard
-        Xs = [x for (x, y) in corners]
-        Ys = [y for (x, y) in corners]
-        # TODO Mean has nice invariants but penalizes using large/close-up checkerboard views. Is there a better way?
-        p_x = mean(Xs) / self.width
-        p_y = mean(Ys) / self.height
-        p_size = math.sqrt(_get_area(corners, b) / (self.width * self.height))
-        skew = _get_skew(corners, b)
-        params = [p_x, p_y, p_size, skew]
-        #print "p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple(params) # DEBUG
-
-        # Add sample to database only if it's sufficiently different from any previous sample.
-        if self.is_good_sample(params):
-            # DEBUG Save CB image also
-            scrib2 = None
-            if 1:
-                good = (corners, b)
-                src = cv.Reshape(self.mk_image_points([good]), 2)
-                scrib2 = cv.CloneMat(rgb)
-                cv.DrawChessboardCorners(scrib2, (b.n_cols, b.n_rows), cvmat_iterator(src), True)
-            self.db.append((params, rgb, scrib2))
-            self.good_corners.append((corners, b))
-            print "*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)
-
-        # TODO Move this to the top, consider showing CB and check on linear error
         if self.calibrated:
-            rgb_remapped = self.remap(rgb)
-            cv.Resize(rgb_remapped, scrib)
+            # Show rectified image
+            # TODO Pull out downsampling code into function
+            if scale > 1.0:
+                rgb_rect = self.remap(rgb)
+                cv.Resize(rgb_rect, scrib)
+            else:
+                scrib = self.remap(rgb)
 
+            if found_checkerboard:
+                # Draw rectified corners and report linear error
+                src = self.mk_image_points([ (corners, b) ])
+                undistorted = list(cvmat_iterator(self.undistort_points(src)))
+                linear_error = self.linear_error(undistorted, b)
+
+                scrib_src = [(x/x_scale, y/y_scale) for (x,y) in undistorted]
+                cv.DrawChessboardCorners(scrib, (b.n_cols, b.n_rows), scrib_src, True)
+
+        elif found_checkerboard:
+            # Draw (potentially downsampled) corners onto display image
+            src = self.mk_image_points([ (downsampled_corners, b) ])
+            cv.DrawChessboardCorners(scrib, (b.n_cols, b.n_rows), cvmat_iterator(src), True)
+
+            # Compute some parameters for this chessboard
+            Xs = [x for (x, y) in corners]
+            Ys = [y for (x, y) in corners]
+            # TODO Mean has nice invariants but penalizes using large/close-up checkerboard views. Is there a better way?
+            p_x = mean(Xs) / self.width
+            p_y = mean(Ys) / self.height
+            p_size = math.sqrt(_get_area(corners, b) / (self.width * self.height))
+            skew = _get_skew(corners, b)
+            params = [p_x, p_y, p_size, skew]
+
+            # Add sample to database only if it's sufficiently different from any previous sample.
+            if self.is_good_sample(params):
+                # DEBUG Save CB image also
+                scrib2 = None
+                if 1:
+                    src = self.mk_image_points([ (corners, b) ])
+                    scrib2 = cv.CloneMat(rgb)
+                    cv.DrawChessboardCorners(scrib2, (b.n_cols, b.n_rows), cvmat_iterator(src), True)
+                self.db.append((params, rgb, scrib2))
+                self.good_corners.append((corners, b))
+                print "*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)
+
+        rv = MonoDrawable()
+        rv.scrib = scrib
         rv.params = self.compute_goodenough()
+        rv.linear_error = linear_error
         return rv
 
     def do_calibration(self, dump = False):
@@ -670,6 +679,7 @@ class MonoCalibrator(Calibrator):
         self.size = cv.GetSize(self.db[0][1]) # TODO Needs to be set externally
         self.cal_fromcorners(self.good_corners)
         self.calibrated = True
+        print self.ost() # DEBUG
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
@@ -863,12 +873,12 @@ class StereoCalibrator(Calibrator):
         (ok, corners, b) = self.get_corners(li)
         if not ok:
             return -1
-        src = cv.Reshape(self.mk_image_points([(corners, b)]), 2)
+        src = self.mk_image_points([(corners, b)])
         L = list(cvmat_iterator(self.lundistort_points(src)))
         (ok, corners, b) = self.get_corners(ri)
         if not ok:
             return -1
-        src = cv.Reshape(self.mk_image_points([(corners, b)]), 2)
+        src = self.mk_image_points([(corners, b)])
         R = list(cvmat_iterator(self.rundistort_points(src)))
 
         # print 'diffs', [abs(y0-y1) for ((_, y0), (_, y1)) in zip(L, R)]
@@ -887,12 +897,12 @@ class StereoCalibrator(Calibrator):
         (ok, corners, b) = self.get_corners(li)
         if not ok:
             return -1
-        src = cv.Reshape(self.mk_image_points([(corners, b)]), 2)
+        src = self.mk_image_points([(corners, b)])
         L = list(cvmat_iterator(self.lundistort_points(src)))
         (ok, corners, b) = self.get_corners(ri)
         if not ok:
             return -1
-        src = cv.Reshape(self.mk_image_points([(corners, b)]), 2)
+        src = self.mk_image_points([(corners, b)])
         R = list(cvmat_iterator(self.rundistort_points(src)))
 
         # Project the points to 3d
@@ -985,7 +995,7 @@ class StereoCalibrator(Calibrator):
         is_max = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_maxs)]
         
         for (co, im, udm) in [(lcorners, lscrib, self.lundistort_points), (rcorners, rscrib, self.rundistort_points)]:
-            src = cv.Reshape(self.mk_image_points([(co, b)]), 2)
+            src = self.mk_image_points([(co, b)])
             if self.calibrated:
                 src = udm(src)
             cv.DrawChessboardCorners(im, (b.n_cols, b.n_rows), cvmat_iterator(src), True)
