@@ -36,6 +36,7 @@ import math
 import operator
 
 import cv
+import cv2
 import cv_bridge
 import numpy
 import numpy.linalg
@@ -143,7 +144,7 @@ def _get_corners(img, board, refine = True):
     w, h = cv.GetSize(img)
     mono = cv.CreateMat(h, w, cv.CV_8UC1)
     cv.CvtColor(img, mono, cv.CV_BGR2GRAY)
-    (ok, corners) = cv.FindChessboardCorners(mono, (board.n_cols, board.n_rows), cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE)
+    (ok, corners) = cv.FindChessboardCorners(mono, (board.n_cols, board.n_rows), cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE | cv2.CALIB_CB_FAST_CHECK)
     
     # If any corners are within BORDER pixels of the screen edge, reject the detection by setting ok to false
     BORDER = 8
