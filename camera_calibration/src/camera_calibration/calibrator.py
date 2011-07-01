@@ -492,12 +492,17 @@ class MonoCalibrator(Calibrator):
         original image are in calibrated image).
         """
 
-        ncm = cv.CreateMat(3, 3, cv.CV_64FC1)
-        cv.GetOptimalNewCameraMatrix(self.intrinsics, self.distortion, self.size, a, ncm)
-        cv.InitUndistortRectifyMap(self.intrinsics, self.distortion, self.R, ncm, self.mapx, self.mapy)
+        if 0:
+            ncm = cv.CreateMat(3, 3, cv.CV_64FC1)
+            cv.GetOptimalNewCameraMatrix(self.intrinsics, self.distortion, self.size, a, ncm)
+            cv.InitUndistortRectifyMap(self.intrinsics, self.distortion, self.R, ncm, self.mapx, self.mapy)
 
-        cv.SetZero(self.P)
-        cv.Copy(ncm, cv.GetSubRect(self.P, (0, 0, 3, 3)))
+            cv.SetZero(self.P)
+            cv.Copy(ncm, cv.GetSubRect(self.P, (0, 0, 3, 3)))
+        else:
+            cv.InitUndistortRectifyMap(self.intrinsics, self.distortion, self.R, self.intrinsics, self.mapx, self.mapy)
+            cv.SetZero(self.P)
+            cv.Copy(self.intrinsics, cv.GetSubRect(self.P, (0, 0, 3, 3)))
 
     def remap(self, src):
         """
