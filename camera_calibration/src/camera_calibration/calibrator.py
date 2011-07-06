@@ -181,7 +181,7 @@ class Calibrator:
     """
     Base class for calibration system
     """
-    def __init__(self, boards):
+    def __init__(self, boards, flags=0):
         # Make sure n_cols > n_rows to agree with OpenCV CB detector output
         self._boards = [ChessboardInfo(max(i.n_cols, i.n_rows), min(i.n_cols, i.n_rows), i.dim) for i in boards]
         self.calibrated = False
@@ -189,6 +189,7 @@ class Calibrator:
         self.db = []
         self.good_corners = []
         self.goodenough = False
+        self.calib_flags = flags
 
     def mkgray(self, msg):
         """
@@ -310,10 +311,11 @@ class Calibrator:
         """ Used by :meth:`as_message`.  Return a CameraInfo message for the given calibration matrices """
         msg = sensor_msgs.msg.CameraInfo()
         (msg.width, msg.height) = self.size
-        msg.distortion_model = "plumb_bob"
+        if d.rows > 5:
+            msg.distortion_model = "rational_polynomial"
+        else:
+            msg.distortion_model = "plumb_bob"
         msg.D = [d[i,0] for i in range(d.rows)]
-        while len(msg.D)<5:
-	        msg.D.append(0)
         msg.K = list(cvmat_iterator(k))
         msg.R = list(cvmat_iterator(r))
         msg.P = list(cvmat_iterator(p))
@@ -346,7 +348,7 @@ class Calibrator:
         + " ".join(["%8f" % k[2,i] for i in range(3)]) + "\n"
         + "\n"
         + "distortion\n"
-        + " ".join(["%8f" % d[i,0] for i in range(4)]) + " 0.0000\n"
+        + " ".join(["%8f" % d[i,0] for i in range(d.rows)]) + "\n"
         + "\n"
         + "rectification\n"
         + " ".join(["%8f" % r[0,i] for i in range(3)]) + "\n"
@@ -460,10 +462,13 @@ class MonoCalibrator(Calibrator):
         npts = self.mk_point_counts(boards)
 
         intrinsics = cv.CreateMat(3, 3, cv.CV_64FC1)
-        distortion = cv.CreateMat(4, 1, cv.CV_64FC1)
+        if self.calib_flags & cv2.CALIB_RATIONAL_MODEL:
+            distortion = cv.CreateMat(8, 1, cv.CV_64FC1) # rational polynomial
+        else:
+            distortion = cv.CreateMat(5, 1, cv.CV_64FC1) # plumb bob
         cv.SetZero(intrinsics)
         cv.SetZero(distortion)
-        # focal lengths have 1/1 ratio
+        # If FIX_ASPECT_RATIO flag set, enforce focal lengths have 1/1 ratio
         intrinsics[0,0] = 1.0
         intrinsics[1,1] = 1.0
         cv.CalibrateCamera2(opts, ipts, npts,
@@ -471,7 +476,7 @@ class MonoCalibrator(Calibrator):
                    distortion,
                    cv.CreateMat(len(good), 3, cv.CV_32FC1),
                    cv.CreateMat(len(good), 3, cv.CV_32FC1),
-                   flags = 0) # cv.CV_CALIB_ZERO_TANGENT_DIST)
+                   flags = self.calib_flags)
         self.intrinsics = intrinsics
         self.distortion = distortion
 
@@ -532,10 +537,10 @@ class MonoCalibrator(Calibrator):
 
         self.size = (msg.width, msg.height)
         self.intrinsics = cv.CreateMat(3, 3, cv.CV_64FC1)
-        self.distortion = cv.CreateMat(4, 1, cv.CV_64FC1)
+        self.distortion = cv.CreateMat(msg.D.rows, 1, cv.CV_64FC1)
         self.R = cv.CreateMat(3, 3, cv.CV_64FC1)
         self.P = cv.CreateMat(3, 4, cv.CV_64FC1)
-        for i in range(4):
+        for i in range(msg.D.rows):
             self.distortion[i, 0] = msg.D[i]
         for i in range(9):
             cv.Set1D(self.intrinsics, i, msg.K[i])
@@ -768,7 +773,7 @@ class StereoCalibrator(Calibrator):
         opts = self.mk_object_points(boards, True)
         npts = self.mk_point_counts(boards)
 
-        flags = cv.CV_CALIB_FIX_ASPECT_RATIO | cv.CV_CALIB_FIX_INTRINSIC
+        flags = cv2.CALIB_FIX_INTRINSIC
 
         self.T = cv.CreateMat(3, 1, cv.CV_64FC1)
         self.R = cv.CreateMat(3, 3, cv.CV_64FC1)
