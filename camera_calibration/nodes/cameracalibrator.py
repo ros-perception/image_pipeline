@@ -63,8 +63,6 @@ ID_SAVE=102
 ID_BUTTON1=110
 ID_EXIT=200
 
-# /wg/osx/rosCode/ros-pkg/ros-pkg/stacks/image_pipeline/image_view/preCalib
-
 from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, ChessboardInfo
 from std_msgs.msg import String
 from std_srvs.srv import Empty
@@ -222,7 +220,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         return k
 
     def on_scale(self, scalevalue):
-        self.c.set_scale(scalevalue / 100.0)
+        self.c.set_scale((scalevalue-1) / 100.0)
 
 
     def button(self, dst, label, enable):

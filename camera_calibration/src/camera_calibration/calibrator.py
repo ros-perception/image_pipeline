@@ -479,6 +479,7 @@ class MonoCalibrator(Calibrator):
         self.R = cv.CreateMat(3, 3, cv.CV_64FC1)
         cv.SetIdentity(self.R)
         self.P = cv.CreateMat(3, 4, cv.CV_64FC1)
+        cv.SetZero(self.P)
 
         self.mapx = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
         self.mapy = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
@@ -492,17 +493,12 @@ class MonoCalibrator(Calibrator):
         original image are in calibrated image).
         """
 
-        if 0:
-            ncm = cv.CreateMat(3, 3, cv.CV_64FC1)
-            cv.GetOptimalNewCameraMatrix(self.intrinsics, self.distortion, self.size, a, ncm)
-            cv.InitUndistortRectifyMap(self.intrinsics, self.distortion, self.R, ncm, self.mapx, self.mapy)
-
-            cv.SetZero(self.P)
-            cv.Copy(ncm, cv.GetSubRect(self.P, (0, 0, 3, 3)))
-        else:
-            cv.InitUndistortRectifyMap(self.intrinsics, self.distortion, self.R, self.intrinsics, self.mapx, self.mapy)
-            cv.SetZero(self.P)
-            cv.Copy(self.intrinsics, cv.GetSubRect(self.P, (0, 0, 3, 3)))
+        # NOTE: Prior to Electric, this code was broken such that we never actually saved the new
+        # camera matrix. In effect, this enforced P = [K|0] for monocular cameras.
+        # TODO: Verify that OpenCV #1199 gets applied (improved GetOptimalNewCameraMatrix)
+        ncm = cv.GetSubRect(self.P, (0, 0, 3, 3))
+        cv.GetOptimalNewCameraMatrix(self.intrinsics, self.distortion, self.size, a, ncm)
+        cv.InitUndistortRectifyMap(self.intrinsics, self.distortion, self.R, ncm, self.mapx, self.mapy)
 
     def remap(self, src):
         """
