@@ -1,9 +1,8 @@
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
-#include <image_proc/advertisement_checker.h>
-
 #include <sensor_msgs/image_encodings.h>
+
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include <boost/make_shared.hpp>
@@ -18,7 +17,6 @@ class DebayerNodelet : public nodelet::Nodelet
   image_transport::Subscriber sub_raw_;
   image_transport::Publisher pub_mono_;
   image_transport::Publisher pub_color_;
-  boost::shared_ptr<AdvertisementChecker> check_inputs_;
 
   virtual void onInit();
 
@@ -37,20 +35,6 @@ void DebayerNodelet::onInit()
   ConnectCB connect_cb = boost::bind(&DebayerNodelet::connectCb, this);
   pub_mono_  = it_->advertise("image_mono",  1, connect_cb, connect_cb);
   pub_color_ = it_->advertise("image_color", 1, connect_cb, connect_cb);
-
-  // Internal option, to be used by image_proc/stereo_image_proc nodes
-  const std::vector<std::string>& argv = getMyArgv();
-  bool do_input_checks = std::find(argv.begin(), argv.end(),
-                                   "--no-input-checks") == argv.end();
-  
-  // Print a warning every minute until the image topic is advertised
-  if (do_input_checks)
-  {
-    ros::V_string topics;
-    topics.push_back("image_raw");
-    check_inputs_.reset( new AdvertisementChecker(nh, getName()) );
-    check_inputs_->start(topics, 60.0);
-  }
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -64,6 +48,10 @@ void DebayerNodelet::connectCb()
 
 void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
 {
+  /// @todo Handle 16-bit Bayer images
+  /// @todo Dynamic reconfigure to choose debayer method (edge-aware, other OpenCV one)
+  /// @todo Handle YUV422
+  
   // Special case when raw image is already monochrome, as no processing is needed.
   if (raw_msg->encoding == enc::MONO8 || raw_msg->encoding == enc::MONO16)
   {

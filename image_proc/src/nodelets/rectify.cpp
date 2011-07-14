@@ -1,8 +1,6 @@
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
-#include <image_proc/advertisement_checker.h>
-
 #include <image_geometry/pinhole_camera_model.h>
 #include <cv_bridge/CvBridge.h>
 
@@ -13,7 +11,6 @@ class RectifyNodelet : public nodelet::Nodelet
   boost::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::CameraSubscriber sub_camera_;
   image_transport::Publisher pub_rect_;
-  boost::shared_ptr<AdvertisementChecker> check_inputs_;
   image_geometry::PinholeCameraModel model_;
   int interpolation_;
   int queue_size_;
@@ -28,7 +25,7 @@ class RectifyNodelet : public nodelet::Nodelet
 
 void RectifyNodelet::onInit()
 {
-  ros::NodeHandle &nh = getNodeHandle();
+  ros::NodeHandle &nh         = getNodeHandle();
   ros::NodeHandle &private_nh = getPrivateNodeHandle();
   it_.reset(new image_transport::ImageTransport(nh));
 
@@ -45,21 +42,6 @@ void RectifyNodelet::onInit()
   // Monitor whether anyone is subscribed to the output
   image_transport::SubscriberStatusCallback connect_cb = boost::bind(&RectifyNodelet::connectCb, this);
   pub_rect_  = it_->advertise("image_rect",  1, connect_cb, connect_cb);
-
-  // Internal option, to be used by image_proc/stereo_image_proc nodes
-  const std::vector<std::string>& argv = getMyArgv();
-  bool do_input_checks = std::find(argv.begin(), argv.end(),
-                                   "--no-input-checks") == argv.end();
-  
-  // Print a warning every minute until the input topics are advertised
-  if (do_input_checks)
-  {
-    ros::V_string topics;
-    topics.push_back("image_mono");
-    topics.push_back("camera_info");
-    check_inputs_.reset( new AdvertisementChecker(nh, getName()) );
-    check_inputs_->start(topics, 60.0);
-  }
 }
 
 // Handles (un)subscribing when clients (un)subscribe

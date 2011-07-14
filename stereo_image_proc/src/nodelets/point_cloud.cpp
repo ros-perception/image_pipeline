@@ -6,8 +6,6 @@
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/sync_policies/approximate_time.h>
-#include <image_proc/advertisement_checker.h>
-
 #include <image_geometry/stereo_camera_model.h>
 
 #include <stereo_msgs/DisparityImage.h>
@@ -43,10 +41,6 @@ class PointCloudNodelet : public nodelet::Nodelet
   image_geometry::StereoCameraModel model_;
   cv::Mat_<cv::Vec3f> points_mat_; // scratch buffer
 
-  // Error reporting
-  boost::shared_ptr<image_proc::AdvertisementChecker> check_inputs_;
-
-  
   virtual void onInit();
 
   void connectCb();
@@ -89,23 +83,6 @@ void PointCloudNodelet::onInit()
                                      sub_r_info_, sub_disparity_) );
     exact_sync_->registerCallback(boost::bind(&PointCloudNodelet::imageCb,
                                               this, _1, _2, _3, _4));
-  }
-
-  // Internal option, to be used by image_proc/stereo_image_proc nodes
-  const std::vector<std::string>& argv = getMyArgv();
-  bool do_input_checks = std::find(argv.begin(), argv.end(),
-                                   "--no-input-checks") == argv.end();
-
-  // Print a warning every minute until the input topics are advertised
-  if (do_input_checks)
-  {
-    ros::V_string topics;
-    topics.push_back("left/image_rect_color");
-    topics.push_back("left/camera_info");
-    topics.push_back("right/camera_info");
-    topics.push_back("disparity");
-    check_inputs_.reset( new image_proc::AdvertisementChecker(nh, getName()) );
-    check_inputs_->start(topics, 60.0);
   }
 }
 

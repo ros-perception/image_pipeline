@@ -65,7 +65,6 @@ int main(int argc, char **argv)
   nodelet::Loader manager(false); // Don't bring up the manager ROS API
   nodelet::M_string remappings;
   nodelet::V_string my_argv;
-  my_argv.push_back("--no-input-checks"); // Avoid redundant topic advertisement checks
 
   // Debayer nodelet, image_raw -> image_mono, image_color
   std::string debayer_name = ros::this_node::getName() + "_debayer";
