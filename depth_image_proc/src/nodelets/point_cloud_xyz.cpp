@@ -15,6 +15,7 @@ class PointCloudXyzNodelet : public nodelet::Nodelet
   // Subscriptions
   boost::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::CameraSubscriber sub_depth_;
+  int queue_size_;
   bool subscribed_;
 
   // Publications
@@ -33,8 +34,12 @@ class PointCloudXyzNodelet : public nodelet::Nodelet
 
 void PointCloudXyzNodelet::onInit()
 {
-  ros::NodeHandle& nh = getNodeHandle();
+  ros::NodeHandle& nh         = getNodeHandle();
+  ros::NodeHandle& private_nh = getPrivateNodeHandle();
   it_.reset(new image_transport::ImageTransport(nh));
+
+  // Read parameters
+  private_nh.param("queue_size", queue_size_, 5);
 
   // Monitor whether anyone is subscribed to the output
   subscribed_ = false;
@@ -53,7 +58,7 @@ void PointCloudXyzNodelet::connectCb()
   else if (!subscribed_)
   {
     image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-    sub_depth_ = it_->subscribeCamera("image_rect_raw", 1, &PointCloudXyzNodelet::depthCb, this, hints);
+    sub_depth_ = it_->subscribeCamera("image_rect_raw", queue_size_, &PointCloudXyzNodelet::depthCb, this, hints);
     subscribed_ = true;
   }
 }
