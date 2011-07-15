@@ -87,8 +87,8 @@ int main(int argc, char **argv)
 
   // Check for only the original camera topics
   ros::V_string topics;
-  topics.push_back("image_raw");
-  topics.push_back("camera_info");
+  topics.push_back(ros::names::resolve("image_raw"));
+  topics.push_back(ros::names::resolve("camera_info"));
   image_proc::AdvertisementChecker check_inputs(ros::NodeHandle(), ros::this_node::getName());
   check_inputs.start(topics, 60.0);
   
