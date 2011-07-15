@@ -61,7 +61,7 @@ void RegisterNodelet::onInit()
   image_transport::ImageTransport it_depth_reg(ros::NodeHandle(nh, "depth_registered"));
   image_transport::SubscriberStatusCallback image_connect_cb = boost::bind(&RegisterNodelet::connectCb, this);
   ros::SubscriberStatusCallback info_connect_cb = boost::bind(&RegisterNodelet::connectCb, this);
-  pub_registered_ = it_depth_reg.advertiseCamera("image_rect_raw", 1,
+  pub_registered_ = it_depth_reg.advertiseCamera("image_rect", 1,
                                                  image_connect_cb, image_connect_cb,
                                                  info_connect_cb, info_connect_cb);
 
@@ -82,9 +82,9 @@ void RegisterNodelet::connectCb()
   }
   else if (!subscribed_)
   {
-    sub_depth_image_.subscribe(*it_depth_, "image_rect_raw", 1);
-    sub_depth_info_ .subscribe(*nh_depth_, "camera_info",    1);
-    sub_rgb_info_   .subscribe(*nh_rgb_,   "camera_info",    1);
+    sub_depth_image_.subscribe(*it_depth_, "image_rect",  1);
+    sub_depth_info_ .subscribe(*nh_depth_, "camera_info", 1);
+    sub_rgb_info_   .subscribe(*nh_rgb_,   "camera_info", 1);
     subscribed_ = true;
   }
 }
