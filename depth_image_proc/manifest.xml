@@ -8,6 +8,12 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/depth_image_proc</url>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ldepth_image_proc" />
+    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
+  </export>
+
   <depend package="dynamic_reconfigure"/>
   <depend package="image_geometry"/>
   <depend package="image_transport"/>
