@@ -58,7 +58,7 @@ void PointCloudXyzNodelet::connectCb()
   else if (!subscribed_)
   {
     image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-    sub_depth_ = it_->subscribeCamera("image_rect_raw", queue_size_, &PointCloudXyzNodelet::depthCb, this, hints);
+    sub_depth_ = it_->subscribeCamera("image_rect", queue_size_, &PointCloudXyzNodelet::depthCb, this, hints);
     subscribed_ = true;
   }
 }

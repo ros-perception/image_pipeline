@@ -91,7 +91,7 @@ void PointCloudXyzrgbNodelet::connectCb()
   }
   else if (!subscribed_)
   {
-    sub_depth_.subscribe(*depth_it_, "image_rect_raw",   1);
+    sub_depth_.subscribe(*depth_it_, "image_rect",       1);
     sub_rgb_  .subscribe(*rgb_it_,   "image_rect_color", 1);
     sub_info_ .subscribe(*rgb_nh_,   "camera_info",      1);
     subscribed_ = true;
