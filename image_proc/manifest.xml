@@ -6,12 +6,13 @@
   <url>http://www.ros.org/wiki/image_proc</url>
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -limage_proc" />
+    <cpp cflags="-I${prefix}/include -I${prefix}/cfg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -limage_proc" />
     <nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
 
   <depend package="camera_calibration_parsers" />
   <depend package="cv_bridge" />
+  <depend package="dynamic_reconfigure" />
   <depend package="image_geometry" />
   <depend package="image_transport" />
   <depend package="nodelet" />

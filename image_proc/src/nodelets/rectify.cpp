@@ -3,17 +3,27 @@
 #include <image_transport/image_transport.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <cv_bridge/CvBridge.h>
+#include <dynamic_reconfigure/server.h>
+#include <image_proc/RectifyConfig.h>
 
 namespace image_proc {
 
 class RectifyNodelet : public nodelet::Nodelet
 {
+  // ROS communication
   boost::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::CameraSubscriber sub_camera_;
   image_transport::Publisher pub_rect_;
-  image_geometry::PinholeCameraModel model_;
-  int interpolation_;
   int queue_size_;
+
+  // Dynamic reconfigure
+  typedef image_proc::RectifyConfig Config;
+  typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
+  boost::shared_ptr<ReconfigureServer> reconfigure_server_;
+  Config config_;
+
+  // Processing state
+  image_geometry::PinholeCameraModel model_;
 
   virtual void onInit();
 
@@ -21,6 +31,8 @@ class RectifyNodelet : public nodelet::Nodelet
 
   void imageCb(const sensor_msgs::ImageConstPtr& image_msg,
                const sensor_msgs::CameraInfoConstPtr& info_msg);
+
+  void configCb(Config &config, uint32_t level);
 };
 
 void RectifyNodelet::onInit()
@@ -31,17 +43,15 @@ void RectifyNodelet::onInit()
 
   // Read parameters
   private_nh.param("queue_size", queue_size_, 5);
-  private_nh.param("interpolation", interpolation_, (int)cv::INTER_LINEAR);
-  /// @todo dynamic_reconfigure for interpolation
-  // 0: Nearest neighbor
-  // 1: Linear
-  // 2: Cubic
-  // 3: Area (not supported by remap)
-  // 4: Lanczos4
 
   // Monitor whether anyone is subscribed to the output
   image_transport::SubscriberStatusCallback connect_cb = boost::bind(&RectifyNodelet::connectCb, this);
   pub_rect_  = it_->advertise("image_rect",  1, connect_cb, connect_cb);
+
+  // Set up dynamic reconfigure
+  reconfigure_server_.reset(new ReconfigureServer(private_nh));
+  ReconfigureServer::CallbackType f = boost::bind(&RectifyNodelet::configCb, this, _1, _2);
+  reconfigure_server_->setCallback(f);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -89,8 +99,13 @@ void RectifyNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   cv::Mat rect = rect_bridge.imgMsgToCv(rect_msg);
 
   // Rectify and publish
-  model_.rectifyImage(image, rect, interpolation_);
+  model_.rectifyImage(image, rect, config_.interpolation);
   pub_rect_.publish(rect_msg);
+}
+
+void RectifyNodelet::configCb(Config &config, uint32_t level)
+{
+  config_ = config;
 }
 
 } // namespace image_proc
