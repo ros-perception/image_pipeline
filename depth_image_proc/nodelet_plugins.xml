@@ -7,6 +7,12 @@
     </description>
   </class>
 
+  <class name="depth_image_proc/disparity" type="depth_image_proc::DisparityNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet to convert depth image to disparity image.
+    </description>
+  </class>
+
   <class name="depth_image_proc/point_cloud_xyz" type="depth_image_proc::PointCloudXyzNodelet"
 	 base_class_type="nodelet::Nodelet">
     <description>
