@@ -178,6 +178,9 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
                raw_msg->encoding == enc::BAYER_GRBG16)
         code = CV_BayerGB2BGR;
 
+      if (config_.debayer == Debayer_VNG)
+        code += CV_BayerBG2BGR_VNG - CV_BayerBG2BGR;
+
       sensor_msgs::ImagePtr color_msg = boost::make_shared<sensor_msgs::Image>();
       color_msg->header   = raw_msg->header;
       color_msg->height   = raw_msg->height;
