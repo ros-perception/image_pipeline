@@ -16,7 +16,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-rosbuild_add_library(depth_image_proc src/nodelets/convert_metric.cpp)
+rosbuild_add_library(depth_image_proc src/nodelets/convert_metric.cpp src/nodelets/point_cloud_xyz.cpp)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)

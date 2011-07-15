@@ -76,7 +76,6 @@ void ConvertMetricNodelet::depthCb(const sensor_msgs::ImageConstPtr& raw_msg)
   float* depth_data = reinterpret_cast<float*>(&depth_msg->data[0]);
   for (unsigned index = 0; index < depth_msg->height * depth_msg->width; ++index)
   {
-    /// @todo Check for no sample value and shadow value once they are non-zero
     uint16_t raw = raw_data[index];
     depth_data[index] = (raw == 0) ? bad_point : (float)raw * 0.001f;
   }

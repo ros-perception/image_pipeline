@@ -13,6 +13,8 @@
   <depend package="image_transport"/>
   <depend package="message_filters"/>
   <depend package="nodelet"/>
+  <depend package="pcl"/>
+  <depend package="pcl_ros"/>
   <depend package="roscpp"/>
   <depend package="sensor_msgs"/>
   <depend package="stereo_msgs"/>
