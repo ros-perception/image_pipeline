@@ -6,6 +6,7 @@
 #include <image_proc/DebayerConfig.h>
 
 #include <opencv2/imgproc/imgproc.hpp>
+#include "edge_aware.h" // Until merged into OpenCV
 
 #include <boost/make_shared.hpp>
 
@@ -163,24 +164,6 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
 
     if (pub_color_.getNumSubscribers() > 0)
     {
-      /// @todo Dynamic reconfigure to choose debayer method (edge-aware, VNG)
-      int code = -1;
-      if (raw_msg->encoding == enc::BAYER_RGGB8 ||
-          raw_msg->encoding == enc::BAYER_RGGB16)
-        code = CV_BayerBG2BGR;
-      else if (raw_msg->encoding == enc::BAYER_BGGR8 ||
-               raw_msg->encoding == enc::BAYER_BGGR16)
-        code = CV_BayerRG2BGR;
-      else if (raw_msg->encoding == enc::BAYER_GBRG8 ||
-               raw_msg->encoding == enc::BAYER_GBRG16)
-        code = CV_BayerGR2BGR;
-      else if (raw_msg->encoding == enc::BAYER_GRBG8 ||
-               raw_msg->encoding == enc::BAYER_GRBG16)
-        code = CV_BayerGB2BGR;
-
-      if (config_.debayer == Debayer_VNG)
-        code += CV_BayerBG2BGR_VNG - CV_BayerBG2BGR;
-
       sensor_msgs::ImagePtr color_msg = boost::make_shared<sensor_msgs::Image>();
       color_msg->header   = raw_msg->header;
       color_msg->height   = raw_msg->height;
@@ -191,21 +174,62 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
 
       cv::Mat color(color_msg->height, color_msg->width, CV_MAKETYPE(type, 3),
                     &color_msg->data[0], color_msg->step);
-      cv::cvtColor(bayer, color, code);
 
+      int algorithm = config_.debayer;
+      if (algorithm == Debayer_EdgeAware ||
+          algorithm == Debayer_EdgeAwareWeighted)
+      {
+        // These algorithms are not in OpenCV yet
+        if (raw_msg->encoding != enc::BAYER_GRBG8)
+        {
+          NODELET_WARN_THROTTLE(30, "Edge aware algorithms currently only support GRBG8 Bayer. "
+                                "Falling back to bilinear interpolation.");
+          algorithm = Debayer_Bilinear;
+        }
+        else
+        {
+          if (algorithm == Debayer_EdgeAware)
+            debayerEdgeAware(bayer, color);
+          else
+            debayerEdgeAwareWeighted(bayer, color);
+        }
+      }
+      if (algorithm == Debayer_Bilinear ||
+          algorithm == Debayer_VNG)
+      {
+        int code = -1;
+        if (raw_msg->encoding == enc::BAYER_RGGB8 ||
+            raw_msg->encoding == enc::BAYER_RGGB16)
+          code = CV_BayerBG2BGR;
+        else if (raw_msg->encoding == enc::BAYER_BGGR8 ||
+                 raw_msg->encoding == enc::BAYER_BGGR16)
+          code = CV_BayerRG2BGR;
+        else if (raw_msg->encoding == enc::BAYER_GBRG8 ||
+                 raw_msg->encoding == enc::BAYER_GBRG16)
+          code = CV_BayerGR2BGR;
+        else if (raw_msg->encoding == enc::BAYER_GRBG8 ||
+                 raw_msg->encoding == enc::BAYER_GRBG16)
+          code = CV_BayerGB2BGR;
+
+        if (config_.debayer == Debayer_VNG)
+          code += CV_BayerBG2BGR_VNG - CV_BayerBG2BGR;
+
+        cv::cvtColor(bayer, color, code);
+      }
+      
       pub_color_.publish(color_msg);
     }
   }
   else if (raw_msg->encoding == enc::TYPE_8UC3) {
     // 8UC3 does not specify a color encoding. Is it BGR, RGB, HSV, XYZ, LUV...?
-    NODELET_ERROR_THROTTLE(30,
+    NODELET_ERROR_THROTTLE(10,
                            "Raw image topic '%s' has ambiguous encoding '8UC3'. The "
                            "source should set the encoding to 'bgr8' or 'rgb8'.",
                            sub_raw_.getTopic().c_str());
   }
   else
   {
-    NODELET_ERROR_THROTTLE(30, "Raw image topic '%s' has unsupported encoding '%s'",
+    NODELET_ERROR_THROTTLE(10, "Raw image topic '%s' has unsupported encoding '%s'",
                            sub_raw_.getTopic().c_str(), raw_msg->encoding.c_str());
   }
 }
