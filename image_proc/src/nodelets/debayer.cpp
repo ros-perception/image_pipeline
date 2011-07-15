@@ -2,6 +2,8 @@
 #include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/image_encodings.h>
+#include <dynamic_reconfigure/server.h>
+#include <image_proc/DebayerConfig.h>
 
 #include <opencv2/imgproc/imgproc.hpp>
 
@@ -13,21 +15,31 @@ namespace enc = sensor_msgs::image_encodings;
 
 class DebayerNodelet : public nodelet::Nodelet
 {
+  // ROS communication
   boost::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::Subscriber sub_raw_;
   image_transport::Publisher pub_mono_;
   image_transport::Publisher pub_color_;
+
+  // Dynamic reconfigure
+  typedef image_proc::DebayerConfig Config;
+  typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
+  boost::shared_ptr<ReconfigureServer> reconfigure_server_;
+  Config config_;
 
   virtual void onInit();
 
   void connectCb();
 
   void imageCb(const sensor_msgs::ImageConstPtr& raw_msg);
+
+  void configCb(Config &config, uint32_t level);
 };
 
 void DebayerNodelet::onInit()
 {
-  ros::NodeHandle &nh = getNodeHandle();
+  ros::NodeHandle &nh         = getNodeHandle();
+  ros::NodeHandle &private_nh = getPrivateNodeHandle();
   it_.reset(new image_transport::ImageTransport(nh));
 
   // Monitor whether anyone is subscribed to the output
@@ -35,6 +47,11 @@ void DebayerNodelet::onInit()
   ConnectCB connect_cb = boost::bind(&DebayerNodelet::connectCb, this);
   pub_mono_  = it_->advertise("image_mono",  1, connect_cb, connect_cb);
   pub_color_ = it_->advertise("image_color", 1, connect_cb, connect_cb);
+
+  // Set up dynamic reconfigure
+  reconfigure_server_.reset(new ReconfigureServer(private_nh));
+  ReconfigureServer::CallbackType f = boost::bind(&DebayerNodelet::configCb, this, _1, _2);
+  reconfigure_server_->setCallback(f);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -48,13 +65,16 @@ void DebayerNodelet::connectCb()
 
 void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
 {
-  /// @todo Handle 16-bit Bayer images
-  /// @todo Dynamic reconfigure to choose debayer method (edge-aware, other OpenCV one)
+  /// @todo Could simplify this whole method by explicitly constructing a map
+  /// from raw encoding to OpenCV cvtColor code
   /// @todo Handle YUV422
   
-  // Special case when raw image is already monochrome, as no processing is needed.
-  if (raw_msg->encoding == enc::MONO8 || raw_msg->encoding == enc::MONO16)
+  if (enc::isMono(raw_msg->encoding))
   {
+    // For monochrome, no processing needed!
+    pub_mono_.publish(raw_msg);
+    pub_color_.publish(raw_msg);
+    
     // Warn if the user asked for color
     if (pub_color_.getNumSubscribers() > 0)
     {
@@ -62,90 +82,134 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
                             "Color topic '%s' requested, but raw image data from topic '%s' is grayscale",
                             pub_color_.getTopic().c_str(), sub_raw_.getTopic().c_str());
     }
-    pub_mono_.publish(raw_msg);
-    pub_color_.publish(raw_msg);
-    return;
   }
+  else if (enc::isColor(raw_msg->encoding))
+  {
+    pub_color_.publish(raw_msg);
+    
+    // Convert to monochrome if needed
+    if (pub_mono_.getNumSubscribers() > 0)
+    {
+      int bit_depth    = enc::bitDepth(raw_msg->encoding);
+      int num_channels = enc::numChannels(raw_msg->encoding);
+      int code = -1;
+      if (raw_msg->encoding == enc::BGR8 ||
+          raw_msg->encoding == enc::BGR16)
+        code = CV_BGR2GRAY;
+      else if (raw_msg->encoding == enc::RGB8 ||
+               raw_msg->encoding == enc::RGB16)
+        code = CV_RGB2GRAY;
+      else if (raw_msg->encoding == enc::BGRA8 ||
+               raw_msg->encoding == enc::BGRA16)
+        code = CV_BGRA2GRAY;
+      else if (raw_msg->encoding == enc::RGBA8 ||
+               raw_msg->encoding == enc::RGBA16)
+        code = CV_RGBA2GRAY;
 
-  // 8UC3 does not specify a color encoding. Is it BGR, RGB, HSV, XYZ, LUV...?
-  if (raw_msg->encoding == enc::TYPE_8UC3) {
+      sensor_msgs::ImagePtr gray_msg = boost::make_shared<sensor_msgs::Image>();
+      gray_msg->header   = raw_msg->header;
+      gray_msg->height   = raw_msg->height;
+      gray_msg->width    = raw_msg->width;
+      gray_msg->encoding = bit_depth == 8 ? enc::MONO8 : enc::MONO16;
+      gray_msg->step     = gray_msg->width * (bit_depth / 8);
+      gray_msg->data.resize(gray_msg->height * gray_msg->step);
+
+      int type = bit_depth == 8 ? CV_8U : CV_16U;
+      const cv::Mat color(raw_msg->height, raw_msg->width, CV_MAKETYPE(type, num_channels),
+                          const_cast<uint8_t*>(&raw_msg->data[0]), raw_msg->step);
+      cv::Mat gray(gray_msg->height, gray_msg->width, CV_MAKETYPE(type, 1),
+                   &gray_msg->data[0], gray_msg->step);
+      cv::cvtColor(color, gray, code);
+
+      pub_mono_.publish(gray_msg);
+    }
+  }
+  else if (enc::isBayer(raw_msg->encoding)) {
+    int bit_depth = enc::bitDepth(raw_msg->encoding);
+    int type = bit_depth == 8 ? CV_8U : CV_16U;
+    const cv::Mat bayer(raw_msg->height, raw_msg->width, CV_MAKETYPE(type, 1),
+                        const_cast<uint8_t*>(&raw_msg->data[0]), raw_msg->step);
+    
+    if (pub_mono_.getNumSubscribers() > 0)
+    {
+      int code = -1;
+      if (raw_msg->encoding == enc::BAYER_RGGB8 ||
+          raw_msg->encoding == enc::BAYER_RGGB16)
+        code = CV_BayerBG2GRAY;
+      else if (raw_msg->encoding == enc::BAYER_BGGR8 ||
+               raw_msg->encoding == enc::BAYER_BGGR16)
+        code = CV_BayerRG2GRAY;
+      else if (raw_msg->encoding == enc::BAYER_GBRG8 ||
+               raw_msg->encoding == enc::BAYER_GBRG16)
+        code = CV_BayerGR2GRAY;
+      else if (raw_msg->encoding == enc::BAYER_GRBG8 ||
+               raw_msg->encoding == enc::BAYER_GRBG16)
+        code = CV_BayerGB2GRAY;
+
+      sensor_msgs::ImagePtr gray_msg = boost::make_shared<sensor_msgs::Image>();
+      gray_msg->header   = raw_msg->header;
+      gray_msg->height   = raw_msg->height;
+      gray_msg->width    = raw_msg->width;
+      gray_msg->encoding = bit_depth == 8 ? enc::MONO8 : enc::MONO16;
+      gray_msg->step     = gray_msg->width * (bit_depth / 8);
+      gray_msg->data.resize(gray_msg->height * gray_msg->step);
+
+      cv::Mat gray(gray_msg->height, gray_msg->width, CV_MAKETYPE(type, 1),
+                   &gray_msg->data[0], gray_msg->step);
+      cv::cvtColor(bayer, gray, code);
+      
+      pub_mono_.publish(gray_msg);
+    }
+
+    if (pub_color_.getNumSubscribers() > 0)
+    {
+      /// @todo Dynamic reconfigure to choose debayer method (edge-aware, VNG)
+      int code = -1;
+      if (raw_msg->encoding == enc::BAYER_RGGB8 ||
+          raw_msg->encoding == enc::BAYER_RGGB16)
+        code = CV_BayerBG2BGR;
+      else if (raw_msg->encoding == enc::BAYER_BGGR8 ||
+               raw_msg->encoding == enc::BAYER_BGGR16)
+        code = CV_BayerRG2BGR;
+      else if (raw_msg->encoding == enc::BAYER_GBRG8 ||
+               raw_msg->encoding == enc::BAYER_GBRG16)
+        code = CV_BayerGR2BGR;
+      else if (raw_msg->encoding == enc::BAYER_GRBG8 ||
+               raw_msg->encoding == enc::BAYER_GRBG16)
+        code = CV_BayerGB2BGR;
+
+      sensor_msgs::ImagePtr color_msg = boost::make_shared<sensor_msgs::Image>();
+      color_msg->header   = raw_msg->header;
+      color_msg->height   = raw_msg->height;
+      color_msg->width    = raw_msg->width;
+      color_msg->encoding = bit_depth == 8? enc::BGR8 : enc::BGR16;
+      color_msg->step     = color_msg->width * 3 * (bit_depth / 8);
+      color_msg->data.resize(color_msg->height * color_msg->step);
+
+      cv::Mat color(color_msg->height, color_msg->width, CV_MAKETYPE(type, 3),
+                    &color_msg->data[0], color_msg->step);
+      cv::cvtColor(bayer, color, code);
+
+      pub_color_.publish(color_msg);
+    }
+  }
+  else if (raw_msg->encoding == enc::TYPE_8UC3) {
+    // 8UC3 does not specify a color encoding. Is it BGR, RGB, HSV, XYZ, LUV...?
     NODELET_ERROR_THROTTLE(30,
                            "Raw image topic '%s' has ambiguous encoding '8UC3'. The "
                            "source should set the encoding to 'bgr8' or 'rgb8'.",
                            sub_raw_.getTopic().c_str());
-    return;
   }
-
-  sensor_msgs::ImageConstPtr color_msg = raw_msg;
-
-  // Bayer case: convert to BGR, then convert that to monochrome if needed
-  /// @todo Better to convert directly to monochrome, but OpenCV doesn't support it yet
-  if (raw_msg->encoding.find("bayer") != std::string::npos) {
-    // Figure out the conversion needed
-    int code = 0;
-    if (raw_msg->encoding == enc::BAYER_RGGB8)
-      code = CV_BayerBG2BGR;
-    else if (raw_msg->encoding == enc::BAYER_BGGR8)
-      code = CV_BayerRG2BGR;
-    else if (raw_msg->encoding == enc::BAYER_GBRG8)
-      code = CV_BayerGR2BGR;
-    else if (raw_msg->encoding == enc::BAYER_GRBG8)
-      code = CV_BayerGB2BGR;
-    else {
-      NODELET_ERROR_THROTTLE(30, "Raw image topic '%s' has unsupported encoding '%s'",
-                             sub_raw_.getTopic().c_str(), raw_msg->encoding.c_str());
-      return;
-    }
-
-    // Allocate new color image message
-    sensor_msgs::ImagePtr out_color = boost::make_shared<sensor_msgs::Image>();
-    out_color->header   = raw_msg->header;
-    out_color->height   = raw_msg->height;
-    out_color->width    = raw_msg->width;
-    out_color->encoding = enc::BGR8;
-    out_color->step     = out_color->width * 3;
-    out_color->data.resize(out_color->height * out_color->step);
-
-    // Construct cv::Mats pointing to raw bayer data and color data
-    const cv::Mat bayer(raw_msg->height, raw_msg->width, CV_8UC1,
-                        const_cast<uint8_t*>(&raw_msg->data[0]), raw_msg->step);
-    cv::Mat color(out_color->height, out_color->width, CV_8UC3,
-                  &out_color->data[0], out_color->step);
-
-    // Do conversion directly into out_color data buffer
-    cv::cvtColor(bayer, color, code);
-    color_msg = out_color;
-  }
-  // The only remaining encodings we handle are RGB8 and BGR8
-  else if (raw_msg->encoding != enc::RGB8 && raw_msg->encoding != enc::BGR8)
+  else
   {
     NODELET_ERROR_THROTTLE(30, "Raw image topic '%s' has unsupported encoding '%s'",
                            sub_raw_.getTopic().c_str(), raw_msg->encoding.c_str());
-    return;
   }
+}
 
-  pub_color_.publish(color_msg);
-
-  // Create monochrome image if needed
-  if (pub_mono_.getNumSubscribers() > 0)
-  {
-    sensor_msgs::ImagePtr gray_msg = boost::make_shared<sensor_msgs::Image>();
-    gray_msg->header   = raw_msg->header;
-    gray_msg->height   = raw_msg->height;
-    gray_msg->width    = raw_msg->width;
-    gray_msg->encoding = enc::MONO8;
-    gray_msg->step     = gray_msg->width;
-    gray_msg->data.resize(gray_msg->height * gray_msg->step);
-      
-    const cv::Mat color(color_msg->height, color_msg->width, CV_8UC3,
-                        const_cast<uint8_t*>(&color_msg->data[0]), color_msg->step);
-    cv::Mat gray(gray_msg->height, gray_msg->width, CV_8UC1,
-                 &gray_msg->data[0], gray_msg->step);
-    int code = (color_msg->encoding == enc::BGR8) ? CV_BGR2GRAY : CV_RGB2GRAY;
-    cv::cvtColor(color, gray, code);
-
-    pub_mono_.publish(gray_msg);
-  }
+void DebayerNodelet::configCb(Config &config, uint32_t level)
+{
+  config_ = config;
 }
 
 } // namespace image_proc
