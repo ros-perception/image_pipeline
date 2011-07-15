@@ -1,0 +1,22 @@
+<package>
+  <description brief="depth_image_proc">
+
+     depth_image_proc
+
+  </description>
+  <author>Patrick Mihelich</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/depth_image_proc</url>
+  <depend package="dynamic_reconfigure"/>
+  <depend package="image_geometry"/>
+  <depend package="image_transport"/>
+  <depend package="message_filters"/>
+  <depend package="nodelet"/>
+  <depend package="roscpp"/>
+  <depend package="sensor_msgs"/>
+  <depend package="stereo_msgs"/>
+
+</package>
+
+
