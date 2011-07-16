@@ -14,7 +14,13 @@ include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 gencfg()
 
 # Nodelet library
-rosbuild_add_library(image_proc src/libimage_proc/processor.cpp src/nodelets/debayer.cpp src/nodelets/rectify.cpp src/libimage_proc/advertisement_checker.cpp src/nodelets/edge_aware.cpp)
+rosbuild_add_library(image_proc src/libimage_proc/processor.cpp
+                                src/nodelets/debayer.cpp
+                                src/nodelets/rectify.cpp
+                                src/nodelets/crop_decimate.cpp
+                                src/libimage_proc/advertisement_checker.cpp
+                                src/nodelets/edge_aware.cpp
+                    )
 
 # Standalone node
 rosbuild_add_executable(image_proc_exe src/nodes/image_proc.cpp)
