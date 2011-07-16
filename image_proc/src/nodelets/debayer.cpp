@@ -6,7 +6,9 @@
 #include <image_proc/DebayerConfig.h>
 
 #include <opencv2/imgproc/imgproc.hpp>
-#include "edge_aware.h" // Until merged into OpenCV
+// Until merged into OpenCV
+#include "edge_aware.h"
+#include "yuv422.h"
 
 #include <boost/make_shared.hpp>
 
@@ -220,7 +222,12 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
       pub_color_.publish(color_msg);
     }
   }
-  else if (raw_msg->encoding == enc::TYPE_8UC3) {
+  else if (raw_msg->encoding == enc::YUV422)
+  {
+    /// @todo Call conversion routines
+  }
+  else if (raw_msg->encoding == enc::TYPE_8UC3)
+  {
     // 8UC3 does not specify a color encoding. Is it BGR, RGB, HSV, XYZ, LUV...?
     NODELET_ERROR_THROTTLE(10,
                            "Raw image topic '%s' has ambiguous encoding '8UC3'. The "

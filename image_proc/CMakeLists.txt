@@ -20,6 +20,7 @@ rosbuild_add_library(image_proc src/libimage_proc/processor.cpp
                                 src/nodelets/crop_decimate.cpp
                                 src/libimage_proc/advertisement_checker.cpp
                                 src/nodelets/edge_aware.cpp
+				src/nodelets/yuv422.cpp
                     )
 
 # Standalone node
