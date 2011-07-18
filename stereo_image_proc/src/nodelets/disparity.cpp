@@ -6,7 +6,6 @@
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/sync_policies/approximate_time.h>
-#include <image_proc/advertisement_checker.h>
 
 #include <image_geometry/stereo_camera_model.h>
 #include <opencv2/calib3d/calib3d.hpp>
@@ -49,9 +48,6 @@ class DisparityNodelet : public nodelet::Nodelet
   // Processing state (note: only safe because we're single-threaded!)
   image_geometry::StereoCameraModel model_;
   cv::StereoBM block_matcher_; // contains scratch buffers for block matching
-
-  // Error reporting
-  boost::shared_ptr<image_proc::AdvertisementChecker> check_inputs_;
 
   virtual void onInit();
 
@@ -104,23 +100,6 @@ void DisparityNodelet::onInit()
                                                   this, _1, _2);
   reconfigure_server_.reset(new ReconfigureServer(private_nh));
   reconfigure_server_->setCallback(f);
-
-  // Internal option, to be used by image_proc/stereo_image_proc nodes
-  const std::vector<std::string>& argv = getMyArgv();
-  bool do_input_checks = std::find(argv.begin(), argv.end(),
-                                   "--no-input-checks") == argv.end();
-
-  // Print a warning every minute until the input topics are advertised
-  if (do_input_checks)
-  {
-    ros::V_string topics;
-    topics.push_back("left/image_rect");
-    topics.push_back("left/camera_info");
-    topics.push_back("right/image_rect");
-    topics.push_back("right/camera_info");
-    check_inputs_.reset( new image_proc::AdvertisementChecker(nh, getName()) );
-    check_inputs_->start(topics, 60.0);
-  }
 }
 
 // Handles (un)subscribing when clients (un)subscribe

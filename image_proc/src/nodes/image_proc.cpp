@@ -65,7 +65,6 @@ int main(int argc, char **argv)
   nodelet::Loader manager(false); // Don't bring up the manager ROS API
   nodelet::M_string remappings;
   nodelet::V_string my_argv;
-  my_argv.push_back("--no-input-checks"); // Avoid redundant topic advertisement checks
 
   // Debayer nodelet, image_raw -> image_mono, image_color
   std::string debayer_name = ros::this_node::getName() + "_debayer";
@@ -88,8 +87,8 @@ int main(int argc, char **argv)
 
   // Check for only the original camera topics
   ros::V_string topics;
-  topics.push_back("image_raw");
-  topics.push_back("camera_info");
+  topics.push_back(ros::names::resolve("image_raw"));
+  topics.push_back(ros::names::resolve("camera_info"));
   image_proc::AdvertisementChecker check_inputs(ros::NodeHandle(), ros::this_node::getName());
   check_inputs.start(topics, 60.0);
   

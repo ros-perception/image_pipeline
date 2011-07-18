@@ -38,32 +38,21 @@ import roslib; roslib.load_manifest(PKG)
 import rospy
 import sensor_msgs.msg
 import sensor_msgs.srv
-import cv_bridge
+import message_filters
+from camera_calibration.approxsync import ApproximateSynchronizer
 
-import math
 import os
-import sys
-import operator
-import time
 import Queue
 import threading
-import tarfile
-import pickle
-import random
-import StringIO
 import functools
 
 import cv
-
-import message_filters
-from camera_calibration.approxsync import ApproximateSynchronizer
+import cv2
 
 ID_LOAD=101
 ID_SAVE=102
 ID_BUTTON1=110
 ID_EXIT=200
-
-# /wg/osx/rosCode/ros-pkg/ros-pkg/stacks/image_pipeline/image_view/preCalib
 
 from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, ChessboardInfo
 from std_msgs.msg import String
@@ -85,7 +74,7 @@ class ConsumerThread(threading.Thread):
 
 
 class CalibrationNode:
-    def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer):
+    def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -101,6 +90,7 @@ class CalibrationNode:
                         rospy.signal_shutdown('Quit')
 
         self._boards = boards
+        self._calib_flags = flags
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = synchronizer([lsub, rsub], 4)
@@ -139,7 +129,7 @@ class CalibrationNode:
 
     def handle_monocular(self, msg):
         if self.c == None:
-            self.c = MonoCalibrator(self._boards)
+            self.c = MonoCalibrator(self._boards, self._calib_flags)
 
         # This should just call the MonoCalibrator
         drawable = self.c.handle_msg(msg)
@@ -149,7 +139,7 @@ class CalibrationNode:
     def handle_stereo(self, msg):
         (lmsg, rmsg) = msg
         if self.c == None:
-            self.c = StereoCalibrator(self._boards)
+            self.c = StereoCalibrator(self._boards, self._calib_flags)
             
         drawable = self.c.handle_msg(msg)
         self.displaywidth = drawable.lscrib.cols + drawable.rscrib.cols
@@ -222,7 +212,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         return k
 
     def on_scale(self, scalevalue):
-        self.c.set_scale(scalevalue / 100.0)
+        self.c.set_scale((scalevalue-1) / 100.0)
 
 
     def button(self, dst, label, enable):
@@ -263,15 +253,17 @@ class OpenCVCalibrationNode(CalibrationNode):
 
         self.buttons(display)
         if not self.c.calibrated:
-            if len(drawable.params) != 0:
-                 for i, (label, lo, hi) in enumerate(drawable.params):
+            if drawable.params:
+                 for i, (label, lo, hi, progress) in enumerate(drawable.params):
                     (w,_),_ = cv.GetTextSize(label, self.font)
                     cv.PutText(display, label, (width + (100 - w) / 2, self.y(i)), self.font, (0,0,0))
+                    color = (0,255,0)
+                    if progress < 1.0:
+                        color = (0, int(progress*255.), 255)
                     cv.Line(display,
                             (int(width + lo * 100), self.y(i) + 20),
                             (int(width + hi * 100), self.y(i) + 20),
-                            (0,0,0),
-                            4)
+                            color, 4)
 
         else:
             cv.PutText(display, "lin.", (width, self.y(0)), self.font, (0,0,0))
@@ -280,7 +272,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 msg = "?"
             else:
                 msg = "%.2f" % linerror
-                print "linear", linerror
+                #print "linear", linerror
             cv.PutText(display, msg, (width, self.y(1)), self.font, (0,0,0))
 
         self.show(display)
@@ -327,18 +319,52 @@ class OpenCVCalibrationNode(CalibrationNode):
 
 
 def main():
-    from optparse import OptionParser
-    parser = OptionParser("%prog --size SIZE1 --square SQUARE1 [ --size SIZE2 --square SQUARE2 ]")
-    parser.add_option("-s", "--size", default=[], action="append", dest="size",
-                      help="specify chessboard size as NxM [default: 8x6]")
-    parser.add_option("-q", "--square", default=[], action="append", dest="square",
-                      help="specify chessboard square size in meters [default: 0.108]")
-    parser.add_option("", "--no-service-check", dest="service_check", action="store_false", default=True, help="disable check for set_camera_info services at startup")
-    parser.add_option("", "--approximate", dest="approximate", type="float", default=0.0, help="Use approximate time synchronizer for incoming stereo images")
+    from optparse import OptionParser, OptionGroup
+    parser = OptionParser("%prog --size SIZE1 --square SQUARE1 [ --size SIZE2 --square SQUARE2 ]",
+                          description=None)
+    group = OptionGroup(parser, "Chessboard Options",
+                        "You must specify one or more chessboards as pairs of --size and --square options.")
+    group.add_option("--pattern",
+                     type="string", default="checkerboard",
+                     help="calibration pattern to detect - 'chessboard' or 'circles'")
+    group.add_option("-s", "--size",
+                     action="append", default=[],
+                     help="chessboard size as NxM, counting interior corners (e.g. a standard chessboard is 7x7)")
+    group.add_option("-q", "--square",
+                     action="append", default=[],
+                     help="chessboard square size in meters")
+    parser.add_option_group(group)
+    group = OptionGroup(parser, "ROS Communication Options")
+    group.add_option("--approximate",
+                     type="float", default=0.0,
+                     help="allow specified slop (in seconds) when pairing images from unsynchronized stereo cameras")
+    group.add_option("--no-service-check",
+                     action="store_false", dest="service_check", default=True,
+                     help="disable check for set_camera_info services at startup")
+    parser.add_option_group(group)
+    group = OptionGroup(parser, "Calibration Optimizer Options")
+    group.add_option("--fix-principal-point",
+                     action="store_true", default=False,
+                     help="fix the principal point at the image center")
+    group.add_option("--fix-aspect-ratio",
+                     action="store_true", default=False,
+                     help="enforce focal lengths (fx, fy) are equal")
+    group.add_option("--zero-tangent-dist",
+                     action="store_true", default=False,
+                     help="set tangential distortion coefficients (p1, p2) to zero")
+    group.add_option("--rational-model",
+                     action="store_true", default=False,
+                     help="enable distortion coefficients k4, k5 and k6 (for high-distortion lenses)")
+    group.add_option("--fix-k1", action="store_true", default=False,
+                     help="do not change the corresponding radial distortion coefficient during the optimization")
+    group.add_option("--fix-k2", action="store_true", default=False)
+    group.add_option("--fix-k3", action="store_true", default=False)
+    group.add_option("--fix-k4", action="store_true", default=False)
+    group.add_option("--fix-k5", action="store_true", default=False)
+    group.add_option("--fix-k6", action="store_true", default=False)
+    parser.add_option_group(group)
     options, args = parser.parse_args()
 
-    rospy.init_node('cameracalibrator') 
-    
     if len(options.size) != len(options.square):
         parser.error("Number of size and square inputs must be the same!")
     
@@ -348,22 +374,38 @@ def main():
 
     boards = []
     for (sz, sq) in zip(options.size, options.square):
-        info = ChessboardInfo()
-        info.dim = float(sq)
         size = tuple([int(c) for c in sz.split('x')])
-        info.n_cols = size[0]
-        info.n_rows = size[1]
-
-        boards.append(info)
-
-    if not boards:
-        parser.error("Must supply at least one chessboard")
+        boards.append(ChessboardInfo(size[0], size[1], float(sq)))
 
     if options.approximate == 0.0:
         sync = message_filters.TimeSynchronizer
     else:
         sync = functools.partial(ApproximateSynchronizer, options.approximate)
-    node = OpenCVCalibrationNode(boards, options.service_check, sync)
+
+    calib_flags = 0
+    if options.fix_principal_point:
+        calib_flags |= cv2.CALIB_FIX_PRINCIPAL_POINT
+    if options.fix_aspect_ratio:
+        calib_flags |= cv2.CALIB_FIX_ASPECT_RATIO
+    if options.zero_tangent_dist:
+        calib_flags |= cv2.CALIB_ZERO_TANGENT_DIST
+    if options.rational_model:
+        calib_flags |= cv2.CALIB_RATIONAL_MODEL
+    if options.fix_k1:
+        calib_flags |= cv2.CALIB_FIX_K1
+    if options.fix_k2:
+        calib_flags |= cv2.CALIB_FIX_K2
+    if options.fix_k3:
+        calib_flags |= cv2.CALIB_FIX_K3
+    if options.fix_k4:
+        calib_flags |= cv2.CALIB_FIX_K4
+    if options.fix_k5:
+        calib_flags |= cv2.CALIB_FIX_K5
+    if options.fix_k6:
+        calib_flags |= cv2.CALIB_FIX_K6
+
+    rospy.init_node('cameracalibrator')
+    node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags)
     rospy.spin()
 
 if __name__ == "__main__":

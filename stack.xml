@@ -8,11 +8,12 @@
   <license>BSD</license>  
   <review status="Doc reviewed" notes="Jan 18, 2010"/>
   <url>http://ros.org/wiki/image_pipeline</url>
-  <depend stack="common" /> <!-- nodelet -->
   <depend stack="common_msgs" /> <!-- sensor_msgs, geometry_msgs, stereo_msgs -->
   <depend stack="driver_common" /> <!-- dynamic_reconfigure -->
   <depend stack="geometry" /> <!-- tf -->
   <depend stack="image_common" /> <!-- image_transport, camera_calibration_parsers -->
+  <depend stack="nodelet_core" /> <!-- nodelet -->
+  <depend stack="perception_pcl" /> <!-- pcl, pcl_ros -->
   <depend stack="ros" />
   <depend stack="ros_comm" /> <!-- std_msgs, rospy, std_srvs, roscpp, message_filters -->
   <depend stack="vision_opencv" /> <!-- opencv2, image_geometry, cv_bridge -->

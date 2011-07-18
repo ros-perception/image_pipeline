@@ -16,18 +16,12 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-rosbuild_add_boost_directories()
+rosbuild_add_library(depth_image_proc src/nodelets/convert_metric.cpp src/nodelets/disparity.cpp src/nodelets/point_cloud_xyz.cpp src/nodelets/point_cloud_xyzrgb.cpp src/nodelets/register.cpp)
 
-# Unit test of calibrator.py
-#rosbuild_add_pyunit(test/directed.py)
-
-# Unit test of the approximate synchronizer
-rosbuild_add_pyunit(test/testapproxsync.py)
-
-# Tests simple calibration dataset
-rosbuild_download_test_data(http://pr.willowgarage.com/data/camera_calibration/camera_calibration.tar.gz camera_calibration.tar.gz 6da43ea314640a4c15dd7a90cbc3aee0)
-
-rosbuild_add_pyunit(test/multiple_boards.py)
-
-# Tests multiple checkerboards
-rosbuild_download_test_data(http://pr.willowgarage.com/data/camera_calibration/multi_board_calibration.tar.gz multi_board_calibration.tar.gz ddc0f69582d140e33f9d3bfb681956bb)
+#common commands for building c++ executables and libraries
+#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
+#target_link_libraries(${PROJECT_NAME} another_library)
+#rosbuild_add_boost_directories()
+#rosbuild_link_boost(${PROJECT_NAME} thread)
+#rosbuild_add_executable(example examples/example.cpp)
+#target_link_libraries(example ${PROJECT_NAME})

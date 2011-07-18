@@ -109,7 +109,6 @@ int main(int argc, char **argv)
   nodelet::Loader manager(false); // Don't bring up the manager ROS API
   nodelet::M_string remappings;
   nodelet::V_string my_argv;
-  my_argv.push_back("--no-input-checks"); // Avoid redundant topic advertisement checks
 
   // Load equivalents of image_proc for left and right cameras
   loadMonocularNodelets(manager, "left",  shared_params, my_argv);
