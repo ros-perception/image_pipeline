@@ -70,7 +70,6 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
 {
   /// @todo Could simplify this whole method by explicitly constructing a map
   /// from raw encoding to OpenCV cvtColor code
-  /// @todo Handle YUV422
   
   if (enc::isMono(raw_msg->encoding))
   {
@@ -224,7 +223,42 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
   }
   else if (raw_msg->encoding == enc::YUV422)
   {
-    /// @todo Call conversion routines
+    const cv::Mat yuv(raw_msg->height, raw_msg->width, CV_8UC2,
+                      const_cast<uint8_t*>(&raw_msg->data[0]), raw_msg->step);
+    
+    if (pub_mono_.getNumSubscribers() > 0)
+    {
+      sensor_msgs::ImagePtr gray_msg = boost::make_shared<sensor_msgs::Image>();
+      gray_msg->header   = raw_msg->header;
+      gray_msg->height   = raw_msg->height;
+      gray_msg->width    = raw_msg->width;
+      gray_msg->encoding = enc::MONO8;
+      gray_msg->step     = gray_msg->width;
+      gray_msg->data.resize(gray_msg->height * gray_msg->step);
+
+      cv::Mat gray(gray_msg->height, gray_msg->width, CV_8UC1,
+                   &gray_msg->data[0], gray_msg->step);
+      yuv422ToGray(yuv, gray);
+
+      pub_mono_.publish(gray_msg);
+    }
+
+    if (pub_color_.getNumSubscribers() > 0)
+    {
+      sensor_msgs::ImagePtr color_msg = boost::make_shared<sensor_msgs::Image>();
+      color_msg->header   = raw_msg->header;
+      color_msg->height   = raw_msg->height;
+      color_msg->width    = raw_msg->width;
+      color_msg->encoding = enc::BGR8;
+      color_msg->step     = color_msg->width * 3;
+      color_msg->data.resize(color_msg->height * color_msg->step);
+
+      cv::Mat color(color_msg->height, color_msg->width, CV_8UC3,
+                    &color_msg->data[0], color_msg->step);
+      yuv422ToColor(yuv, color);
+
+      pub_color_.publish(color_msg);
+    }
   }
   else if (raw_msg->encoding == enc::TYPE_8UC3)
   {
