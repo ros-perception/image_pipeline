@@ -8,4 +8,10 @@
     <description>Nodelet to rectify an unrectified camera image stream</description>
   </class>
 
+  <class name="image_proc/crop_decimate" type="image_proc::CropDecimateNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet to apply binning and ROI to a raw camera image post-capture.
+    </description>
+  </class>
+
 </library>
