@@ -188,12 +188,19 @@ class Calibrator:
     def __init__(self, boards, flags=0):
         # Make sure n_cols > n_rows to agree with OpenCV CB detector output
         self._boards = [ChessboardInfo(max(i.n_cols, i.n_rows), min(i.n_cols, i.n_rows), i.dim) for i in boards]
+        # Set to true after we perform calibration
         self.calibrated = False
-        self.br = cv_bridge.CvBridge()
-        self.db = []
-        self.good_corners = []
-        self.goodenough = False
         self.calib_flags = flags
+        self.br = cv_bridge.CvBridge()
+
+        # self.db is list of (parameters, image) samples for use in calibration. parameters has form
+        # (X, Y, size, skew) all normalized to [0,1], to keep track of what sort of samples we've taken
+        # and ensure enough variety.
+        self.db = []
+        # For each db sample, we also record the detected corners.
+        self.good_corners = []
+        # Set to true when we have sufficiently varied samples to calibrate
+        self.goodenough = False
 
     def mkgray(self, msg):
         """
@@ -662,13 +669,7 @@ class MonoCalibrator(Calibrator):
 
             # Add sample to database only if it's sufficiently different from any previous sample.
             if self.is_good_sample(params):
-                # DEBUG Save CB image also
-                scrib2 = None
-                if 1:
-                    src = self.mk_image_points([ (corners, b) ])
-                    scrib2 = cv.CloneMat(rgb)
-                    cv.DrawChessboardCorners(scrib2, (b.n_cols, b.n_rows), cvmat_iterator(src), True)
-                self.db.append((params, rgb, scrib2))
+                self.db.append((params, rgb))
                 self.good_corners.append((corners, b))
                 print "*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)
 
@@ -681,7 +682,7 @@ class MonoCalibrator(Calibrator):
     def do_calibration(self, dump = False):
         if not self.good_corners:
             print "**** Collecting corners for all images! ****" #DEBUG
-            images = [i for (p, i, _) in self.db]
+            images = [i for (p, i) in self.db]
             self.good_corners = self.collect_corners(images)
         # Dump should only occur if user wants it
         if dump:
@@ -703,15 +704,9 @@ class MonoCalibrator(Calibrator):
             ti.mtime = int(time.time())
             tf.addfile(tarinfo=ti, fileobj=s)
 
-        ims = [("left-%04d.png" % i, im) for i,(_, im, _) in enumerate(self.db)]
+        ims = [("left-%04d.png" % i, im) for i,(_, im) in enumerate(self.db)]
         for (name, im) in ims:
             taradd(name, cv.EncodeImage(".png", im).tostring())
-
-        # DEBUG
-        if 1:
-            scribs = [("scrib-%04d.png" % i, scrib) for i,(_, _, scrib) in enumerate(self.db)]
-            for (name, scrib) in scribs:
-                taradd(name, cv.EncodeImage(".png", scrib).tostring())
 
         taradd('ost.txt', self.ost())
 

@@ -49,11 +49,6 @@ import functools
 import cv
 import cv2
 
-ID_LOAD=101
-ID_SAVE=102
-ID_BUTTON1=110
-ID_EXIT=200
-
 from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, ChessboardInfo
 from std_msgs.msg import String
 from std_srvs.srv import Empty
@@ -137,7 +132,6 @@ class CalibrationNode:
         self.redraw_monocular(drawable)
 
     def handle_stereo(self, msg):
-        (lmsg, rmsg) = msg
         if self.c == None:
             self.c = StereoCalibrator(self._boards, self._calib_flags)
             
