@@ -303,7 +303,8 @@ class OpenCVCalibrationNode(CalibrationNode):
             else:
                 msg = "%.2f" % drawable.epierror
             cv.PutText(display, msg, (2 * width, self.y(1)), self.font, (0,0,0))
-            if drawable.epierror > -1:
+            # TODO dim is never set anywhere. Supposed to be observed chessboard size?
+            if drawable.dim != -1:
                 cv.PutText(display, "dim", (2 * width, self.y(2)), self.font, (0,0,0))
                 cv.PutText(display, "%.3f" % drawable.dim, (2 * width, self.y(3)), self.font, (0,0,0))
 

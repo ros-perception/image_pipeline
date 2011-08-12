@@ -243,8 +243,8 @@ class Calibrator:
         border = math.sqrt(area)
         # For X and Y, we "shrink" the image all around by approx. half the board size.
         # Otherwise large boards are penalized because you can't get much X/Y variation.
-        p_x = (mean(Xs) - border / 2) / (width - border)
-        p_y = (mean(Ys) - border / 2) / (height - border)
+        p_x = min(1.0, max(0.0, (mean(Xs) - border / 2) / (width  - border)))
+        p_y = min(1.0, max(0.0, (mean(Ys) - border / 2) / (height - border)))
         p_size = math.sqrt(area / (width * height))
         skew = _get_skew(corners, board)
         params = [p_x, p_y, p_size, skew]
