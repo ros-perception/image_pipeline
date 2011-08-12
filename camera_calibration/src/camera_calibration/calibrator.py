@@ -779,6 +779,9 @@ class StereoCalibrator(Calibrator):
         Find chessboards in images, and runs the OpenCV calibration solver.
         """
         goodcorners = self.collect_corners(limages, rimages)
+        self.size = cv.GetSize(limages[0])
+        self.l.size = self.size
+        self.r.size = self.size
         self.cal_fromcorners(goodcorners)
 
     def collect_corners(self, limages, rimages):
@@ -786,9 +789,12 @@ class StereoCalibrator(Calibrator):
         For a sequence of left and right images, find pairs of images where both
         left and right have a chessboard, and return  their corners as a list of pairs.
         """
-        lcorners = [ self.get_corners(i) for i in limages]
-        rcorners = [ self.get_corners(i) for i in rimages]
-        good = [(lco, rco, b) for ((lok, lco, b), (rok, rco, br)) in zip( lcorners, rcorners) if (lok and rok)]
+        # Pick out (corners, board) tuples
+        lcorners = [ self.downsample_and_detect(i)[1:4:2] for i in limages]
+        rcorners = [ self.downsample_and_detect(i)[1:4:2] for i in rimages]
+        #lcorners = [ self.get_corners(i) for i in limages]
+        #rcorners = [ self.get_corners(i) for i in rimages]
+        good = [(lco, rco, b) for ((lco, b), (rco, br)) in zip( lcorners, rcorners) if (lco and rco)]
 
         if len(good) == 0:
             raise CalibrationException("No corners found in images!")
