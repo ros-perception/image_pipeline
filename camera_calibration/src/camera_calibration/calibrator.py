@@ -757,6 +757,7 @@ class StereoCalibrator(Calibrator):
     """
 
     is_mono = False
+
     def __init__(self, *args):
         self.l = MonoCalibrator(*args)
         self.r = MonoCalibrator(*args)
@@ -776,13 +777,9 @@ class StereoCalibrator(Calibrator):
 
     def collect_corners(self, limages, rimages):
         """
-        For a sequence of left and right images, find pairs of images where both left and right have a chessboard, and return 
-        their corners as a list of pairs.
+        For a sequence of left and right images, find pairs of images where both
+        left and right have a chessboard, and return  their corners as a list of pairs.
         """
-        self.size = cv.GetSize(limages[0])
-        self.l.cal(limages)
-        self.r.cal(rimages)
-
         lcorners = [ self.get_corners(i) for i in limages]
         rcorners = [ self.get_corners(i) for i in rimages]
         good = [(lco, rco, b) for ((lok, lco, b), (rok, rco, br)) in zip( lcorners, rcorners) if (lok and rok)]
@@ -792,8 +789,14 @@ class StereoCalibrator(Calibrator):
         return good
 
     def cal_fromcorners(self, good):
-        lipts = self.mk_image_points([(l, b) for (l, r, b) in good])
-        ripts = self.mk_image_points([(r, b) for (l, r, b) in good])
+        # Perform monocular calibrations
+        lcorners = [(l, b) for (l, r, b) in good]
+        rcorners = [(r, b) for (l, r, b) in good]
+        self.l.cal_fromcorners(lcorners)
+        self.r.cal_fromcorners(rcorners)
+
+        lipts = self.mk_image_points(lcorners)
+        ripts = self.mk_image_points(rcorners)
         boards = [ b for (_, _, b) in good]
         
         opts = self.mk_object_points(boards, True)
@@ -815,12 +818,7 @@ class StereoCalibrator(Calibrator):
                            cv.CreateMat(3, 3, cv.CV_32FC1),   # F
                            (cv.CV_TERMCRIT_ITER + cv.CV_TERMCRIT_EPS, 1, 1e-5),
                            flags)
-        self.lR = cv.CreateMat(3, 3, cv.CV_64FC1)
-        self.rR = cv.CreateMat(3, 3, cv.CV_64FC1)
-        self.lP = cv.CreateMat(3, 4, cv.CV_64FC1)
-        self.rP = cv.CreateMat(3, 4, cv.CV_64FC1)
-        for m in [self.lR, self.rR, self.lP, self.rP]:
-            cv.SetZero(m)
+
         self.set_alpha(0.0)
 
     def set_alpha(self, a):
@@ -838,23 +836,22 @@ class StereoCalibrator(Calibrator):
                          self.size,
                          self.R,
                          self.T,
-                         self.lR, self.rR, self.lP, self.rP,
+                         self.l.R, self.r.R, self.l.P, self.r.P,
                          alpha = a)
         
-        self.lmapx = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
-        self.lmapy = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
-        self.rmapx = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
-        self.rmapy = cv.CreateImage(self.size, cv.IPL_DEPTH_32F, 1)
-        cv.InitUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.lR, self.lP, self.lmapx, self.lmapy)
-        cv.InitUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.rR, self.rP, self.rmapx, self.rmapy)
+        cv.InitUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.l.R, self.l.P,
+                                   self.l.mapx, self.l.mapy)
+        cv.InitUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.r.R, self.r.P,
+                                   self.r.mapx, self.r.mapy)
 
     def as_message(self):
         """
-        Return the camera calibration as a pair of CameraInfo messages, for left and right cameras respectively.
+        Return the camera calibration as a pair of CameraInfo messages, for left
+        and right cameras respectively.
         """
 
-        return (self.lrmsg(self.l.distortion, self.l.intrinsics, self.lR, self.lP),
-                self.lrmsg(self.r.distortion, self.r.intrinsics, self.rR, self.rP))
+        return (self.lrmsg(self.l.distortion, self.l.intrinsics, self.l.R, self.l.P),
+                self.lrmsg(self.r.distortion, self.r.intrinsics, self.r.R, self.r.P))
 
     def from_message(self, msgs, alpha = 0.0):
         """ Initialize the camera calibration from a pair of CameraInfo messages.  """
@@ -867,76 +864,45 @@ class StereoCalibrator(Calibrator):
 
         self.l.from_message(msgs[0])
         self.r.from_message(msgs[1])
-        self.lR = self.l.R
-        self.lP = self.l.P
-        self.rR = self.r.R
-        self.rP = self.r.P
         # Need to compute self.T and self.R here, using the monocular parameters above
         if False:
             self.set_alpha(0.0)
 
     def report(self):
         print "\nLeft:"
-        self.lrreport(self.l.distortion, self.l.intrinsics, self.lR, self.lP)
+        self.lrreport(self.l.distortion, self.l.intrinsics, self.l.R, self.l.P)
         print "\nRight:"
-        self.lrreport(self.r.distortion, self.r.intrinsics, self.rR, self.rP)
+        self.lrreport(self.r.distortion, self.r.intrinsics, self.r.R, self.r.P)
         print "self.T", list(cvmat_iterator(self.T))
         print "self.R", list(cvmat_iterator(self.R))
-        print "self.l.R = ", list(cvmat_iterator(self.l.R))
-        print "self.r.R = ", list(cvmat_iterator(self.r.R))
-        print "self.l.P = ", list(cvmat_iterator(self.l.P))
-        print "self.r.P = ", list(cvmat_iterator(self.r.P))
 
     def ost(self):
-        return (self.lrost("left", self.l.distortion, self.l.intrinsics, self.lR, self.lP) +
-          self.lrost("right", self.r.distortion, self.r.intrinsics, self.rR, self.rP))
+        return (self.lrost("left", self.l.distortion, self.l.intrinsics, self.l.R, self.l.P) +
+          self.lrost("right", self.r.distortion, self.r.intrinsics, self.r.R, self.r.P))
 
-    def epipolar1(self, li, ri):
+    def epipolar_error(self, lcorners, rcorners, board):
         """
-        :param li: source left image containing chessboard
-        :type li: :class:`cvMat`
-        :param ri: source left image containing chessboard
-        :type ri: :class:`cvMat`
-
-        Applies current calibration to stereo pair (li, ri), finds the checkerbard, and returns their epipolar error.
-        Returns -1 if checkerboard not found.
-
+        Compute the epipolar error from two sets of matching points given the
+        current calibration.
         """
 
-        (ok, corners, b) = self.get_corners(li)
-        if not ok:
-            return -1
-        src = self.mk_image_points([(corners, b)])
-        L = list(cvmat_iterator(self.lundistort_points(src)))
-        (ok, corners, b) = self.get_corners(ri)
-        if not ok:
-            return -1
-        src = self.mk_image_points([(corners, b)])
-        R = list(cvmat_iterator(self.rundistort_points(src)))
+        src = self.mk_image_points( [(lcorners, board)] )
+        L = list(cvmat_iterator(self.l.undistort_points(src)))
+        src = self.mk_image_points( [(rcorners, board)] )
+        R = list(cvmat_iterator(self.r.undistort_points(src)))
 
-        # print 'diffs', [abs(y0-y1) for ((_, y0), (_, y1)) in zip(L, R)]
         d = [(y0-y1) for ((_, y0), (_, y1)) in zip(L, R)]
         return math.sqrt(sum([i**2 for i in d]) / len(d))
 
-    def chessboard_size(self, li, ri):
+    def chessboard_size(self, lcorners, rcorners, board):
         """
-        :param li: source left image containing chessboard
-        :type li: :class:`cvMat`
-        :param ri: source left image containing chessboard
-        :type ri: :class:`cvMat`
-
-        Post calibration, return the square edge length, in meters, or -1 if not possible.
+        Compute the square edge length from two sets of matching points given
+        the current calibration.
         """
-        (ok, corners, b) = self.get_corners(li)
-        if not ok:
-            return -1
-        src = self.mk_image_points([(corners, b)])
-        L = list(cvmat_iterator(self.lundistort_points(src)))
-        (ok, corners, b) = self.get_corners(ri)
-        if not ok:
-            return -1
-        src = self.mk_image_points([(corners, b)])
-        R = list(cvmat_iterator(self.rundistort_points(src)))
+        src = self.mk_image_points( [(lcorners, board)] )
+        L = list(cvmat_iterator(self.l.undistort_points(src)))
+        src = self.mk_image_points( [(rcorners, board)] )
+        R = list(cvmat_iterator(self.r.undistort_points(src)))
 
         # Project the points to 3d
         cam = image_geometry.StereoCameraModel()
@@ -953,105 +919,79 @@ class StereoCalibrator(Calibrator):
             [l2(pt3d[cc * r + 0], pt3d[cc * r + (cc - 1)]) / (cc - 1) for r in range(cr)] +
             [l2(pt3d[c + 0], pt3d[c + (cc * (cr - 1))]) / (cr - 1) for c in range(cc)])
         return sum(lengths) / len(lengths)
-        
-    def lremap(self, src):
-        r = cv.CloneMat(src)
-        cv.Remap(src, r, self.lmapx, self.lmapy)
-        return r
-
-    def rremap(self, src):
-        r = cv.CloneMat(src)
-        cv.Remap(src, r, self.rmapx, self.rmapy)
-        return r
-
-    def lundistort_points(self, src):
-        dst = cv.CloneMat(src)
-        cv.UndistortPoints(src, dst, self.l.intrinsics, self.l.distortion, self.lR, self.lP)
-        return dst
-
-    def rundistort_points(self, src):
-        dst = cv.CloneMat(src)
-        cv.UndistortPoints(src, dst, self.r.intrinsics, self.r.distortion, self.rR, self.rP)
-        return dst
 
     def handle_msg(self, msg):
-        rv = StereoDrawable()
-
+        # TODO Various asserts that images have same dimension, same board detected...
         (lmsg, rmsg) = msg
         lrgb = self.mkgray(lmsg)
         rrgb = self.mkgray(rmsg)
-        (width, height) = cv.GetSize(lrgb)
-        lscrib = lrgb
-        rscrib = rrgb
+        epierror = -1
+
+        # Get display-images-to-be and detections of the calibration target
+        lscrib, lcorners, ldownsampled_corners, board, (x_scale, y_scale) = self.downsample_and_detect(lrgb)
+        rscrib, rcorners, rdownsampled_corners = self.downsample_and_detect(rrgb)
 
         if self.calibrated:
-            epierror = self.epipolar1(lrgb, rrgb)
-            if epierror == -1:
-                print "Cannot find checkerboard"
+            # Show rectified images
+            if x_scale != 1.0 or y_scale != 1.0:
+                rgb_rect = self.l.remap(lrgb)
+                cv.Resize(rgb_rect, lscrib)
+                rgb_rect = self.r.remap(rrgb)
+                cv.Resize(rgb_rect, rscrib)
             else:
-                print "epipolar error:", epierror
-            lscrib = self.lremap(lrgb)
-            rscrib = self.rremap(rrgb)
-        else:
-            lscrib = cv.CloneMat(lrgb)
-            rscrib = cv.CloneMat(rrgb)
-        self.displaywidth = lscrib.cols + rscrib.cols
+                lscrib = self.l.remap(lrgb)
+                rscrib = self.r.remap(rrgb)
 
+            # Draw rectified corners
+            if lcorners:
+                src = self.mk_image_points( [(lcorners, board)] )
+                lundistorted = list(cvmat_iterator(self.l.undistort_points(src)))
+                scrib_src = [(x/x_scale, y/y_scale) for (x,y) in lundistorted]
+                cv.DrawChessboardCorners(lscrib, (board.n_cols, board.n_rows), scrib_src, True)
+
+            if rcorners:
+                src = self.mk_image_points( [(rcorners, board)] )
+                rundistorted = list(cvmat_iterator(self.r.undistort_points(src)))
+                scrib_src = [(x/x_scale, y/y_scale) for (x,y) in rundistorted]
+                cv.DrawChessboardCorners(rscrib, (board.n_cols, board.n_rows), scrib_src, True)
+
+            # Report epipolar error
+            if lcorners and rcorners:
+                epierror = self.epipolar_error(lundistorted, rundistorted, board)
+
+        else:
+            # Draw any detected chessboards onto display (downsampled) images
+            if lcorners:
+                src = self.mk_image_points([ (ldownsampled_corners, board) ])
+                cv.DrawChessboardCorners(lscrib, (board.n_cols, board.n_rows), cvmat_iterator(src), True)
+            if rcorners:
+                src = self.mk_image_points([ (rdownsampled_corners, board) ])
+                cv.DrawChessboardCorners(rscrib, (board.n_cols, board.n_rows), cvmat_iterator(src), True)
+
+            # Add sample to database only if it's sufficiently different from any previous sample
+            if lcorners and rcorners:
+                params = self.get_parameters(lcorners, board, cv.GetSize(lrgb))
+                if self.is_good_sample(params):
+                    self.db.append( (params, lrgb, rrgb) )
+                    self.good_corners.append( (lcorners, rcorners, board) )
+                    print "*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)
+
+        rv = StereoDrawable()
         rv.lscrib = lscrib
         rv.rscrib = rscrib
-
-        rv.load_params(self.db)
-        (lok, lcorners, b) = self.get_corners(lrgb, refine = True)
-        if not lok:
-            return rv
-        (rok, rcorners, b) = self.get_corners(rrgb, refine = True)
-        if not rok:
-            return rv
-
-        # Compute some parameters for this chessboard
-        Xs = [x for (x, y) in lcorners]
-        Ys = [y for (x, y) in lcorners]
-        p_x = mean(Xs) / width
-        p_y = mean(Ys) / height
-        p_size = (max(Xs) - min(Xs)) / width
-        skew = _get_skew(lcorners, b)
-        params = [p_x, p_y, p_size, skew]
-        if self.p_mins == None:
-            self.p_mins = params
-        else:
-            self.p_mins = lmin(self.p_mins, params)
-        if self.p_maxs == None:
-            self.p_maxs = params
-        else:
-            self.p_maxs = lmax(self.p_maxs, params)
-        is_min = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_mins)]
-        is_max = [(abs(p - m) < .1) for (p, m) in zip(params, self.p_maxs)]
-        
-        for (co, im, udm) in [(lcorners, lscrib, self.lundistort_points), (rcorners, rscrib, self.rundistort_points)]:
-            src = self.mk_image_points([(co, b)])
-            if self.calibrated:
-                src = udm(src)
-            cv.DrawChessboardCorners(im, (b.n_cols, b.n_rows), cvmat_iterator(src), True)
-
-        # If the image is a min or max in any parameter, add to the collection
-        if any(is_min) or any(is_max):
-            self.db[str(is_min + is_max)] = (params, lrgb, rrgb)
-
-        self.compute_goodenough()
-
-        rv.load_params(self.db)
+        rv.params = self.compute_goodenough()
         return rv
 
     def do_calibration(self, dump = False):
-        self.calibrated = True
-        vv = list(self.db.values())
-        limages = [ l for (p, l, r) in vv ]
-        rimages = [ r for (p, l, r) in vv ]
-        corners = self.collect_corners(limages, rimages)
+        # TODO MonoCalibrator collects corners if needed here
         # Dump should only occur if user wants it
         if dump:
-            pickle.dump((self.is_mono, self.size, corners), open("/tmp/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
-        self.cal_fromcorners(corners)
+            pickle.dump((self.is_mono, self.size, corners),
+                        open("/tmp/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
+        self.size = cv.GetSize(self.db[0][1]) # TODO Needs to be set externally
+        self.cal_fromcorners(self.good_corners)
+        self.calibrated = True
+        print self.ost() # DEBUG
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
