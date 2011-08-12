@@ -238,10 +238,13 @@ class Calibrator:
         # Compute some parameters for this chessboard
         Xs = [x for (x, y) in corners]
         Ys = [y for (x, y) in corners]
-        # TODO Mean has nice invariants but penalizes using large/close-up checkerboard views. Is there a better way?
-        p_x = mean(Xs) / width
-        p_y = mean(Ys) / height
-        p_size = math.sqrt(_get_area(corners, board) / (width * height))
+        area = _get_area(corners, board)
+        border = math.sqrt(area)
+        # For X and Y, we "shrink" the image all around by approx. half the board size.
+        # Otherwise large boards are penalized because you can't get much X/Y variation.
+        p_x = (mean(Xs) - border / 2) / (width - border)
+        p_y = (mean(Ys) - border / 2) / (height - border)
+        p_size = math.sqrt(area / (width * height))
         skew = _get_skew(corners, board)
         params = [p_x, p_y, p_size, skew]
         return params
@@ -260,10 +263,12 @@ class Calibrator:
         d = min([param_distance(params, p) for p in db_params])
         #print "d = %.3f" % d #DEBUG
         # TODO What's a good threshold here? Should it be configurable?
-        return d > 0.3
+        return d > 0.2
 
     _param_names = ["X", "Y", "Size", "Skew"]
-    _param_ranges = [0.6, 0.6, 0.4, 0.6]
+    #_param_ranges = [0.6, 0.6, 0.4, 0.6]
+    # TODO Finalize parameter ranges, may need to be different for stereo?
+    _param_ranges = [0.3, 0.3, 0.4, 0.5]
 
     def compute_goodenough(self):
         if not self.db:
@@ -992,6 +997,8 @@ class StereoCalibrator(Calibrator):
             pickle.dump((self.is_mono, self.size, corners),
                         open("/tmp/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
         self.size = cv.GetSize(self.db[0][1]) # TODO Needs to be set externally
+        self.l.size = self.size
+        self.r.size = self.size
         self.cal_fromcorners(self.good_corners)
         self.calibrated = True
         print self.ost() # DEBUG
