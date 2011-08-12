@@ -114,6 +114,8 @@ def _get_skew(corners, board):
     Scaled to [0,1], which 0 = no skew, 1 = high skew
     Skew is proportional to the divergence of three outside corners from 90 degrees.
     """
+    # TODO Using three nearby interior corners might be more robust, outside corners occasionally
+    # get mis-detected
     up_left, up_right, down_right, _ = _get_outside_corners(corners, board)
 
     def angle(a, b, c):
@@ -207,6 +209,9 @@ class Calibrator:
         Convert a message into a bgr8 OpenCV bgr8 *monochrome* image.
         Deal with bayer images by converting to color, then to monochrome.
         """
+        # TODO OpenCV supports converting Bayer->monochrome directly now
+        # TODO Convert to one-channel monochrome instead, let other code
+        #      (e.g. downsample_and_detect) expand to bgr8.
         if 'bayer' in msg.encoding:
             converter = {
                 "bayer_rggb8" : cv.CV_BayerBG2BGR,
@@ -225,6 +230,21 @@ class Calibrator:
             rgb = self.br.imgmsg_to_cv(msg, "bgr8")
 
         return rgb
+
+    def get_parameters(self, corners, board, (width, height)):
+        """
+        Return list of parameters [X, Y, size, skew] describing the checkerboard view.
+        """
+        # Compute some parameters for this chessboard
+        Xs = [x for (x, y) in corners]
+        Ys = [y for (x, y) in corners]
+        # TODO Mean has nice invariants but penalizes using large/close-up checkerboard views. Is there a better way?
+        p_x = mean(Xs) / width
+        p_y = mean(Ys) / height
+        p_size = math.sqrt(_get_area(corners, board) / (width * height))
+        skew = _get_skew(corners, board)
+        params = [p_x, p_y, p_size, skew]
+        return params
 
     def is_good_sample(self, params):
         """
@@ -308,7 +328,7 @@ class Calibrator:
         Check all boards. Return corners for first chessboard that it detects
         if given multiple size chessboards.
 
-        Returns ok 
+        Returns (ok, corners, board)
         """
 
         for b in self._boards:
@@ -316,6 +336,51 @@ class Calibrator:
             if ok:
                 return (ok, corners, b)
         return (False, None, None)
+
+    def downsample_and_detect(self, rgb):
+        """
+        Downsample the input image to approximately VGA resolution and detect the
+        calibration target corners in the full-size image.
+
+        Combines these apparently orthogonal duties as an optimization. Checkerboard
+        detection is too expensive on large images, so it's better to do detection on
+        the smaller display image and scale the corners back up to the correct size.
+
+        Returns (scrib, corners, downsampled_corners, board, (x_scale, y_scale)).
+        """
+        # Scale the input image down to ~VGA size
+        (width, height) = cv.GetSize(rgb)
+        scale = math.sqrt( (width*height) / (640.*480.) )
+        if scale > 1.0:
+            scrib = cv.CreateMat(int(height / scale), int(width / scale), cv.GetElemType(rgb))
+            cv.Resize(rgb, scrib)
+        else:
+            scrib = cv.CloneMat(rgb)
+        # Due to rounding, actual horizontal/vertical scaling may differ slightly
+        x_scale = float(width) / scrib.cols
+        y_scale = float(height) / scrib.rows
+
+        # Detect checkerboard
+        (ok, downsampled_corners, board) = self.get_corners(scrib, refine = True)
+
+        # Scale corners back to full size image
+        corners = None
+        if ok:
+            if 0:
+                corners = [(c[0]*x_scale, c[1]*y_scale) for c in downsampled_corners]
+            else:
+                # Refine up-scaled corners in the original full-res image
+                # TODO Does this really make a difference in practice?
+                corners_unrefined = [(c[0]*x_scale, c[1]*y_scale) for c in downsampled_corners]
+                # TODO It's silly that this conversion is needed, this function should just work
+                #      on the one-channel mono image
+                mono = cv.CreateMat(rgb.rows, rgb.cols, cv.CV_8UC1)
+                cv.CvtColor(rgb, mono, cv.CV_BGR2GRAY)
+                radius = int(math.ceil(scale))
+                corners = cv.FindCornerSubPix(mono, corners_unrefined, (radius,radius), (-1,-1),
+                                              ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
+
+        return (scrib, corners, downsampled_corners, board, (x_scale, y_scale))
 
 
     def lrmsg(self, d, k, r, p):
@@ -338,6 +403,7 @@ class Calibrator:
         print "R = ", list(cvmat_iterator(r))
         print "P = ", list(cvmat_iterator(p))
 
+    # TODO Get rid of OST format, show output as YAML instead
     def lrost(self, name, d, k, r, p):
         calmessage = (
         "# oST version 5.0 parameters\n"
@@ -380,12 +446,6 @@ class Calibrator:
         self.do_tarfile_save(tf) # Must be overridden in subclasses
         tf.close()
         print "Wrote calibration data to", filename
-        
-
-
-    def set_scale(self, a):
-        if self.calibrated:
-            self.set_alpha(a)
 
 def image_from_archive(archive, name):
     """
@@ -433,7 +493,7 @@ class MonoCalibrator(Calibrator):
         print mc.as_message()
     """
 
-    is_mono = True
+    is_mono = True  # TODO Could get rid of is_mono
 
     def cal(self, images):
         """
@@ -598,79 +658,46 @@ class MonoCalibrator(Calibrator):
 
     def handle_msg(self, msg):
         """
-        Returns a MonoDrawable message with image data
+        Detects the calibration target and, if found and provides enough new information,
+        adds it to the sample database.
+
+        Returns a MonoDrawable message with the display image and progress info.
         """
         rgb = self.mkgray(msg)
-        # TODO width, height should be local vars
-        (self.width, self.height) = cv.GetSize(rgb)
-        scrib = rgb
-
-        # Checkerboard detection is too expensive on a large image, so scale it down to ~VGA size
-        scale = math.sqrt( (self.width*self.height) / (640.*480.) )
-        if scale > 1.0:
-            scrib = cv.CreateMat(int(self.height / scale), int(self.width / scale), cv.GetElemType(rgb))
-            cv.Resize(rgb, scrib)
-        else:
-            scrib = cv.CloneMat(rgb)
-        # Due to rounding, actual horizontal/vertical scaling may differ slightly
-        x_scale = float(self.width) / scrib.cols
-        y_scale = float(self.height) / scrib.rows
-
-        # Detect checkerboard
-        (ok, downsampled_corners, b) = self.get_corners(scrib, refine = True)
-        found_checkerboard = ok and downsampled_corners # TODO Should just need ok?
         linear_error = -1
 
-        # Scale corners back to full size image
-        corners = None
-        corners_unrefined = None
-        if found_checkerboard:
-            corners = [(c[0]*x_scale, c[1]*y_scale) for c in downsampled_corners]
-            #corners_unrefined = [(c[0]*x_scale, c[1]*y_scale) for c in downsampled_corners]
-            # TODO Put this logic in _get_corners
-            #mono = cv.CreateMat(rgb.rows, rgb.cols, cv.CV_8UC1)
-            #cv.CvtColor(rgb, mono, cv.CV_BGR2GRAY)
-            #radius = int(math.ceil(scale))
-            #corners = cv.FindCornerSubPix(mono, corners_unrefined, (radius,radius), (-1,-1), ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
-            #corners = cv.FindCornerSubPix(mono, corners_unrefined, (radius,radius), (-1,-1), (cv.CV_TERMCRIT_ITER, 30, 0))
+        # Get display-image-to-be (scrib) and detection of the calibration target
+        scrib, corners, downsampled_corners, board, (x_scale, y_scale) = self.downsample_and_detect(rgb)
 
         if self.calibrated:
             # Show rectified image
             # TODO Pull out downsampling code into function
-            if scale > 1.0:
+            if x_scale != 1.0 or y_scale != 1.0:
                 rgb_rect = self.remap(rgb)
                 cv.Resize(rgb_rect, scrib)
             else:
                 scrib = self.remap(rgb)
 
-            if found_checkerboard:
-                # Draw rectified corners and report linear error
-                src = self.mk_image_points([ (corners, b) ])
+            if corners:
+                # Report linear error
+                src = self.mk_image_points([ (corners, board) ])
                 undistorted = list(cvmat_iterator(self.undistort_points(src)))
-                linear_error = self.linear_error(undistorted, b)
+                linear_error = self.linear_error(undistorted, board)
 
+                # Draw rectified corners
                 scrib_src = [(x/x_scale, y/y_scale) for (x,y) in undistorted]
-                cv.DrawChessboardCorners(scrib, (b.n_cols, b.n_rows), scrib_src, True)
+                cv.DrawChessboardCorners(scrib, (board.n_cols, board.n_rows), scrib_src, True)
 
-        elif found_checkerboard:
+        elif corners:
             # Draw (potentially downsampled) corners onto display image
-            src = self.mk_image_points([ (downsampled_corners, b) ])
-            cv.DrawChessboardCorners(scrib, (b.n_cols, b.n_rows), cvmat_iterator(src), True)
-
-            # Compute some parameters for this chessboard
-            Xs = [x for (x, y) in corners]
-            Ys = [y for (x, y) in corners]
-            # TODO Mean has nice invariants but penalizes using large/close-up checkerboard views. Is there a better way?
-            p_x = mean(Xs) / self.width
-            p_y = mean(Ys) / self.height
-            p_size = math.sqrt(_get_area(corners, b) / (self.width * self.height))
-            skew = _get_skew(corners, b)
-            params = [p_x, p_y, p_size, skew]
+            src = self.mk_image_points([ (downsampled_corners, board) ])
+            cv.DrawChessboardCorners(scrib, (board.n_cols, board.n_rows), cvmat_iterator(src), True)
 
             # Add sample to database only if it's sufficiently different from any previous sample.
+            params = self.get_parameters(corners, board, cv.GetSize(rgb))
             if self.is_good_sample(params):
                 self.db.append((params, rgb))
-                self.good_corners.append((corners, b))
+                self.good_corners.append((corners, board))
                 print "*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)
 
         rv = MonoDrawable()
@@ -953,7 +980,7 @@ class StereoCalibrator(Calibrator):
         (lmsg, rmsg) = msg
         lrgb = self.mkgray(lmsg)
         rrgb = self.mkgray(rmsg)
-        (self.width, self.height) = cv.GetSize(lrgb)
+        (width, height) = cv.GetSize(lrgb)
         lscrib = lrgb
         rscrib = rrgb
 
@@ -984,9 +1011,9 @@ class StereoCalibrator(Calibrator):
         # Compute some parameters for this chessboard
         Xs = [x for (x, y) in lcorners]
         Ys = [y for (x, y) in lcorners]
-        p_x = mean(Xs) / self.width
-        p_y = mean(Ys) / self.height
-        p_size = (max(Xs) - min(Xs)) / self.width
+        p_x = mean(Xs) / width
+        p_y = mean(Ys) / height
+        p_size = (max(Xs) - min(Xs)) / width
         skew = _get_skew(lcorners, b)
         params = [p_x, p_y, p_size, skew]
         if self.p_mins == None:

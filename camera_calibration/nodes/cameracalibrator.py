@@ -206,8 +206,8 @@ class OpenCVCalibrationNode(CalibrationNode):
         return k
 
     def on_scale(self, scalevalue):
-        self.c.set_scale((scalevalue-1) / 100.0)
-
+        if self.c.calibrated:
+            self.c.set_alpha(scalevalue / 100.0)
 
     def button(self, dst, label, enable):
         cv.Set(dst, (255, 255, 255))
