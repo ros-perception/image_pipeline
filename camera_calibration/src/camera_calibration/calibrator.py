@@ -892,6 +892,18 @@ class StereoCalibrator(Calibrator):
         return (self.lrost("left", self.l.distortion, self.l.intrinsics, self.l.R, self.l.P) +
           self.lrost("right", self.r.distortion, self.r.intrinsics, self.r.R, self.r.P))
 
+    def epipolar_error_from_images(self, limage, rimage):
+        """
+        Detect the checkerboard in both images and compute the epipolar error.
+        Mainly for use in tests.
+        """
+        _, lcorners, _, board, _ = self.downsample_and_detect(limage)
+        _, rcorners, _, board, _ = self.downsample_and_detect(rimage)
+
+        if not lcorners or not rcorners:
+            return None
+        return self.epipolar_error(lcorners, rcorners, board)
+
     def epipolar_error(self, lcorners, rcorners, board):
         """
         Compute the epipolar error from two sets of matching points given the
