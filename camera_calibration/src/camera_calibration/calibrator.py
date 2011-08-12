@@ -203,6 +203,7 @@ class Calibrator:
         self.good_corners = []
         # Set to true when we have sufficiently varied samples to calibrate
         self.goodenough = False
+        self.param_ranges = [0.8, 0.8, 0.4, 0.5]
 
     def mkgray(self, msg):
         """
@@ -266,9 +267,6 @@ class Calibrator:
         return d > 0.2
 
     _param_names = ["X", "Y", "Size", "Skew"]
-    #_param_ranges = [0.6, 0.6, 0.4, 0.6]
-    # TODO Finalize parameter ranges, may need to be different for stereo?
-    _param_ranges = [0.3, 0.3, 0.4, 0.5]
 
     def compute_goodenough(self):
         if not self.db:
@@ -282,7 +280,7 @@ class Calibrator:
         min_params = [min_params[0], min_params[1], 0., 0.]
 
         # For each parameter, judge how much progress has been made toward adequate variation
-        progress = [min((hi - lo) / r, 1.0) for (lo, hi, r) in zip(min_params, max_params, self._param_ranges)]
+        progress = [min((hi - lo) / r, 1.0) for (lo, hi, r) in zip(min_params, max_params, self.param_ranges)]
         # TODO Awkward that we update self.goodenough instead of returning it
         self.goodenough = all([p == 1.0 for p in progress])
 
@@ -767,6 +765,9 @@ class StereoCalibrator(Calibrator):
         self.l = MonoCalibrator(*args)
         self.r = MonoCalibrator(*args)
         Calibrator.__init__(self, *args)
+        # Collecting from two cameras in a horizontal stereo rig, can't get
+        # full X range in the left camera.
+        self.param_ranges[0] = 0.4
 
     def cal(self, limages, rimages):
         """
