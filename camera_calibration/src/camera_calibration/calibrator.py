@@ -928,8 +928,8 @@ class StereoCalibrator(Calibrator):
         epierror = -1
 
         # Get display-images-to-be and detections of the calibration target
-        lscrib, lcorners, ldownsampled_corners, board, (x_scale, y_scale) = self.downsample_and_detect(lrgb)
-        rscrib, rcorners, rdownsampled_corners = self.downsample_and_detect(rrgb)
+        lscrib, lcorners, ldownsampled_corners, lboard, (x_scale, y_scale) = self.downsample_and_detect(lrgb)
+        rscrib, rcorners, rdownsampled_corners, rboard, _ = self.downsample_and_detect(rrgb)
 
         if self.calibrated:
             # Show rectified images
@@ -944,42 +944,45 @@ class StereoCalibrator(Calibrator):
 
             # Draw rectified corners
             if lcorners:
-                src = self.mk_image_points( [(lcorners, board)] )
+                src = self.mk_image_points( [(lcorners, lboard)] )
                 lundistorted = list(cvmat_iterator(self.l.undistort_points(src)))
                 scrib_src = [(x/x_scale, y/y_scale) for (x,y) in lundistorted]
-                cv.DrawChessboardCorners(lscrib, (board.n_cols, board.n_rows), scrib_src, True)
+                cv.DrawChessboardCorners(lscrib, (lboard.n_cols, lboard.n_rows), scrib_src, True)
 
             if rcorners:
-                src = self.mk_image_points( [(rcorners, board)] )
+                src = self.mk_image_points( [(rcorners, rboard)] )
                 rundistorted = list(cvmat_iterator(self.r.undistort_points(src)))
                 scrib_src = [(x/x_scale, y/y_scale) for (x,y) in rundistorted]
-                cv.DrawChessboardCorners(rscrib, (board.n_cols, board.n_rows), scrib_src, True)
+                cv.DrawChessboardCorners(rscrib, (rboard.n_cols, rboard.n_rows), scrib_src, True)
 
             # Report epipolar error
             if lcorners and rcorners:
-                epierror = self.epipolar_error(lundistorted, rundistorted, board)
+                epierror = self.epipolar_error(lundistorted, rundistorted, lboard)
 
         else:
             # Draw any detected chessboards onto display (downsampled) images
             if lcorners:
-                src = self.mk_image_points([ (ldownsampled_corners, board) ])
-                cv.DrawChessboardCorners(lscrib, (board.n_cols, board.n_rows), cvmat_iterator(src), True)
+                src = self.mk_image_points([ (ldownsampled_corners, lboard) ])
+                cv.DrawChessboardCorners(lscrib, (lboard.n_cols, lboard.n_rows),
+                                         cvmat_iterator(src), True)
             if rcorners:
-                src = self.mk_image_points([ (rdownsampled_corners, board) ])
-                cv.DrawChessboardCorners(rscrib, (board.n_cols, board.n_rows), cvmat_iterator(src), True)
+                src = self.mk_image_points([ (rdownsampled_corners, rboard) ])
+                cv.DrawChessboardCorners(rscrib, (rboard.n_cols, rboard.n_rows),
+                                         cvmat_iterator(src), True)
 
             # Add sample to database only if it's sufficiently different from any previous sample
             if lcorners and rcorners:
-                params = self.get_parameters(lcorners, board, cv.GetSize(lrgb))
+                params = self.get_parameters(lcorners, lboard, cv.GetSize(lrgb))
                 if self.is_good_sample(params):
                     self.db.append( (params, lrgb, rrgb) )
-                    self.good_corners.append( (lcorners, rcorners, board) )
+                    self.good_corners.append( (lcorners, rcorners, lboard) )
                     print "*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)
 
         rv = StereoDrawable()
         rv.lscrib = lscrib
         rv.rscrib = rscrib
         rv.params = self.compute_goodenough()
+        rv.epierror = epierror
         return rv
 
     def do_calibration(self, dump = False):

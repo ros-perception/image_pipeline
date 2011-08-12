@@ -283,15 +283,18 @@ class OpenCVCalibrationNode(CalibrationNode):
         self.buttons(display)
 
         if not self.c.calibrated:
-            if len(drawable.params) != 0:
-                for i, (label, lo, hi) in enumerate(drawable.params):
-                    (label_width,_),_ = cv.GetTextSize(label, self.font)
-                    cv.PutText(display, label, (2 * width + (100 - label_width) / 2, self.y(i)), self.font, (0,0,0))
+            if drawable.params:
+                for i, (label, lo, hi, progress) in enumerate(drawable.params):
+                    (w,_),_ = cv.GetTextSize(label, self.font)
+                    cv.PutText(display, label, (2 * width + (100 - w) / 2, self.y(i)),
+                               self.font, (0,0,0))
+                    color = (0,255,0)
+                    if progress < 1.0:
+                        color = (0, int(progress*255.), 255)
                     cv.Line(display,
                             (int(2 * width + lo * 100), self.y(i) + 20),
                             (int(2 * width + hi * 100), self.y(i) + 20),
-                            (0,0,0),
-                            4)
+                            color, 4)
 
         else:
             cv.PutText(display, "epi.", (2 * width, self.y(0)), self.font, (0,0,0))
