@@ -1006,10 +1006,8 @@ class StereoCalibrator(Calibrator):
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
-        vv = list(self.db.values())
-        # vv is a list of pairs (p, i) for monocular, and triples (p, l, r) for stereo
-        ims = ([("left-%04d.png"  % i, im) for i,(_, im, _) in enumerate(vv)] +
-               [("right-%04d.png" % i, im) for i,(_, _, im) in enumerate(vv)])
+        ims = ([("left-%04d.png"  % i, im) for i,(_, im, _) in enumerate(self.db)] +
+               [("right-%04d.png" % i, im) for i,(_, _, im) in enumerate(self.db)])
 
         def taradd(name, buf):
             s = StringIO.StringIO(buf)
