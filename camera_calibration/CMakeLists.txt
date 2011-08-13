@@ -19,7 +19,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 rosbuild_add_boost_directories()
 
 # Unit test of calibrator.py
-#rosbuild_add_pyunit(test/directed.py)
+rosbuild_add_pyunit(test/directed.py)
 
 # Unit test of the approximate synchronizer
 rosbuild_add_pyunit(test/testapproxsync.py)

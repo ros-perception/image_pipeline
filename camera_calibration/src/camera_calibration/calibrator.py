@@ -369,9 +369,7 @@ class Calibrator:
         # Scale corners back to full size image
         corners = None
         if ok:
-            if 0:
-                corners = [(c[0]*x_scale, c[1]*y_scale) for c in downsampled_corners]
-            else:
+            if scale > 1.0:
                 # Refine up-scaled corners in the original full-res image
                 # TODO Does this really make a difference in practice?
                 corners_unrefined = [(c[0]*x_scale, c[1]*y_scale) for c in downsampled_corners]
@@ -382,6 +380,8 @@ class Calibrator:
                 radius = int(math.ceil(scale))
                 corners = cv.FindCornerSubPix(mono, corners_unrefined, (radius,radius), (-1,-1),
                                               ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
+            else:
+                corners = downsampled_corners
 
         return (scrib, corners, downsampled_corners, board, (x_scale, y_scale))
 
@@ -611,10 +611,10 @@ class MonoCalibrator(Calibrator):
 
         self.size = (msg.width, msg.height)
         self.intrinsics = cv.CreateMat(3, 3, cv.CV_64FC1)
-        self.distortion = cv.CreateMat(msg.D.rows, 1, cv.CV_64FC1)
+        self.distortion = cv.CreateMat(len(msg.D), 1, cv.CV_64FC1)
         self.R = cv.CreateMat(3, 3, cv.CV_64FC1)
         self.P = cv.CreateMat(3, 4, cv.CV_64FC1)
-        for i in range(msg.D.rows):
+        for i in range(len(msg.D)):
             self.distortion[i, 0] = msg.D[i]
         for i in range(9):
             cv.Set1D(self.intrinsics, i, msg.K[i])
@@ -633,6 +633,18 @@ class MonoCalibrator(Calibrator):
     def ost(self):
         return self.lrost("left", self.distortion, self.intrinsics, self.R, self.P)
 
+    def linear_error_from_image(self, image):
+        """
+        Detect the checkerboard and compute the linear error.
+        Mainly for use in tests.
+        """
+        _, corners, _, board, _ = self.downsample_and_detect(image)
+        if not corners:
+            return None
+
+        src = self.mk_image_points([ (corners, board) ])
+        undistorted = list(cvmat_iterator(self.undistort_points(src)))
+        return self.linear_error(undistorted, board)
 
     def linear_error(self, corners, b):
 
@@ -792,8 +804,6 @@ class StereoCalibrator(Calibrator):
         # Pick out (corners, board) tuples
         lcorners = [ self.downsample_and_detect(i)[1:4:2] for i in limages]
         rcorners = [ self.downsample_and_detect(i)[1:4:2] for i in rimages]
-        #lcorners = [ self.get_corners(i) for i in limages]
-        #rcorners = [ self.get_corners(i) for i in rimages]
         good = [(lco, rco, b) for ((lco, b), (rco, br)) in zip( lcorners, rcorners) if (lco and rco)]
 
         if len(good) == 0:
@@ -892,6 +902,7 @@ class StereoCalibrator(Calibrator):
         return (self.lrost("left", self.l.distortion, self.l.intrinsics, self.l.R, self.l.P) +
           self.lrost("right", self.r.distortion, self.r.intrinsics, self.r.R, self.r.P))
 
+    # TODO Get rid of "from_images" versions of these, instead have function to get undistorted corners
     def epipolar_error_from_images(self, limage, rimage):
         """
         Detect the checkerboard in both images and compute the epipolar error.
@@ -899,46 +910,53 @@ class StereoCalibrator(Calibrator):
         """
         _, lcorners, _, board, _ = self.downsample_and_detect(limage)
         _, rcorners, _, board, _ = self.downsample_and_detect(rimage)
-
         if not lcorners or not rcorners:
             return None
-        return self.epipolar_error(lcorners, rcorners, board)
+
+        src = self.mk_image_points( [(lcorners, board)] )
+        lundistorted = list(cvmat_iterator(self.l.undistort_points(src)))
+        src = self.mk_image_points( [(rcorners, board)] )
+        rundistorted = list(cvmat_iterator(self.r.undistort_points(src)))
+
+        return self.epipolar_error(lundistorted, rundistorted, board)
 
     def epipolar_error(self, lcorners, rcorners, board):
         """
-        Compute the epipolar error from two sets of matching points given the
-        current calibration.
+        Compute the epipolar error from two sets of matching undistorted points
+        given the current calibration.
         """
+        d = [(y0-y1) for ((_, y0), (_, y1)) in zip(lcorners, rcorners)]
+        return math.sqrt(sum([i**2 for i in d]) / len(d))
+
+    def chessboard_size_from_images(self, limage, rimage):
+        _, lcorners, _, board, _ = self.downsample_and_detect(limage)
+        _, rcorners, _, board, _ = self.downsample_and_detect(rimage)
+        if not lcorners or not rcorners:
+            return None
 
         src = self.mk_image_points( [(lcorners, board)] )
-        L = list(cvmat_iterator(self.l.undistort_points(src)))
+        lundistorted = list(cvmat_iterator(self.l.undistort_points(src)))
         src = self.mk_image_points( [(rcorners, board)] )
-        R = list(cvmat_iterator(self.r.undistort_points(src)))
+        rundistorted = list(cvmat_iterator(self.r.undistort_points(src)))
 
-        d = [(y0-y1) for ((_, y0), (_, y1)) in zip(L, R)]
-        return math.sqrt(sum([i**2 for i in d]) / len(d))
+        return self.chessboard_size(lundistorted, rundistorted, board)
 
     def chessboard_size(self, lcorners, rcorners, board):
         """
-        Compute the square edge length from two sets of matching points given
-        the current calibration.
+        Compute the square edge length from two sets of matching undistorted points
+        given the current calibration.
         """
-        src = self.mk_image_points( [(lcorners, board)] )
-        L = list(cvmat_iterator(self.l.undistort_points(src)))
-        src = self.mk_image_points( [(rcorners, board)] )
-        R = list(cvmat_iterator(self.r.undistort_points(src)))
-
         # Project the points to 3d
         cam = image_geometry.StereoCameraModel()
         cam.fromCameraInfo(*self.as_message())
-        disparities = [(x0 - x1) for ((x0, y0), (x1, y1)) in zip(L, R)]
-        pt3d = [cam.projectPixelTo3d((x, y), d) for ((x, y), d) in zip(L, disparities)]
+        disparities = [(x0 - x1) for ((x0, y0), (x1, y1)) in zip(lcorners, rcorners)]
+        pt3d = [cam.projectPixelTo3d((x, y), d) for ((x, y), d) in zip(lcorners, disparities)]
         def l2(p0, p1):
             return math.sqrt(sum([(c0 - c1) ** 2 for (c0, c1) in zip(p0, p1)]))
 
         # Compute the length from each horizontal and vertical line, and return the mean
-        cc = b.n_cols
-        cr = b.n_rows
+        cc = board.n_cols
+        cr = board.n_rows
         lengths = (
             [l2(pt3d[cc * r + 0], pt3d[cc * r + (cc - 1)]) / (cc - 1) for r in range(cr)] +
             [l2(pt3d[c + 0], pt3d[c + (cc * (cr - 1))]) / (cr - 1) for c in range(cc)])
