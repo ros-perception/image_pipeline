@@ -322,9 +322,9 @@ def main():
                           description=None)
     group = OptionGroup(parser, "Chessboard Options",
                         "You must specify one or more chessboards as pairs of --size and --square options.")
-    group.add_option("--pattern",
-                     type="string", default="checkerboard",
-                     help="calibration pattern to detect - 'chessboard' or 'circles'")
+    #group.add_option("--pattern",
+    #                 type="string", default="chessboard",
+    #                 help="calibration pattern to detect - 'chessboard' or 'circles'")
     group.add_option("-s", "--size",
                      action="append", default=[],
                      help="chessboard size as NxM, counting interior corners (e.g. a standard chessboard is 7x7)")
