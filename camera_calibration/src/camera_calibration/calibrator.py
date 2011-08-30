@@ -49,8 +49,8 @@ import StringIO
 import time
 
 # Supported calibration patterns
-class Patterns:
-    Chessboard, CirclesGrid = range(2)
+#class Patterns:
+#    Chessboard, CirclesGrid = range(2)
 
 class CalibrationException(Exception):
     pass
