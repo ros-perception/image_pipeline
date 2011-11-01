@@ -151,7 +151,8 @@ class CameraCheckerNode:
                                            [ camera.P[8], camera.P[9], camera.P[10] ] ] )
             rot = cv.CreateMat(3, 1, cv.CV_32FC1)
             trans = cv.CreateMat(3, 1, cv.CV_32FC1)
-            cv.FindExtrinsicCameraParams2(object_points, image_points, camera_matrix, dist_coeffs, rot, trans)
+            cv.FindExtrinsicCameraParams2(object_points, image_points, cv.fromarray(camera_matrix),
+                                          dist_coeffs, rot, trans)
             # Convert rotation into a 3x3 Rotation Matrix
             rot3x3 = cv.CreateMat(3, 3, cv.CV_32FC1)
             cv.Rodrigues2(rot, rot3x3)

@@ -111,6 +111,9 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   out_info->roi.y_offset += config_.y_offset * binning_y;
   out_info->roi.height = height * binning_y;
   out_info->roi.width = width * binning_x;
+  // If no ROI specified, leave do_rectify as-is. If ROI specified, set do_rectify = true.
+  if (width != (int)image_msg->width || height != (int)image_msg->height)
+    out_info->roi.do_rectify = true;
 
   // Create new image message
   sensor_msgs::ImagePtr out_image = boost::make_shared<sensor_msgs::Image>();
