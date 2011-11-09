@@ -94,9 +94,12 @@ class CalibrationNode:
         msub = message_filters.Subscriber('image', sensor_msgs.msg.Image)
         msub.registerCallback(self.queue_monocular)
         
-        self.set_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"), sensor_msgs.srv.SetCameraInfo)
-        self.set_left_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("left_camera"), sensor_msgs.srv.SetCameraInfo)
-        self.set_right_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("right_camera"), sensor_msgs.srv.SetCameraInfo)
+        self.set_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"),
+                                                          sensor_msgs.srv.SetCameraInfo)
+        self.set_left_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("left_camera"),
+                                                               sensor_msgs.srv.SetCameraInfo)
+        self.set_right_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("right_camera"),
+                                                                sensor_msgs.srv.SetCameraInfo)
 
         self.q_mono = Queue.Queue()
         self.q_stereo = Queue.Queue()
@@ -350,6 +353,11 @@ def main():
     group.add_option("--zero-tangent-dist",
                      action="store_true", default=False,
                      help="set tangential distortion coefficients (p1, p2) to zero")
+    group.add_option("-k", "--k-coefficients",
+                     type="int", default=2, metavar="NUM_COEFFS",
+                     help="number of radial distortion coefficients to use (up to 6, default %default)")
+    parser.add_option_group(group)
+    group = OptionGroup(parser, "Deprecated Options")
     group.add_option("--rational-model",
                      action="store_true", default=False,
                      help="enable distortion coefficients k4, k5 and k6 (for high-distortion lenses)")
@@ -380,6 +388,30 @@ def main():
     else:
         sync = functools.partial(ApproximateSynchronizer, options.approximate)
 
+    num_ks = options.k_coefficients
+    # Deprecated flags modify k_coefficients
+    if options.rational_model:
+        print "Option --rational-model is deprecated"
+        num_ks = 6
+    if options.fix_k6:
+        print "Option --fix-k6 is deprecated"
+        num_ks = min(num_ks, 5)
+    if options.fix_k5:
+        print "Option --fix-k5 is deprecated"
+        num_ks = min(num_ks, 4)
+    if options.fix_k4:
+        print "Option --fix-k4 is deprecated"
+        num_ks = min(num_ks, 3)
+    if options.fix_k3:
+        print "Option --fix-k3 is deprecated"
+        num_ks = min(num_ks, 2)
+    if options.fix_k2:
+        print "Option --fix-k2 is deprecated"
+        num_ks = min(num_ks, 1)
+    if options.fix_k1:
+        print "Option --fix-k1 is deprecated"
+        num_ks = 0
+
     calib_flags = 0
     if options.fix_principal_point:
         calib_flags |= cv2.CALIB_FIX_PRINCIPAL_POINT
@@ -387,20 +419,20 @@ def main():
         calib_flags |= cv2.CALIB_FIX_ASPECT_RATIO
     if options.zero_tangent_dist:
         calib_flags |= cv2.CALIB_ZERO_TANGENT_DIST
-    if options.rational_model:
+    if (num_ks > 3):
         calib_flags |= cv2.CALIB_RATIONAL_MODEL
-    if options.fix_k1:
-        calib_flags |= cv2.CALIB_FIX_K1
-    if options.fix_k2:
-        calib_flags |= cv2.CALIB_FIX_K2
-    if options.fix_k3:
-        calib_flags |= cv2.CALIB_FIX_K3
-    if options.fix_k4:
-        calib_flags |= cv2.CALIB_FIX_K4
-    if options.fix_k5:
-        calib_flags |= cv2.CALIB_FIX_K5
-    if options.fix_k6:
+    if (num_ks < 6):
         calib_flags |= cv2.CALIB_FIX_K6
+    if (num_ks < 5):
+        calib_flags |= cv2.CALIB_FIX_K5
+    if (num_ks < 4):
+        calib_flags |= cv2.CALIB_FIX_K4
+    if (num_ks < 3):
+        calib_flags |= cv2.CALIB_FIX_K3
+    if (num_ks < 2):
+        calib_flags |= cv2.CALIB_FIX_K2
+    if (num_ks < 1):
+        calib_flags |= cv2.CALIB_FIX_K1
 
     rospy.init_node('cameracalibrator')
     node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags)
