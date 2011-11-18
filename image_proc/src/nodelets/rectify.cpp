@@ -13,6 +13,7 @@ class RectifyNodelet : public nodelet::Nodelet
   // ROS communication
   boost::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::CameraSubscriber sub_camera_;
+  boost::mutex connect_mutex_;
   image_transport::Publisher pub_rect_;
   int queue_size_;
 
@@ -21,6 +22,7 @@ class RectifyNodelet : public nodelet::Nodelet
   typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
   boost::shared_ptr<ReconfigureServer> reconfigure_server_;
   Config config_;
+  boost::recursive_mutex config_mutex_;
 
   // Processing state
   image_geometry::PinholeCameraModel model_;
@@ -44,19 +46,22 @@ void RectifyNodelet::onInit()
   // Read parameters
   private_nh.param("queue_size", queue_size_, 5);
 
-  // Monitor whether anyone is subscribed to the output
-  image_transport::SubscriberStatusCallback connect_cb = boost::bind(&RectifyNodelet::connectCb, this);
-  pub_rect_  = it_->advertise("image_rect",  1, connect_cb, connect_cb);
-
   // Set up dynamic reconfigure
-  reconfigure_server_.reset(new ReconfigureServer(private_nh));
+  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
   ReconfigureServer::CallbackType f = boost::bind(&RectifyNodelet::configCb, this, _1, _2);
   reconfigure_server_->setCallback(f);
+
+  // Monitor whether anyone is subscribed to the output
+  image_transport::SubscriberStatusCallback connect_cb = boost::bind(&RectifyNodelet::connectCb, this);
+  // Make sure we don't enter connectCb() between advertising and assigning to pub_rect_
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
+  pub_rect_  = it_->advertise("image_rect",  1, connect_cb, connect_cb);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
 void RectifyNodelet::connectCb()
 {
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
   if (pub_rect_.getNumSubscribers() == 0)
     sub_camera_.shutdown();
   else if (!sub_camera_)
@@ -99,7 +104,12 @@ void RectifyNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   cv::Mat rect = rect_bridge.imgMsgToCv(rect_msg);
 
   // Rectify and publish
-  model_.rectifyImage(image, rect, config_.interpolation);
+  int interpolation;
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);
+    interpolation = config_.interpolation;
+  }
+  model_.rectifyImage(image, rect, interpolation);
   pub_rect_.publish(rect_msg);
 }
 
