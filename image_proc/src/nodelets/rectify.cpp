@@ -25,7 +25,7 @@ class RectifyNodelet : public nodelet::Nodelet
   boost::shared_ptr<ReconfigureServer> reconfigure_server_;
   Config config_;
 
-  // Processing state
+  // Processing state (note: only safe because we're using single-threaded NodeHandle!)
   image_geometry::PinholeCameraModel model_;
 
   virtual void onInit();
