@@ -13,16 +13,17 @@ class RectifyNodelet : public nodelet::Nodelet
   // ROS communication
   boost::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::CameraSubscriber sub_camera_;
+  int queue_size_;
+  
   boost::mutex connect_mutex_;
   image_transport::Publisher pub_rect_;
-  int queue_size_;
 
   // Dynamic reconfigure
+  boost::recursive_mutex config_mutex_;
   typedef image_proc::RectifyConfig Config;
   typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
   boost::shared_ptr<ReconfigureServer> reconfigure_server_;
   Config config_;
-  boost::recursive_mutex config_mutex_;
 
   // Processing state
   image_geometry::PinholeCameraModel model_;
