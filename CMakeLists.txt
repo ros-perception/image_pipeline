@@ -17,4 +17,4 @@ set(ROSPACK_MAKEDIST true)
 #list(APPEND CPACK_SOURCE_IGNORE_FILES /core/experimental)
 list(APPEND CPACK_SOURCE_IGNORE_FILES /image_geometry)
 
-rosbuild_make_distribution(1.6.3)
+rosbuild_make_distribution(1.6.4)

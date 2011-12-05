@@ -12,10 +12,13 @@ class CropDecimateNodelet : public nodelet::Nodelet
   // ROS communication
   boost::shared_ptr<image_transport::ImageTransport> it_in_, it_out_;
   image_transport::CameraSubscriber sub_;
-  image_transport::CameraPublisher pub_;
   int queue_size_;
 
+  boost::mutex connect_mutex_;
+  image_transport::CameraPublisher pub_;
+
   // Dynamic reconfigure
+  boost::recursive_mutex config_mutex_;
   typedef image_proc::CropDecimateConfig Config;
   typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
   boost::shared_ptr<ReconfigureServer> reconfigure_server_;
@@ -43,20 +46,23 @@ void CropDecimateNodelet::onInit()
   // Read parameters
   private_nh.param("queue_size", queue_size_, 5);
 
+  // Set up dynamic reconfigure
+  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
+  ReconfigureServer::CallbackType f = boost::bind(&CropDecimateNodelet::configCb, this, _1, _2);
+  reconfigure_server_->setCallback(f);
+
   // Monitor whether anyone is subscribed to the output
   image_transport::SubscriberStatusCallback connect_cb = boost::bind(&CropDecimateNodelet::connectCb, this);
   ros::SubscriberStatusCallback connect_cb_info = boost::bind(&CropDecimateNodelet::connectCb, this);
+  // Make sure we don't enter connectCb() between advertising and assigning to pub_
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
   pub_ = it_out_->advertiseCamera("image_raw",  1, connect_cb, connect_cb, connect_cb_info, connect_cb_info);
-
-  // Set up dynamic reconfigure
-  reconfigure_server_.reset(new ReconfigureServer(private_nh));
-  ReconfigureServer::CallbackType f = boost::bind(&CropDecimateNodelet::configCb, this, _1, _2);
-  reconfigure_server_->setCallback(f);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
 void CropDecimateNodelet::connectCb()
 {
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
   if (pub_.getNumSubscribers() == 0)
     sub_.shutdown();
   else if (!sub_)
@@ -68,25 +74,31 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
 {
   /// @todo Check image dimensions match info_msg
   /// @todo Publish tweaks to config_ so they appear in reconfigure_gui
+
+  Config config;
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);
+    config = config_;
+  }
   
   /// @todo Could support odd offsets for Bayer images, but it's a tad complicated
-  config_.x_offset = (config_.x_offset / 2) * 2;
-  config_.y_offset = (config_.y_offset / 2) * 2;
+  config.x_offset = (config.x_offset / 2) * 2;
+  config.y_offset = (config.y_offset / 2) * 2;
 
-  int max_width = image_msg->width - config_.x_offset;
-  int max_height = image_msg->height - config_.y_offset;
-  int width = config_.width;
-  int height = config_.height;
+  int max_width = image_msg->width - config.x_offset;
+  int max_height = image_msg->height - config.y_offset;
+  int width = config.width;
+  int height = config.height;
   if (width == 0 || width > max_width)
     width = max_width;
   if (height == 0 || height > max_height)
     height = max_height;
 
   // On no-op, just pass the messages along
-  if (config_.decimation_x == 1  &&
-      config_.decimation_y == 1  &&
-      config_.x_offset == 0      &&
-      config_.y_offset == 0      &&
+  if (config.decimation_x == 1  &&
+      config.decimation_y == 1  &&
+      config.x_offset == 0      &&
+      config.y_offset == 0      &&
       width  == (int)image_msg->width &&
       height == (int)image_msg->height)
   {
@@ -105,10 +117,10 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   sensor_msgs::CameraInfoPtr out_info = boost::make_shared<sensor_msgs::CameraInfo>(*info_msg);
   int binning_x = std::max((int)info_msg->binning_x, 1);
   int binning_y = std::max((int)info_msg->binning_y, 1);
-  out_info->binning_x = binning_x * config_.decimation_x;
-  out_info->binning_y = binning_y * config_.decimation_y;
-  out_info->roi.x_offset += config_.x_offset * binning_x;
-  out_info->roi.y_offset += config_.y_offset * binning_y;
+  out_info->binning_x = binning_x * config.decimation_x;
+  out_info->binning_y = binning_y * config.decimation_y;
+  out_info->roi.x_offset += config.x_offset * binning_x;
+  out_info->roi.y_offset += config.y_offset * binning_y;
   out_info->roi.height = height * binning_y;
   out_info->roi.width = width * binning_x;
   // If no ROI specified, leave do_rectify as-is. If ROI specified, set do_rectify = true.
@@ -118,11 +130,11 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   // Create new image message
   sensor_msgs::ImagePtr out_image = boost::make_shared<sensor_msgs::Image>();
   out_image->header = image_msg->header;
-  out_image->height = height / config_.decimation_y;
-  out_image->width  = width  / config_.decimation_x;
+  out_image->height = height / config.decimation_y;
+  out_image->width  = width  / config.decimation_x;
   // Don't know encoding, step, or data size yet
 
-  if (config_.decimation_x == 1 && config_.decimation_y == 1)
+  if (config.decimation_x == 1 && config.decimation_y == 1)
   {
     // Crop only, preserving original encoding
     int num_channels = sensor_msgs::image_encodings::numChannels(image_msg->encoding);
@@ -130,7 +142,7 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
     out_image->step = out_image->width * num_channels;
     out_image->data.resize(out_image->height * out_image->step);
 
-    const uint8_t* input_buffer = &image_msg->data[config_.y_offset*image_msg->step + config_.x_offset*num_channels];
+    const uint8_t* input_buffer = &image_msg->data[config.y_offset*image_msg->step + config.x_offset*num_channels];
     uint8_t* output_buffer = &out_image->data[0];
     for (int y = 0; y < (int)out_image->height; ++y)
     {
@@ -147,9 +159,9 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
     out_image->data.resize(out_image->height * out_image->step);
 
     // Hit only the pixel groups we need
-    int input_step = config_.decimation_y * image_msg->step;
-    int input_skip = config_.decimation_x;
-    const uint8_t* input_row = &image_msg->data[config_.y_offset*image_msg->step + config_.x_offset];
+    int input_step = config.decimation_y * image_msg->step;
+    int input_skip = config.decimation_x;
+    const uint8_t* input_row = &image_msg->data[config.y_offset*image_msg->step + config.x_offset];
     uint8_t* output_buffer = &out_image->data[0];
 
     // Downsample
@@ -169,7 +181,7 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
 
     if (sensor_msgs::image_encodings::isBayer(image_msg->encoding))
     {
-      if (config_.decimation_x % 2 != 0 || config_.decimation_y % 2 != 0)
+      if (config.decimation_x % 2 != 0 || config.decimation_y % 2 != 0)
       {
         NODELET_ERROR_THROTTLE(2, "Odd decimation not supported for Bayer images");
         return;
@@ -212,9 +224,9 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
       }
 
       // Hit only the pixel groups we need
-      int input_step = config_.decimation_y * image_msg->step;
-      int input_skip = config_.decimation_x;
-      const uint8_t* input_row = &image_msg->data[config_.y_offset*image_msg->step + config_.x_offset];
+      int input_step = config.decimation_y * image_msg->step;
+      int input_skip = config.decimation_x;
+      const uint8_t* input_row = &image_msg->data[config.y_offset*image_msg->step + config.x_offset];
       uint8_t* output_buffer = &out_image->data[0];
 
       // Downsample and debayer at once
@@ -268,9 +280,9 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
       }
 
       // Hit only the pixel groups we need
-      int input_step = config_.decimation_y * image_msg->step;
-      int input_skip = config_.decimation_x * channels;
-      const uint8_t* input_row = &image_msg->data[config_.y_offset*image_msg->step + config_.x_offset*channels];
+      int input_step = config.decimation_y * image_msg->step;
+      int input_skip = config.decimation_x * channels;
+      const uint8_t* input_row = &image_msg->data[config.y_offset*image_msg->step + config.x_offset*channels];
       uint8_t* output_buffer = &out_image->data[0];
 
       // Downsample

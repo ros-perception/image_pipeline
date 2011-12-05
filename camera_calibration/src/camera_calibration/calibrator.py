@@ -153,6 +153,8 @@ def _get_corners(img, board, refine = True):
     (ok, corners) = cv.FindChessboardCorners(mono, (board.n_cols, board.n_rows), cv.CV_CALIB_CB_ADAPTIVE_THRESH | cv.CV_CALIB_CB_NORMALIZE_IMAGE | cv2.CALIB_CB_FAST_CHECK)
     
     # If any corners are within BORDER pixels of the screen edge, reject the detection by setting ok to false
+    # NOTE: This may cause problems with very low-resolution cameras, where 8 pixels is a non-negligible fraction
+    # of the image size. See http://answers.ros.org/question/3155/how-can-i-calibrate-low-resolution-cameras
     BORDER = 8
     if not all([(BORDER < x < (w - BORDER)) and (BORDER < y < (h - BORDER)) for (x, y) in corners]):
         ok = False
@@ -203,7 +205,7 @@ class Calibrator:
         self.good_corners = []
         # Set to true when we have sufficiently varied samples to calibrate
         self.goodenough = False
-        self.param_ranges = [0.8, 0.8, 0.4, 0.5]
+        self.param_ranges = [0.7, 0.7, 0.4, 0.5]
 
     def mkgray(self, msg):
         """
@@ -281,8 +283,9 @@ class Calibrator:
 
         # For each parameter, judge how much progress has been made toward adequate variation
         progress = [min((hi - lo) / r, 1.0) for (lo, hi, r) in zip(min_params, max_params, self.param_ranges)]
+        # If we have lots of samples, allow calibration even if not all parameters are green
         # TODO Awkward that we update self.goodenough instead of returning it
-        self.goodenough = all([p == 1.0 for p in progress])
+        self.goodenough = (len(self.db) >= 40) or all([p == 1.0 for p in progress])
 
         return zip(self._param_names, min_params, max_params, progress)
 

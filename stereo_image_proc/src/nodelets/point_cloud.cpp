@@ -32,9 +32,9 @@ class PointCloudNodelet : public nodelet::Nodelet
   typedef message_filters::Synchronizer<ApproximatePolicy> ApproximateSync;
   boost::shared_ptr<ExactSync> exact_sync_;
   boost::shared_ptr<ApproximateSync> approximate_sync_;
-  bool subscribed_;
 
   // Publications
+  boost::mutex connect_mutex_;
   ros::Publisher pub_points_;
 
   // Processing state (note: only safe because we're single-threaded!)
@@ -56,11 +56,6 @@ void PointCloudNodelet::onInit()
   ros::NodeHandle &nh = getNodeHandle();
   ros::NodeHandle &private_nh = getPrivateNodeHandle();
   it_.reset(new image_transport::ImageTransport(nh));
-
-  // Monitor whether anyone is subscribed to the output
-  subscribed_ = false;
-  ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudNodelet::connectCb, this);
-  pub_points_ = nh.advertise<PointCloud>("points",  1, connect_cb, connect_cb);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection
   // callback. Optionally do approximate synchronization.
@@ -84,20 +79,26 @@ void PointCloudNodelet::onInit()
     exact_sync_->registerCallback(boost::bind(&PointCloudNodelet::imageCb,
                                               this, _1, _2, _3, _4));
   }
+
+  // Monitor whether anyone is subscribed to the output
+  ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudNodelet::connectCb, this);
+  // Make sure we don't enter connectCb() between advertising and assigning to pub_points_
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
+  pub_points_ = nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
 void PointCloudNodelet::connectCb()
 {
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
   if (pub_points_.getNumSubscribers() == 0)
   {
     sub_l_image_  .unsubscribe();
     sub_l_info_   .unsubscribe();
     sub_r_info_   .unsubscribe();
     sub_disparity_.unsubscribe();
-    subscribed_ = false;
   }
-  else if (!subscribed_)
+  else if (!sub_l_image_.getSubscriber())
   {
     ros::NodeHandle &nh = getNodeHandle();
     // Queue size 1 should be OK; the one that matters is the synchronizer queue size.
@@ -105,7 +106,6 @@ void PointCloudNodelet::connectCb()
     sub_l_info_   .subscribe(nh,   "left/camera_info", 1);
     sub_r_info_   .subscribe(nh,   "right/camera_info", 1);
     sub_disparity_.subscribe(nh,   "disparity", 1);
-    subscribed_ = true;
   }
 }
 
