@@ -21,10 +21,13 @@ class DebayerNodelet : public nodelet::Nodelet
   // ROS communication
   boost::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::Subscriber sub_raw_;
+  
+  boost::mutex connect_mutex_;
   image_transport::Publisher pub_mono_;
   image_transport::Publisher pub_color_;
 
   // Dynamic reconfigure
+  boost::recursive_mutex config_mutex_;
   typedef image_proc::DebayerConfig Config;
   typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
   boost::shared_ptr<ReconfigureServer> reconfigure_server_;
@@ -45,21 +48,24 @@ void DebayerNodelet::onInit()
   ros::NodeHandle &private_nh = getPrivateNodeHandle();
   it_.reset(new image_transport::ImageTransport(nh));
 
+  // Set up dynamic reconfigure
+  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
+  ReconfigureServer::CallbackType f = boost::bind(&DebayerNodelet::configCb, this, _1, _2);
+  reconfigure_server_->setCallback(f);
+
   // Monitor whether anyone is subscribed to the output
   typedef image_transport::SubscriberStatusCallback ConnectCB;
   ConnectCB connect_cb = boost::bind(&DebayerNodelet::connectCb, this);
+  // Make sure we don't enter connectCb() between advertising and assigning to pub_XXX
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
   pub_mono_  = it_->advertise("image_mono",  1, connect_cb, connect_cb);
   pub_color_ = it_->advertise("image_color", 1, connect_cb, connect_cb);
-
-  // Set up dynamic reconfigure
-  reconfigure_server_.reset(new ReconfigureServer(private_nh));
-  ReconfigureServer::CallbackType f = boost::bind(&DebayerNodelet::configCb, this, _1, _2);
-  reconfigure_server_->setCallback(f);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
 void DebayerNodelet::connectCb()
 {
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
   if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0)
     sub_raw_.shutdown();
   else if (!sub_raw_)
@@ -176,7 +182,12 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
       cv::Mat color(color_msg->height, color_msg->width, CV_MAKETYPE(type, 3),
                     &color_msg->data[0], color_msg->step);
 
-      int algorithm = config_.debayer;
+      int algorithm;
+      {
+        boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);
+        algorithm = config_.debayer;
+      }
+      
       if (algorithm == Debayer_EdgeAware ||
           algorithm == Debayer_EdgeAwareWeighted)
       {
@@ -212,7 +223,7 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
                  raw_msg->encoding == enc::BAYER_GRBG16)
           code = CV_BayerGB2BGR;
 
-        if (config_.debayer == Debayer_VNG)
+        if (algorithm == Debayer_VNG)
           code += CV_BayerBG2BGR_VNG - CV_BayerBG2BGR;
 
         cv::cvtColor(bayer, color, code);

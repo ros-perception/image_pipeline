@@ -35,12 +35,13 @@ class DisparityNodelet : public nodelet::Nodelet
   typedef message_filters::Synchronizer<ApproximatePolicy> ApproximateSync;
   boost::shared_ptr<ExactSync> exact_sync_;
   boost::shared_ptr<ApproximateSync> approximate_sync_;
-  bool subscribed_;
 
   // Publications
+  boost::mutex connect_mutex_;
   ros::Publisher pub_disparity_;
 
   // Dynamic reconfigure
+  boost::recursive_mutex config_mutex_;
   typedef stereo_image_proc::DisparityConfig Config;
   typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
   boost::shared_ptr<ReconfigureServer> reconfigure_server_;
@@ -56,7 +57,7 @@ class DisparityNodelet : public nodelet::Nodelet
   void imageCb(const ImageConstPtr& l_image_msg, const CameraInfoConstPtr& l_info_msg,
                const ImageConstPtr& r_image_msg, const CameraInfoConstPtr& r_info_msg);
 
-  void configCallback(Config &config, uint32_t level);
+  void configCb(Config &config, uint32_t level);
 };
 
 void DisparityNodelet::onInit()
@@ -65,12 +66,6 @@ void DisparityNodelet::onInit()
   ros::NodeHandle &private_nh = getPrivateNodeHandle();
 
   it_.reset(new image_transport::ImageTransport(nh));
-
-  // Monitor whether anyone is subscribed to the output
-  subscribed_ = false;
-  ros::SubscriberStatusCallback connect_cb = boost::bind(&DisparityNodelet::connectCb, this);
-  pub_disparity_  = nh.advertise<DisparityImage>("disparity",  1,
-                                                 connect_cb, connect_cb);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection
   // callback. Optionally do approximate synchronization.
@@ -96,32 +91,38 @@ void DisparityNodelet::onInit()
   }
 
   // Set up dynamic reconfiguration
-  ReconfigureServer::CallbackType f = boost::bind(&DisparityNodelet::configCallback,
+  ReconfigureServer::CallbackType f = boost::bind(&DisparityNodelet::configCb,
                                                   this, _1, _2);
-  reconfigure_server_.reset(new ReconfigureServer(private_nh));
+  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
   reconfigure_server_->setCallback(f);
+
+  // Monitor whether anyone is subscribed to the output
+  ros::SubscriberStatusCallback connect_cb = boost::bind(&DisparityNodelet::connectCb, this);
+  // Make sure we don't enter connectCb() between advertising and assigning to pub_disparity_
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
+  pub_disparity_ = nh.advertise<DisparityImage>("disparity", 1, connect_cb, connect_cb);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
 void DisparityNodelet::connectCb()
 {
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
   if (pub_disparity_.getNumSubscribers() == 0)
   {
     sub_l_image_.unsubscribe();
     sub_l_info_ .unsubscribe();
     sub_r_image_.unsubscribe();
     sub_r_info_ .unsubscribe();
-    subscribed_ = false;
   }
-  else if (!subscribed_)
+  else if (!sub_l_image_.getSubscriber())
   {
     ros::NodeHandle &nh = getNodeHandle();
     // Queue size 1 should be OK; the one that matters is the synchronizer queue size.
+    /// @todo Allow remapping left, right?
     sub_l_image_.subscribe(*it_, "left/image_rect", 1);
     sub_l_info_ .subscribe(nh,   "left/camera_info", 1);
     sub_r_image_.subscribe(*it_, "right/image_rect", 1);
     sub_r_info_ .subscribe(nh,   "right/camera_info", 1);
-    subscribed_ = true;
   }
 }
 
@@ -192,13 +193,15 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   pub_disparity_.publish(disp_msg);
 }
 
-void DisparityNodelet::configCallback(Config &config, uint32_t level)
+void DisparityNodelet::configCb(Config &config, uint32_t level)
 {
   // Tweak all settings to be valid
   config.prefilter_size |= 0x1; // must be odd
   config.correlation_window_size |= 0x1; // must be odd
   config.disparity_range = (config.disparity_range / 16) * 16; // must be multiple of 16
-  
+
+  // Note: With single-threaded NodeHandle, configCb and imageCb can't be called
+  // concurrently, so this is thread-safe.
   block_matcher_.state->preFilterSize       = config.prefilter_size;
   block_matcher_.state->preFilterCap        = config.prefilter_cap;
   block_matcher_.state->SADWindowSize       = config.correlation_window_size;

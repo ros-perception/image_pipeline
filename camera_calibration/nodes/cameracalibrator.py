@@ -49,11 +49,6 @@ import functools
 import cv
 import cv2
 
-ID_LOAD=101
-ID_SAVE=102
-ID_BUTTON1=110
-ID_EXIT=200
-
 from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, ChessboardInfo
 from std_msgs.msg import String
 from std_srvs.srv import Empty
@@ -99,9 +94,12 @@ class CalibrationNode:
         msub = message_filters.Subscriber('image', sensor_msgs.msg.Image)
         msub.registerCallback(self.queue_monocular)
         
-        self.set_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"), sensor_msgs.srv.SetCameraInfo)
-        self.set_left_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("left_camera"), sensor_msgs.srv.SetCameraInfo)
-        self.set_right_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("right_camera"), sensor_msgs.srv.SetCameraInfo)
+        self.set_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"),
+                                                          sensor_msgs.srv.SetCameraInfo)
+        self.set_left_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("left_camera"),
+                                                               sensor_msgs.srv.SetCameraInfo)
+        self.set_right_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("right_camera"),
+                                                                sensor_msgs.srv.SetCameraInfo)
 
         self.q_mono = Queue.Queue()
         self.q_stereo = Queue.Queue()
@@ -137,7 +135,6 @@ class CalibrationNode:
         self.redraw_monocular(drawable)
 
     def handle_stereo(self, msg):
-        (lmsg, rmsg) = msg
         if self.c == None:
             self.c = StereoCalibrator(self._boards, self._calib_flags)
             
@@ -212,8 +209,8 @@ class OpenCVCalibrationNode(CalibrationNode):
         return k
 
     def on_scale(self, scalevalue):
-        self.c.set_scale((scalevalue-1) / 100.0)
-
+        if self.c.calibrated:
+            self.c.set_alpha(scalevalue / 100.0)
 
     def button(self, dst, label, enable):
         cv.Set(dst, (255, 255, 255))
@@ -289,15 +286,18 @@ class OpenCVCalibrationNode(CalibrationNode):
         self.buttons(display)
 
         if not self.c.calibrated:
-            if len(drawable.params) != 0:
-                for i, (label, lo, hi) in enumerate(drawable.params):
-                    (label_width,_),_ = cv.GetTextSize(label, self.font)
-                    cv.PutText(display, label, (2 * width + (100 - label_width) / 2, self.y(i)), self.font, (0,0,0))
+            if drawable.params:
+                for i, (label, lo, hi, progress) in enumerate(drawable.params):
+                    (w,_),_ = cv.GetTextSize(label, self.font)
+                    cv.PutText(display, label, (2 * width + (100 - w) / 2, self.y(i)),
+                               self.font, (0,0,0))
+                    color = (0,255,0)
+                    if progress < 1.0:
+                        color = (0, int(progress*255.), 255)
                     cv.Line(display,
                             (int(2 * width + lo * 100), self.y(i) + 20),
                             (int(2 * width + hi * 100), self.y(i) + 20),
-                            (0,0,0),
-                            4)
+                            color, 4)
 
         else:
             cv.PutText(display, "epi.", (2 * width, self.y(0)), self.font, (0,0,0))
@@ -306,7 +306,8 @@ class OpenCVCalibrationNode(CalibrationNode):
             else:
                 msg = "%.2f" % drawable.epierror
             cv.PutText(display, msg, (2 * width, self.y(1)), self.font, (0,0,0))
-            if drawable.epierror > -1:
+            # TODO dim is never set anywhere. Supposed to be observed chessboard size?
+            if drawable.dim != -1:
                 cv.PutText(display, "dim", (2 * width, self.y(2)), self.font, (0,0,0))
                 cv.PutText(display, "%.3f" % drawable.dim, (2 * width, self.y(3)), self.font, (0,0,0))
 
@@ -324,9 +325,9 @@ def main():
                           description=None)
     group = OptionGroup(parser, "Chessboard Options",
                         "You must specify one or more chessboards as pairs of --size and --square options.")
-    group.add_option("--pattern",
-                     type="string", default="checkerboard",
-                     help="calibration pattern to detect - 'chessboard' or 'circles'")
+    #group.add_option("--pattern",
+    #                 type="string", default="chessboard",
+    #                 help="calibration pattern to detect - 'chessboard' or 'circles'")
     group.add_option("-s", "--size",
                      action="append", default=[],
                      help="chessboard size as NxM, counting interior corners (e.g. a standard chessboard is 7x7)")
@@ -352,6 +353,11 @@ def main():
     group.add_option("--zero-tangent-dist",
                      action="store_true", default=False,
                      help="set tangential distortion coefficients (p1, p2) to zero")
+    group.add_option("-k", "--k-coefficients",
+                     type="int", default=2, metavar="NUM_COEFFS",
+                     help="number of radial distortion coefficients to use (up to 6, default %default)")
+    parser.add_option_group(group)
+    group = OptionGroup(parser, "Deprecated Options")
     group.add_option("--rational-model",
                      action="store_true", default=False,
                      help="enable distortion coefficients k4, k5 and k6 (for high-distortion lenses)")
@@ -382,6 +388,30 @@ def main():
     else:
         sync = functools.partial(ApproximateSynchronizer, options.approximate)
 
+    num_ks = options.k_coefficients
+    # Deprecated flags modify k_coefficients
+    if options.rational_model:
+        print "Option --rational-model is deprecated"
+        num_ks = 6
+    if options.fix_k6:
+        print "Option --fix-k6 is deprecated"
+        num_ks = min(num_ks, 5)
+    if options.fix_k5:
+        print "Option --fix-k5 is deprecated"
+        num_ks = min(num_ks, 4)
+    if options.fix_k4:
+        print "Option --fix-k4 is deprecated"
+        num_ks = min(num_ks, 3)
+    if options.fix_k3:
+        print "Option --fix-k3 is deprecated"
+        num_ks = min(num_ks, 2)
+    if options.fix_k2:
+        print "Option --fix-k2 is deprecated"
+        num_ks = min(num_ks, 1)
+    if options.fix_k1:
+        print "Option --fix-k1 is deprecated"
+        num_ks = 0
+
     calib_flags = 0
     if options.fix_principal_point:
         calib_flags |= cv2.CALIB_FIX_PRINCIPAL_POINT
@@ -389,20 +419,20 @@ def main():
         calib_flags |= cv2.CALIB_FIX_ASPECT_RATIO
     if options.zero_tangent_dist:
         calib_flags |= cv2.CALIB_ZERO_TANGENT_DIST
-    if options.rational_model:
+    if (num_ks > 3):
         calib_flags |= cv2.CALIB_RATIONAL_MODEL
-    if options.fix_k1:
-        calib_flags |= cv2.CALIB_FIX_K1
-    if options.fix_k2:
-        calib_flags |= cv2.CALIB_FIX_K2
-    if options.fix_k3:
-        calib_flags |= cv2.CALIB_FIX_K3
-    if options.fix_k4:
-        calib_flags |= cv2.CALIB_FIX_K4
-    if options.fix_k5:
-        calib_flags |= cv2.CALIB_FIX_K5
-    if options.fix_k6:
+    if (num_ks < 6):
         calib_flags |= cv2.CALIB_FIX_K6
+    if (num_ks < 5):
+        calib_flags |= cv2.CALIB_FIX_K5
+    if (num_ks < 4):
+        calib_flags |= cv2.CALIB_FIX_K4
+    if (num_ks < 3):
+        calib_flags |= cv2.CALIB_FIX_K3
+    if (num_ks < 2):
+        calib_flags |= cv2.CALIB_FIX_K2
+    if (num_ks < 1):
+        calib_flags |= cv2.CALIB_FIX_K1
 
     rospy.init_node('cameracalibrator')
     node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags)

@@ -70,14 +70,14 @@ class TestMultipleBoards(unittest.TestCase):
         archive = tarfile.open(my_archive_name)
         l1_big = image_from_archive(archive, "left-0000.png")
         r1_big = image_from_archive(archive, "right-0000.png")
-        epi_big = stereo_cal.epipolar1(l1_big, r1_big)
+        epi_big = stereo_cal.epipolar_error_from_images(l1_big, r1_big)
         self.assert_(epi_big < 1.0, "Epipolar error for large checkerboard > 1.0. Error: %.2f" % epi_big)
 
         # Small checkerboard has larger error threshold for now
         l1_sm = image_from_archive(archive, "left-0012-sm.png")
         r1_sm = image_from_archive(archive, "right-0012-sm.png")
-        epi_sm =  stereo_cal.epipolar1(l1_sm, r1_sm)
-        self.assert_(epi_sm < 2.0, "Epipolar error for small checkerboard > 1.0. Error: %.2f" % epi_sm)
+        epi_sm =  stereo_cal.epipolar_error_from_images(l1_sm, r1_sm)
+        self.assert_(epi_sm < 2.0, "Epipolar error for small checkerboard > 2.0. Error: %.2f" % epi_sm)
 
 
 

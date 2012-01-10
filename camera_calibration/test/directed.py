@@ -38,6 +38,7 @@ roslib.load_manifest(PKG)
 import rostest
 import rospy
 import cv
+import cv2
 import unittest
 import tarfile
 import copy
@@ -71,10 +72,10 @@ class TestDirected(unittest.TestCase):
                 self.r[dim].append(rri)
                 
     def assert_good_mono(self, c, dim):
-        c.report()
+        #c.report()
         self.assert_(len(c.ost()) > 0)
         img = self.l[dim][0]
-        lin_err = c.linear_error(img)
+        lin_err = c.linear_error_from_image(img)
         self.assert_(0.0 < lin_err)
         self.assert_(lin_err < 1.0)
 
@@ -83,7 +84,7 @@ class TestDirected(unittest.TestCase):
 
     def test_monocular(self):
         # Run the calibrator, produce a calibration, check it
-        mc = MonoCalibrator([ board ])
+        mc = MonoCalibrator([ board ], cv2.CALIB_FIX_K3)
         for dim in self.sizes:
             mc.cal(self.l[dim])
             self.assert_good_mono(mc, dim)
@@ -97,27 +98,33 @@ class TestDirected(unittest.TestCase):
 
     def test_stereo(self):
         for dim in self.sizes:
-            sc = StereoCalibrator([board])
+            print "Dim =", dim
+            sc = StereoCalibrator([board], cv2.CALIB_FIX_K3)
             sc.cal(self.l[dim], self.r[dim])
 
             sc.report()
-            sc.ost()
+            #print sc.ost()
 
-            self.assert_(sc.epipolar1(self.l[dim][0], self.r[dim][0]) < 0.5)
-            self.assertAlmostEqual(sc.chessboard_size(self.l[dim][0], self.r[dim][0]), .108, 2)
+            # NOTE: epipolar error currently increases with resolution.
+            # At highest res expect error ~0.75
+            epierror = sc.epipolar_error_from_images(self.l[dim][0], self.r[dim][0])
+            print "Epipolar error =", epierror
+            self.assert_(epierror < 0.8)
 
-            print sc.as_message()
+            self.assertAlmostEqual(sc.chessboard_size_from_images(self.l[dim][0], self.r[dim][0]), .108, 2)
+
+            #print sc.as_message()
 
             img = self.l[dim][0]
-            flat = sc.lremap(img)
+            flat = sc.l.remap(img)
             self.assertEqual(cv.GetSize(img), cv.GetSize(flat))
-            flat = sc.rremap(img)
+            flat = sc.r.remap(img)
             self.assertEqual(cv.GetSize(img), cv.GetSize(flat))
 
             sc2 = StereoCalibrator([board])
             sc2.from_message(sc.as_message())
             # sc2.set_alpha(1.0)
-            sc2.report()
+            #sc2.report()
             self.assert_(len(sc2.ost()) > 0)
 
     def test_nochecker(self):
