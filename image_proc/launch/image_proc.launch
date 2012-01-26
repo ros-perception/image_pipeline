@@ -1,0 +1,29 @@
+<!-- Launch in the camera namespace containing "image_raw" and "camera_info" -->
+<launch>
+
+  <arg name="manager" /> <!-- Must be globally qualified -->
+  <arg name="respawn" default="false" />
+  <!-- TODO Arguments for debayer, interpolation methods? -->
+
+  <arg     if="$(arg respawn)" name="bond" value="" />
+  <arg unless="$(arg respawn)" name="bond" value="--no-bond" />
+
+  <!-- Debayered images -->
+  <node pkg="nodelet" type="nodelet" name="debayer"
+        args="load image_proc/debayer $(arg manager) $(arg bond)"
+	respawn="$(arg respawn)" />
+
+  <!-- Monochrome rectified image -->
+  <node pkg="nodelet" type="nodelet" name="rectify_mono"
+        args="load image_proc/rectify $(arg manager) $(arg bond)"
+	respawn="$(arg respawn)" />
+
+  <!-- Color rectified image -->
+  <node pkg="nodelet" type="nodelet" name="rectify_color"
+        args="load image_proc/rectify $(arg manager) $(arg bond)"
+	respawn="$(arg respawn)">
+    <remap from="image_mono" to="image_color" />
+    <remap from="image_rect" to="image_rect_color" />
+  </node>  
+
+</launch>
