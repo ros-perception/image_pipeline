@@ -13,7 +13,8 @@
   <depend stack="geometry" /> <!-- tf -->
   <depend stack="image_common" /> <!-- image_transport, camera_calibration_parsers -->
   <depend stack="nodelet_core" /> <!-- nodelet -->
-  <depend stack="ros" />
+  <depend stack="perception_pcl" /> <!-- pcl, pcl_ros -->
+  <depend stack="ros" /> <!-- roslib -->
   <depend stack="ros_comm" /> <!-- std_msgs, rospy, std_srvs, roscpp, message_filters -->
   <depend stack="vision_opencv" /> <!-- opencv2, image_geometry, cv_bridge -->
 

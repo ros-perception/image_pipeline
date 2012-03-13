@@ -1,0 +1,144 @@
+#include <ros/ros.h>
+#include <nodelet/nodelet.h>
+#include <image_transport/image_transport.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl/point_types.h>
+#include <sensor_msgs/image_encodings.h>
+#include <image_geometry/pinhole_camera_model.h>
+#include <boost/thread.hpp>
+#include "depth_traits.h"
+
+namespace depth_image_proc {
+
+namespace enc = sensor_msgs::image_encodings;
+
+class PointCloudXyzNodelet : public nodelet::Nodelet
+{
+  // Subscriptions
+  boost::shared_ptr<image_transport::ImageTransport> it_;
+  image_transport::CameraSubscriber sub_depth_;
+  int queue_size_;
+
+  // Publications
+  boost::mutex connect_mutex_;
+  typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+  ros::Publisher pub_point_cloud_;
+
+  image_geometry::PinholeCameraModel model_;
+
+  virtual void onInit();
+
+  void connectCb();
+
+  void depthCb(const sensor_msgs::ImageConstPtr& depth_msg,
+               const sensor_msgs::CameraInfoConstPtr& info_msg);
+
+  // Handles float or uint16 depths
+  template<typename T>
+  void convert(const sensor_msgs::ImageConstPtr& depth_msg, PointCloud::Ptr& cloud_msg);
+};
+
+void PointCloudXyzNodelet::onInit()
+{
+  ros::NodeHandle& nh         = getNodeHandle();
+  ros::NodeHandle& private_nh = getPrivateNodeHandle();
+  it_.reset(new image_transport::ImageTransport(nh));
+
+  // Read parameters
+  private_nh.param("queue_size", queue_size_, 5);
+
+  // Monitor whether anyone is subscribed to the output
+  ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudXyzNodelet::connectCb, this);
+  // Make sure we don't enter connectCb() between advertising and assigning to pub_point_cloud_
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
+  pub_point_cloud_ = nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
+}
+
+// Handles (un)subscribing when clients (un)subscribe
+void PointCloudXyzNodelet::connectCb()
+{
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
+  if (pub_point_cloud_.getNumSubscribers() == 0)
+  {
+    sub_depth_.shutdown();
+  }
+  else if (!sub_depth_)
+  {
+    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
+    sub_depth_ = it_->subscribeCamera("image_rect", queue_size_, &PointCloudXyzNodelet::depthCb, this, hints);
+  }
+}
+
+void PointCloudXyzNodelet::depthCb(const sensor_msgs::ImageConstPtr& depth_msg,
+                                   const sensor_msgs::CameraInfoConstPtr& info_msg)
+{
+  PointCloud::Ptr cloud_msg(new PointCloud);
+  cloud_msg->header = depth_msg->header;
+  cloud_msg->height = depth_msg->height;
+  cloud_msg->width  = depth_msg->width;
+  cloud_msg->is_dense = false;
+  cloud_msg->points.resize(cloud_msg->height * cloud_msg->width);
+
+  // Update camera model
+  model_.fromCameraInfo(info_msg);
+
+  if (depth_msg->encoding == enc::TYPE_16UC1)
+  {
+    convert<uint16_t>(depth_msg, cloud_msg);
+  }
+  else if (depth_msg->encoding == enc::TYPE_32FC1)
+  {
+    convert<float>(depth_msg, cloud_msg);
+  }
+  else
+  {
+    NODELET_ERROR_THROTTLE(5, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
+    return;
+  }
+
+  pub_point_cloud_.publish (cloud_msg);
+}
+
+template<typename T>
+void PointCloudXyzNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg, PointCloud::Ptr& cloud_msg)
+{
+  // Use correct principal point from calibration
+  float center_x = model_.cx();
+  float center_y = model_.cy();
+
+  // Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
+  double unit_scaling = DepthTraits<T>::toMeters( T(1) );
+  float constant_x = unit_scaling / model_.fx();
+  float constant_y = unit_scaling / model_.fy();
+  float bad_point = std::numeric_limits<float>::quiet_NaN();
+
+  PointCloud::iterator pt_iter = cloud_msg->begin();
+  const T* depth_row = reinterpret_cast<const T*>(&depth_msg->data[0]);
+  int row_step = depth_msg->step / sizeof(T);
+  for (int v = 0; v < (int)cloud_msg->height; ++v, depth_row += row_step)
+  {
+    for (int u = 0; u < (int)cloud_msg->width; ++u)
+    {
+      pcl::PointXYZ& pt = *pt_iter++;
+      T depth = depth_row[u];
+
+      // Missing points denoted by NaNs
+      if (!DepthTraits<T>::valid(depth))
+      {
+        pt.x = pt.y = pt.z = bad_point;
+        continue;
+      }
+
+      // Fill in XYZ
+      pt.x = (u - center_x) * depth * constant_x;
+      pt.y = (v - center_y) * depth * constant_y;
+      pt.z = DepthTraits<T>::toMeters(depth);
+    }
+  }
+}
+
+} // namespace depth_image_proc
+
+// Register as nodelet
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_DECLARE_CLASS (depth_image_proc, point_cloud_xyz, depth_image_proc::PointCloudXyzNodelet, nodelet::Nodelet);
