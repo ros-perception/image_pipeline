@@ -143,9 +143,12 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   bool is_bayer = sensor_msgs::image_encodings::isBayer(image_msg->encoding);
   if (is_bayer)
   {
-    /// @todo Could support odd offsets for Bayer images, but it's a tad complicated
+    // Odd offsets for Bayer images basically change the Bayer pattern, but that's
+    // unnecessarily complicated to support
     config.x_offset &= ~0x1;
     config.y_offset &= ~0x1;
+    config.width &= ~0x1;
+    config.height &= ~0x1;    
   }
 
   int max_width = image_msg->width - config.x_offset;
