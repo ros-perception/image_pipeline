@@ -3,9 +3,12 @@
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/image_encodings.h>
 #include <dynamic_reconfigure/server.h>
+#include <cv_bridge/cv_bridge.h>
 #include <image_proc/CropDecimateConfig.h>
 
 namespace image_proc {
+
+using namespace cv_bridge; // CvImage, toCvShare
 
 class CropDecimateNodelet : public nodelet::Nodelet
 {
@@ -69,6 +72,59 @@ void CropDecimateNodelet::connectCb()
     sub_ = it_in_->subscribeCamera("image_raw", queue_size_, &CropDecimateNodelet::imageCb, this);
 }
 
+template <typename T>
+void debayer2x2toBGR(const cv::Mat& src, cv::Mat& dst, int R, int G1, int G2, int B)
+{
+  typedef cv::Vec<T, 3> DstPixel; // 8- or 16-bit BGR
+  dst.create(src.rows / 2, src.cols / 2, cv::DataType<DstPixel>::type);
+
+  int src_row_step = src.step1();
+  int dst_row_step = dst.step1();
+  const T* src_row = src.ptr<T>();
+  T* dst_row = dst.ptr<T>();
+
+  // 2x2 downsample and debayer at once
+  for (int y = 0; y < dst.rows; ++y)
+  {
+    for (int x = 0; x < dst.cols; ++x)
+    {
+      dst_row[x*3 + 0] = src_row[x*2 + B];
+      dst_row[x*3 + 1] = (src_row[x*2 + G1] + src_row[x*2 + G2]) / 2;
+      dst_row[x*3 + 2] = src_row[x*2 + R];
+    }
+    src_row += src_row_step * 2;
+    dst_row += dst_row_step;
+  }
+}
+
+// Templated on pixel size, in bytes (MONO8 = 1, BGR8 = 3, RGBA16 = 8, ...)
+template <int N>
+void decimate(const cv::Mat& src, cv::Mat& dst, int decimation_x, int decimation_y)
+{
+  dst.create(src.rows / decimation_y, src.cols / decimation_x, src.type());
+
+  int src_row_step = src.step[0] * decimation_y;
+  int src_pixel_step = N * decimation_x;
+  int dst_row_step = dst.step[0];
+
+  const uint8_t* src_row = src.ptr();
+  uint8_t* dst_row = dst.ptr();
+  
+  for (int y = 0; y < dst.rows; ++y)
+  {
+    const uint8_t* src_pixel = src_row;
+    uint8_t* dst_pixel = dst_row;
+    for (int x = 0; x < dst.cols; ++x)
+    {
+      memcpy(dst_pixel, src_pixel, N); // Should inline with small, fixed N
+      src_pixel += src_pixel_step;
+      dst_pixel += N;
+    }
+    src_row += src_row_step;
+    dst_row += dst_row_step;
+  }
+}
+
 void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
                                   const sensor_msgs::CameraInfoConstPtr& info_msg)
 {
@@ -80,10 +136,17 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
     boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);
     config = config_;
   }
-  
-  /// @todo Could support odd offsets for Bayer images, but it's a tad complicated
-  config.x_offset = (config.x_offset / 2) * 2;
-  config.y_offset = (config.y_offset / 2) * 2;
+  int decimation_x = config.decimation_x;
+  int decimation_y = config.decimation_y;
+
+  // Compute the ROI we'll actually use
+  bool is_bayer = sensor_msgs::image_encodings::isBayer(image_msg->encoding);
+  if (is_bayer)
+  {
+    /// @todo Could support odd offsets for Bayer images, but it's a tad complicated
+    config.x_offset &= ~0x1;
+    config.y_offset &= ~0x1;
+  }
 
   int max_width = image_msg->width - config.x_offset;
   int max_height = image_msg->height - config.y_offset;
@@ -95,10 +158,10 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
     height = max_height;
 
   // On no-op, just pass the messages along
-  if (config.decimation_x == 1  &&
-      config.decimation_y == 1  &&
-      config.x_offset == 0      &&
-      config.y_offset == 0      &&
+  if (decimation_x == 1               &&
+      decimation_y == 1               &&
+      config.x_offset == 0            &&
+      config.y_offset == 0            &&
       width  == (int)image_msg->width &&
       height == (int)image_msg->height)
   {
@@ -106,13 +169,100 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
     return;
   }
 
-  /// @todo Support 16-bit encodings
-  if (sensor_msgs::image_encodings::bitDepth(image_msg->encoding) != 8)
+  // Get a cv::Mat view of the source data
+  CvImageConstPtr source = toCvShare(image_msg);
+
+  // Except in Bayer downsampling case, output has same encoding as the input
+  CvImage output(source->header, source->encoding);
+  // Apply ROI (no copy, still a view of the image_msg data)
+  output.image = source->image(cv::Rect(config.x_offset, config.y_offset, width, height));
+
+  // Special case: when decimating Bayer images, we first do a 2x2 decimation to BGR
+  if (is_bayer && (decimation_x > 1 || decimation_y > 1))
   {
-    NODELET_ERROR_THROTTLE(2, "Only 8-bit encodings are currently supported");
-    return;
+    if (decimation_x % 2 != 0 || decimation_y % 2 != 0)
+    {
+      NODELET_ERROR_THROTTLE(2, "Odd decimation not supported for Bayer images");
+      return;
+    }
+
+    cv::Mat bgr;
+    int step = output.image.step1();
+    if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_RGGB8)
+      debayer2x2toBGR<uint8_t>(output.image, bgr, 0, 1, step, step + 1);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_BGGR8)
+      debayer2x2toBGR<uint8_t>(output.image, bgr, step + 1, 1, step, 0);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GBRG8)
+      debayer2x2toBGR<uint8_t>(output.image, bgr, step, 0, step + 1, 1);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG8)
+      debayer2x2toBGR<uint8_t>(output.image, bgr, 1, 0, step + 1, step);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_RGGB16)
+      debayer2x2toBGR<uint16_t>(output.image, bgr, 0, 1, step, step + 1);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_BGGR16)
+      debayer2x2toBGR<uint16_t>(output.image, bgr, step + 1, 1, step, 0);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GBRG16)
+      debayer2x2toBGR<uint16_t>(output.image, bgr, step, 0, step + 1, 1);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG16)
+      debayer2x2toBGR<uint16_t>(output.image, bgr, 1, 0, step + 1, step);
+    else
+    {
+      NODELET_ERROR_THROTTLE(2, "Unrecognized Bayer encoding '%s'", image_msg->encoding.c_str());
+      return;
+    }
+
+    output.image = bgr;
+    output.encoding = (bgr.depth() == CV_8U) ? sensor_msgs::image_encodings::BGR8
+                                             : sensor_msgs::image_encodings::BGR16;
+    decimation_x /= 2;
+    decimation_y /= 2;
   }
-  
+
+  // Apply further downsampling, if necessary
+  if (decimation_x > 1 || decimation_y > 1)
+  {
+    /// @todo cv::resize() with other sampling algorithms
+    
+    cv::Mat decimated;
+    int pixel_size = output.image.elemSize();
+    switch (pixel_size)
+    {
+      // Currently support up through 4-channel float
+      case 1:
+        decimate<1>(output.image, decimated, decimation_x, decimation_y);
+        break;
+      case 2:
+        decimate<2>(output.image, decimated, decimation_x, decimation_y);
+        break;
+      case 3:
+        decimate<3>(output.image, decimated, decimation_x, decimation_y);
+        break;
+      case 4:
+        decimate<4>(output.image, decimated, decimation_x, decimation_y);
+        break;
+      case 6:
+        decimate<6>(output.image, decimated, decimation_x, decimation_y);
+        break;
+      case 8:
+        decimate<8>(output.image, decimated, decimation_x, decimation_y);
+        break;
+      case 12:
+        decimate<12>(output.image, decimated, decimation_x, decimation_y);
+        break;
+      case 16:
+        decimate<16>(output.image, decimated, decimation_x, decimation_y);
+        break;
+      default:
+        NODELET_ERROR_THROTTLE(2, "Unsupported pixel size, %d bytes", pixel_size);
+        return;
+    }
+
+    output.image = decimated;
+  }
+
+  // Create output Image message
+  /// @todo Could save copies by allocating this above and having output.image alias it
+  sensor_msgs::ImagePtr out_image = output.toImageMsg();
+
   // Create updated CameraInfo message
   sensor_msgs::CameraInfoPtr out_info = boost::make_shared<sensor_msgs::CameraInfo>(*info_msg);
   int binning_x = std::max((int)info_msg->binning_x, 1);
@@ -126,180 +276,7 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   // If no ROI specified, leave do_rectify as-is. If ROI specified, set do_rectify = true.
   if (width != (int)image_msg->width || height != (int)image_msg->height)
     out_info->roi.do_rectify = true;
-
-  // Create new image message
-  sensor_msgs::ImagePtr out_image = boost::make_shared<sensor_msgs::Image>();
-  out_image->header = image_msg->header;
-  out_image->height = height / config.decimation_y;
-  out_image->width  = width  / config.decimation_x;
-  // Don't know encoding, step, or data size yet
-
-  if (config.decimation_x == 1 && config.decimation_y == 1)
-  {
-    // Crop only, preserving original encoding
-    int num_channels = sensor_msgs::image_encodings::numChannels(image_msg->encoding);
-    out_image->encoding = image_msg->encoding;
-    out_image->step = out_image->width * num_channels;
-    out_image->data.resize(out_image->height * out_image->step);
-
-    const uint8_t* input_buffer = &image_msg->data[config.y_offset*image_msg->step + config.x_offset*num_channels];
-    uint8_t* output_buffer = &out_image->data[0];
-    for (int y = 0; y < (int)out_image->height; ++y)
-    {
-      memcpy(output_buffer, input_buffer, out_image->step);
-      input_buffer += image_msg->step;
-      output_buffer += out_image->step;
-    }
-  }
-  else if (sensor_msgs::image_encodings::isMono(image_msg->encoding))
-  {
-    // Output is also monochrome
-    out_image->encoding = sensor_msgs::image_encodings::MONO8;
-    out_image->step = out_image->width;
-    out_image->data.resize(out_image->height * out_image->step);
-
-    // Hit only the pixel groups we need
-    int input_step = config.decimation_y * image_msg->step;
-    int input_skip = config.decimation_x;
-    const uint8_t* input_row = &image_msg->data[config.y_offset*image_msg->step + config.x_offset];
-    uint8_t* output_buffer = &out_image->data[0];
-
-    // Downsample
-    for (int y = 0; y < (int)out_image->height; ++y, input_row += input_step)
-    {
-      const uint8_t* input_buffer = input_row;
-      for (int x = 0; x < (int)out_image->width; ++x, input_buffer += input_skip, ++output_buffer)
-        *output_buffer = *input_buffer;
-    }
-  }
-  else
-  {
-    // Output is color
-    out_image->encoding = sensor_msgs::image_encodings::BGR8;
-    out_image->step     = out_image->width * 3;
-    out_image->data.resize(out_image->height * out_image->step);
-
-    if (sensor_msgs::image_encodings::isBayer(image_msg->encoding))
-    {
-      if (config.decimation_x % 2 != 0 || config.decimation_y % 2 != 0)
-      {
-        NODELET_ERROR_THROTTLE(2, "Odd decimation not supported for Bayer images");
-        return;
-      }
-      
-      // Compute offsets to color elements
-      int R, G1, G2, B;
-      if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_RGGB8)
-      {
-        R  = 0;
-        G1 = 1;
-        G2 = image_msg->step;
-        B  = image_msg->step + 1;
-      }
-      else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_BGGR8)
-      {
-        B  = 0;
-        G1 = 1;
-        G2 = image_msg->step;
-        R  = image_msg->step + 1;
-      }
-      else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GBRG8)
-      {
-        G1 = 0;
-        B  = 1;
-        R  = image_msg->step;
-        G2 = image_msg->step + 1;
-      }
-      else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG8)
-      {
-        G1 = 0;
-        R  = 1;
-        B  = image_msg->step;
-        G2 = image_msg->step + 1;
-      }
-      else
-      {
-        NODELET_ERROR_THROTTLE(2, "Unrecognized Bayer encoding '%s'", image_msg->encoding.c_str());
-        return;
-      }
-
-      // Hit only the pixel groups we need
-      int input_step = config.decimation_y * image_msg->step;
-      int input_skip = config.decimation_x;
-      const uint8_t* input_row = &image_msg->data[config.y_offset*image_msg->step + config.x_offset];
-      uint8_t* output_buffer = &out_image->data[0];
-
-      // Downsample and debayer at once
-      for (int y = 0; y < (int)out_image->height; ++y, input_row += input_step)
-      {
-        const uint8_t* input_buffer = input_row;
-        for (int x = 0; x < (int)out_image->width; ++x, input_buffer += input_skip, output_buffer += 3)
-        {
-          output_buffer[0] = input_buffer[B];
-          output_buffer[1] = (input_buffer[G1] + input_buffer[G2]) / 2;
-          output_buffer[2] = input_buffer[R];
-        }
-      }
-    }
-    else
-    {
-      // Support RGB-type encodings
-      int R, G, B, channels;
-      if (image_msg->encoding == sensor_msgs::image_encodings::BGR8)
-      {
-        B = 0;
-        G = 1;
-        R = 2;
-        channels = 3;
-      }
-      else if (image_msg->encoding == sensor_msgs::image_encodings::RGB8)
-      {
-        R = 0;
-        G = 1;
-        B = 2;
-        channels = 3;
-      }
-      else if (image_msg->encoding == sensor_msgs::image_encodings::BGRA8)
-      {
-        B = 0;
-        G = 1;
-        R = 2;
-        channels = 4;
-      }
-      else if (image_msg->encoding == sensor_msgs::image_encodings::RGBA8)
-      {
-        R = 0;
-        G = 1;
-        B = 2;
-        channels = 4;
-      }
-      else
-      {
-        NODELET_ERROR_THROTTLE(2, "Unsupported encoding '%s'", image_msg->encoding.c_str());
-        return;
-      }
-
-      // Hit only the pixel groups we need
-      int input_step = config.decimation_y * image_msg->step;
-      int input_skip = config.decimation_x * channels;
-      const uint8_t* input_row = &image_msg->data[config.y_offset*image_msg->step + config.x_offset*channels];
-      uint8_t* output_buffer = &out_image->data[0];
-
-      // Downsample
-      for (int y = 0; y < (int)out_image->height; ++y, input_row += input_step)
-      {
-        const uint8_t* input_buffer = input_row;
-        for (int x = 0; x < (int)out_image->width; ++x, input_buffer += input_skip, output_buffer += 3)
-        {
-          output_buffer[0] = input_buffer[B];
-          output_buffer[1] = input_buffer[G];
-          output_buffer[2] = input_buffer[R];
-        }
-      }
-
-    }
-  }
-
+  
   pub_.publish(out_image, out_info);
 }
 
