@@ -5,6 +5,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <cv_bridge/cv_bridge.h>
 #include <image_proc/CropDecimateConfig.h>
+#include <opencv2/imgproc/imgproc.hpp>
 
 namespace image_proc {
 
@@ -223,40 +224,49 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   // Apply further downsampling, if necessary
   if (decimation_x > 1 || decimation_y > 1)
   {
-    /// @todo cv::resize() with other sampling algorithms
-    
     cv::Mat decimated;
-    int pixel_size = output.image.elemSize();
-    switch (pixel_size)
+
+    if (config.interpolation == image_proc::CropDecimate_NN)
     {
-      // Currently support up through 4-channel float
-      case 1:
-        decimate<1>(output.image, decimated, decimation_x, decimation_y);
-        break;
-      case 2:
-        decimate<2>(output.image, decimated, decimation_x, decimation_y);
-        break;
-      case 3:
-        decimate<3>(output.image, decimated, decimation_x, decimation_y);
-        break;
-      case 4:
-        decimate<4>(output.image, decimated, decimation_x, decimation_y);
-        break;
-      case 6:
-        decimate<6>(output.image, decimated, decimation_x, decimation_y);
-        break;
-      case 8:
-        decimate<8>(output.image, decimated, decimation_x, decimation_y);
-        break;
-      case 12:
-        decimate<12>(output.image, decimated, decimation_x, decimation_y);
-        break;
-      case 16:
-        decimate<16>(output.image, decimated, decimation_x, decimation_y);
-        break;
-      default:
-        NODELET_ERROR_THROTTLE(2, "Unsupported pixel size, %d bytes", pixel_size);
-        return;
+      // Use optimized method instead of OpenCV's more general NN resize
+      int pixel_size = output.image.elemSize();
+      switch (pixel_size)
+      {
+        // Currently support up through 4-channel float
+        case 1:
+          decimate<1>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 2:
+          decimate<2>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 3:
+          decimate<3>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 4:
+          decimate<4>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 6:
+          decimate<6>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 8:
+          decimate<8>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 12:
+          decimate<12>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 16:
+          decimate<16>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        default:
+          NODELET_ERROR_THROTTLE(2, "Unsupported pixel size, %d bytes", pixel_size);
+          return;
+      }
+    }
+    else
+    {
+      // Linear, cubic, area, ...
+      cv::Size size(output.image.cols / decimation_x, output.image.rows / decimation_y);
+      cv::resize(output.image, decimated, size, 0.0, 0.0, config.interpolation);
     }
 
     output.image = decimated;
