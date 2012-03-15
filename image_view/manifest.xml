@@ -17,7 +17,6 @@
   <depend package="cv_bridge"/>
   <depend package="image_transport"/>
   <depend package="nodelet" />
-  <depend package="opencv2"/>
   <depend package="roscpp"/>
   <depend package="sensor_msgs"/>
   <depend package="stereo_msgs"/>

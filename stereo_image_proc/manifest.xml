@@ -15,7 +15,6 @@
   <depend package="image_proc"/>
   <depend package="message_filters"/>
   <depend package="nodelet"/>
-  <depend package="opencv2"/>
   <depend package="roscpp"/>
   <depend package="sensor_msgs"/>
   <depend package="stereo_msgs"/>
