@@ -1,7 +1,8 @@
 <stack>
   <description brief="Pipeline for processing monocular and stereo images">
 
-    image_pipeline fills the gap between getting raw images from a camera driver and higher-level vision processing.
+    image_pipeline fills the gap between getting raw images from a camera
+    driver and higher-level vision processing.
 
   </description>
   <author>Maintained by Patrick Mihelich/mihelich@willowgarage.com</author>
@@ -9,7 +10,7 @@
   <review status="Doc reviewed" notes="Jan 18, 2010"/>
   <url>http://ros.org/wiki/image_pipeline</url>
   <depend stack="common_msgs" /> <!-- sensor_msgs, geometry_msgs, stereo_msgs -->
-  <depend stack="driver_common" /> <!-- dynamic_reconfigure -->
+  <depend stack="dynamic_reconfigure" /> <!-- dynamic_reconfigure -->
   <depend stack="geometry" /> <!-- tf -->
   <depend stack="image_common" /> <!-- image_transport, camera_calibration_parsers -->
   <depend stack="nodelet_core" /> <!-- nodelet -->
