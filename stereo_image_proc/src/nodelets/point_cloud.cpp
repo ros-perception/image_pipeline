@@ -102,7 +102,8 @@ void PointCloudNodelet::connectCb()
   {
     ros::NodeHandle &nh = getNodeHandle();
     // Queue size 1 should be OK; the one that matters is the synchronizer queue size.
-    sub_l_image_  .subscribe(*it_, "left/image_rect_color", 1);
+    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
+    sub_l_image_  .subscribe(*it_, "left/image_rect_color", 1, hints);
     sub_l_info_   .subscribe(nh,   "left/camera_info", 1);
     sub_r_info_   .subscribe(nh,   "right/camera_info", 1);
     sub_disparity_.subscribe(nh,   "disparity", 1);

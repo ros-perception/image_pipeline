@@ -116,7 +116,8 @@ void ImageNodelet::onInit()
   startWindowThread();
 
   image_transport::ImageTransport it(nh);
-  sub_ = it.subscribe(topic, 1, &ImageNodelet::imageCb, this, transport);
+  image_transport::TransportHints hints(transport, ros::TransportHints(), getPrivateNodeHandle());
+  sub_ = it.subscribe(topic, 1, &ImageNodelet::imageCb, this, hints);
 }
 
 void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
