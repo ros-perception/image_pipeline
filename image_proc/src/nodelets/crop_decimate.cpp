@@ -70,7 +70,10 @@ void CropDecimateNodelet::connectCb()
   if (pub_.getNumSubscribers() == 0)
     sub_.shutdown();
   else if (!sub_)
-    sub_ = it_in_->subscribeCamera("image_raw", queue_size_, &CropDecimateNodelet::imageCb, this);
+  {
+    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
+    sub_ = it_in_->subscribeCamera("image_raw", queue_size_, &CropDecimateNodelet::imageCb, this, hints);
+  }
 }
 
 template <typename T>

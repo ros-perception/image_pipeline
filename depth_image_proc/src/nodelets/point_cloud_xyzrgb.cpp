@@ -99,8 +99,9 @@ void PointCloudXyzrgbNodelet::connectCb()
   }
   else if (!sub_depth_.getSubscriber())
   {
-    sub_depth_.subscribe(*depth_it_, "image_rect",       1);
-    sub_rgb_  .subscribe(*rgb_it_,   "image_rect_color", 1);
+    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
+    sub_depth_.subscribe(*depth_it_, "image_rect",       1, hints);
+    sub_rgb_  .subscribe(*rgb_it_,   "image_rect_color", 1, hints);
     sub_info_ .subscribe(*rgb_nh_,   "camera_info",      1);
   }
 }

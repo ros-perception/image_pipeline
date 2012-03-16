@@ -89,7 +89,8 @@ void RegisterNodelet::connectCb()
   }
   else if (!sub_depth_image_.getSubscriber())
   {
-    sub_depth_image_.subscribe(*it_depth_, "image_rect",  1);
+    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
+    sub_depth_image_.subscribe(*it_depth_, "image_rect",  1, hints);
     sub_depth_info_ .subscribe(*nh_depth_, "camera_info", 1);
     sub_rgb_info_   .subscribe(*nh_rgb_,   "camera_info", 1);
   }

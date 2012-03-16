@@ -119,9 +119,10 @@ void DisparityNodelet::connectCb()
     ros::NodeHandle &nh = getNodeHandle();
     // Queue size 1 should be OK; the one that matters is the synchronizer queue size.
     /// @todo Allow remapping left, right?
-    sub_l_image_.subscribe(*it_, "left/image_rect", 1);
+    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
+    sub_l_image_.subscribe(*it_, "left/image_rect", 1, hints);
     sub_l_info_ .subscribe(nh,   "left/camera_info", 1);
-    sub_r_image_.subscribe(*it_, "right/image_rect", 1);
+    sub_r_image_.subscribe(*it_, "right/image_rect", 1, hints);
     sub_r_info_ .subscribe(nh,   "right/camera_info", 1);
   }
 }
