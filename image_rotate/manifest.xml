@@ -24,6 +24,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/image_rotate</url>
 
+  <rosdep name="opencv2"/>
   <depend package="tf"/>
   <depend package="roscpp"/>
   <depend package="dynamic_reconfigure"/>
