@@ -17,7 +17,6 @@
     <nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
 
-  <rosdep name="opencv2"/>
   <depend package="dynamic_reconfigure"/>
   <depend package="image_geometry"/>
   <depend package="image_transport"/>

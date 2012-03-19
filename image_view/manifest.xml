@@ -13,7 +13,6 @@
     <nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
 
-  <rosdep name="opencv2"/>
   <depend package="camera_calibration_parsers"/>
   <depend package="cv_bridge"/>
   <depend package="image_transport"/>
