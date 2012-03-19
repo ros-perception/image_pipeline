@@ -9,6 +9,7 @@
   <license>BSD</license>
   <review status="Doc reviewed" notes="Jan 18, 2010"/>
   <url>http://www.ros.org/wiki/camera_calibration</url>
+  <rosdep name="opencv2"/>
   <depend package="cv_bridge"/>
   <depend package="image_geometry"/>
   <depend package="roscpp"/>

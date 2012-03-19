@@ -18,5 +18,4 @@
   <depend stack="ros" /> <!-- roslib -->
   <depend stack="ros_comm" /> <!-- std_msgs, rospy, std_srvs, roscpp, message_filters -->
   <depend stack="vision_opencv" /> <!-- image_geometry, cv_bridge -->
-
 </stack>
