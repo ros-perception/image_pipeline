@@ -1,4 +1,3 @@
-#include <ros/assert.h>
 #include "stereo_image_proc/processor.h"
 #include <sensor_msgs/image_encodings.h>
 #include <cmath>
