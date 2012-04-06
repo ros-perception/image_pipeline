@@ -49,7 +49,7 @@ import functools
 import cv
 import cv2
 
-from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, ChessboardInfo
+from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, ChessboardInfo, Patterns
 from std_msgs.msg import String
 from std_srvs.srv import Empty
 
@@ -69,7 +69,7 @@ class ConsumerThread(threading.Thread):
 
 
 class CalibrationNode:
-    def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0):
+    def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0, pattern=Patterns.Chessboard):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -86,6 +86,7 @@ class CalibrationNode:
 
         self._boards = boards
         self._calib_flags = flags
+        self._pattern = pattern
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = synchronizer([lsub, rsub], 4)
@@ -127,7 +128,7 @@ class CalibrationNode:
 
     def handle_monocular(self, msg):
         if self.c == None:
-            self.c = MonoCalibrator(self._boards, self._calib_flags)
+            self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern)
 
         # This should just call the MonoCalibrator
         drawable = self.c.handle_msg(msg)
@@ -136,7 +137,7 @@ class CalibrationNode:
 
     def handle_stereo(self, msg):
         if self.c == None:
-            self.c = StereoCalibrator(self._boards, self._calib_flags)
+            self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern)
             
         drawable = self.c.handle_msg(msg)
         self.displaywidth = drawable.lscrib.cols + drawable.rscrib.cols
@@ -325,9 +326,9 @@ def main():
                           description=None)
     group = OptionGroup(parser, "Chessboard Options",
                         "You must specify one or more chessboards as pairs of --size and --square options.")
-    #group.add_option("--pattern",
-    #                 type="string", default="chessboard",
-    #                 help="calibration pattern to detect - 'chessboard' or 'circles'")
+    group.add_option("-p", "--pattern",
+                     type="string", default="chessboard",
+                     help="calibration pattern to detect - 'chessboard', 'circles', 'acircles'")
     group.add_option("-s", "--size",
                      action="append", default=[],
                      help="chessboard size as NxM, counting interior corners (e.g. a standard chessboard is 7x7)")
@@ -434,8 +435,16 @@ def main():
     if (num_ks < 1):
         calib_flags |= cv2.CALIB_FIX_K1
 
+    pattern = Patterns.Chessboard
+    if options.pattern == 'circles':
+        pattern = Patterns.Circles
+    elif options.pattern == 'acircles':
+        pattern = Patterns.ACircles
+    elif options.pattern != 'chessboard':
+        print 'Unrecognized pattern %s, defaulting to chessboard' % options.pattern
+
     rospy.init_node('cameracalibrator')
-    node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags)
+    node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, pattern)
     rospy.spin()
 
 if __name__ == "__main__":

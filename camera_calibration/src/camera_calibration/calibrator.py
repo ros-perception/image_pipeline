@@ -49,8 +49,8 @@ import StringIO
 import time
 
 # Supported calibration patterns
-#class Patterns:
-#    Chessboard, CirclesGrid = range(2)
+class Patterns:
+    Chessboard, Circles, ACircles = range(3)
 
 class CalibrationException(Exception):
     pass
@@ -60,6 +60,7 @@ def cvmat_iterator(cvmat):
         for j in range(cvmat.cols):
             yield cvmat[i,j]
 
+# TODO: Make pattern per-board?
 class ChessboardInfo(object):
     def __init__(self, n_cols = 0, n_rows = 0, dim = 0.0):
         self.n_cols = n_cols
@@ -172,10 +173,36 @@ def _get_corners(img, board, refine = True):
                 index = row*board.n_rows + col
                 min_distance = min(min_distance, _pdist(corners[index], corners[index + board.n_cols]))
         radius = int(math.ceil(min_distance * 0.5))
-        corners = cv.FindCornerSubPix(mono, corners, (radius,radius), (-1,-1), ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
+        corners = cv.FindCornerSubPix(mono, corners, (radius,radius), (-1,-1),
+                                      ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
         
     return (ok, corners)
 
+def _get_circles(img, board, pattern):
+    """
+    Get circle centers for a symmetric or asymmetric grid
+    """
+    w, h = cv.GetSize(img)
+    mono = cv.CreateMat(h, w, cv.CV_8UC1)
+    cv.CvtColor(img, mono, cv.CV_BGR2GRAY)
+
+    flag = cv2.CALIB_CB_SYMMETRIC_GRID
+    if pattern == Patterns.ACircles:
+        flag = cv2.CALIB_CB_ASYMMETRIC_GRID
+    mono_arr = numpy.array(mono)
+    (ok, corners) = cv2.findCirclesGrid(mono_arr, (board.n_cols, board.n_rows), flags=flag)
+
+    # In symmetric case, findCirclesGrid does not detect the target if it's turned sideways. So we try
+    # again with dimensions swapped - not so efficient.
+    # TODO Better to add as second board? Corner ordering will change.
+    if not ok and pattern == Patterns.Circles:
+        (ok, corners) = cv2.findCirclesGrid(mono_arr, (board.n_rows, board.n_cols), flags=flag)
+
+    # For some reason findCirclesGrid returns centers as [[x y]] instead of (x y) like FindChessboardCorners
+    if corners is not None:
+        corners = [(x, y) for [[x, y]] in corners]
+
+    return (ok, corners)
 
 def _get_total_num_pts(boards):
     rv = 0
@@ -189,12 +216,22 @@ class Calibrator:
     """
     Base class for calibration system
     """
-    def __init__(self, boards, flags=0):
-        # Make sure n_cols > n_rows to agree with OpenCV CB detector output
-        self._boards = [ChessboardInfo(max(i.n_cols, i.n_rows), min(i.n_cols, i.n_rows), i.dim) for i in boards]
+    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard):
+        # Ordering the dimensions for the different detectors is actually a minefield...
+        if pattern == Patterns.Chessboard:
+            # Make sure n_cols > n_rows to agree with OpenCV CB detector output
+            self._boards = [ChessboardInfo(max(i.n_cols, i.n_rows), min(i.n_cols, i.n_rows), i.dim) for i in boards]
+        elif pattern == Patterns.ACircles:
+            # 7x4 and 4x7 are actually different patterns. Assume square-ish pattern, so n_rows > n_cols.
+            self._boards = [ChessboardInfo(min(i.n_cols, i.n_rows), max(i.n_cols, i.n_rows), i.dim) for i in boards]
+        elif pattern == Patterns.Circles:
+            # We end up having to check both ways anyway
+            self._boards = boards
+
         # Set to true after we perform calibration
         self.calibrated = False
         self.calib_flags = flags
+        self.pattern = pattern
         self.br = cv_bridge.CvBridge()
 
         # self.db is list of (parameters, image) samples for use in calibration. parameters has form
@@ -338,7 +375,10 @@ class Calibrator:
         """
 
         for b in self._boards:
-            (ok, corners) = _get_corners(img, b, refine)
+            if self.pattern == Patterns.Chessboard:
+                (ok, corners) = _get_corners(img, b, refine)
+            else:
+                (ok, corners) = _get_circles(img, b, self.pattern)
             if ok:
                 return (ok, corners, b)
         return (False, None, None)
@@ -366,25 +406,37 @@ class Calibrator:
         x_scale = float(width) / scrib.cols
         y_scale = float(height) / scrib.rows
 
-        # Detect checkerboard
-        (ok, downsampled_corners, board) = self.get_corners(scrib, refine = True)
+        if self.pattern == Patterns.Chessboard:
+            # Detect checkerboard
+            (ok, downsampled_corners, board) = self.get_corners(scrib, refine = True)
 
-        # Scale corners back to full size image
-        corners = None
-        if ok:
-            if scale > 1.0:
-                # Refine up-scaled corners in the original full-res image
-                # TODO Does this really make a difference in practice?
-                corners_unrefined = [(c[0]*x_scale, c[1]*y_scale) for c in downsampled_corners]
-                # TODO It's silly that this conversion is needed, this function should just work
-                #      on the one-channel mono image
-                mono = cv.CreateMat(rgb.rows, rgb.cols, cv.CV_8UC1)
-                cv.CvtColor(rgb, mono, cv.CV_BGR2GRAY)
-                radius = int(math.ceil(scale))
-                corners = cv.FindCornerSubPix(mono, corners_unrefined, (radius,radius), (-1,-1),
-                                              ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
-            else:
-                corners = downsampled_corners
+            # Scale corners back to full size image
+            corners = None
+            if ok:
+                if scale > 1.0:
+                    # Refine up-scaled corners in the original full-res image
+                    # TODO Does this really make a difference in practice?
+                    corners_unrefined = [(c[0]*x_scale, c[1]*y_scale) for c in downsampled_corners]
+                    # TODO It's silly that this conversion is needed, this function should just work
+                    #      on the one-channel mono image
+                    mono = cv.CreateMat(rgb.rows, rgb.cols, cv.CV_8UC1)
+                    cv.CvtColor(rgb, mono, cv.CV_BGR2GRAY)
+                    radius = int(math.ceil(scale))
+                    corners = cv.FindCornerSubPix(mono, corners_unrefined, (radius,radius), (-1,-1),
+                                                  ( cv.CV_TERMCRIT_EPS+cv.CV_TERMCRIT_ITER, 30, 0.1 ))
+                else:
+                    corners = downsampled_corners
+        else:
+            # Circle grid detection is fast even on large images
+            (ok, corners, board) = self.get_corners(rgb)
+            # Scale corners to downsampled image for display
+            downsampled_corners = None
+            if ok:
+                print corners
+                if scale > 1.0:
+                    downsampled_corners = [(c[0]/x_scale, c[1]/y_scale) for c in corners]
+                else:
+                    downsampled_corners = corners
 
         return (scrib, corners, downsampled_corners, board, (x_scale, y_scale))
 
