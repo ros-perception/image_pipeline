@@ -10,6 +10,8 @@
 #include <sensor_msgs/image_encodings.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include "depth_traits.h"
+#include <cv_bridge/cv_bridge.h>
+#include <opencv2/imgproc/imgproc.hpp>
 
 namespace depth_image_proc {
 
@@ -107,23 +109,59 @@ void PointCloudXyzrgbNodelet::connectCb()
 }
 
 void PointCloudXyzrgbNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_msg,
-                                      const sensor_msgs::ImageConstPtr& rgb_msg,
+                                      const sensor_msgs::ImageConstPtr& rgb_msg_in,
                                       const sensor_msgs::CameraInfoConstPtr& info_msg)
 {
   // Check for bad inputs
-  if (depth_msg->header.frame_id != rgb_msg->header.frame_id)
+  if (depth_msg->header.frame_id != rgb_msg_in->header.frame_id)
   {
     NODELET_ERROR_THROTTLE(5, "Depth image frame id [%s] doesn't match RGB image frame id [%s]",
-                           depth_msg->header.frame_id.c_str(), rgb_msg->header.frame_id.c_str());
+                           depth_msg->header.frame_id.c_str(), rgb_msg_in->header.frame_id.c_str());
     return;
   }
 
+  // Update camera model
+  model_.fromCameraInfo(info_msg);
+
+  // Check if the input image has to be resized
+  sensor_msgs::ImageConstPtr rgb_msg = rgb_msg_in;
   if (depth_msg->width != rgb_msg->width || depth_msg->height != rgb_msg->height)
   {
-    NODELET_ERROR_THROTTLE(5, "Depth resolution (%ux%u) does not match RGB resolution (%ux%u)",
-                           depth_msg->width, depth_msg->height, rgb_msg->width, rgb_msg->height);
-    return;
-  }
+    sensor_msgs::CameraInfo info_msg_tmp = *info_msg;
+    info_msg_tmp.width = depth_msg->width;
+    info_msg_tmp.height = depth_msg->height;
+    float ratio = float(depth_msg->width)/float(rgb_msg->width);
+    info_msg_tmp.K[0] *= ratio;
+    info_msg_tmp.K[2] *= ratio;
+    info_msg_tmp.K[4] *= ratio;
+    info_msg_tmp.K[5] *= ratio;
+    info_msg_tmp.P[0] *= ratio;
+    info_msg_tmp.P[2] *= ratio;
+    info_msg_tmp.P[5] *= ratio;
+    info_msg_tmp.P[6] *= ratio;
+    model_.fromCameraInfo(info_msg_tmp);
+
+    cv_bridge::CvImageConstPtr cv_ptr;
+    try
+    {
+      cv_ptr = cv_bridge::toCvShare(rgb_msg, rgb_msg->encoding);
+    }
+    catch (cv_bridge::Exception& e)
+    {
+      ROS_ERROR("cv_bridge exception: %s", e.what());
+      return;
+    }
+    cv_bridge::CvImage cv_rsz;
+    cv_rsz.header = cv_ptr->header;
+    cv_rsz.encoding = cv_ptr->encoding;
+    cv::resize(cv_ptr->image.rowRange(0,depth_msg->height/ratio), cv_rsz.image, cv::Size(depth_msg->width, depth_msg->height));
+    rgb_msg = cv_rsz.toImageMsg();
+
+    //NODELET_ERROR_THROTTLE(5, "Depth resolution (%ux%u) does not match RGB resolution (%ux%u)",
+    //                       depth_msg->width, depth_msg->height, rgb_msg->width, rgb_msg->height);
+    //return;
+  } else
+    rgb_msg = rgb_msg_in;
 
   // Supported color encodings: RGB8, BGR8, MONO8
   int red_offset, green_offset, blue_offset, color_step;
@@ -161,9 +199,6 @@ void PointCloudXyzrgbNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_ms
   cloud_msg->width  = depth_msg->width;
   cloud_msg->is_dense = false;
   cloud_msg->points.resize (cloud_msg->height * cloud_msg->width);
-
-  // Update camera model
-  model_.fromCameraInfo(info_msg);
 
   if (depth_msg->encoding == enc::TYPE_16UC1)
   {
