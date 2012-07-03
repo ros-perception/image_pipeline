@@ -5,7 +5,7 @@
     driver and higher-level vision processing.
 
   </description>
-  <author>Maintained by Patrick Mihelich/mihelich@willowgarage.com</author>
+  <author>Maintained by Vincent Rabaud vrabaud@willowgarage.com</author>
   <license>BSD</license>  
   <review status="Doc reviewed" notes="Jan 18, 2010"/>
   <url>http://ros.org/wiki/image_pipeline</url>
