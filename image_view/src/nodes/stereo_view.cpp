@@ -38,7 +38,7 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 #include <stereo_msgs/DisparityImage.h>
-#include <cv_bridge/CvBridge.h>
+#include <cv_bridge/cv_bridge.h>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
@@ -348,7 +348,6 @@ private:
   
   ImageConstPtr last_left_msg_, last_right_msg_;
   cv::Mat last_left_image_, last_right_image_;
-  CvBridge left_bridge_, right_bridge_;
   cv::Mat_<cv::Vec3b> disparity_color_;
   boost::mutex image_mutex_;
   
@@ -452,10 +451,10 @@ public:
     last_left_msg_ = left;
     last_right_msg_ = right;
     try {
-      last_left_image_ = left_bridge_.imgMsgToCv(left, "bgr8");
-      last_right_image_ = right_bridge_.imgMsgToCv(right, "bgr8");
+      last_left_image_ = cv_bridge::toCvShare(left, "bgr8")->image;
+      last_right_image_ = cv_bridge::toCvShare(right, "bgr8")->image;
     }
-    catch (CvBridgeException& e) {
+    catch (cv_bridge::Exception& e) {
       ROS_ERROR("Unable to convert one of '%s' or '%s' to 'bgr8'",
                 left->encoding.c_str(), right->encoding.c_str());
     }

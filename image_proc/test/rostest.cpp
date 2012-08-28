@@ -1,9 +1,7 @@
 #include <ros/ros.h>
 #include <gtest/gtest.h>
 #include <camera_calibration_parsers/parse.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-#include <cv_bridge/CvBridge.h>
+#include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 
 #include <boost/foreach.hpp>
