@@ -1,23 +1,29 @@
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/highgui/highgui.hpp>
 
 #include <ros/ros.h>
-#include <cv_bridge/CvBridge.h>
+#include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <camera_calibration_parsers/parse.h>
 #include <boost/format.hpp>
 
-sensor_msgs::CvBridge g_bridge;
 int g_count = 0;
 boost::format g_format;
 
-void callback(const sensor_msgs::ImageConstPtr& image, const sensor_msgs::CameraInfoConstPtr& info)
+void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr& info)
 {
-  if (g_bridge.fromImage(*image, "bgr8")) {
-    IplImage *image = g_bridge.toIpl();
-    if (image) {
+  cv::Mat image;
+  try
+  {
+    image = cv_bridge::toCvShare(image_msg, "bgr8")->image;
+  } catch(cv_bridge::Exception)
+  {
+    ROS_ERROR("Unable to convert %s image to bgr8", image_msg->encoding.c_str());
+    return;
+  }
+  
+    if (!image.empty()) {
       std::string filename = (g_format % g_count % "jpg").str();
-      cvSaveImage(filename.c_str(), image);
+      cv::imwrite(filename, image);
       ROS_INFO("Saved image %s", filename.c_str());
       filename = (g_format % g_count % "ini").str();
       camera_calibration_parsers::writeCalibration(filename, "camera", *info);
@@ -26,9 +32,6 @@ void callback(const sensor_msgs::ImageConstPtr& image, const sensor_msgs::Camera
     } else {
       ROS_WARN("Couldn't save image, no data!");
     }
-  }
-  else
-    ROS_ERROR("Unable to convert %s image to bgr8", image->encoding.c_str());
 }
 
 int main(int argc, char** argv)
