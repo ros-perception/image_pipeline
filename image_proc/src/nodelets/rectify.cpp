@@ -2,7 +2,7 @@
 #include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
 #include <image_geometry/pinhole_camera_model.h>
-#include <cv_bridge/CvBridge.h>
+#include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
 #include <image_proc/RectifyConfig.h>
 
@@ -93,19 +93,9 @@ void RectifyNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   // Update the camera model
   model_.fromCameraInfo(info_msg);
   
-  // Allocate new rectified image message
-  sensor_msgs::ImagePtr rect_msg = boost::make_shared<sensor_msgs::Image>();
-  rect_msg->header   = image_msg->header;
-  rect_msg->height   = image_msg->height;
-  rect_msg->width    = image_msg->width;
-  rect_msg->encoding = image_msg->encoding;
-  rect_msg->step     = image_msg->step;
-  rect_msg->data.resize(rect_msg->height * rect_msg->step);
-
   // Create cv::Mat views onto both buffers
-  sensor_msgs::CvBridge image_bridge, rect_bridge;
-  const cv::Mat image = image_bridge.imgMsgToCv(image_msg);
-  cv::Mat rect = rect_bridge.imgMsgToCv(rect_msg);
+  const cv::Mat image = cv_bridge::toCvShare(image_msg)->image;
+  cv::Mat rect;
 
   // Rectify and publish
   int interpolation;
@@ -114,6 +104,9 @@ void RectifyNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
     interpolation = config_.interpolation;
   }
   model_.rectifyImage(image, rect, interpolation);
+
+  // Allocate new rectified image message
+  sensor_msgs::ImagePtr rect_msg = cv_bridge::CvImage(image_msg->header, image_msg->encoding, rect).toImageMsg();
   pub_rect_.publish(rect_msg);
 }
 

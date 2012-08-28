@@ -4,7 +4,8 @@
 #include <image_rotate/ImageRotateConfig.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <image_transport/image_transport.h>
-#include <cv_bridge/CvBridge.h>
+#include <cv_bridge/cv_bridge.h>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <dynamic_reconfigure/server.h>
 #include <math.h>
 
@@ -19,8 +20,6 @@ class ImageRotater
   image_transport::Publisher img_pub_;
   image_transport::Subscriber img_sub_;
   image_transport::CameraSubscriber cam_sub_;
-
-  sensor_msgs::CvBridge bridge_;
 
   tf::Stamped<tf::Vector3> target_vector_;
   tf::Stamped<tf::Vector3> source_vector_;
@@ -142,8 +141,7 @@ class ImageRotater
     try
     {
       // Convert the image into something opencv can handle.
-      IplImage *in_image_ipl = bridge_.imgMsgToCv(msg, "passthrough");
-      cv::Mat in_image = in_image_ipl;
+      cv::Mat in_image = cv_bridge::toCvShare(msg, msg->encoding)->image;
 
       // Compute the output image size.
       int max_dim = in_image.cols > in_image.rows ? in_image.cols : in_image.rows;
@@ -167,9 +165,7 @@ class ImageRotater
       cv::warpAffine(in_image, out_image, rot_matrix, cv::Size(out_size, out_size));
 
       // Publish the image.
-      IplImage out_msg = out_image;
-      sensor_msgs::Image::Ptr out_img = bridge_.cvToImgMsg(&out_msg, msg->encoding);
-      out_img->header = msg->header;
+      sensor_msgs::Image::Ptr out_img = cv_bridge::CvImage(msg->header, msg->encoding, out_image).toImageMsg();
       out_img->header.frame_id = transform.child_frame_id_;
       img_pub_.publish(out_img);
     }

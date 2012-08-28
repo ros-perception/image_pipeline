@@ -32,12 +32,11 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/highgui/highgui.hpp>
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
-#include <cv_bridge/CvBridge.h>
+#include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 
 #include <boost/thread.hpp>
@@ -49,7 +48,6 @@ private:
   image_transport::Subscriber sub_;
 
   sensor_msgs::ImageConstPtr last_msg_;
-  sensor_msgs::CvBridge img_bridge_;
   boost::mutex image_mutex_;
 
   std::string window_name_;
@@ -101,20 +99,25 @@ public:
     if (msg->encoding.find("bayer") != std::string::npos)
       boost::const_pointer_cast<sensor_msgs::Image>(msg)->encoding = "mono8";
 
-    if (!img_bridge_.fromImage(*msg, "bgr8"))
+    cv::Mat image;
+    try
+    {
+      image = cv_bridge::toCvShare(msg, "bgr8")->image;
+    } catch(cv_bridge::Exception)
+    {
       ROS_ERROR("Unable to convert %s image to bgr8", msg->encoding.c_str());
+    }
 
     double delay = ros::Time::now().toSec()-_time;
     if(delay >= sec_per_frame_)
     {
       _time = ros::Time::now().toSec();
 
-      IplImage *image = img_bridge_.toIpl();
-      if (image) {
+      if (!image.empty()) {
         std::string filename = (filename_format_ % count_).str();
 
 #if !defined(_VIDEO)
-        cvSaveImage(filename.c_str(), image);
+        cv::imwrite(filename, image);
 #else
         if(!video_writer)
         {

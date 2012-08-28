@@ -2,7 +2,7 @@
 #include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
 
-#include <cv_bridge/CvBridge.h>
+#include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
 #include "window_thread.h"
 
@@ -36,7 +36,6 @@ namespace image_view {
 class ImageNodelet : public nodelet::Nodelet
 {
   image_transport::Subscriber sub_;
-  sensor_msgs::CvBridge img_bridge_;
 
   boost::mutex image_mutex_;
   sensor_msgs::ImageConstPtr last_msg_;
@@ -133,7 +132,7 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
   // We want to scale floating point images so that they display nicely
   else if(msg->encoding.find("F") != std::string::npos)
   {
-    cv::Mat float_image_bridge = img_bridge_.imgMsgToCv(msg, "passthrough");
+    cv::Mat float_image_bridge = cv_bridge::toCvShare(msg, msg->encoding)->image;
     cv::Mat_<float> float_image = float_image_bridge;
     float max_val = 0;
     for(int i = 0; i < float_image.rows; ++i)
@@ -154,11 +153,11 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
   {
     // Convert to OpenCV native BGR color
     try {
-      last_image_ = img_bridge_.imgMsgToCv(msg, "bgr8");
+      last_image_ = cv_bridge::toCvShare(msg, "bgr8")->image;
     }
-    catch (sensor_msgs::CvBridgeException& e) {
-      NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image to bgr8",
-                             msg->encoding.c_str());
+    catch (cv_bridge::Exception& e) {
+      NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image to bgr8: '%s'",
+                             msg->encoding.c_str(), e.what());
     }
   }
 

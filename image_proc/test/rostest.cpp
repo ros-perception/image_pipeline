@@ -1,9 +1,8 @@
 #include <ros/ros.h>
 #include <gtest/gtest.h>
 #include <camera_calibration_parsers/parse.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-#include <cv_bridge/CvBridge.h>
+#include <cv_bridge/cv_bridge.h>
+#include <opencv2/highgui/highgui.hpp>
 #include <image_transport/image_transport.h>
 
 #include <boost/foreach.hpp>
@@ -34,8 +33,8 @@ protected:
       throw "Must set parameter ~camera_info_file.";
 
     /// @todo Test variety of encodings for raw image (bayer, mono, color)
-    cv::Ptr<IplImage> img = cvLoadImage(raw_image_file.c_str(), 0);
-    raw_image = sensor_msgs::CvBridge::cvToImgMsg(img, "mono8");
+    cv::Mat img = cv::imread(raw_image_file, 0);
+    raw_image = cv_bridge::CvImage(std_msgs::Header(), "mono8", img).toImageMsg();
     std::string cam_name;
     if (!camera_calibration_parsers::readCalibration(cam_info_file, cam_name, cam_info))
       throw "Failed to read camera info file.";
