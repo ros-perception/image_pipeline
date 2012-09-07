@@ -13,15 +13,13 @@
 
   <build_depends>gtk2</build_depends>
   <build_depends>image_common</build_depends>
-  <build_depends>roscpp</build_depends>
-  <build_depends>sensor_msgs</build_depends>
-  <build_depends>tf</build_depends>  
+  <build_depends>roscpp_core</build_depends>
+  <build_depends>common_msgs</build_depends>
   <build_depends>vision_opencv</build_depends>  
 
   <depends>gtk2</depends>
   <depends>image_common</depends>
-  <depends>roscpp</depends>
-  <depends>sensor_msgs</depends>
-  <depends>tf</depends>
+  <depends>roscpp_core</depends>
+  <depends>common_msgs</depends>
   <depends>vision_opencv</depends>
 </stack>
