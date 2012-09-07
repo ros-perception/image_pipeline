@@ -1,33 +1,39 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+project(image_proc)
+catkin_project(image_proc)
 
-set(ROS_BUILD_TYPE RelWithDebInfo)
-
-rosbuild_init()
-
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-rosbuild_add_boost_directories()
+find_package(catkin REQUIRED image_geometry)
+include_directories(SYSTEM ${image_geometry_INCLUDE_DIRS})
+include_directories(include)
 
 # Dynamic reconfigure support
-rosbuild_find_ros_package(dynamic_reconfigure)
+if (FALSE)
+find_package(catkin REQUIRED dynamic_reconfigure)
 include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 gencfg()
+endif()
 
 # Nodelet library
-rosbuild_add_library(image_proc src/libimage_proc/processor.cpp
+if (FALSE)
+add_library(image_proc src/libimage_proc/processor.cpp
                                 src/nodelets/debayer.cpp
                                 src/nodelets/rectify.cpp
                                 src/nodelets/crop_decimate.cpp
                                 src/libimage_proc/advertisement_checker.cpp
                                 src/nodelets/edge_aware.cpp
 				src/nodelets/yuv422.cpp
-                    )
+)
+install(TARGETS image_proc
+        DESTINATION ${CATKIN_PROJECT_LIB_DESTINATION}
+)
 
 # Standalone node
-rosbuild_add_executable(image_proc_exe src/nodes/image_proc.cpp)
+add_executable(image_proc_exe src/nodes/image_proc.cpp)
 target_link_libraries(image_proc_exe image_proc)
 SET_TARGET_PROPERTIES(image_proc_exe PROPERTIES OUTPUT_NAME image_proc)
+install(TARGETS image_proc_exe
+        DESTINATION ${CATKIN_PROJECT_BIN_DESTINATION}
+)
+endif()
 
 # Tests
-rosbuild_add_executable(image_proc_rostest test/rostest.cpp)
-rosbuild_add_gtest_build_flags(image_proc_rostest)
+catkin_add_gtest(image_proc_rostest test/rostest.cpp)

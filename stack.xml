@@ -1,21 +1,27 @@
 <stack>
+  <name>image_pipeline</name>
+  <version>1.9.0</version>
   <description brief="Pipeline for processing monocular and stereo images">
-
     image_pipeline fills the gap between getting raw images from a camera
     driver and higher-level vision processing.
-
   </description>
-  <author>Maintained by Vincent Rabaud vrabaud@willowgarage.com</author>
-  <license>BSD</license>  
-  <review status="Doc reviewed" notes="Jan 18, 2010"/>
+  <author>Patrick Mihelich</author>
+  <maintainer mail="vrabaud@willowgarage.com">Vincent Rabaud</maintainer>
+  <license>BSD</license>
   <url>http://ros.org/wiki/image_pipeline</url>
-  <depend stack="common_msgs" /> <!-- sensor_msgs, geometry_msgs, stereo_msgs -->
-  <depend stack="dynamic_reconfigure" /> <!-- dynamic_reconfigure -->
-  <depend stack="geometry" /> <!-- tf -->
-  <depend stack="image_common" /> <!-- image_transport, camera_calibration_parsers -->
-  <depend stack="nodelet_core" /> <!-- nodelet -->
-  <depend stack="perception_pcl" /> <!-- pcl, pcl_ros -->
-  <depend stack="ros" /> <!-- roslib -->
-  <depend stack="ros_comm" /> <!-- std_msgs, rospy, std_srvs, roscpp, message_filters -->
-  <depend stack="vision_opencv" /> <!-- image_geometry, cv_bridge -->
+  <copyright>Willow Garage</copyright>
+
+  <build_depends>gtk2</build_depends>
+  <build_depends>image_common</build_depends>
+  <build_depends>roscpp</build_depends>
+  <build_depends>sensor_msgs</build_depends>
+  <build_depends>tf</build_depends>  
+  <build_depends>vision_opencv</build_depends>  
+
+  <depends>gtk2</depends>
+  <depends>image_common</depends>
+  <depends>roscpp</depends>
+  <depends>sensor_msgs</depends>
+  <depends>tf</depends>
+  <depends>vision_opencv</depends>
 </stack>
