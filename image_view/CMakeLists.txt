@@ -4,7 +4,7 @@ catkin_project(image_view)
 find_package(Boost COMPONENTS signals)
 find_package(GTK2)
 find_package(OpenCV)
-find_package(catkin REQUIRED camera_calibration_parsers cv_bridge image_transport rosconsole roscpp)
+find_package(catkin REQUIRED camera_calibration_parsers cv_bridge image_transport message_filters rosconsole roscpp)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
                            ${camera_calibration_parsers_INCLUDE_DIRS}
                            ${cv_bridge_INCLUDE_DIRS}
@@ -45,6 +45,7 @@ target_link_libraries(stereo_view ${Boost_LIBRARIES}
                                   ${cv_bridge_LIBRARIES}
                                   ${GTK_LIBRARIES}
                                   ${image_transport_LIBRARIES}
+                                  ${message_filters_LIBRARIES}
                                   ${OpenCV_LIBRARIES}
                                   ${rosconsole_LIBRARIES}
                                   ${roscpp_LIBRARIES}
@@ -66,9 +67,11 @@ target_link_libraries(image_saver ${camera_calibration_parsers_LIBRARIES}
                                   ${image_transport_LIBRARIES}
                                   ${OpenCV_LIBRARIES}
                                   ${rosconsole_LIBRARIES}
+                                  ${roscpp_LIBRARIES}
 )
 
+#TODO
 #install(TARGETS image_view_exe disparity_view stereo_view extract_images image_saver
-install(TARGETS stereo_view extract_images image_saver
+install(TARGETS extract_images image_saver stereo_view
         DESTINATION ${CATKIN_PROJECT_BIN_DESTINATION}
 )
