@@ -25,6 +25,9 @@ add_library(image_proc src/libimage_proc/processor.cpp
 install(TARGETS image_proc
         DESTINATION ${CATKIN_PROJECT_LIB_DESTINATION}
 )
+install(DIRECTORY include/
+        DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
+)
 
 # Standalone node
 add_executable(image_proc_exe src/nodes/image_proc.cpp)
