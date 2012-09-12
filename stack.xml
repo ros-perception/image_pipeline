@@ -1,6 +1,6 @@
 <stack>
   <name>image_pipeline</name>
-  <version>1.9.0</version>
+  <version>1.9.1</version>
   <description brief="Pipeline for processing monocular and stereo images">
     image_pipeline fills the gap between getting raw images from a camera
     driver and higher-level vision processing.
