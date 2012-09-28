@@ -1,9 +1,11 @@
+cmake_minimum_required(VERSION 2.8)
 project(image_rotate)
-catkin_project(image_rotate)
 
-return()
+find_package(catkin REQUIRED)
+catkin_package()
 
 find_package(catkin REQUIRED dynamic_reconfigure tf)
+return()
 include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 gencfg()
 
@@ -13,8 +15,8 @@ include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS}
                            ${tf_INCLUDE_DIRS}
 )
 
-add_executable(image_rotate src/node/image_rotate.cpp)
-target_link_libraries(image_rotate ${OpenCV_LIBRARIES})
-install(TARGETS image_rotate
-        DESTINATION ${CATKIN_PROJECT_BIN_DESTINATION}
+add_executable(${PROJECT_NAME} src/node/image_rotate.cpp)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
+install(TARGETS ${PROJECT_NAME}
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

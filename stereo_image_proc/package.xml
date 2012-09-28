@@ -1,0 +1,19 @@
+<package>
+  <name>stereo_image_proc</name>
+  <version>1.9.2</version>
+  <description>Stereo and single image rectification and disparity processing.</description>
+  <author>Patrick Mihelich</author>
+  <author>Kurt Konolige</author>
+  <author>Jeremy Leibs</author>
+  <maintainer email="vrabaud@willowgarage.com">Vincent Rabaud</maintainer>
+  <license>BSD</license>
+  <url>http://www.ros.org/wiki/stereo_image_proc</url>
+
+  <export>
+    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
+  </export>
+
+  <build_depend>dynamic_reconfigure</build_depend>
+
+  <depend>dynamic_reconfigure</depend>
+</package>

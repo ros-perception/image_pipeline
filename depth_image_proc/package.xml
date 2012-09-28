@@ -1,0 +1,23 @@
+<package>
+  <name>depth_image_proc</name>
+  <version>1.9.2</version>
+  <description brief="depth_image_proc">
+
+     Contains nodelets for processing depth images such as those
+     produced by OpenNI camera. Functions include creating disparity
+     images and point clouds, as well as registering (reprojecting)
+     a depth image into another camera frame.
+
+  </description>
+  <author>Patrick Mihelich</author>
+  <maintainer email="vrabaud@willowgarage.com">Vincent Rabaud</maintainer>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/depth_image_proc</url>
+
+  <export>
+    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
+  </export>
+
+  <build_depend>nodelet_core</build_depend>
+  <run_depend>nodelet_core</run_depend>
+</package>

@@ -1,0 +1,21 @@
+<package>
+  <name>camera_calibration</name>
+  <version>1.9.2</version>
+  <description brief="camera_calibration">
+
+     camera_calibration allows easy calibration of monocular or stereo
+     cameras using a checkerboard calibration target.
+
+  </description>
+  <author>James Bowman</author>
+  <author>Patrick Mihelich</author>
+  <maintainer email="vrabaud@willowgarage.com">Vincent Rabaud</maintainer>
+
+
+  <license>BSD</license>
+  <url>http://www.ros.org/wiki/camera_calibration</url>
+
+  <export>
+    <rosdoc config="rosdoc.yaml" />
+  </export>
+</package>

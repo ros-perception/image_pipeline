@@ -1,0 +1,21 @@
+<package>
+  <name>image_proc</name>
+  <version>1.9.2</version>
+  <description>Single image rectification and color processing.</description>
+  <author>Patrick Mihelich</author>
+  <author>Kurt Konolige</author>
+  <author>Jeremy Leibs</author>
+  <maintainer email="vrabaud@willowgarage.com">Vincent Rabaud</maintainer>
+  <license>BSD</license>
+  <url>http://www.ros.org/wiki/image_proc</url>
+
+  <export>
+    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
+  </export>
+
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>image_geometry</build_depend>
+  
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>image_geometry</run_depend>
+</package>

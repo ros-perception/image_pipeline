@@ -1,9 +1,15 @@
+cmake_minimum_required(VERSION 2.8)
 project(depth_image_proc)
-catkin_project(depth_image_proc)
+
+find_package(catkin REQUIRED)
+catkin_package(LIBRARIES ${PROJECT_NAME})
 
 find_package(Eigen REQUIRED)
-include_directories(SYSTEM ${EIGEN_INCLUDE_DIRS})
 return()
+find_package(catkin REQUIRED nodelet_core)
+include_directories(SYSTEM ${EIGEN_INCLUDE_DIRS}
+                           ${nodelet_core_INCLUDE_DIRS}
+)
 add_library(${PROJECT_NAME} src/nodelets/convert_metric.cpp
                              src/nodelets/disparity.cpp
                              src/nodelets/point_cloud_xyz.cpp
@@ -11,5 +17,5 @@ add_library(${PROJECT_NAME} src/nodelets/convert_metric.cpp
                              src/nodelets/register.cpp
 )
 install(TARGETS ${PROJECT_NAME}
-        DESTINATION ${CATKIN_PROJECT_LIB_DESTINATION}
+        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )

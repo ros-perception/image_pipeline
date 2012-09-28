@@ -1,5 +1,8 @@
+cmake_minimum_required(VERSION 2.8)
 project(image_view)
-catkin_project(image_view)
+
+find_package(catkin REQUIRED)
+catkin_package()
 
 find_package(Boost COMPONENTS signals)
 find_package(GTK2)
@@ -22,7 +25,7 @@ target_link_libraries(image_view ${GTK_LIBRARIES}
                                  ${OpenCV_LIBRARIES}
 )
 install(TARGETS image_view
-        DESTINATION ${CATKIN_PROJECT_LIB_DESTINATION}
+        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
 # Image viewers
@@ -73,5 +76,5 @@ target_link_libraries(image_saver ${camera_calibration_parsers_LIBRARIES}
 #TODO
 #install(TARGETS image_view_exe disparity_view stereo_view extract_images image_saver
 install(TARGETS extract_images image_saver stereo_view
-        DESTINATION ${CATKIN_PROJECT_BIN_DESTINATION}
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

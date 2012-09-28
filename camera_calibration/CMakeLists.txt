@@ -1,5 +1,8 @@
+cmake_minimum_required(VERSION 2.8)
 project(camera_calibration)
-catkin_project(camera_calibration)
+
+find_package(catkin REQUIRED)
+catkin_package()
 
 # Unit test of calibrator.py
 catkin_add_nosetests(test/directed.py)

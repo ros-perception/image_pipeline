@@ -1,4 +1,6 @@
 <package>
+  <name>image_rotate</name>
+  <version>1.9.2</version>
   <description brief="Node to rotate an image stream.">
     <p>
       Contains a node that rotates an image stream in a way that minimizes
@@ -20,19 +22,13 @@
     </p>
   </description>
   <author>Blaise Gassend</author>
+  <maintainer email="vrabaud@willowgarage.com">Blaise Gassend</maintainer>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/image_rotate</url>
 
-  <rosdep name="opencv2"/>
-  <depend package="tf"/>
-  <depend package="roscpp"/>
-  <depend package="dynamic_reconfigure"/>
-  <depend package="geometry_msgs"/>
-  <depend package="image_transport"/>
-  <depend package="cv_bridge"/>
-  <depend package="sensor_msgs"/>
-  <depend package="std_msgs"/>
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>tf</build_depend>
+
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>tf</run_depend>
 </package>
-
-
