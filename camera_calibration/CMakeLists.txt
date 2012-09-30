@@ -20,3 +20,12 @@ if (FALSE)
 rosbuild_download_test_data(http://pr.willowgarage.com/data/camera_calibration/multi_board_calibration.tar.gz multi_board_calibration.tar.gz ddc0f69582d140e33f9d3bfb681956bb)
 endif()
 catkin_add_nosetests(test/multiple_boards.py)
+
+
+install(PROGRAMS nodes/camera_calibrate_from_disk.py 
+                 nodes/cameracalibrator.py
+                 nodes/cameracheck.py
+                 nodes/camera_hammer.py
+                 scripts/tarfile_calibration.py
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)

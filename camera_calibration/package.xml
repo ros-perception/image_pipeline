@@ -11,6 +11,10 @@
   <author>Patrick Mihelich</author>
   <maintainer email="vrabaud@willowgarage.com">Vincent Rabaud</maintainer>
 
+  <run_depend>image_geometry<_run_depend>
+  <run_depend>opencv2<_run_depend>
+  <run_depend>rospy<_run_depend>
+  <run_depend>sensor_msgs<_run_depend>
 
   <license>BSD</license>
   <url>http://www.ros.org/wiki/camera_calibration</url>

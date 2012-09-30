@@ -5,8 +5,6 @@ find_package(catkin REQUIRED)
 catkin_package()
 
 find_package(catkin REQUIRED dynamic_reconfigure tf)
-return()
-include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 gencfg()
 
 find_package(OpenCV REQUIRED)

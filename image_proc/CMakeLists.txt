@@ -9,14 +9,10 @@ include_directories(SYSTEM ${image_geometry_INCLUDE_DIRS})
 include_directories(include)
 
 # Dynamic reconfigure support
-if (FALSE)
 find_package(catkin REQUIRED dynamic_reconfigure)
-include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 gencfg()
-endif()
 
 # Nodelet library
-if (FALSE)
 add_library(image_proc src/libimage_proc/processor.cpp
                                 src/nodelets/debayer.cpp
                                 src/nodelets/rectify.cpp
@@ -28,8 +24,8 @@ add_library(image_proc src/libimage_proc/processor.cpp
 install(TARGETS image_proc
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
-install(DIRECTORY include/
-        DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
+install(DIRECTORY include/${PROJECT_NAME}/
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
 # Standalone node
@@ -39,7 +35,6 @@ SET_TARGET_PROPERTIES(image_proc_exe PROPERTIES OUTPUT_NAME image_proc)
 install(TARGETS image_proc_exe
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-endif()
 
 # Tests
 catkin_add_gtest(image_proc_rostest test/rostest.cpp)

@@ -19,7 +19,6 @@ add_definitions(-DHAVE_GTK)
 
 
 # Nodelet library
-if (FALSE)
 rosbuild_add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
 target_link_libraries(image_view ${GTK_LIBRARIES}
                                  ${OpenCV_LIBRARIES}
@@ -34,14 +33,11 @@ SET_TARGET_PROPERTIES(image_view_exe PROPERTIES OUTPUT_NAME image_view)
 target_link_libraries(image_view_exe
                       ${OpenCV_LIBRARIES}
 )
-endif()
 
-if (FALSE)
 add_executable(disparity_view src/nodes/disparity_view.cpp)
 target_link_libraries(disparity_view
                       ${OpenCV_LIBRARIES}
 )
-endif()
 
 add_executable(stereo_view src/nodes/stereo_view.cpp)
 target_link_libraries(stereo_view ${Boost_LIBRARIES}
@@ -73,8 +69,6 @@ target_link_libraries(image_saver ${camera_calibration_parsers_LIBRARIES}
                                   ${roscpp_LIBRARIES}
 )
 
-#TODO
-#install(TARGETS image_view_exe disparity_view stereo_view extract_images image_saver
-install(TARGETS extract_images image_saver stereo_view
+install(TARGETS disparity_view extract_images image_saver image_view_exe stereo_view
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

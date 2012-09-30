@@ -8,12 +8,17 @@ include_directories(include)
 
 # Dynamic reconfigure support
 find_package(catkin REQUIRED dynamic_reconfigure)
-return()
-include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 gencfg()
+
+find_package(catkin REQUIRED dynamic_reconfigure image_geometry image_proc image_transport message_filters nodelet sensor_msgs stereo_image_proc stereo_msgs)
+find_package(OpenCV REQUIRED)
+include_directories(SYSTEM ${catkin_INCLUDE_DIRS}
+                           ${OpenCV_INCLUDE_DIRS}
+)
 
 # Nodelet library
 add_library(${PROJECT_NAME} src/libstereo_image_proc/processor.cpp src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp src/nodelets/point_cloud.cpp)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
 install(TARGETS ${PROJECT_NAME}
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )

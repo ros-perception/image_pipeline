@@ -4,11 +4,12 @@ project(depth_image_proc)
 find_package(catkin REQUIRED)
 catkin_package(LIBRARIES ${PROJECT_NAME})
 
+find_package(Boost REQUIRED)
 find_package(Eigen REQUIRED)
-return()
-find_package(catkin REQUIRED nodelet_core)
-include_directories(SYSTEM ${EIGEN_INCLUDE_DIRS}
-                           ${nodelet_core_INCLUDE_DIRS}
+find_package(catkin REQUIRED cv_bridge image_geometry image_transport message_filters nodelet_core pcl pcl_ros sensor_msgs stereo_msgs tf)
+include_directories(SYSTEM ${BOOST_INCLUDE_DIRS}
+                           ${catkin_INCLUDE_DIRS}
+                           ${EIGEN_INCLUDE_DIRS}
 )
 add_library(${PROJECT_NAME} src/nodelets/convert_metric.cpp
                              src/nodelets/disparity.cpp
