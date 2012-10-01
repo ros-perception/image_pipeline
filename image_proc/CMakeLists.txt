@@ -2,18 +2,22 @@ cmake_minimum_required(VERSION 2.8)
 project(image_proc)
 
 find_package(catkin REQUIRED)
-catkin_package()
 
-find_package(catkin REQUIRED image_geometry)
-include_directories(SYSTEM ${image_geometry_INCLUDE_DIRS})
+find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_geometry image_transport nodelet roscpp sensor_msgs)
+find_package(OpenCV REQUIRED)
+catkin_package(DEPENDS image_geometry OpenCV roscpp sensor_msgs
+               INCLUDE_DIRS include
+               LIBRARIES ${PROJECT_NAME}
+)
+
+include_directories(SYSTEM ${catkin_INCLUDE_DIRS})
 include_directories(include)
 
 # Dynamic reconfigure support
-find_package(catkin REQUIRED dynamic_reconfigure)
-gencfg()
+generate_cfg(cfg/CropDecimate.cfg cfg/Debayer.cfg cfg/Rectify.cfg)
 
 # Nodelet library
-add_library(image_proc src/libimage_proc/processor.cpp
+add_library(${PROJECT_NAME} src/libimage_proc/processor.cpp
                                 src/nodelets/debayer.cpp
                                 src/nodelets/rectify.cpp
                                 src/nodelets/crop_decimate.cpp
@@ -21,7 +25,10 @@ add_library(image_proc src/libimage_proc/processor.cpp
                                 src/nodelets/edge_aware.cpp
 				src/nodelets/yuv422.cpp
 )
-install(TARGETS image_proc
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+
+install(TARGETS ${PROJECT_NAME}
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 install(DIRECTORY include/${PROJECT_NAME}/
@@ -30,7 +37,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
 
 # Standalone node
 add_executable(image_proc_exe src/nodes/image_proc.cpp)
-target_link_libraries(image_proc_exe image_proc)
+target_link_libraries(image_proc_exe ${PROJECT_NAME})
 SET_TARGET_PROPERTIES(image_proc_exe PROPERTIES OUTPUT_NAME image_proc)
 install(TARGETS image_proc_exe
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

@@ -4,17 +4,22 @@ project(image_rotate)
 find_package(catkin REQUIRED)
 catkin_package()
 
-find_package(catkin REQUIRED dynamic_reconfigure tf)
-gencfg()
-
 find_package(OpenCV REQUIRED)
+find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_transport tf)
 
-include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS}
-                           ${tf_INCLUDE_DIRS}
+# generate the dynamic_reconfigure config file
+generate_cfg(cfg/ImageRotate.cfg)
+
+# add the executable
+include_directories(SYSTEM ${catkin_INCLUDE_DIRS}
+                           ${OpenCV_INCLUDE_DIRS}
 )
 
 add_executable(${PROJECT_NAME} src/node/image_rotate.cpp)
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}
+                                      ${OpenCV_LIBRARIES}
+)
 install(TARGETS ${PROJECT_NAME}
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

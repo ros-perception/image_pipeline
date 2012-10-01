@@ -21,7 +21,6 @@
   <build_depend>nodelet</build_depend>
   <build_depend>opencv2</build_depend>
   <build_depend>sensor_msgs</build_depend>
-  <build_depend>stereo_image_proc</build_depend>
   <build_depend>stereo_msgs</build_depend>
 
   <run_depend>dynamic_reconfigure</run_depend>

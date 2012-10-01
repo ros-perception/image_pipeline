@@ -8,9 +8,9 @@ include_directories(include)
 
 # Dynamic reconfigure support
 find_package(catkin REQUIRED dynamic_reconfigure)
-gencfg()
+generate_cfg(cfg/Disparity.cfg)
 
-find_package(catkin REQUIRED dynamic_reconfigure image_geometry image_proc image_transport message_filters nodelet sensor_msgs stereo_image_proc stereo_msgs)
+find_package(catkin REQUIRED dynamic_reconfigure image_geometry image_proc image_transport message_filters nodelet sensor_msgs stereo_msgs)
 find_package(OpenCV REQUIRED)
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS}
                            ${OpenCV_INCLUDE_DIRS}
@@ -18,7 +18,10 @@ include_directories(SYSTEM ${catkin_INCLUDE_DIRS}
 
 # Nodelet library
 add_library(${PROJECT_NAME} src/libstereo_image_proc/processor.cpp src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp src/nodelets/point_cloud.cpp)
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}
+                                      ${OpenCV_LIBRARIES}
+)
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 install(TARGETS ${PROJECT_NAME}
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
