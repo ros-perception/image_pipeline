@@ -1,7 +1,7 @@
 #ifndef IMAGE_PROC_PROCESSOR_H
 #define IMAGE_PROC_PROCESSOR_H
 
-#include <opencv/cv.h>
+#include <opencv2/core/core.hpp>
 #include <image_geometry/pinhole_camera_model.h>
 #include <sensor_msgs/Image.h>
 
