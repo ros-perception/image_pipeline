@@ -19,6 +19,7 @@
   </export>
 
   <build_depend>boost</build_depend>
+  <build_depend>catkin</build_depend>
   <build_depend>cv_bridge</build_depend>
   <build_depend>eigen</build_depend>
   <build_depend>image_geometry</build_depend>
@@ -31,5 +32,8 @@
   <build_depend>stereo_msgs</build_depend>
   <build_depend>tf</build_depend>
 
-  <run_depend>nodelet_core</run_depend>
+  <run_depend>boost</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>nodelet</run_depend>
+  <run_depend>pcl_ros</run_depend>
 </package>
