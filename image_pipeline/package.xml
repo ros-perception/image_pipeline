@@ -1,0 +1,26 @@
+<package>
+  <name>image_pipeline</name>
+  <version>1.9.5</version>
+  <description>image_pipeline fills the gap between getting raw images from a camera driver and higher-level vision processing.</description>
+  <author>Patrick Mihelich</author>
+  <author>James Bowman</author>
+  <maintainer email="vrabaud@willowgarage.com">Vincent Rabaud</maintainer>
+  <license>BSD</license>
+  
+  <url type="website">http://www.ros.org/wiki/image_pipeline</url>
+  <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>
+  <url type="repository">https://github.com/ros-perception/image_pipeline</url>
+  
+  <!-- Old stack contents -->
+  <run_depend>camera_calibration</run_depend>
+  <run_depend>depth_image_proc</run_depend>
+  <run_depend>image_proc</run_depend>
+  <run_depend>image_rotate</run_depend>
+  <run_depend>image_view</run_depend>
+  <run_depend>stereo_image_proc</run_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+
+</package>
