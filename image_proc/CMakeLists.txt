@@ -14,7 +14,7 @@ include_directories(SYSTEM ${catkin_INCLUDE_DIRS})
 include_directories(include)
 
 # Dynamic reconfigure support
-generate_cfg(cfg/CropDecimate.cfg cfg/Debayer.cfg cfg/Rectify.cfg)
+generate_dynamic_reconfigure_options(cfg/CropDecimate.cfg cfg/Debayer.cfg cfg/Rectify.cfg)
 
 # Nodelet library
 add_library(${PROJECT_NAME} src/libimage_proc/processor.cpp

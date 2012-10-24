@@ -8,7 +8,7 @@ include_directories(include)
 
 # Dynamic reconfigure support
 find_package(catkin REQUIRED dynamic_reconfigure)
-generate_cfg(cfg/Disparity.cfg)
+generate_dynamic_reconfigure_options(cfg/Disparity.cfg)
 
 find_package(catkin REQUIRED dynamic_reconfigure image_geometry image_proc image_transport message_filters nodelet sensor_msgs stereo_msgs)
 find_package(OpenCV REQUIRED)

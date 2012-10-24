@@ -8,7 +8,7 @@ find_package(OpenCV REQUIRED)
 find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_transport tf)
 
 # generate the dynamic_reconfigure config file
-generate_cfg(cfg/ImageRotate.cfg)
+generate_dynamic_reconfigure_options(cfg/ImageRotate.cfg)
 
 # add the executable
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS}
