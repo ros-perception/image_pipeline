@@ -60,3 +60,6 @@ target_link_libraries(image_saver ${catkin_LIBRARIES}
 install(TARGETS disparity_view extract_images image_saver image_view_exe stereo_view
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+install(FILES nodelet_plugins.xml
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
