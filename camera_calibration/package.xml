@@ -1,6 +1,6 @@
 <package>
   <name>camera_calibration</name>
-  <version>1.9.8</version>
+  <version>1.9.9</version>
   <description brief="camera_calibration">
 
      camera_calibration allows easy calibration of monocular or stereo
