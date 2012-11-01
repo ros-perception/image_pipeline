@@ -46,5 +46,10 @@ install(TARGETS image_proc_exe
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+# install the launch file
+install(DIRECTORY launch
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/
+)
+
 # Tests
 catkin_add_gtest(image_proc_rostest test/rostest.cpp)

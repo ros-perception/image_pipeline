@@ -36,3 +36,8 @@ SET_TARGET_PROPERTIES(stereoimageproc_exe PROPERTIES OUTPUT_NAME stereo_image_pr
 install(TARGETS stereoimageproc_exe
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+# install the launch file
+install(DIRECTORY launch
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/
+)
