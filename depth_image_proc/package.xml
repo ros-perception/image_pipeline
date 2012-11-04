@@ -1,7 +1,7 @@
 <package>
   <name>depth_image_proc</name>
   <version>1.9.9</version>
-  <description brief="depth_image_proc">
+  <description>
 
      Contains nodelets for processing depth images such as those
      produced by OpenNI camera. Functions include creating disparity

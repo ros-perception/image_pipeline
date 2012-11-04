@@ -1,7 +1,7 @@
 <package>
   <name>image_rotate</name>
   <version>1.9.9</version>
-  <description brief="Node to rotate an image stream.">
+  <description>
     <p>
       Contains a node that rotates an image stream in a way that minimizes
       the angle between a vector in some arbitrary frame and a vector in the
