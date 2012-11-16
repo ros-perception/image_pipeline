@@ -19,6 +19,8 @@ add_library(${PROJECT_NAME} src/nodelets/convert_metric.cpp
                              src/nodelets/point_cloud_xyzrgb.cpp
                              src/nodelets/register.cpp
 )
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+
 install(TARGETS ${PROJECT_NAME}
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
