@@ -75,11 +75,14 @@ void DebayerNodelet::connectCb()
   }
 }
 
-void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
+void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_input_msg)
 {
   /// @todo Could simplify this whole method by explicitly constructing a map
   /// from raw encoding to OpenCV cvtColor code
   
+  // copy message in order to safely process image data
+  sensor_msgs::ImagePtr raw_msg = sensor_msgs::ImagePtr(new sensor_msgs::Image(*raw_input_msg));
+
   if (enc::isMono(raw_msg->encoding))
   {
     // For monochrome, no processing needed!

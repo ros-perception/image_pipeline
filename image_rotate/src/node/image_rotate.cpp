@@ -141,7 +141,7 @@ class ImageRotater
     try
     {
       // Convert the image into something opencv can handle.
-      cv::Mat in_image = cv_bridge::toCvShare(msg, msg->encoding)->image;
+      cv::Mat in_image = cv_bridge::toCvCopy(msg, msg->encoding)->image;
 
       // Compute the output image size.
       int max_dim = in_image.cols > in_image.rows ? in_image.cols : in_image.rows;

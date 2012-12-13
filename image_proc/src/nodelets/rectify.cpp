@@ -94,7 +94,7 @@ void RectifyNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   model_.fromCameraInfo(info_msg);
   
   // Create cv::Mat views onto both buffers
-  const cv::Mat image = cv_bridge::toCvShare(image_msg)->image;
+  const cv::Mat image = cv_bridge::toCvCopy(image_msg)->image;
   cv::Mat rect;
 
   // Rectify and publish

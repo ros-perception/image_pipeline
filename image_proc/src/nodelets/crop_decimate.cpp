@@ -177,7 +177,7 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   }
 
   // Get a cv::Mat view of the source data
-  CvImageConstPtr source = toCvShare(image_msg);
+  CvImageConstPtr source = toCvCopy(image_msg);
 
   // Except in Bayer downsampling case, output has same encoding as the input
   CvImage output(source->header, source->encoding);
