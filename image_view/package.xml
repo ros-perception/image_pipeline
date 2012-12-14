@@ -14,8 +14,9 @@
     <nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
 
+  <buildtool_depend>catkin</buildtool_depend>
+  
   <build_depend>camera_calibration_parsers</build_depend>
-  <build_depend>catkin</build_depend>
   <build_depend>cv_bridge</build_depend>
   <build_depend>image_transport</build_depend>
   <build_depend>message_filters</build_depend>

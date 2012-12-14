@@ -9,7 +9,7 @@
   <author>Patrick Mihelich</author>
   <maintainer email="vrabaud@willowgarage.com">Vincent Rabaud</maintainer>
 
-  <build_depend>catkin</build_depend>
+  <buildtool_depend>catkin</buildtool_depend>
 
   <run_depend>image_geometry</run_depend>
   <run_depend>opencv2</run_depend>

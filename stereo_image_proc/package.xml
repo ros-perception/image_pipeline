@@ -13,7 +13,8 @@
     <nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
 
-  <build_depend>catkin</build_depend>
+  <buildtool_depend>catkin</buildtool_depend>
+  
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>image_geometry</build_depend>
   <build_depend>image_proc</build_depend>
