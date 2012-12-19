@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 2.8)
 project(stereo_image_proc)
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS dynamic_reconfigure)
+
+# Dynamic reconfigure support
+generate_dynamic_reconfigure_options(cfg/Disparity.cfg)
+
 catkin_package(LIBRARIES ${PROJECT_NAME})
 
 include_directories(include)
-
-# Dynamic reconfigure support
-find_package(catkin REQUIRED dynamic_reconfigure)
-generate_dynamic_reconfigure_options(cfg/Disparity.cfg)
 
 find_package(catkin REQUIRED dynamic_reconfigure image_geometry image_proc image_transport message_filters nodelet sensor_msgs stereo_msgs)
 find_package(OpenCV REQUIRED)

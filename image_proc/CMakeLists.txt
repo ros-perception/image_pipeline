@@ -5,6 +5,10 @@ find_package(catkin REQUIRED)
 
 find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_geometry image_transport nodelet roscpp sensor_msgs)
 find_package(OpenCV REQUIRED)
+
+# Dynamic reconfigure support
+generate_dynamic_reconfigure_options(cfg/CropDecimate.cfg cfg/Debayer.cfg cfg/Rectify.cfg)
+
 catkin_package(DEPENDS image_geometry OpenCV roscpp sensor_msgs
                INCLUDE_DIRS include
                LIBRARIES ${PROJECT_NAME}
@@ -12,9 +16,6 @@ catkin_package(DEPENDS image_geometry OpenCV roscpp sensor_msgs
 
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS})
 include_directories(include)
-
-# Dynamic reconfigure support
-generate_dynamic_reconfigure_options(cfg/CropDecimate.cfg cfg/Debayer.cfg cfg/Rectify.cfg)
 
 # Nodelet library
 add_library(${PROJECT_NAME} src/libimage_proc/processor.cpp
