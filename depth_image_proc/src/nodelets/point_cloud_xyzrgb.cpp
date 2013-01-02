@@ -188,7 +188,10 @@ void PointCloudXyzrgbNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_ms
     cv_rsz.header = cv_ptr->header;
     cv_rsz.encoding = cv_ptr->encoding;
     cv::resize(cv_ptr->image.rowRange(0,depth_msg->height/ratio), cv_rsz.image, cv::Size(depth_msg->width, depth_msg->height));
-    rgb_msg = cv_rsz.toImageMsg();
+    if ((rgb_msg->encoding == enc::RGB8) || (rgb_msg->encoding == enc::BGR8) || (rgb_msg->encoding == enc::MONO8))
+      rgb_msg = cv_rsz.toImageMsg();
+    else
+      rgb_msg = cv_bridge::toCvCopy(cv_rsz.toImageMsg(), enc::RGB8)->toImageMsg();
 
     //NODELET_ERROR_THROTTLE(5, "Depth resolution (%ux%u) does not match RGB resolution (%ux%u)",
     //                       depth_msg->width, depth_msg->height, rgb_msg->width, rgb_msg->height);
@@ -221,8 +224,19 @@ void PointCloudXyzrgbNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_ms
   }
   else
   {
-    NODELET_ERROR_THROTTLE(5, "Unsupported encoding [%s]", rgb_msg->encoding.c_str());
-    return;
+    try
+    {
+      rgb_msg = cv_bridge::toCvCopy(rgb_msg, enc::RGB8)->toImageMsg();
+    }
+    catch (cv_bridge::Exception& e)
+    {
+      NODELET_ERROR_THROTTLE(5, "Unsupported encoding [%s]: %s", rgb_msg->encoding.c_str(), e.what());
+      return;
+    }
+    red_offset   = 0;
+    green_offset = 1;
+    blue_offset  = 2;
+    color_step   = 3;
   }
 
   // Allocate new point cloud message
