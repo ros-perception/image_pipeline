@@ -4,6 +4,8 @@ project(camera_calibration)
 find_package(catkin REQUIRED)
 catkin_package()
 
+catkin_python_setup()
+
 # Unit test of calibrator.py
 catkin_add_nosetests(test/directed.py)
 

@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 from distutils.core import setup
-from catkin_pkg.package import parse_package_for_distutils
+from catkin_pkg.python_setup import generate_distutils_setup
 
-d = parse_package_for_distutils()
+d = generate_distutils_setup()
 d['packages'] = ['camera_calibration']
 d['package_dir'] = {'':'src'}
-)
 
 setup(**d)
