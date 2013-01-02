@@ -3,7 +3,7 @@ project(image_proc)
 
 find_package(catkin REQUIRED)
 
-find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_geometry image_transport nodelet roscpp sensor_msgs)
+find_package(catkin REQUIRED camera_calibration_parsers cv_bridge dynamic_reconfigure image_geometry image_transport nodelet roscpp sensor_msgs)
 find_package(OpenCV REQUIRED)
 
 # Dynamic reconfigure support
@@ -54,3 +54,4 @@ install(DIRECTORY launch
 
 # Tests
 catkin_add_gtest(image_proc_rostest test/rostest.cpp)
+target_link_libraries(image_proc_rostest ${catkin_LIBRARIES})
