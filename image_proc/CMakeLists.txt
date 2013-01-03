@@ -24,7 +24,6 @@ add_library(${PROJECT_NAME} src/libimage_proc/processor.cpp
                                 src/nodelets/crop_decimate.cpp
                                 src/libimage_proc/advertisement_checker.cpp
                                 src/nodelets/edge_aware.cpp
-				src/nodelets/yuv422.cpp
 )
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})

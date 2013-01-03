@@ -41,9 +41,10 @@
 #include <opencv2/imgproc/imgproc.hpp>
 // Until merged into OpenCV
 #include "edge_aware.h"
-#include "yuv422.h"
 
 #include <boost/make_shared.hpp>
+
+#include <cv_bridge/cv_bridge.h>
 
 namespace image_proc {
 
@@ -110,13 +111,41 @@ void DebayerNodelet::connectCb()
 
 void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
 {
-  /// @todo Could simplify this whole method by explicitly constructing a map
-  /// from raw encoding to OpenCV cvtColor code
-  
+  int bit_depth = enc::bitDepth(raw_msg->encoding);
+  //@todo Fix as soon as bitDepth fixes it
+  if (raw_msg->encoding == enc::YUV422)
+    bit_depth = 8;
+
+  // First publish to mono if needed
+  if (pub_mono_.getNumSubscribers())
+  {
+    if (enc::isMono(raw_msg->encoding))
+      pub_mono_.publish(raw_msg);
+    else
+    {
+      if ((bit_depth != 8) && (bit_depth != 16))
+      {
+        NODELET_WARN_THROTTLE(30,
+                            "Raw image data from topic '%s' has unsupported depth: %d",
+                            sub_raw_.getTopic().c_str(), bit_depth);
+      } else {
+        // Use cv_bridge to convert to Mono. If a type is not supported,
+        // it will error out there
+        sensor_msgs::ImagePtr gray_msg;
+        if (bit_depth == 8)
+          gray_msg = cv_bridge::toCvCopy(raw_msg, enc::MONO8)->toImageMsg();
+        else
+          gray_msg = cv_bridge::toCvCopy(raw_msg, enc::MONO16)->toImageMsg();
+
+        pub_mono_.publish(gray_msg);
+      }
+    }
+  }
+
+  // Next, publish to color
   if (enc::isMono(raw_msg->encoding))
   {
     // For monochrome, no processing needed!
-    pub_mono_.publish(raw_msg);
     pub_color_.publish(raw_msg);
     
     // Warn if the user asked for color
@@ -130,80 +159,11 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
   else if (enc::isColor(raw_msg->encoding))
   {
     pub_color_.publish(raw_msg);
-    
-    // Convert to monochrome if needed
-    if (pub_mono_.getNumSubscribers() > 0)
-    {
-      int bit_depth    = enc::bitDepth(raw_msg->encoding);
-      int num_channels = enc::numChannels(raw_msg->encoding);
-      int code = -1;
-      if (raw_msg->encoding == enc::BGR8 ||
-          raw_msg->encoding == enc::BGR16)
-        code = CV_BGR2GRAY;
-      else if (raw_msg->encoding == enc::RGB8 ||
-               raw_msg->encoding == enc::RGB16)
-        code = CV_RGB2GRAY;
-      else if (raw_msg->encoding == enc::BGRA8 ||
-               raw_msg->encoding == enc::BGRA16)
-        code = CV_BGRA2GRAY;
-      else if (raw_msg->encoding == enc::RGBA8 ||
-               raw_msg->encoding == enc::RGBA16)
-        code = CV_RGBA2GRAY;
-
-      sensor_msgs::ImagePtr gray_msg = boost::make_shared<sensor_msgs::Image>();
-      gray_msg->header   = raw_msg->header;
-      gray_msg->height   = raw_msg->height;
-      gray_msg->width    = raw_msg->width;
-      gray_msg->encoding = bit_depth == 8 ? enc::MONO8 : enc::MONO16;
-      gray_msg->step     = gray_msg->width * (bit_depth / 8);
-      gray_msg->data.resize(gray_msg->height * gray_msg->step);
-
-      int type = bit_depth == 8 ? CV_8U : CV_16U;
-      const cv::Mat color(raw_msg->height, raw_msg->width, CV_MAKETYPE(type, num_channels),
-                          const_cast<uint8_t*>(&raw_msg->data[0]), raw_msg->step);
-      cv::Mat gray(gray_msg->height, gray_msg->width, CV_MAKETYPE(type, 1),
-                   &gray_msg->data[0], gray_msg->step);
-      cv::cvtColor(color, gray, code);
-
-      pub_mono_.publish(gray_msg);
-    }
   }
   else if (enc::isBayer(raw_msg->encoding)) {
-    int bit_depth = enc::bitDepth(raw_msg->encoding);
     int type = bit_depth == 8 ? CV_8U : CV_16U;
     const cv::Mat bayer(raw_msg->height, raw_msg->width, CV_MAKETYPE(type, 1),
                         const_cast<uint8_t*>(&raw_msg->data[0]), raw_msg->step);
-    
-    if (pub_mono_.getNumSubscribers() > 0)
-    {
-      int code = -1;
-      if (raw_msg->encoding == enc::BAYER_RGGB8 ||
-          raw_msg->encoding == enc::BAYER_RGGB16)
-        code = CV_BayerBG2GRAY;
-      else if (raw_msg->encoding == enc::BAYER_BGGR8 ||
-               raw_msg->encoding == enc::BAYER_BGGR16)
-        code = CV_BayerRG2GRAY;
-      else if (raw_msg->encoding == enc::BAYER_GBRG8 ||
-               raw_msg->encoding == enc::BAYER_GBRG16)
-        code = CV_BayerGR2GRAY;
-      else if (raw_msg->encoding == enc::BAYER_GRBG8 ||
-               raw_msg->encoding == enc::BAYER_GRBG16)
-        code = CV_BayerGB2GRAY;
-
-      sensor_msgs::ImagePtr gray_msg = boost::make_shared<sensor_msgs::Image>();
-      gray_msg->header   = raw_msg->header;
-      gray_msg->height   = raw_msg->height;
-      gray_msg->width    = raw_msg->width;
-      gray_msg->encoding = bit_depth == 8 ? enc::MONO8 : enc::MONO16;
-      gray_msg->step     = gray_msg->width * (bit_depth / 8);
-      gray_msg->data.resize(gray_msg->height * gray_msg->step);
-
-      cv::Mat gray(gray_msg->height, gray_msg->width, CV_MAKETYPE(type, 1),
-                   &gray_msg->data[0], gray_msg->step);
-      cv::cvtColor(bayer, gray, code);
-      
-      pub_mono_.publish(gray_msg);
-    }
 
     if (pub_color_.getNumSubscribers() > 0)
     {
@@ -270,42 +230,10 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
   }
   else if (raw_msg->encoding == enc::YUV422)
   {
-    const cv::Mat yuv(raw_msg->height, raw_msg->width, CV_8UC2,
-                      const_cast<uint8_t*>(&raw_msg->data[0]), raw_msg->step);
-    
-    if (pub_mono_.getNumSubscribers() > 0)
-    {
-      sensor_msgs::ImagePtr gray_msg = boost::make_shared<sensor_msgs::Image>();
-      gray_msg->header   = raw_msg->header;
-      gray_msg->height   = raw_msg->height;
-      gray_msg->width    = raw_msg->width;
-      gray_msg->encoding = enc::MONO8;
-      gray_msg->step     = gray_msg->width;
-      gray_msg->data.resize(gray_msg->height * gray_msg->step);
+    // Use cv_bridge to convert to BGR8
+    sensor_msgs::ImagePtr color_msg = cv_bridge::toCvCopy(raw_msg, enc::BGR8)->toImageMsg();
 
-      cv::Mat gray(gray_msg->height, gray_msg->width, CV_8UC1,
-                   &gray_msg->data[0], gray_msg->step);
-      yuv422ToGray(yuv, gray);
-
-      pub_mono_.publish(gray_msg);
-    }
-
-    if (pub_color_.getNumSubscribers() > 0)
-    {
-      sensor_msgs::ImagePtr color_msg = boost::make_shared<sensor_msgs::Image>();
-      color_msg->header   = raw_msg->header;
-      color_msg->height   = raw_msg->height;
-      color_msg->width    = raw_msg->width;
-      color_msg->encoding = enc::BGR8;
-      color_msg->step     = color_msg->width * 3;
-      color_msg->data.resize(color_msg->height * color_msg->step);
-
-      cv::Mat color(color_msg->height, color_msg->width, CV_8UC3,
-                    &color_msg->data[0], color_msg->step);
-      yuv422ToColor(yuv, color);
-
-      pub_color_.publish(color_msg);
-    }
+    pub_mono_.publish(color_msg);
   }
   else if (raw_msg->encoding == enc::TYPE_8UC3)
   {
