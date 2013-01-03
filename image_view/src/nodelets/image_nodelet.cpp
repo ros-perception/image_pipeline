@@ -246,4 +246,4 @@ void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
 
 // Register the nodelet
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_DECLARE_CLASS(image_view, image, image_view::ImageNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS( image_view::ImageNodelet, nodelet::Nodelet)

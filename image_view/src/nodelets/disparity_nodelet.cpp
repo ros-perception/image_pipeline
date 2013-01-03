@@ -427,4 +427,4 @@ unsigned char DisparityNodelet::colormap[768] =
 
 // Register the nodelet
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_DECLARE_CLASS(image_view, disparity, image_view::DisparityNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS( image_view::DisparityNodelet, nodelet::Nodelet)

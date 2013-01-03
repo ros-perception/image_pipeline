@@ -259,4 +259,4 @@ void DebayerNodelet::configCb(Config &config, uint32_t level)
 
 // Register nodelet
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_DECLARE_CLASS(image_proc, debayer, image_proc::DebayerNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS( image_proc::DebayerNodelet, nodelet::Nodelet)

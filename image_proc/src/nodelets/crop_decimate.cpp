@@ -338,4 +338,4 @@ void CropDecimateNodelet::configCb(Config &config, uint32_t level)
 
 // Register nodelet
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_DECLARE_CLASS(image_proc, crop_decimate, image_proc::CropDecimateNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS( image_proc::CropDecimateNodelet, nodelet::Nodelet)
