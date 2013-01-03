@@ -138,13 +138,12 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
             gray_msg = cv_bridge::toCvCopy(raw_msg, enc::MONO8)->toImageMsg();
           else
             gray_msg = cv_bridge::toCvCopy(raw_msg, enc::MONO16)->toImageMsg();
+          pub_mono_.publish(gray_msg);
         }
         catch (cv_bridge::Exception &e)
         {
           NODELET_WARN_THROTTLE(30, "cv_bridge conversion error: '%s'", e.what());
         }
-
-        pub_mono_.publish(gray_msg);
       }
     }
   }
@@ -239,13 +238,12 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
     try
     {
       color_msg = cv_bridge::toCvCopy(raw_msg, enc::BGR8)->toImageMsg();
+      pub_color_.publish(color_msg);
     }
     catch (cv_bridge::Exception &e)
     {
       NODELET_WARN_THROTTLE(30, "cv_bridge conversion error: '%s'", e.what());
     }
-
-    pub_color_.publish(color_msg);
   }
   else if (raw_msg->encoding == enc::TYPE_8UC3)
   {
