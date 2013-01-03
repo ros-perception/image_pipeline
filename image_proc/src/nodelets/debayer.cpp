@@ -132,10 +132,17 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
         // Use cv_bridge to convert to Mono. If a type is not supported,
         // it will error out there
         sensor_msgs::ImagePtr gray_msg;
-        if (bit_depth == 8)
-          gray_msg = cv_bridge::toCvCopy(raw_msg, enc::MONO8)->toImageMsg();
-        else
-          gray_msg = cv_bridge::toCvCopy(raw_msg, enc::MONO16)->toImageMsg();
+        try
+        {
+          if (bit_depth == 8)
+            gray_msg = cv_bridge::toCvCopy(raw_msg, enc::MONO8)->toImageMsg();
+          else
+            gray_msg = cv_bridge::toCvCopy(raw_msg, enc::MONO16)->toImageMsg();
+        }
+        catch (cv_bridge::Exception &e)
+        {
+          NODELET_WARN_THROTTLE(30, "cv_bridge conversion error: '%s'", e.what());
+        }
 
         pub_mono_.publish(gray_msg);
       }
@@ -143,18 +150,18 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
   }
 
   // Next, publish to color
+  if (!pub_color_.getNumSubscribers())
+    return;
+
   if (enc::isMono(raw_msg->encoding))
   {
     // For monochrome, no processing needed!
     pub_color_.publish(raw_msg);
-    
+
     // Warn if the user asked for color
-    if (pub_color_.getNumSubscribers() > 0)
-    {
-      NODELET_WARN_THROTTLE(30, 
+    NODELET_WARN_THROTTLE(30,
                             "Color topic '%s' requested, but raw image data from topic '%s' is grayscale",
                             pub_color_.getTopic().c_str(), sub_raw_.getTopic().c_str());
-    }
   }
   else if (enc::isColor(raw_msg->encoding))
   {
@@ -165,8 +172,6 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
     const cv::Mat bayer(raw_msg->height, raw_msg->width, CV_MAKETYPE(type, 1),
                         const_cast<uint8_t*>(&raw_msg->data[0]), raw_msg->step);
 
-    if (pub_color_.getNumSubscribers() > 0)
-    {
       sensor_msgs::ImagePtr color_msg = boost::make_shared<sensor_msgs::Image>();
       color_msg->header   = raw_msg->header;
       color_msg->height   = raw_msg->height;
@@ -226,14 +231,21 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
       }
       
       pub_color_.publish(color_msg);
-    }
   }
   else if (raw_msg->encoding == enc::YUV422)
   {
     // Use cv_bridge to convert to BGR8
-    sensor_msgs::ImagePtr color_msg = cv_bridge::toCvCopy(raw_msg, enc::BGR8)->toImageMsg();
+    sensor_msgs::ImagePtr color_msg;
+    try
+    {
+      color_msg = cv_bridge::toCvCopy(raw_msg, enc::BGR8)->toImageMsg();
+    }
+    catch (cv_bridge::Exception &e)
+    {
+      NODELET_WARN_THROTTLE(30, "cv_bridge conversion error: '%s'", e.what());
+    }
 
-    pub_mono_.publish(color_msg);
+    pub_color_.publish(color_msg);
   }
   else if (raw_msg->encoding == enc::TYPE_8UC3)
   {
