@@ -39,7 +39,10 @@ import sys
 
 from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo
 
-def cal_from_tarfile(boards, tarname, mono = False):
+import rospy
+import sensor_msgs.srv
+
+def cal_from_tarfile(boards, tarname, mono = False, upload = False):
     if mono:
         calibrator = MonoCalibrator(boards)
     else:
@@ -48,6 +51,23 @@ def cal_from_tarfile(boards, tarname, mono = False):
     calibrator.do_tarfile_calibration(tarname)
 
     print calibrator.ost()
+
+    if upload: 
+        info = calibrator.as_message()
+        if mono:
+            set_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"), sensor_msgs.srv.SetCameraInfo)
+
+            response = set_camera_info_service(info)
+            if not response.success:
+                raise RuntimeError("connected to set_camera_info service, but failed setting camera_info")
+        else:
+            set_left_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("left_camera"), sensor_msgs.srv.SetCameraInfo)
+            set_right_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("right_camera"), sensor_msgs.srv.SetCameraInfo)
+
+            response1 = set_camera_info_service(info[0])
+            response2 = set_camera_info_service(info[1])
+            if not (response1.success and response2.success):
+                raise RuntimeError("connected to set_camera_info service, but failed setting camera_info")
 
 if __name__ == '__main__':
     from optparse import OptionParser
@@ -58,6 +78,8 @@ if __name__ == '__main__':
                       help="specify chessboard size as NxM [default: 8x6]")
     parser.add_option("-q", "--square", default=[], action="append", dest="square",
                       help="specify chessboard square size in meters [default: 0.108]")
+    parser.add_option("--upload", default=False, action="store_true", dest="upload",
+                      help="Upload results to camera(s).")
     options, args = parser.parse_args()
     
     if len(options.size) != len(options.square):
@@ -87,4 +109,4 @@ if __name__ == '__main__':
 
     tarname = args[0]
 
-    cal_from_tarfile(boards, tarname, options.mono)
+    cal_from_tarfile(boards, tarname, options.mono, upload=options.upload)
