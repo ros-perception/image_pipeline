@@ -44,6 +44,7 @@
 int g_count = 0;
 boost::format g_format;
 bool save_all_image, save_image_service;
+std::string encoding;
 
 bool service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
   save_image_service = true;
@@ -55,7 +56,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::Ca
   cv::Mat image;
   try
   {
-    image = cv_bridge::toCvShare(image_msg, "bgr8")->image;
+    image = cv_bridge::toCvShare(image_msg, encoding)->image;
   } catch(cv_bridge::Exception)
   {
     ROS_ERROR("Unable to convert %s image to bgr8", image_msg->encoding.c_str());
@@ -100,6 +101,7 @@ int main(int argc, char** argv)
   ros::NodeHandle local_nh("~");
   std::string format_string;
   local_nh.param("filename_format", format_string, std::string("left%04i.%s"));
+  local_nh.param("encoding", encoding, std::string("bgr8"));
   local_nh.param("save_all_image", save_all_image, true);
   g_format.parse(format_string);
   ros::ServiceServer save = local_nh.advertiseService ("save", service);
