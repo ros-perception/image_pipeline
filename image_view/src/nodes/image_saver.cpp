@@ -64,7 +64,6 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::Ca
   }
 
     if (!image.empty()) {
-      std::string filename = (g_format % g_count % "jpg").str();
       std::string filename;
       try {
         filename = (g_format).str();
