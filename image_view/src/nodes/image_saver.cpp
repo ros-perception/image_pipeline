@@ -56,11 +56,22 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::Ca
   
     if (!image.empty()) {
       std::string filename = (g_format % g_count % "jpg").str();
+      std::string filename;
+      try {
+        filename = (g_format).str();
+      } catch (...) { g_format.clear(); }
+      try {
+        filename = (g_format % g_count).str();
+      } catch (...) { g_format.clear(); }
+      try { 
+        filename = (g_format % g_count % "jpg").str();
+      } catch (...) { g_format.clear(); }
+
       cv::imwrite(filename, image);
       ROS_INFO("Saved image %s", filename.c_str());
-      filename = (g_format % g_count % "ini").str();
+      filename = filename.replace(filename.rfind("."), filename.length(),".ini");
       camera_calibration_parsers::writeCalibration(filename, "camera", *info);
-      
+
       g_count++;
     } else {
       ROS_WARN("Couldn't save image, no data!");
@@ -71,10 +82,14 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "image_saver", ros::init_options::AnonymousName);
   ros::NodeHandle nh;
-  g_format.parse("left%04i.%s");
   image_transport::ImageTransport it(nh);
   std::string topic = nh.resolveName("image");
   image_transport::CameraSubscriber sub = it.subscribeCamera(topic, 1, &callback);
+
+  ros::NodeHandle local_nh("~");
+  std::string format_string;
+  local_nh.param("filename_format", format_string, std::string("left%04i.%s"));
+  g_format.parse(format_string);
 
   ros::spin();
 }
