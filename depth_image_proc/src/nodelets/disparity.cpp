@@ -181,4 +181,4 @@ void DisparityNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
 
 // Register as nodelet
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_DECLARE_CLASS (depth_image_proc, disparity, depth_image_proc::DisparityNodelet, nodelet::Nodelet);
+PLUGINLIB_EXPORT_CLASS(depth_image_proc::DisparityNodelet,nodelet::Nodelet);

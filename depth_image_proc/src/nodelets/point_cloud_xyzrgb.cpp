@@ -321,4 +321,4 @@ void PointCloudXyzrgbNodelet::convert(const sensor_msgs::ImageConstPtr& depth_ms
 
 // Register as nodelet
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_DECLARE_CLASS (depth_image_proc, point_cloud_xyzrgb, depth_image_proc::PointCloudXyzrgbNodelet, nodelet::Nodelet);
+PLUGINLIB_EXPORT_CLASS(depth_image_proc::PointCloudXyzrgbNodelet,nodelet::Nodelet);
