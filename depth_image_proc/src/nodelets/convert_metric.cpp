@@ -121,4 +121,4 @@ void ConvertMetricNodelet::depthCb(const sensor_msgs::ImageConstPtr& raw_msg)
 
 // Register as nodelet
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_DECLARE_CLASS (depth_image_proc, convert_metric, depth_image_proc::ConvertMetricNodelet, nodelet::Nodelet);
+PLUGINLIB_EXPORT_CLASS(depth_image_proc::ConvertMetricNodelet,nodelet::Nodelet);

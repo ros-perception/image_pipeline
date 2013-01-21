@@ -251,5 +251,4 @@ void DisparityNodelet::configCb(Config &config, uint32_t level)
 
 // Register nodelet
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_DECLARE_CLASS(stereo_image_proc, disparity,
-                        stereo_image_proc::DisparityNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(stereo_image_proc::DisparityNodelet,nodelet::Nodelet)
