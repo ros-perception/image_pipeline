@@ -182,7 +182,7 @@ class OpenCVCalibrationNode(CalibrationNode):
     def __init__(self, *args):
 
         CalibrationNode.__init__(self, *args)
-        cv.NamedWindow("display", CV_WINDOW_NORMAL)
+        cv.NamedWindow("display", cv.CV_WINDOW_NORMAL)
         self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 0.20, 1, thickness = 2)
         #self.button = cv.LoadImage("%s/button.jpg" % roslib.packages.get_pkg_dir(PKG))
         cv.SetMouseCallback("display", self.on_mouse)
