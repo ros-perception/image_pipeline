@@ -719,7 +719,11 @@ class MonoCalibrator(Calibrator):
         linear_error = -1
 
         # Get display-image-to-be (scrib) and detection of the calibration target
-        scrib, corners, downsampled_corners, board, (x_scale, y_scale) = self.downsample_and_detect(gray)
+        scrib_mono, corners, downsampled_corners, board, (x_scale, y_scale) = self.downsample_and_detect(gray)
+
+        # make sure scrib has 3 channels for display
+        scrib = cv.CreateMat(scrib_mono.rows, scrib_mono.cols, cv.CV_8UC3)
+        cv.CvtColor(scrib_mono, scrib, cv.CV_GRAY2BGR)
 
         if self.calibrated:
             # Show rectified image
@@ -738,16 +742,12 @@ class MonoCalibrator(Calibrator):
 
                 # Draw rectified corners
                 scrib_src = [(x/x_scale, y/y_scale) for (x,y) in undistorted]
-                scrib_color = cv.CreateMat(scrib.rows, scrib.cols, cv.CV_8UC3)
-                cv.CvtColor(scrib, scrib_color, cv.CV_GRAY2BGR)
                 cv.DrawChessboardCorners(scrib, (board.n_cols, board.n_rows), scrib_src, True)
 
         elif corners:
             # Draw (potentially downsampled) corners onto display image
             src = self.mk_image_points([ (downsampled_corners, board) ])
-            scrib_color = cv.CreateMat(scrib.rows, scrib.cols, cv.CV_8UC3)
-            cv.CvtColor(scrib, scrib_color, cv.CV_GRAY2BGR)
-            cv.DrawChessboardCorners(scrib_color, (board.n_cols, board.n_rows), cvmat_iterator(src), True)
+            cv.DrawChessboardCorners(scrib, (board.n_cols, board.n_rows), cvmat_iterator(src), True)
 
             # Add sample to database only if it's sufficiently different from any previous sample.
             params = self.get_parameters(corners, board, cv.GetSize(gray))
@@ -1011,8 +1011,13 @@ class StereoCalibrator(Calibrator):
         epierror = -1
 
         # Get display-images-to-be and detections of the calibration target
-        lscrib, lcorners, ldownsampled_corners, lboard, (x_scale, y_scale) = self.downsample_and_detect(lgray)
-        rscrib, rcorners, rdownsampled_corners, rboard, _ = self.downsample_and_detect(rgray)
+        lscrib_mono, lcorners, ldownsampled_corners, lboard, (x_scale, y_scale) = self.downsample_and_detect(lgray)
+        rscrib_mono, rcorners, rdownsampled_corners, rboard, _ = self.downsample_and_detect(rgray)
+
+        lscrib = cv.CreateMat(lscrib_mono.rows, lscrib_mono.cols, cv.CV_8UC3)
+        cv.CvtColor(lscrib_mono, lscrib, cv.CV_GRAY2BGR)
+        rscrib = cv.CreateMat(rscrib_mono.rows, rscrib_mono.cols, cv.CV_8UC3)
+        cv.CvtColor(rscrib_mono, rscrib, cv.CV_GRAY2BGR)
 
         if self.calibrated:
             # Show rectified images
@@ -1030,21 +1035,13 @@ class StereoCalibrator(Calibrator):
                 src = self.mk_image_points( [(lcorners, lboard)] )
                 lundistorted = list(cvmat_iterator(self.l.undistort_points(src)))
                 scrib_src = [(x/x_scale, y/y_scale) for (x,y) in lundistorted]
-
-                lscrib_color = cv.CreateMat(lscrib.rows, lscrib.cols, cv.CV_8UC3)
-                cv.CvtColor(lscrib, lscrib_color, cv.CV_GRAY2BGR)
-
-                cv.DrawChessboardCorners(lscrib_color, (lboard.n_cols, lboard.n_rows), scrib_src, True)
+                cv.DrawChessboardCorners(lscrib, (lboard.n_cols, lboard.n_rows), scrib_src, True)
 
             if rcorners:
                 src = self.mk_image_points( [(rcorners, rboard)] )
                 rundistorted = list(cvmat_iterator(self.r.undistort_points(src)))
                 scrib_src = [(x/x_scale, y/y_scale) for (x,y) in rundistorted]
-
-                rscrib_color = cv.CreateMat(rscrib.rows, rscrib.cols, cv.CV_8UC3)
-                cv.CvtColor(rscrib, rscrib_color, cv.CV_GRAY2BGR)
-
-                cv.DrawChessboardCorners(rscrib_color, (rboard.n_cols, rboard.n_rows), scrib_src, True)
+                cv.DrawChessboardCorners(rscrib, (rboard.n_cols, rboard.n_rows), scrib_src, True)
 
             # Report epipolar error
             if lcorners and rcorners:
@@ -1054,19 +1051,11 @@ class StereoCalibrator(Calibrator):
             # Draw any detected chessboards onto display (downsampled) images
             if lcorners:
                 src = self.mk_image_points([ (ldownsampled_corners, lboard) ])
-
-                lscrib_color = cv.CreateMat(lscrib.rows, lscrib.cols, cv.CV_8UC3)
-                cv.CvtColor(lscrib, lscrib_color, cv.CV_GRAY2BGR)
-
-                cv.DrawChessboardCorners(lscrib_color, (lboard.n_cols, lboard.n_rows),
+                cv.DrawChessboardCorners(lscrib, (lboard.n_cols, lboard.n_rows),
                                          cvmat_iterator(src), True)
             if rcorners:
                 src = self.mk_image_points([ (rdownsampled_corners, rboard) ])
-
-                rscrib_color = cv.CreateMat(rscrib.rows, rscrib.cols, cv.CV_8UC3)
-                cv.CvtColor(rscrib, rscrib_color, cv.CV_GRAY2BGR)
-
-                cv.DrawChessboardCorners(rscrib_color, (rboard.n_cols, rboard.n_rows),
+                cv.DrawChessboardCorners(rscrib, (rboard.n_cols, rboard.n_rows),
                                          cvmat_iterator(src), True)
 
             # Add sample to database only if it's sufficiently different from any previous sample
