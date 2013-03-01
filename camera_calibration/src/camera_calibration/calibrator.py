@@ -250,7 +250,14 @@ class Calibrator:
         """
         Convert a message into a 8-bit 1 channel monochrome OpenCV image
         """
-        return self.br.imgmsg_to_cv(msg, "mono8")
+        # as cv_bridge automatically scales, we need to remove that behavior
+        if msg.encoding.endswith('16'):
+            mono16 = self.br.imgmsg_to_cv(msg, "mono16")
+            mono8 = cv.CreateMat(mono16.rows, mono16.cols, cv.CV_8UC1)
+            cv.ConvertScale(mono16, mono8)
+            return mono8
+        else:
+            return self.br.imgmsg_to_cv(msg, "mono8")
 
     def get_parameters(self, corners, board, (width, height)):
         """
