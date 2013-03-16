@@ -41,3 +41,8 @@ install(TARGETS stereoimageproc_exe
 install(DIRECTORY launch
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/
 )
+
+# install the include directory
+install(DIRECTORY include/${PROJECT_NAME}/
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
