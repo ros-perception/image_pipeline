@@ -730,19 +730,17 @@ class MonoCalibrator(Calibrator):
 
         # make sure scrib has 3 channels for display
         scrib = cv.CreateMat(scrib_mono.rows, scrib_mono.cols, cv.CV_8UC3)
-        cv.CvtColor(scrib_mono, scrib, cv.CV_GRAY2BGR)
 
         if self.calibrated:
             # Show rectified image
             # TODO Pull out downsampling code into function
+            gray_remap = self.remap(gray)
+            gray_rect = gray_remap
             if x_scale != 1.0 or y_scale != 1.0:
-                gray_rect = self.remap(gray)
-                rgb_rect = cv.CreateMat(scrib.rows, scribe.cols, cv.CV_8UC3)
-                cv.CvtColor(gray_rect, rbg_rec, cv.CV_GRAY2BGR)
-                cv.Resize(rgb_rect, scrib)
-            else:
-                gray_remap = self.remap(gray)
-                cv.CvtColor(gray_remap, scrib, cv.CV_GRAY2BGR)
+                gray_rect = cv.CreateMat(scrib.rows, scribe.cols, cv.CV_8UC1)
+                cv.Resize(gray_remap, grap_rect)
+
+            cv.CvtColor(gray_rect, scrib, cv.CV_GRAY2BGR)
 
             if corners:
                 # Report linear error
@@ -754,17 +752,19 @@ class MonoCalibrator(Calibrator):
                 scrib_src = [(x/x_scale, y/y_scale) for (x,y) in undistorted]
                 cv.DrawChessboardCorners(scrib, (board.n_cols, board.n_rows), scrib_src, True)
 
-        elif corners:
-            # Draw (potentially downsampled) corners onto display image
-            src = self.mk_image_points([ (downsampled_corners, board) ])
-            cv.DrawChessboardCorners(scrib, (board.n_cols, board.n_rows), cvmat_iterator(src), True)
+        else:
+            cv.CvtColor(scrib_mono, scrib, cv.CV_GRAY2BGR)
+            if corners:
+                # Draw (potentially downsampled) corners onto display image
+                src = self.mk_image_points([ (downsampled_corners, board) ])
+                cv.DrawChessboardCorners(scrib, (board.n_cols, board.n_rows), cvmat_iterator(src), True)
 
-            # Add sample to database only if it's sufficiently different from any previous sample.
-            params = self.get_parameters(corners, board, cv.GetSize(gray))
-            if self.is_good_sample(params):
-                self.db.append((params, gray))
-                self.good_corners.append((corners, board))
-                print "*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)
+                # Add sample to database only if it's sufficiently different from any previous sample.
+                params = self.get_parameters(corners, board, cv.GetSize(gray))
+                if self.is_good_sample(params):
+                    self.db.append((params, gray))
+                    self.good_corners.append((corners, board))
+                    print "*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)
 
         rv = MonoDrawable()
         rv.scrib = scrib
