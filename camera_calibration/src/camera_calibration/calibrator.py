@@ -736,10 +736,13 @@ class MonoCalibrator(Calibrator):
             # Show rectified image
             # TODO Pull out downsampling code into function
             if x_scale != 1.0 or y_scale != 1.0:
-                rgb_rect = self.remap(gray)
+                gray_rect = self.remap(gray)
+                rgb_rect = cv.CreateMat(scrib.rows, scribe.cols, cv.CV_8UC3)
+                cv.CvtColor(gray_rect, rbg_rec, cv.CV_GRAY2BGR)
                 cv.Resize(rgb_rect, scrib)
             else:
-                scrib = self.remap(gray)
+                gray_remap = self.remap(gray)
+                cv.CvtColor(gray_remap, scrib, cv.CV_GRAY2BGR)
 
             if corners:
                 # Report linear error
