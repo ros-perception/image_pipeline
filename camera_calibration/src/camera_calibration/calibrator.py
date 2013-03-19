@@ -740,7 +740,7 @@ class MonoCalibrator(Calibrator):
             gray_remap = self.remap(gray)
             gray_rect = gray_remap
             if x_scale != 1.0 or y_scale != 1.0:
-                gray_rect = cv.CreateMat(scrib.rows, scribe.cols, cv.CV_8UC1)
+                gray_rect = cv.CreateMat(scrib.rows, scrib.cols, cv.CV_8UC1)
                 cv.Resize(gray_remap, grap_rect)
 
             cv.CvtColor(gray_rect, scrib, cv.CV_GRAY2BGR)
@@ -1037,8 +1037,8 @@ class StereoCalibrator(Calibrator):
             lrect = lremap
             rrect = rremap
             if x_scale != 1.0 or y_scale != 1.0:
-                lrect = cv.CreateMat(lscrib.rows, lscribe.cols, cv.CV_8UC1)
-                rrect = cv.CreateMat(rscrib.rows, rscribe.cols, cv.CV_8UC1)
+                lrect = cv.CreateMat(lscrib.rows, lscrib.cols, cv.CV_8UC1)
+                rrect = cv.CreateMat(rscrib.rows, rscrib.cols, cv.CV_8UC1)
                 cv.Resize(lremap, lrect)
                 cv.Resize(rremap, rrect)
 
