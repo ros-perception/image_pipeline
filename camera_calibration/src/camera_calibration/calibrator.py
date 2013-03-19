@@ -148,8 +148,8 @@ def _get_corners(img, board, refine = True):
     Get corners for a particular chessboard for an image
     """
     w, h = cv.GetSize(img)
-    mono = cv.CreateMat(h, w, cv.CV_8UC1)
     if img.channels == 3:
+        mono = cv.CreateMat(h, w, cv.CV_8UC1)
         cv.CvtColor(img, mono, cv.CV_BGR2GRAY)
     else:
         mono = img
@@ -185,8 +185,11 @@ def _get_circles(img, board, pattern):
     Get circle centers for a symmetric or asymmetric grid
     """
     w, h = cv.GetSize(img)
-    mono = cv.CreateMat(h, w, cv.CV_8UC1)
-    cv.CvtColor(img, mono, cv.CV_BGR2GRAY)
+    if img.channels == 3:
+        mono = cv.CreateMat(h, w, cv.CV_8UC1)
+        cv.CvtColor(img, mono, cv.CV_BGR2GRAY)
+    else:
+        mono = img
 
     flag = cv2.CALIB_CB_SYMMETRIC_GRID
     if pattern == Patterns.ACircles:
