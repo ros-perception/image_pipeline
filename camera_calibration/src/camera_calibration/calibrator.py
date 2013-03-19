@@ -1025,20 +1025,22 @@ class StereoCalibrator(Calibrator):
         rscrib_mono, rcorners, rdownsampled_corners, rboard, _ = self.downsample_and_detect(rgray)
 
         lscrib = cv.CreateMat(lscrib_mono.rows, lscrib_mono.cols, cv.CV_8UC3)
-        cv.CvtColor(lscrib_mono, lscrib, cv.CV_GRAY2BGR)
         rscrib = cv.CreateMat(rscrib_mono.rows, rscrib_mono.cols, cv.CV_8UC3)
-        cv.CvtColor(rscrib_mono, rscrib, cv.CV_GRAY2BGR)
 
         if self.calibrated:
             # Show rectified images
+            lremap = self.l.remap(lgray)
+            rremap = self.r.remap(rgray)
+            lrect = lremap
+            rrect = rremap
             if x_scale != 1.0 or y_scale != 1.0:
-                rgb_rect = self.l.remap(lgray)
-                cv.Resize(rgb_rect, lscrib)
-                rgb_rect = self.r.remap(rgray)
-                cv.Resize(rgb_rect, rscrib)
-            else:
-                lscrib = self.l.remap(lgray)
-                rscrib = self.r.remap(rgray)
+                lrect = cv.CreateMat(lscrib.rows, lscribe.cols, cv.CV_8UC1)
+                rrect = cv.CreateMat(rscrib.rows, rscribe.cols, cv.CV_8UC1)
+                cv.Resize(lremap, lrect)
+                cv.Resize(rremap, rrect)
+
+            cv.CvtColor(lrect, lscrib, cv.CV_GRAY2BGR)
+            cv.CvtColor(rrect, rscrib, cv.CV_GRAY2BGR)
 
             # Draw rectified corners
             if lcorners:
@@ -1058,6 +1060,8 @@ class StereoCalibrator(Calibrator):
                 epierror = self.epipolar_error(lundistorted, rundistorted, lboard)
 
         else:
+            cv.CvtColor(lscrib_mono, lscrib, cv.CV_GRAY2BGR)
+            cv.CvtColor(rscrib_mono, rscrib, cv.CV_GRAY2BGR)
             # Draw any detected chessboards onto display (downsampled) images
             if lcorners:
                 src = self.mk_image_points([ (ldownsampled_corners, lboard) ])
