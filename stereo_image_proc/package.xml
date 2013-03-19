@@ -14,6 +14,8 @@
   </export>
 
   <buildtool_depend>catkin</buildtool_depend>
+
+  <test_depend>rostest</test_depend>
   
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>image_geometry</build_depend>
