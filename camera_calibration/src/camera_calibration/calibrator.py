@@ -741,7 +741,7 @@ class MonoCalibrator(Calibrator):
             gray_rect = gray_remap
             if x_scale != 1.0 or y_scale != 1.0:
                 gray_rect = cv.CreateMat(scrib.rows, scrib.cols, cv.CV_8UC1)
-                cv.Resize(gray_remap, grap_rect)
+                cv.Resize(gray_remap, gray_rect)
 
             cv.CvtColor(gray_rect, scrib, cv.CV_GRAY2BGR)
 
