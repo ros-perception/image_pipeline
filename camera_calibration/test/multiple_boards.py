@@ -60,7 +60,7 @@ class TestMultipleBoards(unittest.TestCase):
 
         stereo_cal = StereoCalibrator([board, small_board])
         
-        my_archive_name = os.path.join(roslib.packages.get_pkg_dir(PKG), "multi_board_calibration.tar.gz")
+        my_archive_name = "multi_board_calibration.tar.gz"
         stereo_cal.do_tarfile_calibration(my_archive_name)
 
         stereo_cal.report()

@@ -53,8 +53,7 @@ board.dim = 0.108
 
 class TestDirected(unittest.TestCase):
     def setUp(self):
-        self.mydir = roslib.packages.get_pkg_dir(PKG)
-        self.tar = tarfile.open('%s/camera_calibration.tar.gz' % self.mydir, 'r')
+        self.tar = tarfile.open('camera_calibration.tar.gz', 'r')
         self.limages = [image_from_archive(self.tar, "wide/left%04d.pgm" % i) for i in range(3, 15)]
         self.rimages = [image_from_archive(self.tar, "wide/right%04d.pgm" % i) for i in range(3, 15)]
         self.l = {}
