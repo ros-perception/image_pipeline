@@ -259,6 +259,14 @@ class Calibrator:
             mono8 = cv.CreateMat(mono16.rows, mono16.cols, cv.CV_8UC1)
             cv.ConvertScale(mono16, mono8)
             return mono8
+        elif 'FC1' in msg.encoding:
+            # floating point image handling
+            img = self.br.imgmsg_to_cv(msg, "passthrough")
+            mono_img = cv.CreateMat(img.rows, img.cols, cv.CV_8UC1)
+            _, max_val, _, _ = cv.MinMaxLoc(img)
+            scale = 255.0 / max_val if max_val > 0 else 1.0
+            cv.ConvertScale(img, mono_img, scale)
+            return mono_img
         else:
             return self.br.imgmsg_to_cv(msg, "mono8")
 
