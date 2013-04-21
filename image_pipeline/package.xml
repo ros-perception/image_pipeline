@@ -10,7 +10,9 @@
   <url type="website">http://www.ros.org/wiki/image_pipeline</url>
   <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>
   <url type="repository">https://github.com/ros-perception/image_pipeline</url>
-  
+
+  <buildtool_depend>catkin</buildtool_depend>
+
   <!-- Old stack contents -->
   <run_depend>camera_calibration</run_depend>
   <run_depend>depth_image_proc</run_depend>
