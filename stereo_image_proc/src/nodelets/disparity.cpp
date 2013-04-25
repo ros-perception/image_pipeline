@@ -49,6 +49,8 @@
 #include <stereo_image_proc/DisparityConfig.h>
 #include <dynamic_reconfigure/server.h>
 
+#include <boost/thread/lock_guard.hpp>
+
 namespace stereo_image_proc {
 
 using namespace sensor_msgs;
