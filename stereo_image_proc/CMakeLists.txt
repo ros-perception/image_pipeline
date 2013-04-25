@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(stereo_image_proc)
 
 find_package(catkin REQUIRED COMPONENTS dynamic_reconfigure)
+find_package(Boost REQUIRED COMPONENTS thread)
 
 # Dynamic reconfigure support
 generate_dynamic_reconfigure_options(cfg/Disparity.cfg)
