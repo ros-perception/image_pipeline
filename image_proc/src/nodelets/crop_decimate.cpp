@@ -39,6 +39,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <image_proc/CropDecimateConfig.h>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <boost/thread/lock_guard.hpp>
 
 namespace image_proc {
 

@@ -38,6 +38,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
 #include <image_proc/RectifyConfig.h>
+#include <boost/thread/lock_guard.hpp>
 
 namespace image_proc {
 

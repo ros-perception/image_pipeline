@@ -5,6 +5,7 @@ find_package(catkin REQUIRED)
 
 find_package(catkin REQUIRED camera_calibration_parsers cv_bridge dynamic_reconfigure image_geometry image_transport nodelet roscpp sensor_msgs)
 find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED COMPONENTS thread)
 
 # Dynamic reconfigure support
 generate_dynamic_reconfigure_options(cfg/CropDecimate.cfg cfg/Debayer.cfg cfg/Rectify.cfg)
@@ -26,7 +27,7 @@ add_library(${PROJECT_NAME} src/libimage_proc/processor.cpp
                                 src/nodelets/edge_aware.cpp
 )
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}  ${Boost_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME}
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -40,7 +41,7 @@ install(FILES nodelet_plugins.xml
 
 # Standalone node
 add_executable(image_proc_exe src/nodes/image_proc.cpp)
-target_link_libraries(image_proc_exe ${PROJECT_NAME})
+target_link_libraries(image_proc_exe ${PROJECT_NAME}  ${Boost_LIBRARIES})
 SET_TARGET_PROPERTIES(image_proc_exe PROPERTIES OUTPUT_NAME image_proc)
 install(TARGETS image_proc_exe
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -53,4 +54,4 @@ install(DIRECTORY launch
 
 # Tests
 catkin_add_gtest(image_proc_rostest test/rostest.cpp)
-target_link_libraries(image_proc_rostest ${catkin_LIBRARIES})
+target_link_libraries(image_proc_rostest ${catkin_LIBRARIES}  ${Boost_LIBRARIES})

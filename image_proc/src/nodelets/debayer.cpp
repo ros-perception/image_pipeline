@@ -43,6 +43,7 @@
 #include "edge_aware.h"
 
 #include <boost/make_shared.hpp>
+#include <boost/thread/lock_guard.hpp>
 
 #include <cv_bridge/cv_bridge.h>
 

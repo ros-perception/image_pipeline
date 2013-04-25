@@ -45,6 +45,8 @@
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/image_encodings.h>
 
+#include <boost/thread/lock_guard.hpp>
+
 namespace stereo_image_proc {
 
 using namespace sensor_msgs;
