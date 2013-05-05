@@ -4,7 +4,7 @@
   <description>image_pipeline fills the gap between getting raw images from a camera driver and higher-level vision processing.</description>
   <author>Patrick Mihelich</author>
   <author>James Bowman</author>
-  <maintainer email="vrabaud@willowgarage.com">Vincent Rabaud</maintainer>
+  <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
   <license>BSD</license>
   
   <url type="website">http://www.ros.org/wiki/image_pipeline</url>

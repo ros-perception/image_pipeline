@@ -10,7 +10,7 @@
 
   </description>
   <author>Patrick Mihelich</author>
-  <maintainer email="vrabaud@willowgarage.com">Vincent Rabaud</maintainer>
+  <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
   <license>BSD</license>
   <url>http://ros.org/wiki/depth_image_proc</url>
 
