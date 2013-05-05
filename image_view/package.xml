@@ -1,6 +1,6 @@
 <package>
   <name>image_view</name>
-  <version>1.10.8</version>
+  <version>1.10.9</version>
   <description>
   A simple viewer for ROS image topics. Includes a specialized viewer
   for stereo + disparity images.
