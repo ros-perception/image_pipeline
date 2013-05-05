@@ -31,6 +31,11 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+#include <boost/make_shared.hpp>
+#if ((BOOST_VERSION / 100) % 1000) >= 53
+#include <boost/thread/lock_guard.hpp>  
+#endif
+
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
@@ -41,9 +46,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 // Until merged into OpenCV
 #include "edge_aware.h"
-
-#include <boost/make_shared.hpp>
-#include <boost/thread/lock_guard.hpp>
 
 #include <cv_bridge/cv_bridge.h>
 

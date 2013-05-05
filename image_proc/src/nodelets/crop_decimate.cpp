@@ -31,6 +31,10 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+#if ((BOOST_VERSION / 100) % 1000) >= 53
+#include <boost/thread/lock_guard.hpp>  
+#endif
+
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
@@ -39,7 +43,6 @@
 #include <cv_bridge/cv_bridge.h>
 #include <image_proc/CropDecimateConfig.h>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <boost/thread/lock_guard.hpp>
 
 namespace image_proc {
 
