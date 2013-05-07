@@ -31,9 +31,9 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-
+#include <boost/version.hpp>
 #if ((BOOST_VERSION / 100) % 1000) >= 53
-#include <boost/thread/lock_guard.hpp>  
+#include <boost/thread/lock_guard.hpp>
 #endif
 
 #include <ros/ros.h>
