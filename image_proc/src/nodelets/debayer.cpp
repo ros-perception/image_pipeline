@@ -32,8 +32,9 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 #include <boost/make_shared.hpp>
+#include <boost/version.hpp>
 #if ((BOOST_VERSION / 100) % 1000) >= 53
-#include <boost/thread/lock_guard.hpp>  
+#include <boost/thread/lock_guard.hpp>
 #endif
 
 #include <ros/ros.h>
