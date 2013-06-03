@@ -139,7 +139,7 @@ class CameraCheckerNode:
         self.q_stereo.put((lmsg, lcmsg, rmsg, rcmsg))
 
     def mkgray(self, msg):
-        return self.br.imgmsg_to_cv(msg, "bgr8")
+        return self.mc.mkgray(msg)
 
     def image_corners(self, im):
         (ok, corners, b) = self.mc.get_corners(im)
@@ -154,8 +154,8 @@ class CameraCheckerNode:
             """ point is (x0, y0), line is (x1, y1, x2, y2) """
             return abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) / math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
         (image, camera) = msg
-        rgb = self.mkgray(image)
-        C = self.image_corners(rgb)
+        gray = self.mkgray(image)
+        C = self.image_corners(gray)
         if C:
             cc = self.board.n_cols
             cr = self.board.n_rows
@@ -203,13 +203,13 @@ class CameraCheckerNode:
     def handle_stereo(self, msg):
 
         (lmsg, lcmsg, rmsg, rcmsg) = msg
-        lrgb = self.mkgray(lmsg)
-        rrgb = self.mkgray(rmsg)
+        lgray = self.mkgray(lmsg)
+        rgray = self.mkgray(rmsg)
 
         sc = StereoCalibrator([self.board])
 
-        L = self.image_corners(lrgb)
-        R = self.image_corners(rrgb)
+        L = self.image_corners(lgray)
+        R = self.image_corners(rgray)
         scm = image_geometry.StereoCameraModel()
         scm.fromCameraInfo(lcmsg, rcmsg)
         if L and R:
