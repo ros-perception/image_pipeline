@@ -139,8 +139,16 @@ void PointCloudXyzrgbNodelet::connectCb()
   }
   else if (!sub_depth_.getSubscriber())
   {
-    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-    sub_depth_.subscribe(*depth_it_, "image_rect",       1, hints);
+    ros::NodeHandle& private_nh = getPrivateNodeHandle();
+    // parameter for depth_image_transport hint
+    std::string depth_image_transport_param = "depth_image_transport";
+
+    // depth image can use different transport.(e.g. compressedDepth)
+    image_transport::TransportHints depth_hints("raw",ros::TransportHints(), private_nh, depth_image_transport_param);
+    sub_depth_.subscribe(*depth_it_, "image_rect",       1, depth_hints);
+
+    // rgb uses normal ros transport hints.
+    image_transport::TransportHints hints("raw", ros::TransportHints(), private_nh);
     sub_rgb_  .subscribe(*rgb_it_,   "image_rect_color", 1, hints);
     sub_info_ .subscribe(*rgb_nh_,   "camera_info",      1);
   }
