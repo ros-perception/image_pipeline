@@ -51,6 +51,8 @@
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <pcl_conversions/pcl_conversions.h>
+
 namespace depth_image_proc {
 
 using namespace message_filters::sync_policies;
@@ -254,7 +256,7 @@ void PointCloudXyzrgbNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_ms
 
   // Allocate new point cloud message
   PointCloud::Ptr cloud_msg (new PointCloud);
-  cloud_msg->header = depth_msg->header; // Use depth image time stamp
+  cloud_msg->header = pcl_conversions::toPCL(depth_msg->header); // Use depth image time stamp
   cloud_msg->height = depth_msg->height;
   cloud_msg->width  = depth_msg->width;
   cloud_msg->is_dense = false;
