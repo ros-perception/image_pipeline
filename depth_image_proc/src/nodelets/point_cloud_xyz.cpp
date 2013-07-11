@@ -41,6 +41,8 @@
 #include <boost/thread.hpp>
 #include "depth_traits.h"
 
+#include <pcl_conversions/pcl_conversions.h>
+
 namespace depth_image_proc {
 
 namespace enc = sensor_msgs::image_encodings;
@@ -106,7 +108,7 @@ void PointCloudXyzNodelet::depthCb(const sensor_msgs::ImageConstPtr& depth_msg,
                                    const sensor_msgs::CameraInfoConstPtr& info_msg)
 {
   PointCloud::Ptr cloud_msg(new PointCloud);
-  cloud_msg->header = depth_msg->header;
+  cloud_msg->header = pcl_conversions::toPCL(depth_msg->header);
   cloud_msg->height = depth_msg->height;
   cloud_msg->width  = depth_msg->width;
   cloud_msg->is_dense = false;
