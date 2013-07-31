@@ -4,7 +4,7 @@ project(image_view)
 find_package(catkin REQUIRED)
 catkin_package()
 
-find_package(Boost COMPONENTS signals)
+find_package(Boost REQUIRED COMPONENTS signals thread)
 find_package(GTK2)
 find_package(OpenCV)
 find_package(catkin REQUIRED camera_calibration_parsers cv_bridge image_transport message_filters nodelet rosconsole roscpp)
@@ -22,6 +22,7 @@ target_link_libraries(image_view ${catkin_LIBRARIES}
                                  ${GTK_LIBRARIES}
                                  ${GTK2_LIBRARIES}
                                  ${OpenCV_LIBRARIES}
+                                 ${Boost_LIBRARIES}
 )
 install(TARGETS image_view
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
