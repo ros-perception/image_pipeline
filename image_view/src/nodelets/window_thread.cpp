@@ -40,7 +40,7 @@ namespace image_view {
 void startWindowThread()
 {
   static boost::once_flag cv_thread_flag = BOOST_ONCE_INIT;
-  boost::call_once(cv_thread_flag, &cv::startWindowThread);
+  boost::call_once(&cv::startWindowThread, cv_thread_flag);
 }
 
 } // namespace image_view
