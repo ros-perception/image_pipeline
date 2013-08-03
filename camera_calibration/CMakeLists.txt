@@ -13,10 +13,10 @@ catkin_add_nosetests(test/directed.py)
 catkin_add_nosetests(test/testapproxsync.py)
 
 # Tests simple calibration dataset
-download_test_data(http://pr.willowgarage.com/data/camera_calibration/camera_calibration.tar.gz camera_calibration.tar.gz 6da43ea314640a4c15dd7a90cbc3aee0)
+catkin_download_test_data(camera_calibration.tar.gz http://pr.willowgarage.com/data/camera_calibration/camera_calibration.tar.gz MD5 6da43ea314640a4c15dd7a90cbc3aee0)
 
 # Tests multiple checkerboards
-download_test_data(http://pr.willowgarage.com/data/camera_calibration/multi_board_calibration.tar.gz multi_board_calibration.tar.gz ddc0f69582d140e33f9d3bfb681956bb)
+catkin_download_test_data(multi_board_calibration.tar.gz http://pr.willowgarage.com/data/camera_calibration/multi_board_calibration.tar.gz MD5 ddc0f69582d140e33f9d3bfb681956bb)
 catkin_add_nosetests(test/multiple_boards.py)
 
 
