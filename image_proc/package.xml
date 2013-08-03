@@ -31,6 +31,7 @@
   <run_depend>cv_bridge</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>image_geometry</run_depend>
+  <run_depend>image_transport</run_depend>
   <run_depend>nodelet</run_depend>
   <run_depend>opencv2</run_depend>
   <run_depend>roscpp</run_depend>

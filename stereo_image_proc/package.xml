@@ -28,6 +28,10 @@
   <build_depend>stereo_msgs</build_depend>
 
   <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>image_geometry</run_depend>
+  <run_depend>image_proc</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>message_filters</run_depend>
   <run_depend>nodelet</run_depend>
   <run_depend>opencv2</run_depend>
 </package>
