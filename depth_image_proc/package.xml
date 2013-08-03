@@ -37,6 +37,9 @@
 
   <run_depend>boost</run_depend>
   <run_depend>cv_bridge</run_depend>
+  <run_depend>image_geometry</run_depend>
+  <run_depend>image_transport</run_depend>
   <run_depend>nodelet</run_depend>
   <run_depend>pcl_ros</run_depend>
+  <run_depend>tf</run_depend>
 </package>
