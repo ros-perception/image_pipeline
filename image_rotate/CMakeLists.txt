@@ -8,7 +8,7 @@ generate_dynamic_reconfigure_options(cfg/ImageRotate.cfg)
 
 catkin_package()
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED core imgproc)
 
 # add the executable
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS}

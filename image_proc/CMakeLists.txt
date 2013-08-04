@@ -4,15 +4,17 @@ project(image_proc)
 find_package(catkin REQUIRED)
 
 find_package(catkin REQUIRED camera_calibration_parsers cv_bridge dynamic_reconfigure image_geometry image_transport nodelet roscpp sensor_msgs)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED core highgui imgproc)
 find_package(Boost REQUIRED COMPONENTS thread)
 
 # Dynamic reconfigure support
 generate_dynamic_reconfigure_options(cfg/CropDecimate.cfg cfg/Debayer.cfg cfg/Rectify.cfg)
 
-catkin_package(DEPENDS image_geometry OpenCV roscpp sensor_msgs
-               INCLUDE_DIRS include
-               LIBRARIES ${PROJECT_NAME}
+catkin_package(
+  CATKIN_DEPENDS image_geometry roscpp sensor_msgs
+  DEPENDS OpenCV
+  INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME}
 )
 
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS})

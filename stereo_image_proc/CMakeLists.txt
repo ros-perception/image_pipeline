@@ -16,7 +16,7 @@ catkin_package(
 include_directories(include)
 
 find_package(catkin REQUIRED dynamic_reconfigure image_geometry image_proc image_transport message_filters nodelet sensor_msgs stereo_msgs)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED calib3d)
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS}
                            ${OpenCV_INCLUDE_DIRS}
 )
