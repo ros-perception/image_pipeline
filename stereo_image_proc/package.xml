@@ -35,4 +35,5 @@
   <run_depend>nodelet</run_depend>
   <run_depend>opencv2</run_depend>
   <run_depend>sensor_msgs</run_depend>
+  <run_depend>stereo_msgs</run_depend>
 </package>
