@@ -7,7 +7,11 @@ find_package(Boost REQUIRED COMPONENTS thread)
 # Dynamic reconfigure support
 generate_dynamic_reconfigure_options(cfg/Disparity.cfg)
 
-catkin_package(LIBRARIES ${PROJECT_NAME})
+catkin_package(
+  CATKIN_DEPENDS image_geometry image_proc sensor_msgs
+  INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME}
+)
 
 include_directories(include)
 
