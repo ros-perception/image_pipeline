@@ -21,7 +21,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <test_depend>rostest</test_depend>
-  
+
   <build_depend>boost</build_depend>
   <build_depend>cv_bridge</build_depend>
   <build_depend>eigen</build_depend>
@@ -29,7 +29,6 @@
   <build_depend>image_transport</build_depend>
   <build_depend>message_filters</build_depend>
   <build_depend>nodelet</build_depend>
-  <build_depend>pcl</build_depend>
   <build_depend>pcl_conversions</build_depend>
   <build_depend>pcl_ros</build_depend>
   <build_depend>sensor_msgs</build_depend>
