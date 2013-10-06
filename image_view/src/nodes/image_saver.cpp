@@ -78,8 +78,10 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::Ca
       if ( save_all_image || save_image_service ) {
         cv::imwrite(filename, image);
         ROS_INFO("Saved image %s", filename.c_str());
-        filename = filename.replace(filename.rfind("."), filename.length(),".ini");
-        camera_calibration_parsers::writeCalibration(filename, "camera", *info);
+        if (info) {
+          filename = filename.replace(filename.rfind("."), filename.length(),".ini");
+          camera_calibration_parsers::writeCalibration(filename, "camera", *info);
+        }
 
         g_count++;
         save_image_service = false;
@@ -95,7 +97,9 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
   image_transport::ImageTransport it(nh);
   std::string topic = nh.resolveName("image");
-  image_transport::CameraSubscriber sub = it.subscribeCamera(topic, 1, &callback);
+  image_transport::CameraSubscriber sub_camera = it.subscribeCamera(topic, 1, &callback);
+  image_transport::Subscriber sub_image = it.subscribe(topic, 1,
+                           boost::bind(callback, _1, sensor_msgs::CameraInfoConstPtr()));
 
   ros::NodeHandle local_nh("~");
   std::string format_string;
