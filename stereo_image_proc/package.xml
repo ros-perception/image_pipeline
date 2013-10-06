@@ -1,6 +1,6 @@
 <package>
   <name>stereo_image_proc</name>
-  <version>1.11.2</version>
+  <version>1.11.3</version>
   <description>Stereo and single image rectification and disparity processing.</description>
   <author>Patrick Mihelich</author>
   <author>Kurt Konolige</author>
