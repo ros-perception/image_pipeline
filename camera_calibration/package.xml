@@ -9,7 +9,7 @@
   <author>Patrick Mihelich</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend version_gte="0.5.68">catkin</buildtool_depend>
 
   <test_depend>rostest</test_depend>
 
