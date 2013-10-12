@@ -6,19 +6,20 @@ catkin_package()
 
 catkin_python_setup()
 
-# Unit test of calibrator.py
-catkin_add_nosetests(test/directed.py)
+if(CATKIN_ENABLE_TESTING)
+  # Unit test of calibrator.py
+  catkin_add_nosetests(test/directed.py)
 
-# Unit test of the approximate synchronizer
-catkin_add_nosetests(test/testapproxsync.py)
+  # Unit test of the approximate synchronizer
+  catkin_add_nosetests(test/testapproxsync.py)
 
-# Tests simple calibration dataset
-catkin_download_test_data(camera_calibration.tar.gz http://download.ros.org/data/camera_calibration/camera_calibration.tar.gz MD5 6da43ea314640a4c15dd7a90cbc3aee0)
+  # Tests simple calibration dataset
+  catkin_download_test_data(camera_calibration.tar.gz http://download.ros.org/data/camera_calibration/camera_calibration.tar.gz MD5 6da43ea314640a4c15dd7a90cbc3aee0)
 
-# Tests multiple checkerboards
-catkin_download_test_data(multi_board_calibration.tar.gz http://download.ros.org/data/camera_calibration/multi_board_calibration.tar.gz MD5 ddc0f69582d140e33f9d3bfb681956bb)
-catkin_add_nosetests(test/multiple_boards.py)
-
+  # Tests multiple checkerboards
+  catkin_download_test_data(multi_board_calibration.tar.gz http://download.ros.org/data/camera_calibration/multi_board_calibration.tar.gz MD5 ddc0f69582d140e33f9d3bfb681956bb)
+  catkin_add_nosetests(test/multiple_boards.py)
+endif()
 
 install(PROGRAMS nodes/camera_calibrate_from_disk.py 
                  nodes/cameracalibrator.py
