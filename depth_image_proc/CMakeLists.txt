@@ -5,13 +5,11 @@ find_package(catkin REQUIRED)
 catkin_package(LIBRARIES ${PROJECT_NAME})
 
 find_package(Boost REQUIRED)
-find_package(catkin REQUIRED cv_bridge image_geometry image_transport message_filters nodelet pcl_conversions pcl_ros sensor_msgs stereo_msgs tf)
+find_package(catkin REQUIRED cv_bridge image_geometry image_transport message_filters nodelet sensor_msgs stereo_msgs tf)
 find_package(Eigen REQUIRED)
-find_package(PCL)
 include_directories(SYSTEM ${BOOST_INCLUDE_DIRS}
                            ${catkin_INCLUDE_DIRS}
                            ${EIGEN_INCLUDE_DIRS}
-                           ${PCL_INCLUDE_DIRS}
 )
 add_library(${PROJECT_NAME} src/nodelets/convert_metric.cpp
                              src/nodelets/disparity.cpp
