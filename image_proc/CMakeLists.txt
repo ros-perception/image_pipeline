@@ -55,7 +55,5 @@ install(DIRECTORY launch
 )
 
 if(CATKIN_ENABLE_TESTING)
-  # Tests
-  catkin_add_gtest(image_proc_rostest test/rostest.cpp)
-  target_link_libraries(image_proc_rostest ${catkin_LIBRARIES}  ${Boost_LIBRARIES})
+  add_subdirectory(test)
 endif()
