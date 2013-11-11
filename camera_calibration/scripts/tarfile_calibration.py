@@ -37,16 +37,18 @@ import roslib; roslib.load_manifest(PKG)
 import os
 import sys
 
+import cv2
+
 from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo
 
 import rospy
 import sensor_msgs.srv
 
-def cal_from_tarfile(boards, tarname, mono = False, upload = False):
+def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags = 0):
     if mono:
-        calibrator = MonoCalibrator(boards)
+        calibrator = MonoCalibrator(boards, calib_flags)
     else:
-        calibrator = StereoCalibrator(boards)
+        calibrator = StereoCalibrator(boards, calib_flags)
 
     calibrator.do_tarfile_calibration(tarname)
 
@@ -80,6 +82,14 @@ if __name__ == '__main__':
                       help="specify chessboard square size in meters [default: 0.108]")
     parser.add_option("--upload", default=False, action="store_true", dest="upload",
                       help="Upload results to camera(s).")
+    parser.add_option("--fix-principal-point", action="store_true", default=False,
+                     help="fix the principal point at the image center")
+    parser.add_option("--fix-aspect-ratio", action="store_true", default=False,
+                     help="enforce focal lengths (fx, fy) are equal")
+    parser.add_option("--zero-tangent-dist", action="store_true", default=False,
+                     help="set tangential distortion coefficients (p1, p2) to zero")
+    parser.add_option("-k", "--k-coefficients", type="int", default=2, metavar="NUM_COEFFS",
+                     help="number of radial distortion coefficients to use (up to 6, default %default)")
     options, args = parser.parse_args()
     
     if len(options.size) != len(options.square):
@@ -109,4 +119,28 @@ if __name__ == '__main__':
 
     tarname = args[0]
 
-    cal_from_tarfile(boards, tarname, options.mono, upload=options.upload)
+    num_ks = options.k_coefficients
+
+    calib_flags = 0
+    if options.fix_principal_point:
+        calib_flags |= cv2.CALIB_FIX_PRINCIPAL_POINT
+    if options.fix_aspect_ratio:
+        calib_flags |= cv2.CALIB_FIX_ASPECT_RATIO
+    if options.zero_tangent_dist:
+        calib_flags |= cv2.CALIB_ZERO_TANGENT_DIST
+    if (num_ks > 3):
+        calib_flags |= cv2.CALIB_RATIONAL_MODEL
+    if (num_ks < 6):
+        calib_flags |= cv2.CALIB_FIX_K6
+    if (num_ks < 5):
+        calib_flags |= cv2.CALIB_FIX_K5
+    if (num_ks < 4):
+        calib_flags |= cv2.CALIB_FIX_K4
+    if (num_ks < 3):
+        calib_flags |= cv2.CALIB_FIX_K3
+    if (num_ks < 2):
+        calib_flags |= cv2.CALIB_FIX_K2
+    if (num_ks < 1):
+        calib_flags |= cv2.CALIB_FIX_K1
+
+    cal_from_tarfile(boards, tarname, options.mono, options.upload, calib_flags)
