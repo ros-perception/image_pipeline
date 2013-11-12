@@ -36,15 +36,25 @@ PKG = 'camera_calibration'
 import roslib; roslib.load_manifest(PKG)
 import os
 import sys
+import numpy
 
+import cv
 import cv2
+import cv_bridge
+import tarfile
 
 from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo
 
 import rospy
 import sensor_msgs.srv
 
-def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags = 0):
+def waitkey():
+   k = cv.WaitKey(6)
+   if k in [27, ord('q')]:
+      rospy.signal_shutdown('Quit')
+   return k
+
+def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags = 0, alpha=1.0):
     if mono:
         calibrator = MonoCalibrator(boards, calib_flags)
     else:
@@ -71,6 +81,82 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
             if not (response1.success and response2.success):
                 raise RuntimeError("connected to set_camera_info service, but failed setting camera_info")
 
+    #Show rectified images
+    calibrator.set_alpha(alpha);
+
+    archive = tarfile.open(tarname, 'r')
+    if mono:
+       for f in archive.getnames():
+            if f.startswith('left') and (f.endswith('.pgm') or f.endswith('png')):
+                filedata = archive.extractfile(f).read()
+                file_bytes = numpy.asarray(bytearray(filedata), dtype=numpy.uint8)
+                im=cv2.imdecode(file_bytes,cv2.cv.CV_LOAD_IMAGE_COLOR)
+
+                bridge = cv_bridge.CvBridge()
+                try:
+                    msg=bridge.cv_to_imgmsg(cv.fromarray(im), "bgr8")
+                except cv_bridge.CvBridgeError, e:
+                    print e
+
+                #handle msg returns the recitifed image with corner detection once camera is calibrated.
+                drawable=calibrator.handle_msg(msg);
+
+                #Display. Name of window:f
+                cv2.namedWindow(f, cv2.cv.CV_WINDOW_NORMAL)
+                cv2.imshow( f,  numpy.asarray( drawable.scrib[:,:] ))
+                k=-1;
+                while k ==-1:
+                  k=waitkey();
+                cv2.destroyWindow(f) 
+    else:
+        limages = [ f for f in archive.getnames() if (f.startswith('left') and (f.endswith('pgm') or f.endswith('png'))) ]
+        limages.sort()
+        rimages = [ f for f in archive.getnames() if (f.startswith('right') and (f.endswith('pgm') or f.endswith('png'))) ]
+        rimages.sort();
+
+        if not len(limages) == len(rimages):
+            raise RuntimeError("Left, right images don't match. %d left images, %d right" % (len(limages), len(rimages)))
+        
+        for i in range(len(limages)):
+            l=limages[i];
+            r=rimages[i];
+
+            if l.startswith('left') and (l.endswith('.pgm') or l.endswith('png')) and r.startswith('right') and (r.endswith('.pgm') or r.endswith('png')):
+                # LEFT IMAGE
+                filedata = archive.extractfile(l).read()
+                file_bytes = numpy.asarray(bytearray(filedata), dtype=numpy.uint8)
+                im_left=cv2.imdecode(file_bytes,cv2.cv.CV_LOAD_IMAGE_COLOR)
+                im_left_rect=calibrator.l.remap(cv.fromarray(im_left));
+   
+                bridge = cv_bridge.CvBridge()
+                try:
+                    msg_left=bridge.cv_to_imgmsg(cv.fromarray(im_left), "bgr8")
+                except cv_bridge.CvBridgeError, e:
+                    print e
+
+                #RIGHT IMAGE
+                filedata = archive.extractfile(r).read()
+                file_bytes = numpy.asarray(bytearray(filedata), dtype=numpy.uint8)
+                im_right=cv2.imdecode(file_bytes,cv2.cv.CV_LOAD_IMAGE_COLOR)
+                try:
+                    msg_right=bridge.cv_to_imgmsg(cv.fromarray(im_right), "bgr8")
+                except cv_bridge.CvBridgeError, e:
+                    print e
+
+                drawable=calibrator.handle_msg([ msg_left,msg_right] );
+
+                h, w = numpy.asarray(drawable.lscrib[:,:]).shape[:2]
+                vis = numpy.zeros((h, w*2, 3), numpy.uint8)
+                vis[:h, :w ,:] = numpy.asarray(drawable.lscrib[:,:])
+                vis[:h, w:w*2, :] = numpy.asarray(drawable.rscrib[:,:])
+
+                cv2.namedWindow(l+" "+r, cv2.cv.CV_WINDOW_NORMAL)
+                cv2.imshow( l+" "+r,  vis)
+                k=-1
+                while k ==-1:
+                  k=waitkey();
+                cv2.destroyWindow( l+" "+r)
+
 if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser("%prog TARFILE [ opts ]")
@@ -90,6 +176,9 @@ if __name__ == '__main__':
                      help="set tangential distortion coefficients (p1, p2) to zero")
     parser.add_option("-k", "--k-coefficients", type="int", default=2, metavar="NUM_COEFFS",
                      help="number of radial distortion coefficients to use (up to 6, default %default)")
+    parser.add_option("-a", "--alpha", type="float", default=1.0, metavar="ALPHA",
+                     help="zoom for visualization of rectifies images. Ranges from 0 (zoomed in, all pixels in calibrated image are valid) to 1 (zoomed out, all pixels in  original image are in calibrated image). default %default)")
+
     options, args = parser.parse_args()
     
     if len(options.size) != len(options.square):
@@ -143,4 +232,4 @@ if __name__ == '__main__':
     if (num_ks < 1):
         calib_flags |= cv2.CALIB_FIX_K1
 
-    cal_from_tarfile(boards, tarname, options.mono, options.upload, calib_flags)
+    cal_from_tarfile(boards, tarname, options.mono, options.upload, calib_flags, options.alpha)

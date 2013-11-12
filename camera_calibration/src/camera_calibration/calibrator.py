@@ -559,6 +559,7 @@ class MonoCalibrator(Calibrator):
         """
         goodcorners = self.collect_corners(images)
         self.cal_fromcorners(goodcorners)
+        self.calibrated = True
 
     def collect_corners(self, images):
         """
@@ -857,6 +858,7 @@ class StereoCalibrator(Calibrator):
         self.l.size = self.size
         self.r.size = self.size
         self.cal_fromcorners(goodcorners)
+        self.calibrated = True
 
     def collect_corners(self, limages, rimages):
         """
