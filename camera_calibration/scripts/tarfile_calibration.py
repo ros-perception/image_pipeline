@@ -49,10 +49,10 @@ import rospy
 import sensor_msgs.srv
 
 def waitkey():
-   k = cv.WaitKey(6)
-   if k in [27, ord('q')]:
-      rospy.signal_shutdown('Quit')
-   return k
+    k = cv.WaitKey(6)
+    if k in [27, ord('q')]:
+        rospy.signal_shutdown('Quit')
+    return k
 
 def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags = 0, alpha=1.0):
     if mono:
@@ -86,7 +86,7 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
 
     archive = tarfile.open(tarname, 'r')
     if mono:
-       for f in archive.getnames():
+        for f in archive.getnames():
             if f.startswith('left') and (f.endswith('.pgm') or f.endswith('png')):
                 filedata = archive.extractfile(f).read()
                 file_bytes = numpy.asarray(bytearray(filedata), dtype=numpy.uint8)
@@ -106,7 +106,7 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
                 cv2.imshow( f,  numpy.asarray( drawable.scrib[:,:] ))
                 k=-1;
                 while k ==-1:
-                  k=waitkey();
+                    k=waitkey();
                 cv2.destroyWindow(f) 
     else:
         limages = [ f for f in archive.getnames() if (f.startswith('left') and (f.endswith('pgm') or f.endswith('png'))) ]
@@ -126,7 +126,6 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
                 filedata = archive.extractfile(l).read()
                 file_bytes = numpy.asarray(bytearray(filedata), dtype=numpy.uint8)
                 im_left=cv2.imdecode(file_bytes,cv2.cv.CV_LOAD_IMAGE_COLOR)
-                im_left_rect=calibrator.l.remap(cv.fromarray(im_left));
    
                 bridge = cv_bridge.CvBridge()
                 try:
@@ -154,7 +153,7 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
                 cv2.imshow( l+" "+r,  vis)
                 k=-1
                 while k ==-1:
-                  k=waitkey();
+                    k=waitkey();
                 cv2.destroyWindow( l+" "+r)
 
 if __name__ == '__main__':
