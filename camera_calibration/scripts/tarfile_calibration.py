@@ -49,8 +49,6 @@ import sensor_msgs.srv
 
 def waitkey():
     k = cv2.waitKey(6)
-    if k in [27, ord('q')]:
-        rospy.signal_shutdown('Quit')
     return k
 
 def display(win_name, img):
@@ -59,7 +57,10 @@ def display(win_name, img):
     k=-1
     while k ==-1:
         k=waitkey()
-    cv2.destroyWindow(win_name) 
+    cv2.destroyWindow(win_name)
+    if k in [27, ord('q')]:
+        rospy.signal_shutdown('Quit')
+
 
 def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags = 0, visualize = False, alpha=1.0):
     if mono:
@@ -91,7 +92,7 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
     if visualize:
 
         #Show rectified images
-        calibrator.set_alpha(alpha);
+        calibrator.set_alpha(alpha)
 
         archive = tarfile.open(tarname, 'r')
         if mono:
@@ -116,14 +117,14 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
             limages = [ f for f in archive.getnames() if (f.startswith('left') and (f.endswith('pgm') or f.endswith('png'))) ]
             limages.sort()
             rimages = [ f for f in archive.getnames() if (f.startswith('right') and (f.endswith('pgm') or f.endswith('png'))) ]
-            rimages.sort();
+            rimages.sort()
 
             if not len(limages) == len(rimages):
                 raise RuntimeError("Left, right images don't match. %d left images, %d right" % (len(limages), len(rimages)))
             
             for i in range(len(limages)):
-                l=limages[i];
-                r=rimages[i];
+                l=limages[i]
+                r=rimages[i]
 
                 if l.startswith('left') and (l.endswith('.pgm') or l.endswith('png')) and r.startswith('right') and (r.endswith('.pgm') or r.endswith('png')):
                     # LEFT IMAGE
@@ -146,14 +147,14 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
                     except cv_bridge.CvBridgeError, e:
                         print e
 
-                    drawable=calibrator.handle_msg([ msg_left,msg_right] );
+                    drawable=calibrator.handle_msg([ msg_left,msg_right] )
 
                     h, w = numpy.asarray(drawable.lscrib[:,:]).shape[:2]
                     vis = numpy.zeros((h, w*2, 3), numpy.uint8)
                     vis[:h, :w ,:] = numpy.asarray(drawable.lscrib[:,:])
                     vis[:h, w:w*2, :] = numpy.asarray(drawable.rscrib[:,:])
                     
-                    display(l+" "+r,vis);    
+                    display(l+" "+r,vis)    
 
 
 if __name__ == '__main__':
