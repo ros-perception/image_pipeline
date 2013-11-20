@@ -172,35 +172,13 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
                                const ImageConstPtr& r_image_msg,
                                const CameraInfoConstPtr& r_info_msg)
 {
-  // convert images if necessary
-  cv_bridge::CvImageConstPtr l_ptr, r_ptr;
-
   // Create cv::Mat view onto l/r image_msg buffer
   cv::Mat_<uint8_t> l_image, r_image;
 
-  if (l_image_msg->encoding == sensor_msgs::image_encodings::MONO8)
-  {
-    l_image = cv::Mat_<uint8_t>(l_image_msg->height, l_image_msg->width, const_cast<uint8_t *>(&l_image_msg->data[0]),
-                                l_image_msg->step);
-  }
-  else
-  {
-    l_ptr = cv_bridge::toCvShare(l_image_msg, sensor_msgs::image_encodings::MONO8);
-    l_image = cv::Mat_<uint8_t>(l_ptr->image.rows, l_ptr->image.cols, const_cast<uint8_t *>(&l_ptr->image.data[0]),
-                                l_ptr->image.step);
-  }
+  // convert images if necessary
+  l_image = cv_bridge::toCvShare(l_image_msg, sensor_msgs::image_encodings::MONO8)->image;
+  r_image = cv_bridge::toCvShare(r_image_msg, sensor_msgs::image_encodings::MONO8)->image;
 
-  if (r_image_msg->encoding == sensor_msgs::image_encodings::MONO8)
-  {
-    r_image = cv::Mat_<uint8_t>(r_image_msg->height, r_image_msg->width, const_cast<uint8_t *>(&r_image_msg->data[0]),
-                                r_image_msg->step);
-  }
-  else
-  {
-    r_ptr = cv_bridge::toCvShare(r_image_msg, sensor_msgs::image_encodings::MONO8);
-    r_image = cv::Mat_<uint8_t>(r_ptr->image.rows, r_ptr->image.cols, const_cast<uint8_t *>(&r_ptr->image.data[0]),
-                                r_ptr->image.step);
-  }
 
   // Update the camera model
   model_.fromCameraInfo(l_info_msg, r_info_msg);
