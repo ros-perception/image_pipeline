@@ -48,6 +48,8 @@
 #include <image_geometry/stereo_camera_model.h>
 #include <opencv2/calib3d/calib3d.hpp>
 
+#include <cv_bridge/cv_bridge.h>
+
 #include <sensor_msgs/image_encodings.h>
 #include <stereo_msgs/DisparityImage.h>
 
@@ -170,9 +172,13 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
                                const ImageConstPtr& r_image_msg,
                                const CameraInfoConstPtr& r_info_msg)
 {
-  /// @todo Convert (share) with new cv_bridge
-  assert(l_image_msg->encoding == sensor_msgs::image_encodings::MONO8);
-  assert(r_image_msg->encoding == sensor_msgs::image_encodings::MONO8);
+  // Create cv::Mat view onto l/r image_msg buffer
+  cv::Mat_<uint8_t> l_image, r_image;
+
+  // convert images if necessary
+  l_image = cv_bridge::toCvShare(l_image_msg, sensor_msgs::image_encodings::MONO8)->image;
+  r_image = cv_bridge::toCvShare(r_image_msg, sensor_msgs::image_encodings::MONO8)->image;
+
 
   // Update the camera model
   model_.fromCameraInfo(l_info_msg, r_info_msg);
@@ -209,13 +215,7 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   disp_msg->max_disparity = params->minDisparity + params->numberOfDisparities - 1;
   disp_msg->delta_d = 1.0 / 16; // OpenCV uses 16 disparities per pixel
 
-  // Create cv::Mat views onto all buffers
-  const cv::Mat_<uint8_t> l_image(l_image_msg->height, l_image_msg->width,
-                                  const_cast<uint8_t*>(&l_image_msg->data[0]),
-                                  l_image_msg->step);
-  const cv::Mat_<uint8_t> r_image(r_image_msg->height, r_image_msg->width,
-                                  const_cast<uint8_t*>(&r_image_msg->data[0]),
-                                  r_image_msg->step);
+  // Create cv::Mat view onto disparity image message buffer
   cv::Mat_<float> disp_image(disp_msg->image.height, disp_msg->image.width,
                              reinterpret_cast<float*>(&disp_msg->image.data[0]),
                              disp_msg->image.step);

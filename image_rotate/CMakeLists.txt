@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(image_rotate)
 
-find_package(catkin REQUIRED COMPONENTS cv_bridge dynamic_reconfigure image_transport roscpp tf)
+find_package(catkin REQUIRED COMPONENTS cv_bridge dynamic_reconfigure image_transport roscpp sensor_msgs tf)
 
 # generate the dynamic_reconfigure config file
 generate_dynamic_reconfigure_options(cfg/ImageRotate.cfg)
