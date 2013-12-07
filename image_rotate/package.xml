@@ -1,6 +1,6 @@
 <package>
   <name>image_rotate</name>
-  <version>1.11.4</version>
+  <version>1.11.5</version>
   <description>
     <p>
       Contains a node that rotates an image stream in a way that minimizes
