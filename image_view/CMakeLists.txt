@@ -60,7 +60,12 @@ target_link_libraries(image_saver ${catkin_LIBRARIES}
                                   ${OpenCV_LIBRARIES}
 )
 
-install(TARGETS disparity_view extract_images image_saver image_view_exe stereo_view
+add_executable(video_recorder src/nodes/video_recorder.cpp)
+target_link_libraries(video_recorder ${catkin_LIBRARIES}
+                                     ${OpenCV_LIBRARIES}
+)
+
+install(TARGETS disparity_view extract_images image_saver video_recorder image_view_exe stereo_view
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 install(FILES nodelet_plugins.xml
