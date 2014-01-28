@@ -29,7 +29,8 @@ add_library(${PROJECT_NAME} src/libimage_proc/processor.cpp
                                 src/nodelets/edge_aware.cpp
 )
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}  ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}  ${Boost_LIBRARIES}
+  ${OpenCV_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME}
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
