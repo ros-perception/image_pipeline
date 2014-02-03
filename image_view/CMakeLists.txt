@@ -6,7 +6,7 @@ catkin_package()
 
 find_package(Boost REQUIRED COMPONENTS signals thread)
 find_package(GTK2)
-find_package(OpenCV REQUIRED highgui)
+find_package(OpenCV REQUIRED highgui core)
 find_package(catkin REQUIRED camera_calibration_parsers cv_bridge image_transport message_filters nodelet rosconsole roscpp)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
                            ${catkin_INCLUDE_DIRS}
