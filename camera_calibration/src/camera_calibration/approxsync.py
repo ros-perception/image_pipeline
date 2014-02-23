@@ -36,6 +36,7 @@ import rospy
 import message_filters
 import threading
 import itertools
+import operator
 
 class ApproximateSynchronizer(message_filters.SimpleFilter):
 
@@ -55,23 +56,12 @@ class ApproximateSynchronizer(message_filters.SimpleFilter):
         my_queue[msg.header.stamp] = msg
         while len(my_queue) > self.queue_size:
             del my_queue[min(my_queue)]
-        if 0:
-            # common is the set of timestamps that occur in all queues
-            common = reduce(set.intersection, [set(q) for q in self.queues])
-            for t in sorted(common):
-                # msgs is list of msgs (one from each queue) with stamp t
-                msgs = [q[t] for q in self.queues]
+        for vv in itertools.product(*[q.keys() for q in self.queues]):
+            qt = zip(self.queues, vv)
+            if (((max(vv) - min(vv)) < self.slop) and 
+                reduce(operator.and_, [q.has_key(t) for q,t in qt])):
+                msgs = [q[t] for q,t in qt]
                 self.signalMessage(*msgs)
-                for q in self.queues:
+                for q,t in qt:
                     del q[t]
-        else:
-            for vv in itertools.product(*[q.keys() for q in self.queues]):
-                if ((max(vv) - min(vv)) < self.slop):
-                    msgs = [q[t] for q,t in zip(self.queues, vv)]
-                    self.signalMessage(*msgs)
-                    for q in self.queues:
-                        try:
-                            del q[t]
-                        except KeyError:
-                            pass # TODO: why can del q[t] fail?
         self.lock.release()
