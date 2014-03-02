@@ -45,10 +45,12 @@ import os
 import sys
 import operator
 import time
-import Queue
+try:
+    from queue import Queue
+except ImportError:
+    from Queue import Queue
 import threading
 import tarfile
-import StringIO
 
 import cv
 
@@ -119,8 +121,8 @@ class CameraCheckerNode:
 
         self.br = cv_bridge.CvBridge()
 
-        self.q_mono = Queue.Queue()
-        self.q_stereo = Queue.Queue()
+        self.q_mono = Queue()
+        self.q_stereo = Queue()
 
         mth = ConsumerThread(self.q_mono, self.handle_monocular)
         mth.setDaemon(True)
@@ -196,9 +198,9 @@ class CameraCheckerNode:
             reprojection_rms = numpy.sqrt(numpy.sum(numpy.array(reprojection_errors) ** 2) / numpy.product(reprojection_errors.shape))
 
             # Print the results
-            print "Linearity RMS Error: %.3f Pixels      Reprojection RMS Error: %.3f Pixels" % (linearity_rms, reprojection_rms)
+            print("Linearity RMS Error: %.3f Pixels      Reprojection RMS Error: %.3f Pixels" % (linearity_rms, reprojection_rms))
         else:
-            print 'no chessboard'
+            print('no chessboard')
 
     def handle_stereo(self, msg):
 
@@ -229,9 +231,9 @@ class CameraCheckerNode:
                 [l2(pt3d[c + 0], pt3d[c + (cc * (cr - 1))]) / (cr - 1) for c in range(cc)])
             dimension = sum(lengths) / len(lengths)
 
-            print "epipolar error: %f pixels   dimension: %f m" % (epipolar, dimension)
+            print("epipolar error: %f pixels   dimension: %f m" % (epipolar, dimension))
         else:
-            print "no chessboard"
+            print("no chessboard")
 
 def main():
     from optparse import OptionParser

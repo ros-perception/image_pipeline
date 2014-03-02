@@ -42,7 +42,10 @@ import message_filters
 from camera_calibration.approxsync import ApproximateSynchronizer
 
 import os
-import Queue
+try:
+    from queue import Queue
+except ImportError:
+    from Queue import Queue
 import threading
 import functools
 
@@ -76,12 +79,12 @@ class CalibrationNode:
                 remapped = rospy.remap_name(svcname)
                 if remapped != svcname:
                     fullservicename = "%s/set_camera_info" % remapped
-                    print "Waiting for service", fullservicename, "..."
+                    print("Waiting for service", fullservicename, "...")
                     try:
                         rospy.wait_for_service(fullservicename, 5)
-                        print "OK"
+                        print("OK")
                     except rospy.ROSException:
-                        print "Service not found"
+                        print("Service not found")
                         rospy.signal_shutdown('Quit')
 
         self._boards = boards
@@ -102,8 +105,8 @@ class CalibrationNode:
         self.set_right_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("right_camera"),
                                                                 sensor_msgs.srv.SetCameraInfo)
 
-        self.q_mono = Queue.Queue()
-        self.q_stereo = Queue.Queue()
+        self.q_mono = Queue()
+        self.q_stereo = Queue()
 
         self.c = None
 
@@ -149,19 +152,19 @@ class CalibrationNode:
             return True
 
         for i in range(10):
-            print "!" * 80
-        print
-        print "Attempt to set camera info failed: " + response.status_message
-        print
+            print("!" * 80)
+        print()
+        print("Attempt to set camera info failed: " + response.status_message)
+        print()
         for i in range(10):
-            print "!" * 80
-        print
+            print("!" * 80)
+        print()
         rospy.logerr('Unable to set camera info for calibration. Failure message: %s' % response.status_message)
         return False
 
     def do_upload(self):
         self.c.report()
-        print self.c.ost()
+        print(self.c.ost())
         info = self.c.as_message()
 
         rv = True
@@ -392,25 +395,25 @@ def main():
     num_ks = options.k_coefficients
     # Deprecated flags modify k_coefficients
     if options.rational_model:
-        print "Option --rational-model is deprecated"
+        print("Option --rational-model is deprecated")
         num_ks = 6
     if options.fix_k6:
-        print "Option --fix-k6 is deprecated"
+        print("Option --fix-k6 is deprecated")
         num_ks = min(num_ks, 5)
     if options.fix_k5:
-        print "Option --fix-k5 is deprecated"
+        print("Option --fix-k5 is deprecated")
         num_ks = min(num_ks, 4)
     if options.fix_k4:
-        print "Option --fix-k4 is deprecated"
+        print("Option --fix-k4 is deprecated")
         num_ks = min(num_ks, 3)
     if options.fix_k3:
-        print "Option --fix-k3 is deprecated"
+        print("Option --fix-k3 is deprecated")
         num_ks = min(num_ks, 2)
     if options.fix_k2:
-        print "Option --fix-k2 is deprecated"
+        print("Option --fix-k2 is deprecated")
         num_ks = min(num_ks, 1)
     if options.fix_k1:
-        print "Option --fix-k1 is deprecated"
+        print("Option --fix-k1 is deprecated")
         num_ks = 0
 
     calib_flags = 0
@@ -441,7 +444,7 @@ def main():
     elif options.pattern == 'acircles':
         pattern = Patterns.ACircles
     elif options.pattern != 'chessboard':
-        print 'Unrecognized pattern %s, defaulting to chessboard' % options.pattern
+        print('Unrecognized pattern %s, defaulting to chessboard' % options.pattern)
 
     rospy.init_node('cameracalibrator')
     node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, pattern)
@@ -450,6 +453,6 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except Exception, e:
+    except Exception as e:
         import traceback
         traceback.print_exc()

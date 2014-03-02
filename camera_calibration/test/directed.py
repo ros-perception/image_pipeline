@@ -106,7 +106,7 @@ class TestDirected(unittest.TestCase):
     def test_stereo(self):
         epierrors = [0.1, 14.2, 0.1, 5.7]
         for i, dim in enumerate(self.sizes):
-            print "Dim =", dim
+            print("Dim =", dim)
             sc = StereoCalibrator([board], cv2.CALIB_FIX_K3)
             sc.cal(self.l[dim], self.r[dim])
 

@@ -32,7 +32,10 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import StringIO
+try:
+    from io import StringIO
+except ImportError:
+    from io import StringIO
 import cv
 import cv2
 import cv_bridge
@@ -49,7 +52,7 @@ import time
 
 # Supported calibration patterns
 class Patterns:
-    Chessboard, Circles, ACircles = range(3)
+    Chessboard, Circles, ACircles = list(range(3))
 
 class CalibrationException(Exception):
     pass
@@ -271,11 +274,11 @@ class Calibrator(object):
         else:
             return self.br.imgmsg_to_cv(msg, "mono8")
 
-    def get_parameters(self, corners, board, (width, height)):
+    def get_parameters(self, corners, board, size):
         """
         Return list of parameters [X, Y, size, skew] describing the checkerboard view.
         """
-        # Compute some parameters for this chessboard
+        (width, height) = size
         Xs = [x for (x, y) in corners]
         Ys = [y for (x, y) in corners]
         area = _get_area(corners, board)
@@ -313,8 +316,11 @@ class Calibrator(object):
 
         # Find range of checkerboard poses covered by samples in database
         all_params = [sample[0] for sample in self.db]
-        min_params = reduce(lmin, all_params)
-        max_params = reduce(lmax, all_params)
+        min_params = all_params[0]
+        max_params = all_params[0]
+        for params in all_params[1:]:
+            min_params = lmin(min_params, params)
+            max_params = lmax(max_params, params)
         # Don't reward small size or skew
         min_params = [min_params[0], min_params[1], 0., 0.]
 
@@ -324,7 +330,7 @@ class Calibrator(object):
         # TODO Awkward that we update self.goodenough instead of returning it
         self.goodenough = (len(self.db) >= 40) or all([p == 1.0 for p in progress])
 
-        return zip(self._param_names, min_params, max_params, progress)
+        return list(zip(self._param_names, min_params, max_params, progress))
 
     def mk_object_points(self, boards, use_board_size = False):
         opts = cv.CreateMat(_get_total_num_pts(boards), 3, cv.CV_32FC1)
@@ -433,7 +439,7 @@ class Calibrator(object):
             # Scale corners to downsampled image for display
             downsampled_corners = None
             if ok:
-                print corners
+                print(corners)
                 if scale > 1.0:
                     downsampled_corners = [(c[0]/x_scale, c[1]/y_scale) for c in corners]
                 else:
@@ -457,10 +463,10 @@ class Calibrator(object):
         return msg
 
     def lrreport(self, d, k, r, p):
-        print "D = ", list(cvmat_iterator(d))
-        print "K = ", list(cvmat_iterator(k))
-        print "R = ", list(cvmat_iterator(r))
-        print "P = ", list(cvmat_iterator(p))
+        print(("D = ", list(cvmat_iterator(d))))
+        print(("K = ", list(cvmat_iterator(k))))
+        print(("R = ", list(cvmat_iterator(r))))
+        print(("P = ", list(cvmat_iterator(p))))
 
     # TODO Get rid of OST format, show output as YAML instead
     def lrost(self, name, d, k, r, p):
@@ -504,7 +510,7 @@ class Calibrator(object):
         tf = tarfile.open(filename, 'w:gz')
         self.do_tarfile_save(tf) # Must be overridden in subclasses
         tf.close()
-        print "Wrote calibration data to", filename
+        print(("Wrote calibration data to", filename))
 
 def image_from_archive(archive, name):
     """
@@ -780,7 +786,7 @@ class MonoCalibrator(Calibrator):
                 if self.is_good_sample(params):
                     self.db.append((params, gray))
                     self.good_corners.append((corners, board))
-                    print "*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)
+                    print(("*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)))
 
         rv = MonoDrawable()
         rv.scrib = scrib
@@ -790,7 +796,7 @@ class MonoCalibrator(Calibrator):
 
     def do_calibration(self, dump = False):
         if not self.good_corners:
-            print "**** Collecting corners for all images! ****" #DEBUG
+            print("**** Collecting corners for all images! ****") #DEBUG
             images = [i for (p, i) in self.db]
             self.good_corners = self.collect_corners(images)
         # Dump should only occur if user wants it
@@ -800,7 +806,7 @@ class MonoCalibrator(Calibrator):
         self.size = cv.GetSize(self.db[0][1]) # TODO Needs to be set externally
         self.cal_fromcorners(self.good_corners)
         self.calibrated = True
-        print self.ost() # DEBUG
+        print((self.ost())) # DEBUG
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
@@ -962,12 +968,12 @@ class StereoCalibrator(Calibrator):
             self.set_alpha(0.0)
 
     def report(self):
-        print "\nLeft:"
+        print("\nLeft:")
         self.lrreport(self.l.distortion, self.l.intrinsics, self.l.R, self.l.P)
-        print "\nRight:"
+        print("\nRight:")
         self.lrreport(self.r.distortion, self.r.intrinsics, self.r.R, self.r.P)
-        print "self.T", list(cvmat_iterator(self.T))
-        print "self.R", list(cvmat_iterator(self.R))
+        print(("self.T", list(cvmat_iterator(self.T))))
+        print(("self.R", list(cvmat_iterator(self.R))))
 
     def ost(self):
         return (self.lrost(self.name + "/left", self.l.distortion, self.l.intrinsics, self.l.R, self.l.P) +
@@ -1098,7 +1104,7 @@ class StereoCalibrator(Calibrator):
                 if self.is_good_sample(params):
                     self.db.append( (params, lgray, rgray) )
                     self.good_corners.append( (lcorners, rcorners, lboard) )
-                    print "*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)
+                    print(("*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)))
 
         rv = StereoDrawable()
         rv.lscrib = lscrib
@@ -1118,7 +1124,7 @@ class StereoCalibrator(Calibrator):
         self.r.size = self.size
         self.cal_fromcorners(self.good_corners)
         self.calibrated = True
-        print self.ost() # DEBUG
+        print((self.ost())) # DEBUG
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """

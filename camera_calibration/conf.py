@@ -39,8 +39,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'camera_calibration'
-copyright = u'2009, Willow Garage, Inc.'
+project = 'camera_calibration'
+copyright = '2009, Willow Garage, Inc.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -174,8 +174,8 @@ htmlhelp_basename = 'camera_calibrationdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'camera_calibration.tex', u'stereo\\_utils Documentation',
-   u'James Bowman', 'manual'),
+  ('index', 'camera_calibration.tex', 'stereo\\_utils Documentation',
+   'James Bowman', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

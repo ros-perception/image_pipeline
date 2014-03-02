@@ -70,7 +70,7 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
 
     calibrator.do_tarfile_calibration(tarname)
 
-    print calibrator.ost()
+    print(calibrator.ost())
 
     if upload: 
         info = calibrator.as_message()
@@ -105,8 +105,8 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
                     bridge = cv_bridge.CvBridge()
                     try:
                         msg=bridge.cv2_to_imgmsg(im, "bgr8")
-                    except cv_bridge.CvBridgeError, e:
-                        print e
+                    except cv_bridge.CvBridgeError as e:
+                        print(e)
 
                     #handle msg returns the recitifed image with corner detection once camera is calibrated.
                     drawable=calibrator.handle_msg(msg)
@@ -135,8 +135,8 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
                     bridge = cv_bridge.CvBridge()
                     try:
                         msg_left=bridge.cv2_to_imgmsg(im_left, "bgr8")
-                    except cv_bridge.CvBridgeError, e:
-                        print e
+                    except cv_bridge.CvBridgeError as e:
+                        print(e)
 
                     #RIGHT IMAGE
                     filedata = archive.extractfile(r).read()
@@ -144,8 +144,8 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
                     im_right=cv2.imdecode(file_bytes,cv2.CV_LOAD_IMAGE_COLOR)
                     try:
                         msg_right=bridge.cv2_to_imgmsg(im_right, "bgr8")
-                    except cv_bridge.CvBridgeError, e:
-                        print e
+                    except cv_bridge.CvBridgeError as e:
+                        print(e)
 
                     drawable=calibrator.handle_msg([ msg_left,msg_right] )
 

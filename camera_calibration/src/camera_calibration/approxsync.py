@@ -56,10 +56,10 @@ class ApproximateSynchronizer(message_filters.SimpleFilter):
         my_queue[msg.header.stamp] = msg
         while len(my_queue) > self.queue_size:
             del my_queue[min(my_queue)]
-        for vv in itertools.product(*[q.keys() for q in self.queues]):
-            qt = zip(self.queues, vv)
-            if (((max(vv) - min(vv)) < self.slop) and 
-                reduce(operator.and_, [q.has_key(t) for q,t in qt])):
+        for vv in itertools.product(*[list(q.keys()) for q in self.queues]):
+            qt = list(zip(self.queues, vv))
+            if ( ((max(vv) - min(vv)) < self.slop) and 
+                (len([1 for q,t in qt if t not in q]) == 0) ):
                 msgs = [q[t] for q,t in qt]
                 self.signalMessage(*msgs)
                 for q,t in qt:
