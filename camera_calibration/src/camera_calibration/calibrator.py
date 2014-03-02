@@ -217,11 +217,11 @@ def _get_total_num_pts(boards):
 
 
 # TODO self.size needs to come from CameraInfo, full resolution
-class Calibrator:
+class Calibrator(object):
     """
     Base class for calibration system
     """
-    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard):
+    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard, name=''):
         # Ordering the dimensions for the different detectors is actually a minefield...
         if pattern == Patterns.Chessboard:
             # Make sure n_cols > n_rows to agree with OpenCV CB detector output
@@ -248,6 +248,7 @@ class Calibrator:
         # Set to true when we have sufficiently varied samples to calibrate
         self.goodenough = False
         self.param_ranges = [0.7, 0.7, 0.4, 0.5]
+        self.name = name
 
     def mkgray(self, msg):
         """
@@ -475,7 +476,7 @@ class Calibrator:
         + "height\n"
         + str(self.size[1]) + "\n"
         + "\n"
-        + "[narrow_stereo/%s]" % name + "\n"
+        + "[%s]" % name + "\n"
         + "\n"
         + "camera matrix\n"
         + " ".join(["%8f" % k[0,i] for i in range(3)]) + "\n"
@@ -552,6 +553,9 @@ class MonoCalibrator(Calibrator):
     """
 
     is_mono = True  # TODO Could get rid of is_mono
+
+    def __init__(self, board, name = 'narrow_stereo/left', **kwargs):
+        super(MonoCalibrator, self).__init__(board, name = name, **kwargs)
 
     def cal(self, images):
         """
@@ -686,7 +690,7 @@ class MonoCalibrator(Calibrator):
         self.lrreport(self.distortion, self.intrinsics, self.R, self.P)
 
     def ost(self):
-        return self.lrost("left", self.distortion, self.intrinsics, self.R, self.P)
+        return self.lrost(self.name, self.distortion, self.intrinsics, self.R, self.P)
 
     def linear_error_from_image(self, image):
         """
@@ -835,6 +839,9 @@ class StereoCalibrator(Calibrator):
 
     is_mono = False
 
+    def __init__(self, board, name = 'narrow_stereo', **kwargs):
+        super(StereoCalibrator, self).__init__(board, name = name, **kwargs)
+
     def __init__(self, *args):
         self.l = MonoCalibrator(*args)
         self.r = MonoCalibrator(*args)
@@ -961,8 +968,8 @@ class StereoCalibrator(Calibrator):
         print "self.R", list(cvmat_iterator(self.R))
 
     def ost(self):
-        return (self.lrost("left", self.l.distortion, self.l.intrinsics, self.l.R, self.l.P) +
-          self.lrost("right", self.r.distortion, self.r.intrinsics, self.r.R, self.r.P))
+        return (self.lrost(self.name + "/left", self.l.distortion, self.l.intrinsics, self.l.R, self.l.P) +
+          self.lrost(self.name + "/right", self.r.distortion, self.r.intrinsics, self.r.R, self.r.P))
 
     # TODO Get rid of "from_images" versions of these, instead have function to get undistorted corners
     def epipolar_error_from_images(self, limage, rimage):
