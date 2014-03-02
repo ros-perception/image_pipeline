@@ -560,8 +560,10 @@ class MonoCalibrator(Calibrator):
 
     is_mono = True  # TODO Could get rid of is_mono
 
-    def __init__(self, board, name = 'narrow_stereo/left', **kwargs):
-        super(MonoCalibrator, self).__init__(board, name = name, **kwargs)
+    def __init__(self, *args, **kwargs):
+        if 'name' not in kwargs:
+            kwargs['name'] = 'narrow_stereo/left'
+        super(MonoCalibrator, self).__init__(*args, **kwargs)
 
     def cal(self, images):
         """
@@ -846,13 +848,12 @@ class StereoCalibrator(Calibrator):
 
     is_mono = False
 
-    def __init__(self, board, name = 'narrow_stereo', **kwargs):
-        super(StereoCalibrator, self).__init__(board, name = name, **kwargs)
-
-    def __init__(self, *args):
-        self.l = MonoCalibrator(*args)
-        self.r = MonoCalibrator(*args)
-        Calibrator.__init__(self, *args)
+    def __init__(self, *args, **kwargs):
+        if 'name' not in kwargs:
+            kwargs['name'] = 'narrow_stereo'
+        super(StereoCalibrator, self).__init__(*args, **kwargs)
+        self.l = MonoCalibrator(*args, **kwargs)
+        self.r = MonoCalibrator(*args, **kwargs)
         # Collecting from two cameras in a horizontal stereo rig, can't get
         # full X range in the left camera.
         self.param_ranges[0] = 0.4

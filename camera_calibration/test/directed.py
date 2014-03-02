@@ -89,7 +89,7 @@ class TestDirected(unittest.TestCase):
     def test_monocular(self):
         # Run the calibrator, produce a calibration, check it
         mc = MonoCalibrator([ board ], cv2.CALIB_FIX_K3)
-        max_errs = [0.3, 0.4, 1.9, 1.9]
+        max_errs = [0.1, 0.2, 0.4, 0.7]
         for i, dim in enumerate(self.sizes):
             mc.cal(self.l[dim])
             self.assert_good_mono(mc, dim, max_errs[i])
@@ -102,7 +102,7 @@ class TestDirected(unittest.TestCase):
             self.assert_good_mono(mc2, dim, max_errs[i])
 
     def test_stereo(self):
-        epierrors = [0.1, 14.2, 0.1, 5.7]
+        epierrors = [0.1, 0.2, 0.4, 1.0]
         for i, dim in enumerate(self.sizes):
             print("Dim =", dim)
             sc = StereoCalibrator([board], cv2.CALIB_FIX_K3)
@@ -121,7 +121,7 @@ class TestDirected(unittest.TestCase):
                     epierror += epierror_local
                     n += 1
             epierror /= n
-            self.assert_(epierror < epierrors[i], 'Epipolar error is %f' % epierror)
+            self.assert_(epierror < epierrors[i], 'Epipolar error is %f for resolution i = %d' % (epierror, i))
 
             self.assertAlmostEqual(sc.chessboard_size_from_images(self.l[dim][0], self.r[dim][0]), .108, 2)
 
