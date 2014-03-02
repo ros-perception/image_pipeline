@@ -33,8 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import roslib
-PKG = 'camera_calibration'
-roslib.load_manifest(PKG)
 import rostest
 import rospy
 import cv

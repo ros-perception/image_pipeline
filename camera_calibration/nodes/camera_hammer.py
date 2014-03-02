@@ -32,9 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-PKG = 'camera_calibration' # this package name
-import roslib; roslib.load_manifest(PKG)
-
 import rospy
 import sensor_msgs.msg
 import sensor_msgs.srv

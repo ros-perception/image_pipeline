@@ -32,9 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import roslib
-PKG = 'camera_calibration'
-roslib.load_manifest(PKG)
 import rostest
 import rospy
 import unittest
