@@ -69,7 +69,7 @@ class ConsumerThread(threading.Thread):
 
 
 class CalibrationNode:
-    def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0, pattern=Patterns.Chessboard):
+    def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0, pattern=Patterns.Chessboard, camera_name=''):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -87,6 +87,7 @@ class CalibrationNode:
         self._boards = boards
         self._calib_flags = flags
         self._pattern = pattern
+        self._camera_name = camera_name
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = synchronizer([lsub, rsub], 4)
@@ -128,7 +129,10 @@ class CalibrationNode:
 
     def handle_monocular(self, msg):
         if self.c == None:
-            self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern)
+            if self._camera_name:
+                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name)
+            else:
+                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern)
 
         # This should just call the MonoCalibrator
         drawable = self.c.handle_msg(msg)
@@ -137,8 +141,11 @@ class CalibrationNode:
 
     def handle_stereo(self, msg):
         if self.c == None:
-            self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern)
-            
+            if self._camera_name:
+                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name)
+            else:
+                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern)
+
         drawable = self.c.handle_msg(msg)
         self.displaywidth = drawable.lscrib.cols + drawable.rscrib.cols
         self.redraw_stereo(drawable)
@@ -324,6 +331,9 @@ def main():
     from optparse import OptionParser, OptionGroup
     parser = OptionParser("%prog --size SIZE1 --square SQUARE1 [ --size SIZE2 --square SQUARE2 ]",
                           description=None)
+    parser.add_option("-c", "--camera_name",
+                     type="string", default='narrow_stereo',
+                     help="name of the camera to appear in the calibration file")
     group = OptionGroup(parser, "Chessboard Options",
                         "You must specify one or more chessboards as pairs of --size and --square options.")
     group.add_option("-p", "--pattern",
@@ -444,7 +454,7 @@ def main():
         print('Unrecognized pattern %s, defaulting to chessboard' % options.pattern)
 
     rospy.init_node('cameracalibrator')
-    node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, pattern)
+    node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, pattern, options.camera_name)
     rospy.spin()
 
 if __name__ == "__main__":
