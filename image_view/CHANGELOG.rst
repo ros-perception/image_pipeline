@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.11.7 (2014-03-28)
+-------------------
 * Added requirement for core.
 * Contributors: Jonathan J Hunt
 
