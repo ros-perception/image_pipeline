@@ -29,14 +29,8 @@
         args="load stereo_image_proc/disparity $(arg manager) $(arg bond)"
 	respawn="$(arg respawn)" />
 
-  <!-- Point cloud, PCL-friendly -->
+  <!-- PointCloud2 -->
   <node pkg="nodelet" type="nodelet" name="point_cloud2"
         args="load stereo_image_proc/point_cloud2 $(arg manager) $(arg bond)"
 	respawn="$(arg respawn)" />
-
-  <!-- Point cloud, deprecated format -->
-  <node pkg="nodelet" type="nodelet" name="point_cloud"
-        args="load stereo_image_proc/point_cloud $(arg manager) $(arg bond)"
-	respawn="$(arg respawn)" />
-
 </launch>

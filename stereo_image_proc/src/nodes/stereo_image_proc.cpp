@@ -135,14 +135,6 @@ int main(int argc, char **argv)
     ros::param::set(point_cloud2_name, shared_params);
   manager.load(point_cloud2_name, "stereo_image_proc/point_cloud2", remappings, my_argv);
 
-  // PointCloud (deprecated) nodelet
-  // Inputs: left/image_rect_color, left/camera_info, right/camera_info, disparity
-  // Outputs: points
-  std::string point_cloud_name = ros::this_node::getName() + "_point_cloud";
-  if (shared_params.valid())
-    ros::param::set(point_cloud_name, shared_params);
-  manager.load(point_cloud_name, "stereo_image_proc/point_cloud", remappings, my_argv);
-
   // Check for only the original camera topics
   ros::V_string topics;
   topics.push_back(ros::names::resolve("left/image_raw"));
