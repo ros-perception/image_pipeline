@@ -43,33 +43,18 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl/point_types.h>
 #include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include "depth_traits.h"
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <pcl_conversions/pcl_conversions.h>
-
 namespace depth_image_proc {
 
 using namespace message_filters::sync_policies;
 namespace enc = sensor_msgs::image_encodings;
-
-typedef union
-{
-  struct /*anonymous*/
-  {
-    unsigned char Blue;
-    unsigned char Green;
-    unsigned char Red;
-    unsigned char Alpha;
-  };
-  float float_value;
-  long long_value;
-} RGBValue;
 
 class PointCloudXyzrgbNodelet : public nodelet::Nodelet
 {
@@ -85,7 +70,7 @@ class PointCloudXyzrgbNodelet : public nodelet::Nodelet
 
   // Publications
   boost::mutex connect_mutex_;
-  typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
+  typedef sensor_msgs::PointCloud2 PointCloud;
   ros::Publisher pub_point_cloud_;
 
   image_geometry::PinholeCameraModel model_;
@@ -256,11 +241,14 @@ void PointCloudXyzrgbNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_ms
 
   // Allocate new point cloud message
   PointCloud::Ptr cloud_msg (new PointCloud);
-  cloud_msg->header = pcl_conversions::toPCL(depth_msg->header); // Use depth image time stamp
+  cloud_msg->header = depth_msg->header; // Use depth image time stamp
   cloud_msg->height = depth_msg->height;
   cloud_msg->width  = depth_msg->width;
   cloud_msg->is_dense = false;
-  cloud_msg->points.resize (cloud_msg->height * cloud_msg->width);
+  cloud_msg->is_bigendian = false;
+
+  sensor_msgs::PointCloud2Modifier pcd_modifier(*cloud_msg);
+  pcd_modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
 
   if (depth_msg->encoding == enc::TYPE_16UC1)
   {
@@ -299,35 +287,39 @@ void PointCloudXyzrgbNodelet::convert(const sensor_msgs::ImageConstPtr& depth_ms
   int row_step = depth_msg->step / sizeof(T);
   const uint8_t* rgb = &rgb_msg->data[0];
   int rgb_skip = rgb_msg->step - rgb_msg->width * color_step;
-  PointCloud::iterator pt_iter = cloud_msg->begin ();
 
-  for (int v = 0; v < (int)cloud_msg->height; ++v, depth_row += row_step, rgb += rgb_skip)
+  sensor_msgs::PointCloud2Iterator<float> iter_x(*cloud_msg, "x");
+  sensor_msgs::PointCloud2Iterator<float> iter_y(*cloud_msg, "y");
+  sensor_msgs::PointCloud2Iterator<float> iter_z(*cloud_msg, "z");
+  sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(*cloud_msg, "r");
+  sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(*cloud_msg, "g");
+  sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*cloud_msg, "b");
+  sensor_msgs::PointCloud2Iterator<uint8_t> iter_a(*cloud_msg, "a");
+
+  for (int v = 0; v < int(cloud_msg->height); ++v, depth_row += row_step, rgb += rgb_skip)
   {
-    for (int u = 0; u < (int)cloud_msg->width; ++u, rgb += color_step)
+    for (int u = 0; u < int(cloud_msg->width); ++u, rgb += color_step, ++iter_x, ++iter_y, ++iter_z, ++iter_a, ++iter_r, ++iter_g, ++iter_b)
     {
-      pcl::PointXYZRGB& pt = *pt_iter++;
       T depth = depth_row[u];
 
       // Check for invalid measurements
       if (!DepthTraits<T>::valid(depth))
       {
-        pt.x = pt.y = pt.z = bad_point;
+        *iter_x = *iter_y = *iter_z = bad_point;
       }
       else
       {
         // Fill in XYZ
-        pt.x = (u - center_x) * depth * constant_x;
-        pt.y = (v - center_y) * depth * constant_y;
-        pt.z = DepthTraits<T>::toMeters(depth);
+        *iter_x = (u - center_x) * depth * constant_x;
+        *iter_y = (v - center_y) * depth * constant_y;
+        *iter_z = DepthTraits<T>::toMeters(depth);
       }
 
       // Fill in color
-      RGBValue color;
-      color.Red   = rgb[red_offset];
-      color.Green = rgb[green_offset];
-      color.Blue  = rgb[blue_offset];
-      color.Alpha = 0;
-      pt.rgb = color.float_value;
+      *iter_a = 255;
+      *iter_r = rgb[red_offset];
+      *iter_g = rgb[green_offset];
+      *iter_b = rgb[blue_offset];
     }
   }
 }
