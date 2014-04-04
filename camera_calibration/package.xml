@@ -15,8 +15,8 @@
 
   <run_depend>cv_bridge</run_depend>
   <run_depend>image_geometry</run_depend>
+  <run_depend>libopencv-dev</run_depend>
   <run_depend>message_filters</run_depend>
-  <run_depend>opencv2</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>std_srvs</run_depend>
   <run_depend>sensor_msgs</run_depend>
