@@ -1,3 +1,8 @@
+1.12.1 (2014-04-06)
+-------------------
+* get proper opencv dependency
+* Contributors: Vincent Rabaud
+
 1.11.7 (2014-03-28)
 -------------------
 * Added requirement for core.
