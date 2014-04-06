@@ -38,10 +38,12 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
-#include <tf/transform_listener.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 #include <sensor_msgs/image_encodings.h>
 #include <image_geometry/pinhole_camera_model.h>
-#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <eigen_conversions/eigen_msg.h>
 #include "depth_traits.h"
 
 namespace depth_image_proc {
@@ -57,7 +59,8 @@ class RegisterNodelet : public nodelet::Nodelet
   // Subscriptions
   image_transport::SubscriberFilter sub_depth_image_;
   message_filters::Subscriber<sensor_msgs::CameraInfo> sub_depth_info_, sub_rgb_info_;
-  boost::shared_ptr<tf::TransformListener> tf_;
+  boost::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  boost::shared_ptr<tf2_ros::TransformListener> tf_;
   typedef ApproximateTime<sensor_msgs::Image, sensor_msgs::CameraInfo, sensor_msgs::CameraInfo> SyncPolicy;
   typedef message_filters::Synchronizer<SyncPolicy> Synchronizer;
   boost::shared_ptr<Synchronizer> sync_;
@@ -79,7 +82,7 @@ class RegisterNodelet : public nodelet::Nodelet
   template<typename T>
   void convert(const sensor_msgs::ImageConstPtr& depth_msg,
                const sensor_msgs::ImagePtr& registered_msg,
-               const Eigen::Matrix4d& depth_to_rgb);
+               const Eigen::Affine3d& depth_to_rgb);
 };
 
 void RegisterNodelet::onInit()
@@ -89,7 +92,8 @@ void RegisterNodelet::onInit()
   nh_depth_.reset( new ros::NodeHandle(nh, "depth") );
   nh_rgb_.reset( new ros::NodeHandle(nh, "rgb") );
   it_depth_.reset( new image_transport::ImageTransport(*nh_depth_) );
-  tf_.reset( new tf::TransformListener );
+  tf_buffer_.reset( new tf2_ros::Buffer );
+  tf_.reset( new tf2_ros::TransformListener(*tf_buffer_) );
 
   // Read parameters
   int queue_size;
@@ -137,27 +141,19 @@ void RegisterNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_image_msg,
   depth_model_.fromCameraInfo(depth_info_msg);
   rgb_model_  .fromCameraInfo(rgb_info_msg);
 
-  // Query tf for transform from (X,Y,Z) in depth camera frame to RGB camera frame
-  Eigen::Matrix4d depth_to_rgb;
+  // Query tf2 for transform from (X,Y,Z) in depth camera frame to RGB camera frame
+  Eigen::Affine3d depth_to_rgb;
   try
   {
-    ros::Duration timeout(1.0 / 30); /// @todo Parameter for expected frame rate
-    tf_->waitForTransform(rgb_info_msg->header.frame_id, depth_info_msg->header.frame_id,
-                          depth_info_msg->header.stamp, timeout);
-    tf::StampedTransform transform;
-    tf_->lookupTransform (rgb_info_msg->header.frame_id, depth_info_msg->header.frame_id,
-                          depth_info_msg->header.stamp, transform);
+    geometry_msgs::TransformStamped transform = tf_buffer_->lookupTransform (
+                          rgb_info_msg->header.frame_id, depth_info_msg->header.frame_id,
+                          depth_info_msg->header.stamp);
 
-    tf::Matrix3x3& R = transform.getBasis();
-    tf::Vector3&   T = transform.getOrigin();
-    depth_to_rgb << R[0][0], R[0][1], R[0][2], T[0],
-                    R[1][0], R[1][1], R[1][2], T[1],
-                    R[2][0], R[2][1], R[2][2], T[2],
-                          0,       0,       0,    1;
+    tf::transformMsgToEigen(transform.transform, depth_to_rgb);
   }
-  catch (tf::TransformException& ex)
+  catch (tf2::TransformException& ex)
   {
-    NODELET_WARN_THROTTLE(2, "TF exception:\n%s", ex.what());
+    NODELET_WARN_THROTTLE(2, "TF2 exception:\n%s", ex.what());
     return;
     /// @todo Can take on order of a minute to register a disconnect callback when we
     /// don't call publish() in this cb. What's going on roscpp?
@@ -198,7 +194,7 @@ void RegisterNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_image_msg,
 template<typename T>
 void RegisterNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
                               const sensor_msgs::ImagePtr& registered_msg,
-                              const Eigen::Matrix4d& depth_to_rgb)
+                              const Eigen::Affine3d& depth_to_rgb)
 {
   // Allocate memory for registered depth image
   registered_msg->step = registered_msg->width * sizeof(T);
