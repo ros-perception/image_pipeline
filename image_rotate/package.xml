@@ -37,7 +37,10 @@
   <build_depend>opencv2</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>tf</build_depend>
+  <build_depend>tf2_ros</build_depend>
   <build_depend>nodelet</build_depend>
+  <build_depend>eigen_conversions</build_depend>
+  <build_depend>tf_conversions</build_depend>
 
   <run_depend>cv_bridge</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
@@ -45,7 +48,10 @@
   <run_depend>opencv2</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>tf</run_depend>
+  <run_depend>tf2_ros</run_depend>
   <run_depend>nodelet</run_depend>
+  <run_depend>eigen_conversions</run_depend>
+  <run_depend>tf_conversions</run_depend>
   <export>
     <nodelet plugin="${prefix}/nodelet_plugins.xml"/>
   </export>
