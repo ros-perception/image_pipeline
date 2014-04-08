@@ -18,9 +18,17 @@ include_directories(SYSTEM ${catkin_INCLUDE_DIRS}
 add_library(${PROJECT_NAME} SHARED src/nodelet/image_rotate_nodelet.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
+install(TARGETS image_rotate
+        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
 
-install(TARGETS ${PROJECT_NAME}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+add_executable(image_rotate_exe src/node/image_rotate.cpp)
+SET_TARGET_PROPERTIES(image_rotate_exe PROPERTIES OUTPUT_NAME image_rotate)
+target_link_libraries(image_rotate_exe ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+install(TARGETS image_rotate_exe
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+install(FILES nodelet_plugins.xml
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
