@@ -133,10 +133,10 @@ class ImageRotateNodelet : public nodelet::Nodelet
       transform = tf_buffer_.lookupTransform(config_.source_frame_id, input_frame_id, msg->header.stamp);
       tf2::doTransform(source_vector_, source_vector_transformed, transform);
 
-      //ROS_INFO("target: %f %f %f", target_vector_.x(), target_vector_.y(), target_vector_.z());
-      //ROS_INFO("target_transformed: %f %f %f", target_vector_transformed.x(), target_vector_transformed.y(), target_vector_transformed.z());
-      //ROS_INFO("source: %f %f %f", source_vector_.x(), source_vector_.y(), source_vector_.z());
-      //ROS_INFO("source_transformed: %f %f %f", source_vector_transformed.x(), source_vector_transformed.y(), source_vector_transformed.z());
+      //NODELET_INFO("target: %f %f %f", target_vector_.x(), target_vector_.y(), target_vector_.z());
+      //NODELET_INFO("target_transformed: %f %f %f", target_vector_transformed.x(), target_vector_transformed.y(), target_vector_transformed.z());
+      //NODELET_INFO("source: %f %f %f", source_vector_.x(), source_vector_.y(), source_vector_.z());
+      //NODELET_INFO("source_transformed: %f %f %f", source_vector_transformed.x(), source_vector_transformed.y(), source_vector_transformed.z());
 
       // Calculate the angle of the rotation.
       double angle = angle_;
@@ -170,10 +170,10 @@ class ImageRotateNodelet : public nodelet::Nodelet
     }
     catch (tf2::TransformException &e)
     {
-      ROS_ERROR("Transform error: %s", e.what());
+      NODELET_ERROR("Transform error: %s", e.what());
     }
 
-    //ROS_INFO("angle: %f", 180 * angle_ / M_PI);
+    //NODELET_INFO("angle: %f", 180 * angle_ / M_PI);
 
     // Publish the transform.
     geometry_msgs::TransformStamped transform;
@@ -201,7 +201,7 @@ class ImageRotateNodelet : public nodelet::Nodelet
       int candidates[] = { noblack_dim, min_dim, max_dim, diag_dim, diag_dim }; // diag_dim repeated to simplify limit case.
       int step = config_.output_image_size;
       out_size = candidates[step] + (candidates[step + 1] - candidates[step]) * (config_.output_image_size - step);
-      //ROS_INFO("out_size: %d", out_size);
+      //NODELET_INFO("out_size: %d", out_size);
 
       // Compute the rotation matrix.
       cv::Mat rot_matrix = cv::getRotationMatrix2D(cv::Point2f(in_image.cols / 2.0, in_image.rows / 2.0), 180 * angle_ / M_PI, 1);
@@ -220,7 +220,7 @@ class ImageRotateNodelet : public nodelet::Nodelet
     }
     catch (cv::Exception &e)
     {
-      ROS_ERROR("Image processing error: %s %s %s %i", e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
+      NODELET_ERROR("Image processing error: %s %s %s %i", e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
     }
 
     prev_stamp_ = msg->header.stamp;
@@ -228,7 +228,7 @@ class ImageRotateNodelet : public nodelet::Nodelet
 
   void subscribe()
   {
-    ROS_DEBUG("Subscribing to image topic.");
+    NODELET_DEBUG("Subscribing to image topic.");
     if (config_.use_camera_info && config_.input_frame_id.empty())
       cam_sub_ = it_->subscribeCamera("image", 3, &ImageRotateNodelet::imageCallbackWithInfo, this);
     else
@@ -237,7 +237,7 @@ class ImageRotateNodelet : public nodelet::Nodelet
 
   void unsubscribe()
   {
-      ROS_DEBUG("Unsubscribing from image topic.");
+      NODELET_DEBUG("Unsubscribing from image topic.");
       img_sub_.shutdown();
       cam_sub_.shutdown();
   }
