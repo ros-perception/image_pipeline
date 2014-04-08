@@ -186,11 +186,15 @@ class ImageRotateNodelet : public nodelet::Nodelet
       source_vector_.stamp_ = msg->header.stamp;
       source_vector_.frame_id_ = frameWithDefault(config_.source_frame_id, input_frame_id);
       tf::Stamped<tf::Vector3> source_vector_transformed;
-      tf_sub_.waitForTransform(input_frame_id, msg->header.stamp,
-                               source_vector_.frame_id_, source_vector_.stamp_,
-                               input_frame_id, ros::Duration(0.01));
-      tf_sub_.transformVector(input_frame_id, msg->header.stamp, source_vector_,
-                              input_frame_id, source_vector_transformed);
+      // tf_sub_->waitForTransform(input_frame_id, msg->header.stamp,
+      //                           source_vector_.frame_id_, source_vector_.stamp_,
+      //                           input_frame_id, ros::Duration(0.01));
+      // tf_sub_->transformVector(input_frame_id, msg->header.stamp, source_vector_,
+      //                          input_frame_id, source_vector_transformed);
+      transformVector(input_frame_id, msg->header.stamp,
+                      source_vector_.frame_id_, source_vector_.stamp_,
+                      input_frame_id, source_vector_, source_vector_transformed,
+                      ros::Duration(0.01));
 
       //NODELET_INFO("target: %f %f %f", target_vector_.x(), target_vector_.y(), target_vector_.z());
       //NODELET_INFO("target_transformed: %f %f %f", target_vector_transformed.x(), target_vector_transformed.y(), target_vector_transformed.z());
