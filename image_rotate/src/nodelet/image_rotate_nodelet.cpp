@@ -260,7 +260,7 @@ class ImageRotateNodelet : public nodelet::Nodelet
 public:
   virtual void onInit()
   {
-    nh_ = getPrivateNodeHandle();
+    nh_ = getNodeHandle();
     it_ = boost::shared_ptr<image_transport::ImageTransport>(new image_transport::ImageTransport(nh_));
     subscriber_count_ = 0;
     angle_ = 0;
