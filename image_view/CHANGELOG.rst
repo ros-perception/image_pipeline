@@ -1,3 +1,6 @@
+Forthcoming
+-----------
+
 1.12.1 (2014-04-06)
 -------------------
 * get proper opencv dependency
