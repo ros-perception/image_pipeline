@@ -52,4 +52,7 @@
   <run_depend>tf2</run_depend>
   <run_depend>tf2_geometry_msgs</run_depend>
   <run_depend>tf2_ros</run_depend>
+  <export>
+    <nodelet plugin="${prefix}/nodelet_plugins.xml"/>
+  </export>
 </package>
