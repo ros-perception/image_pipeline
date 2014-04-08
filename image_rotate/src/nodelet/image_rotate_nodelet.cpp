@@ -1,7 +1,8 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
-*  Copyright (c) 2008, Willow Garage, Inc.
+*
+*  Copyright (c) 2014, JSK Lab.
+*                2008, Willow Garage, Inc.
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -31,7 +32,18 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+
+/********************************************************************
+* image_rotate_nodelet.cpp
+* this is a forked version of image_rotate.
+* this image_rotate_nodelet supports:
+*  1) nodelet
+*  2) tf and tf2
+*********************************************************************/
+
 #include <ros/ros.h>
+#include <nodelet/nodelet.h>
+
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <image_rotate/ImageRotateConfig.h>
@@ -42,7 +54,8 @@
 #include <dynamic_reconfigure/server.h>
 #include <math.h>
 
-class ImageRotater
+namespace image_rotate {
+class ImageRotateNodelet : public nodelet::Nodelet
 {
   tf::TransformListener tf_sub_;
   tf::TransformBroadcaster tf_pub_;
@@ -57,7 +70,7 @@ class ImageRotater
   tf::Stamped<tf::Vector3> target_vector_;
   tf::Stamped<tf::Vector3> source_vector_;
     
-  image_transport::ImageTransport it_;
+  boost::shared_ptr<image_transport::ImageTransport> it_;
   ros::NodeHandle nh_;
 
   int subscriber_count_;
@@ -214,9 +227,9 @@ class ImageRotater
   {
     ROS_DEBUG("Subscribing to image topic.");
     if (config_.use_camera_info && config_.input_frame_id.empty())
-      cam_sub_ = it_.subscribeCamera("image", 3, &ImageRotater::imageCallbackWithInfo, this);
+      cam_sub_ = it_->subscribeCamera("image", 3, &ImageRotateNodelet::imageCallbackWithInfo, this);
     else
-      img_sub_ = it_.subscribe("image", 3, &ImageRotater::imageCallback, this);
+      img_sub_ = it_->subscribe("image", 3, &ImageRotateNodelet::imageCallback, this);
   }
 
   void unsubscribe()
@@ -242,22 +255,22 @@ class ImageRotater
   }
 
 public:
-  ImageRotater(ros::NodeHandle nh = ros::NodeHandle()) : it_(nh), nh_(nh), subscriber_count_(0), angle_(0), prev_stamp_(0, 0)
+  virtual void onInit()
   {
-    image_transport::SubscriberStatusCallback connect_cb    = boost::bind(&ImageRotater::connectCb, this, _1);
-    image_transport::SubscriberStatusCallback disconnect_cb = boost::bind(&ImageRotater::disconnectCb, this, _1);
+    nh_ = getPrivateNodeHandle();
+    it_ = boost::shared_ptr<image_transport::ImageTransport>(new image_transport::ImageTransport(nh_));
+    subscriber_count_ = 0;
+    angle_ = 0;
+    prev_stamp_ = ros::Time(0, 0);
+    image_transport::SubscriberStatusCallback connect_cb    = boost::bind(&ImageRotateNodelet::connectCb, this, _1);
+    image_transport::SubscriberStatusCallback disconnect_cb = boost::bind(&ImageRotateNodelet::disconnectCb, this, _1);
     img_pub_ = image_transport::ImageTransport(ros::NodeHandle(nh_, "rotated")).advertise("image", 1, connect_cb, disconnect_cb);
 
     dynamic_reconfigure::Server<image_rotate::ImageRotateConfig>::CallbackType f =
-      boost::bind(&ImageRotater::reconfigureCallback, this, _1, _2);
+      boost::bind(&ImageRotateNodelet::reconfigureCallback, this, _1, _2);
     srv.setCallback(f);
   }
 };
-
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "image_rotate", ros::init_options::AnonymousName);
-
-  ImageRotater ir;
-  ros::spin();
 }
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_EXPORT_CLASS(image_rotate::ImageRotateNodelet, nodelet::Nodelet);
