@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.2 (2014-04-08)
+-------------------
 * Fixes a typo on stereo camera info service calls
   Script works after correcting the call names.
 * Contributors: JoonasMelin
