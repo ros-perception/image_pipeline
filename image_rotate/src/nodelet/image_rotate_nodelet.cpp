@@ -137,7 +137,6 @@ class ImageRotateNodelet : public nodelet::Nodelet
                        const ros::Duration& duration)
   {
     if (use_tf2_) {
-      NODELET_INFO("lookup %s -> %s", input_frame_id.c_str(), source_frame_id.c_str());
       geometry_msgs::TransformStamped trans
         = tf2_client_->lookupTransform(input_frame_id, source_frame_id,
                                        target_time, duration);
@@ -172,11 +171,6 @@ class ImageRotateNodelet : public nodelet::Nodelet
       target_vector_.stamp_ = msg->header.stamp;
       target_vector_.frame_id_ = frameWithDefault(config_.target_frame_id, input_frame_id);
       tf::Stamped<tf::Vector3> target_vector_transformed;
-      // tf_sub_->waitForTransform(input_frame_id, msg->header.stamp,
-      //                           target_vector_.frame_id_, target_vector_.stamp_,
-      //                           input_frame_id, ros::Duration(0.2));
-      // tf_sub_->transformVector(input_frame_id, msg->header.stamp, target_vector_,
-      //                          input_frame_id, target_vector_transformed);
       transformVector(input_frame_id, msg->header.stamp,
                       target_vector_.frame_id_, target_vector_.stamp_,
                       input_frame_id, target_vector_, target_vector_transformed,
@@ -186,20 +180,15 @@ class ImageRotateNodelet : public nodelet::Nodelet
       source_vector_.stamp_ = msg->header.stamp;
       source_vector_.frame_id_ = frameWithDefault(config_.source_frame_id, input_frame_id);
       tf::Stamped<tf::Vector3> source_vector_transformed;
-      // tf_sub_->waitForTransform(input_frame_id, msg->header.stamp,
-      //                           source_vector_.frame_id_, source_vector_.stamp_,
-      //                           input_frame_id, ros::Duration(0.01));
-      // tf_sub_->transformVector(input_frame_id, msg->header.stamp, source_vector_,
-      //                          input_frame_id, source_vector_transformed);
       transformVector(input_frame_id, msg->header.stamp,
                       source_vector_.frame_id_, source_vector_.stamp_,
                       input_frame_id, source_vector_, source_vector_transformed,
                       ros::Duration(0.01));
 
-      //NODELET_INFO("target: %f %f %f", target_vector_.x(), target_vector_.y(), target_vector_.z());
-      //NODELET_INFO("target_transformed: %f %f %f", target_vector_transformed.x(), target_vector_transformed.y(), target_vector_transformed.z());
-      //NODELET_INFO("source: %f %f %f", source_vector_.x(), source_vector_.y(), source_vector_.z());
-      //NODELET_INFO("source_transformed: %f %f %f", source_vector_transformed.x(), source_vector_transformed.y(), source_vector_transformed.z());
+      // NODELET_INFO("target: %f %f %f", target_vector_.x(), target_vector_.y(), target_vector_.z());
+      // NODELET_INFO("target_transformed: %f %f %f", target_vector_transformed.x(), target_vector_transformed.y(), target_vector_transformed.z());
+      // NODELET_INFO("source: %f %f %f", source_vector_.x(), source_vector_.y(), source_vector_.z());
+      // NODELET_INFO("source_transformed: %f %f %f", source_vector_transformed.x(), source_vector_transformed.y(), source_vector_transformed.z());
 
       // Calculate the angle of the rotation.
       double angle = angle_;
