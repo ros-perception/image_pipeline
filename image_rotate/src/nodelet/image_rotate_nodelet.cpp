@@ -46,6 +46,9 @@
 
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
+#include <tf2_ros/buffer_client.h>
+#include <eigen_conversions/eigen_msg.h>
+#include <tf_conversions/tf_eigen.h>
 #include <image_rotate/ImageRotateConfig.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <image_transport/image_transport.h>
@@ -57,9 +60,10 @@
 namespace image_rotate {
 class ImageRotateNodelet : public nodelet::Nodelet
 {
-  tf::TransformListener tf_sub_;
+  bool use_tf2_;
+  boost::shared_ptr<tf::TransformListener> tf_sub_;
   tf::TransformBroadcaster tf_pub_;
-
+  boost::shared_ptr<tf2_ros::BufferClient> tf2_client_;
   image_rotate::ImageRotateConfig config_;
   dynamic_reconfigure::Server<image_rotate::ImageRotateConfig> srv;
 
@@ -77,6 +81,21 @@ class ImageRotateNodelet : public nodelet::Nodelet
   double angle_;
   ros::Time prev_stamp_;
 
+  void setupTFListener()
+  {
+    if (use_tf2_) {
+      // shutdown tf_sub_
+      if (tf_sub_) {
+        tf_sub_.reset();
+      }
+    }
+    else {
+      if(!tf_sub_) {
+        tf_sub_.reset(new tf::TransformListener());
+      }
+    }
+  }
+  
   void reconfigureCallback(image_rotate::ImageRotateConfig &new_config, uint32_t level)
   {
     config_ = new_config;
@@ -86,6 +105,10 @@ class ImageRotateNodelet : public nodelet::Nodelet
     { // @todo Could do this without an interruption at some point.
       unsubscribe();
       subscribe();
+    }
+    if (use_tf2_ != config_.use_tf2) {
+      use_tf2_ = config_.use_tf2;
+      setupTFListener();
     }
   }
 
@@ -106,6 +129,38 @@ class ImageRotateNodelet : public nodelet::Nodelet
     do_work(msg, msg->header.frame_id);
   }
 
+  void transformVector(const std::string& input_frame_id, const ros::Time& target_time,
+                       const std::string& source_frame_id, const ros::Time& time,
+                       const std::string& fixed_frame_id,
+                       const tf::Stamped<tf::Vector3>& input_vector,
+                       tf::Stamped<tf::Vector3>& target_vector,
+                       const ros::Duration& duration)
+  {
+    if (use_tf2_) {
+      geometry_msgs::TransformStamped trans
+        = tf2_client_->lookupTransform(input_frame_id, source_frame_id,
+                                       target_time, duration);
+      // geometry_msgs -> eigen -> tf
+      Eigen::Affine3d transform_eigen;
+      tf::transformMsgToEigen(trans.transform, transform_eigen);
+      tf::StampedTransform transform_tf; // convert trans to tfStampedTransform
+      tf::transformEigenToTF(transform_eigen, transform_tf);
+      tf::Vector3 origin = tf::Vector3(0, 0, 0);
+      tf::Vector3 end = input_vector;
+      tf::Vector3 output = (transform_tf * end) - (transform_tf * origin);
+      target_vector.setData(output);
+      target_vector.stamp_ = input_vector.stamp_;
+      target_vector.frame_id_ = input_frame_id;
+    }
+    else {
+      tf_sub_->waitForTransform(input_frame_id, target_time,
+                                source_frame_id, time,
+                                fixed_frame_id, duration);
+      tf_sub_->transformVector(input_frame_id, target_time, input_vector,
+                               fixed_frame_id, target_vector);
+    }
+  }
+  
   void do_work(const sensor_msgs::ImageConstPtr& msg, const std::string input_frame_from_msg)
   {
     try
@@ -116,26 +171,24 @@ class ImageRotateNodelet : public nodelet::Nodelet
       target_vector_.stamp_ = msg->header.stamp;
       target_vector_.frame_id_ = frameWithDefault(config_.target_frame_id, input_frame_id);
       tf::Stamped<tf::Vector3> target_vector_transformed;
-      tf_sub_.waitForTransform(input_frame_id, msg->header.stamp,
-                               target_vector_.frame_id_, target_vector_.stamp_,
-                               input_frame_id, ros::Duration(0.2));
-      tf_sub_.transformVector(input_frame_id, msg->header.stamp, target_vector_,
-                              input_frame_id, target_vector_transformed);
+      transformVector(input_frame_id, msg->header.stamp,
+                      target_vector_.frame_id_, target_vector_.stamp_,
+                      input_frame_id, target_vector_, target_vector_transformed,
+                      ros::Duration(0.2));
 
       // Transform the source vector into the image frame.
       source_vector_.stamp_ = msg->header.stamp;
       source_vector_.frame_id_ = frameWithDefault(config_.source_frame_id, input_frame_id);
       tf::Stamped<tf::Vector3> source_vector_transformed;
-      tf_sub_.waitForTransform(input_frame_id, msg->header.stamp,
-                               source_vector_.frame_id_, source_vector_.stamp_,
-                               input_frame_id, ros::Duration(0.01));
-      tf_sub_.transformVector(input_frame_id, msg->header.stamp, source_vector_,
-                              input_frame_id, source_vector_transformed);
+      transformVector(input_frame_id, msg->header.stamp,
+                      source_vector_.frame_id_, source_vector_.stamp_,
+                      input_frame_id, source_vector_, source_vector_transformed,
+                      ros::Duration(0.01));
 
-      //NODELET_INFO("target: %f %f %f", target_vector_.x(), target_vector_.y(), target_vector_.z());
-      //NODELET_INFO("target_transformed: %f %f %f", target_vector_transformed.x(), target_vector_transformed.y(), target_vector_transformed.z());
-      //NODELET_INFO("source: %f %f %f", source_vector_.x(), source_vector_.y(), source_vector_.z());
-      //NODELET_INFO("source_transformed: %f %f %f", source_vector_transformed.x(), source_vector_transformed.y(), source_vector_transformed.z());
+      // NODELET_INFO("target: %f %f %f", target_vector_.x(), target_vector_.y(), target_vector_.z());
+      // NODELET_INFO("target_transformed: %f %f %f", target_vector_transformed.x(), target_vector_transformed.y(), target_vector_transformed.z());
+      // NODELET_INFO("source: %f %f %f", source_vector_.x(), source_vector_.y(), source_vector_.z());
+      // NODELET_INFO("source_transformed: %f %f %f", source_vector_transformed.x(), source_vector_transformed.y(), source_vector_transformed.z());
 
       // Calculate the angle of the rotation.
       double angle = angle_;
@@ -259,6 +312,7 @@ public:
   {
     nh_ = getNodeHandle();
     it_ = boost::shared_ptr<image_transport::ImageTransport>(new image_transport::ImageTransport(nh_));
+    tf2_client_.reset(new tf2_ros::BufferClient("tf2_buffer_server", 100, ros::Duration(0.2)));
     subscriber_count_ = 0;
     angle_ = 0;
     prev_stamp_ = ros::Time(0, 0);
