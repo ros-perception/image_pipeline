@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.3 (2014-04-12)
+-------------------
 * camera_calibration: Fix Python import order
 * Contributors: Scott K Logan
 
