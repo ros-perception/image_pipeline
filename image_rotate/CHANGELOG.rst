@@ -1,3 +1,6 @@
+Forthcoming
+-----------
+
 1.12.2 (2014-04-08)
 -------------------
 * use NODELET_** macros instead of ROS_** macros

@@ -1,3 +1,8 @@
+Forthcoming
+-----------
+* camera_calibration: Fix Python import order
+* Contributors: Scott K Logan
+
 1.12.2 (2014-04-08)
 -------------------
 * Fixes a typo on stereo camera info service calls
