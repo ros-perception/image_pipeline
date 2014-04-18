@@ -57,6 +57,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::Ca
         ROS_INFO_STREAM("Starting to record " << codec << " video at " << size << "@" << fps << "fps. Press Ctrl+C to stop recording." );
 
     }
+    else if (outputVideo.isOpened() && info) return;
 
     cv::Mat image;
     try
