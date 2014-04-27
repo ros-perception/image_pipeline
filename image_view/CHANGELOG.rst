@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.4 (2014-04-28)
+-------------------
 * fixes `#65 <https://github.com/ros-perception/image_pipeline/issues/65>`_
 * Contributors: Vincent Rabaud
 

@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.4 (2014-04-28)
+-------------------
 * depth_image_proc: fix missing symbols in nodelets
 * Contributors: Michael Ferguson
 
