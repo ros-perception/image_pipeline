@@ -5,7 +5,7 @@ find_package(catkin REQUIRED)
 catkin_package(LIBRARIES ${PROJECT_NAME})
 
 find_package(Boost REQUIRED)
-find_package(catkin REQUIRED cmake_modules cv_bridge image_geometry image_transport message_filters nodelet sensor_msgs stereo_msgs tf2)
+find_package(catkin REQUIRED cmake_modules cv_bridge eigen_conversions image_geometry image_transport message_filters nodelet sensor_msgs stereo_msgs tf2 tf2_ros)
 find_package(Eigen REQUIRED)
 include_directories(SYSTEM ${BOOST_INCLUDE_DIRS}
                            ${catkin_INCLUDE_DIRS}
