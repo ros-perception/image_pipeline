@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 try:
-    from io import StringIO
+    from cStringIO import StringIO
 except ImportError:
     from io import StringIO
 import cv
@@ -814,9 +814,9 @@ class MonoCalibrator(Calibrator):
         """ Write images and calibration solution to a tarfile object """
 
         def taradd(name, buf):
-            s = StringIO.StringIO(buf)
+            s = StringIO(buf)
             ti = tarfile.TarInfo(name)
-            ti.size = len(s.buf)
+            ti.size = len(s.getvalue())
             ti.uname = 'calibrator'
             ti.mtime = int(time.time())
             tf.addfile(tarinfo=ti, fileobj=s)
@@ -1133,9 +1133,9 @@ class StereoCalibrator(Calibrator):
                [("right-%04d.png" % i, im) for i,(_, _, im) in enumerate(self.db)])
 
         def taradd(name, buf):
-            s = StringIO.StringIO(buf)
+            s = StringIO(buf)
             ti = tarfile.TarInfo(name)
-            ti.size = len(s.buf)
+            ti.size = len(s.getvalue())
             ti.uname = 'calibrator'
             ti.mtime = int(time.time())
             tf.addfile(tarinfo=ti, fileobj=s)
