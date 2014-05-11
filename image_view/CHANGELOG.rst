@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.5 (2014-05-11)
+-------------------
 * image_view: Add depend on gtk2
 * Contributors: Scott K Logan
 
