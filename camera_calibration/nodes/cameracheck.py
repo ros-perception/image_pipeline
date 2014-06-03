@@ -55,7 +55,7 @@ import message_filters
 import image_geometry
 import numpy
 
-from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, ChessboardInfo
+from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, ChessboardInfo
 
 def mean(seq):
     return sum(seq) / len(seq)
@@ -143,7 +143,7 @@ class CameraCheckerNode:
     def image_corners(self, im):
         (ok, corners, b) = self.mc.get_corners(im)
         if ok:
-            return list(cvmat_iterator(cv.Reshape(self.mc.mk_image_points([(corners, b)]), 2)))
+            return corners
         else:
             return None
 
@@ -160,16 +160,16 @@ class CameraCheckerNode:
             cr = self.board.n_rows
             errors = []
             for r in range(cr):
-                (x1, y1) = C[(cc * r) + 0]
-                (x2, y2) = C[(cc * r) + cc - 1]
+                (x1, y1) = C[(cc * r) + 0, 0]
+                (x2, y2) = C[(cc * r) + cc - 1, 0]
                 for i in range(1, cc - 1):
-                    (x0, y0) = C[(cc * r) + i]
+                    (x0, y0) = C[(cc * r) + i, 0]
                     errors.append(pt2line(x0, y0, x1, y1, x2, y2))
             linearity_rms = math.sqrt(sum([e**2 for e in errors]) / len(errors))
 
             # Add in reprojection check
             A = cv.CreateMat(3,3,0)
-            image_points = cv.fromarray(numpy.array(C))
+            image_points = cv.fromarray(C)
             object_points = cv.fromarray(numpy.zeros([cc*cr, 3]))
             for i in range(cr):
                 for j in range(cc):

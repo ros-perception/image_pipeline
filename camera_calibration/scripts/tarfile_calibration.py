@@ -40,7 +40,7 @@ import cv2
 import cv_bridge
 import tarfile
 
-from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo
+from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo
 
 import rospy
 import sensor_msgs.srv
@@ -50,7 +50,7 @@ def waitkey():
     return k
 
 def display(win_name, img):
-    cv2.namedWindow(win_name, cv2.cv.CV_WINDOW_NORMAL)
+    cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
     cv2.imshow( win_name,  numpy.asarray( img[:,:] ))
     k=-1
     while k ==-1:

@@ -35,14 +35,13 @@
 import roslib
 import rostest
 import rospy
-import cv
 import cv2
 import unittest
 import tarfile
 import copy
 import os, sys
 
-from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo, image_from_archive
+from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo, image_from_archive
 
 board = ChessboardInfo()
 board.n_cols = 8
@@ -62,10 +61,8 @@ class TestDirected(unittest.TestCase):
             self.l[dim] = []
             self.r[dim] = []
             for li,ri in zip(self.limages, self.rimages):
-                rli = cv.CreateMat(dim[1], dim[0], cv.CV_8UC3)
-                rri = cv.CreateMat(dim[1], dim[0], cv.CV_8UC3)
-                cv.Resize(li, rli)
-                cv.Resize(ri, rri)
+                rli = cv2.resize(li, (dim[0], dim[1]))
+                rri = cv2.resize(ri, (dim[0], dim[1]))
                 self.l[dim].append(rli)
                 self.r[dim].append(rri)
                 
@@ -79,12 +76,13 @@ class TestDirected(unittest.TestCase):
             if lin_err_local:
                 lin_err += lin_err_local
                 n += 1
-        lin_err /= n
+        if n > 0:
+            lin_err /= n
         self.assert_(0.0 < lin_err, 'lin_err is %f' % lin_err)
         self.assert_(lin_err < max_err, 'lin_err is %f' % lin_err)
 
         flat = c.remap(img)
-        self.assertEqual(cv.GetSize(img), cv.GetSize(flat))
+        self.assertEqual(img.shape, flat.shape)
 
     def test_monocular(self):
         # Run the calibrator, produce a calibration, check it
@@ -129,9 +127,9 @@ class TestDirected(unittest.TestCase):
 
             img = self.l[dim][0]
             flat = sc.l.remap(img)
-            self.assertEqual(cv.GetSize(img), cv.GetSize(flat))
+            self.assertEqual(img.shape, flat.shape)
             flat = sc.r.remap(img)
-            self.assertEqual(cv.GetSize(img), cv.GetSize(flat))
+            self.assertEqual(img.shape, flat.shape)
 
             sc2 = StereoCalibrator([board])
             sc2.from_message(sc.as_message())

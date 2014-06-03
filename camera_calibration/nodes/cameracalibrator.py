@@ -48,8 +48,9 @@ import functools
 
 import cv
 import cv2
+import numpy
 
-from camera_calibration.calibrator import cvmat_iterator, MonoCalibrator, StereoCalibrator, ChessboardInfo, Patterns
+from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, ChessboardInfo, Patterns
 from std_msgs.msg import String
 from std_srvs.srv import Empty
 
@@ -136,7 +137,7 @@ class CalibrationNode:
 
         # This should just call the MonoCalibrator
         drawable = self.c.handle_msg(msg)
-        self.displaywidth = drawable.scrib.cols
+        self.displaywidth = drawable.scrib.shape[1]
         self.redraw_monocular(drawable)
 
     def handle_stereo(self, msg):
@@ -147,7 +148,7 @@ class CalibrationNode:
                 self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern)
 
         drawable = self.c.handle_msg(msg)
-        self.displaywidth = drawable.lscrib.cols + drawable.rscrib.cols
+        self.displaywidth = drawable.lscrib.shape[1] + drawable.rscrib.shape[1]
         self.redraw_stereo(drawable)
             
  
