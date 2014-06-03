@@ -310,7 +310,8 @@ class Calibrator(object):
 
         return list(zip(self._param_names, min_params, max_params, progress))
 
-    def mk_object_points(self, boards, use_board_size = False):
+    @staticmethod
+    def mk_object_points(boards, use_board_size = False):
         opts = []
         for i, b in enumerate(boards):
             num_pts = b.n_cols * b.n_rows
@@ -650,11 +651,15 @@ class MonoCalibrator(Calibrator):
         undistorted = self.undistort_points(corners)
         return self.linear_error(undistorted, board)
 
-    def linear_error(self, corners, b):
+    @staticmethod
+    def linear_error(corners, b):
 
         """
         Returns the linear error for a set of corners detected in the unrectified image.
         """
+
+        if corners is None:
+            return None
 
         def pt2line(x0, y0, x1, y1, x2, y2):
             """ point is (x0, y0), line is (x1, y1, x2, y2) """
@@ -939,14 +944,17 @@ class StereoCalibrator(Calibrator):
 
         return self.chessboard_size(lundistorted, rundistorted, board)
 
-    def chessboard_size(self, lcorners, rcorners, board):
+    def chessboard_size(self, lcorners, rcorners, board, msg = None):
         """
         Compute the square edge length from two sets of matching undistorted points
         given the current calibration.
+        :param msg: a tuple of (left_msg, right_msg)
         """
         # Project the points to 3d
         cam = image_geometry.StereoCameraModel()
-        cam.fromCameraInfo(*self.as_message())
+        if msg == None:
+            msg = self.as_message()
+        cam.fromCameraInfo(*msg)
         disparities = lcorners[:,:,0] - rcorners[:,:,0]
         pt3d = [cam.projectPixelTo3d((lcorners[i,0,0], lcorners[i,0,1]), disparities[i,0]) for i in range(lcorners.shape[0]) ]
         def l2(p0, p1):

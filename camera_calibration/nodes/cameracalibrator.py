@@ -46,7 +46,6 @@ except ImportError:
 import threading
 import functools
 
-import cv
 import cv2
 import numpy
 
@@ -186,18 +185,27 @@ class CalibrationNode:
 
 class OpenCVCalibrationNode(CalibrationNode):
     """ Calibration node with an OpenCV Gui """
+    FONT_FACE = cv2.FONT_HERSHEY_SIMPLEX
+    FONT_SCALE = 0.6
+    FONT_THICKNESS = 2
 
     def __init__(self, *args):
 
         CalibrationNode.__init__(self, *args)
-        cv.NamedWindow("display", cv.CV_WINDOW_NORMAL)
-        self.font = cv.InitFont(cv.CV_FONT_HERSHEY_SIMPLEX, 0.20, 1, thickness = 2)
-        #self.button = cv.LoadImage("%s/button.jpg" % roslib.packages.get_pkg_dir(PKG))
-        cv.SetMouseCallback("display", self.on_mouse)
-        cv.CreateTrackbar("scale", "display", 0, 100, self.on_scale)
+        cv2.namedWindow("display", cv2.WINDOW_NORMAL)
+        cv2.setMouseCallback("display", self.on_mouse)
+        cv2.createTrackbar("scale", "display", 0, 100, self.on_scale)
+
+    @classmethod
+    def putText(cls, img, text, org, color = (0,0,0)):
+        cv2.putText(img, text, org, cls.FONT_FACE, cls.FONT_SCALE, color, thickness = cls.FONT_THICKNESS)
+
+    @classmethod
+    def getTextSize(cls, text):
+        return cv2.getTextSize(text, cls.FONT_FACE, cls.FONT_SCALE, cls.FONT_THICKNESS)[0]
 
     def on_mouse(self, event, x, y, flags, param):
-        if event == cv.CV_EVENT_LBUTTONDOWN and self.displaywidth < x:
+        if event == cv2.EVENT_LBUTTONDOWN and self.displaywidth < x:
             if self.c.goodenough:
                 if 180 <= y < 280:
                     self.c.do_calibration()
@@ -212,7 +220,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                         
 
     def waitkey(self):
-        k = cv.WaitKey(6)
+        k = cv2.waitKey(6)
         if k in [27, ord('q')]:
             rospy.signal_shutdown('Quit')
         return k
@@ -222,21 +230,21 @@ class OpenCVCalibrationNode(CalibrationNode):
             self.c.set_alpha(scalevalue / 100.0)
 
     def button(self, dst, label, enable):
-        cv.Set(dst, (255, 255, 255))
-        size = cv.GetSize(dst)
+        dst.fill(255)
+        size = (dst.shape[1], dst.shape[0])
         if enable:
-            color = cv.RGB(155, 155, 80)
+            color = (155, 155, 80)
         else:
-            color = cv.RGB(224, 224, 224)
-        cv.Circle(dst, (size[0] / 2, size[1] / 2), min(size) / 2, color, -1)
-        ((w, h), _) = cv.GetTextSize(label, self.font)
-        cv.PutText(dst, label, ((size[0] - w) / 2, (size[1] + h) / 2), self.font, (255,255,255))
+            color = (224, 224, 224)
+        cv2.circle(dst, (size[0] / 2, size[1] / 2), min(size) / 2, color, -1)
+        (w, h) = self.getTextSize(label)
+        self.putText(dst, label, ((size[0] - w) / 2, (size[1] + h) / 2), (255,255,255))
 
     def buttons(self, display):
         x = self.displaywidth
-        self.button(cv.GetSubRect(display, (x,180,100,100)), "CALIBRATE", self.c.goodenough)
-        self.button(cv.GetSubRect(display, (x,280,100,100)), "SAVE", self.c.calibrated)
-        self.button(cv.GetSubRect(display, (x,380,100,100)), "COMMIT", self.c.calibrated)
+        self.button(display[180:280,x:x+100], "CALIBRATE", self.c.goodenough)
+        self.button(display[280:380,x:x+100], "SAVE", self.c.calibrated)
+        self.button(display[380:480,x:x+100], "COMMIT", self.c.calibrated)
 
     def y(self, i):
         """Set up right-size images"""
@@ -246,84 +254,83 @@ class OpenCVCalibrationNode(CalibrationNode):
         i = 0
         while os.access("/tmp/dump%d.png" % i, os.R_OK):
             i += 1
-        cv.SaveImage("/tmp/dump%d.png" % i, im)
+        cv2.imsave("/tmp/dump%d.png" % i, im)
 
     def redraw_monocular(self, drawable):
-        width, height = cv.GetSize(drawable.scrib)
+        height = drawable.scrib.shape[0]
+        width = drawable.scrib.shape[1]
 
-        display = cv.CreateMat(max(480, height), width + 100, cv.CV_8UC3)
-        cv.Zero(display)
-        cv.Copy(drawable.scrib, cv.GetSubRect(display, (0,0,width,height)))
-        cv.Set(cv.GetSubRect(display, (width,0,100,height)), (255, 255, 255))
+        display = numpy.zeros((max(480, height), width + 100, 3), dtype=numpy.uint8)
+        display[0:height, 0:width,:] = drawable.scrib
+        display[0:height, width:width+100,:].fill(255)
 
 
         self.buttons(display)
         if not self.c.calibrated:
             if drawable.params:
                  for i, (label, lo, hi, progress) in enumerate(drawable.params):
-                    (w,_),_ = cv.GetTextSize(label, self.font)
-                    cv.PutText(display, label, (width + (100 - w) / 2, self.y(i)), self.font, (0,0,0))
+                    (w,_) = self.getTextSize(label)
+                    self.putText(display, label, (width + (100 - w) / 2, self.y(i)))
                     color = (0,255,0)
                     if progress < 1.0:
                         color = (0, int(progress*255.), 255)
-                    cv.Line(display,
+                    cv2.line(display,
                             (int(width + lo * 100), self.y(i) + 20),
                             (int(width + hi * 100), self.y(i) + 20),
                             color, 4)
 
         else:
-            cv.PutText(display, "lin.", (width, self.y(0)), self.font, (0,0,0))
+            self.putText(display, "lin.", (width, self.y(0)))
             linerror = drawable.linear_error
             if linerror < 0:
                 msg = "?"
             else:
                 msg = "%.2f" % linerror
                 #print "linear", linerror
-            cv.PutText(display, msg, (width, self.y(1)), self.font, (0,0,0))
+            self.putText(display, msg, (width, self.y(1)))
 
         self.show(display)
 
     def redraw_stereo(self, drawable):
-        width, height = cv.GetSize(drawable.lscrib)
+        height = drawable.lscrib.shape[0]
+        width = drawable.lscrib.shape[0]
 
-        display = cv.CreateMat(max(480, height), 2 * width + 100, cv.CV_8UC3)
-        cv.Zero(display)
-        cv.Copy(drawable.lscrib, cv.GetSubRect(display, (0,0,width,height)))
-        cv.Copy(drawable.rscrib, cv.GetSubRect(display, (width,0,width,height)))
-        cv.Set(cv.GetSubRect(display, (2 * width,0,100,height)), (255, 255, 255))
+        display = numpy.zeros((max(480, height), 2 * width + 100, 3), dtype=numpy.uint8)
+        display[0:height, 0:width,:] = drawable.lscrib
+        display[0:height, width:2*width,:] = drawable.rscrib
+        display[0:height, 2*width:2*width+100,:].fill(255)
 
         self.buttons(display)
 
         if not self.c.calibrated:
             if drawable.params:
                 for i, (label, lo, hi, progress) in enumerate(drawable.params):
-                    (w,_),_ = cv.GetTextSize(label, self.font)
-                    cv.PutText(display, label, (2 * width + (100 - w) / 2, self.y(i)),
-                               self.font, (0,0,0))
+                    (w,_) = self.getTextSize(label)
+                    self.putText(display, label, (2 * width + (100 - w) / 2, self.y(i)))
                     color = (0,255,0)
                     if progress < 1.0:
                         color = (0, int(progress*255.), 255)
-                    cv.Line(display,
+                    cv2.line(display,
                             (int(2 * width + lo * 100), self.y(i) + 20),
                             (int(2 * width + hi * 100), self.y(i) + 20),
                             color, 4)
 
         else:
-            cv.PutText(display, "epi.", (2 * width, self.y(0)), self.font, (0,0,0))
+            self.putText(display, "epi.", (2 * width, self.y(0)))
             if drawable.epierror == -1:
                 msg = "?"
             else:
                 msg = "%.2f" % drawable.epierror
-            cv.PutText(display, msg, (2 * width, self.y(1)), self.font, (0,0,0))
+            self.putText(display, msg, (2 * width, self.y(1)))
             # TODO dim is never set anywhere. Supposed to be observed chessboard size?
             if drawable.dim != -1:
-                cv.PutText(display, "dim", (2 * width, self.y(2)), self.font, (0,0,0))
-                cv.PutText(display, "%.3f" % drawable.dim, (2 * width, self.y(3)), self.font, (0,0,0))
+                self.putText(display, "dim", (2 * width, self.y(2)))
+                self.putText(display, "%.3f" % drawable.dim, (2 * width, self.y(3)))
 
         self.show(display)
 
     def show(self, im):
-        cv.ShowImage("display", im)
+        cv2.imshow("display", im)
         if self.waitkey() == ord('s'):
             self.screendump(im)
 

@@ -49,7 +49,7 @@ except ImportError:
 import threading
 import tarfile
 
-import cv
+import cv2
 
 import message_filters
 import image_geometry
@@ -130,6 +130,7 @@ class CameraCheckerNode:
         sth.start()
 
         self.mc = MonoCalibrator([self.board])
+        self.sc = StereoCalibrator([self.board])
 
     def queue_monocular(self, msg, cmsg):
         self.q_mono.put((msg, cmsg))
@@ -149,49 +150,27 @@ class CameraCheckerNode:
 
     def handle_monocular(self, msg):
 
-        def pt2line(x0, y0, x1, y1, x2, y2):
-            """ point is (x0, y0), line is (x1, y1, x2, y2) """
-            return abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) / math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
         (image, camera) = msg
         gray = self.mkgray(image)
         C = self.image_corners(gray)
         if C:
-            cc = self.board.n_cols
-            cr = self.board.n_rows
-            errors = []
-            for r in range(cr):
-                (x1, y1) = C[(cc * r) + 0, 0]
-                (x2, y2) = C[(cc * r) + cc - 1, 0]
-                for i in range(1, cc - 1):
-                    (x0, y0) = C[(cc * r) + i, 0]
-                    errors.append(pt2line(x0, y0, x1, y1, x2, y2))
-            linearity_rms = math.sqrt(sum([e**2 for e in errors]) / len(errors))
+            linearity_rms = self.mc.linear_error(C, self.board)
 
             # Add in reprojection check
-            A = cv.CreateMat(3,3,0)
-            image_points = cv.fromarray(C)
-            object_points = cv.fromarray(numpy.zeros([cc*cr, 3]))
-            for i in range(cr):
-                for j in range(cc):
-                    object_points[i*cc + j, 0] = j * self.board.dim
-                    object_points[i*cc + j, 1] = i * self.board.dim
-                    object_points[i*cc + j, 2] = 0.0
-            dist_coeffs = cv.fromarray(numpy.array([ [0.0, 0.0, 0.0, 0.0] ]))
+            image_points = C
+            object_points = self.mc.mk_object_points([self.board], use_board_size=True)[0]
+            dist_coeffs = numpy.zeros((4, 1))
             camera_matrix = numpy.array( [ [ camera.P[0], camera.P[1], camera.P[2]  ],
                                            [ camera.P[4], camera.P[5], camera.P[6]  ],
                                            [ camera.P[8], camera.P[9], camera.P[10] ] ] )
-            rot = cv.CreateMat(3, 1, cv.CV_32FC1)
-            trans = cv.CreateMat(3, 1, cv.CV_32FC1)
-            cv.FindExtrinsicCameraParams2(object_points, image_points, cv.fromarray(camera_matrix),
-                                          dist_coeffs, rot, trans)
+            ok, rot, trans = cv2.solvePnP(object_points, image_points, camera_matrix, dist_coeffs)
             # Convert rotation into a 3x3 Rotation Matrix
-            rot3x3 = cv.CreateMat(3, 3, cv.CV_32FC1)
-            cv.Rodrigues2(rot, rot3x3)
+            rot3x3, _ = cv2.Rodrigues(rot)
             # Reproject model points into image
-            object_points_world = numpy.asmatrix(rot3x3) * (numpy.asmatrix(object_points).T) + numpy.asmatrix(trans)
+            object_points_world = numpy.asmatrix(rot3x3) * (numpy.asmatrix(object_points.squeeze().T) + numpy.asmatrix(trans)
             reprojected_h = camera_matrix * object_points_world
             reprojected   = (reprojected_h[0:2, :] / reprojected_h[2, :])
-            reprojection_errors = image_points - reprojected.T
+            reprojection_errors = image_points.squeeze().T - reprojected.T
             reprojection_rms = numpy.sqrt(numpy.sum(numpy.array(reprojection_errors) ** 2) / numpy.product(reprojection_errors.shape))
 
             # Print the results
@@ -205,28 +184,12 @@ class CameraCheckerNode:
         lgray = self.mkgray(lmsg)
         rgray = self.mkgray(rmsg)
 
-        sc = StereoCalibrator([self.board])
-
         L = self.image_corners(lgray)
         R = self.image_corners(rgray)
-        scm = image_geometry.StereoCameraModel()
-        scm.fromCameraInfo(lcmsg, rcmsg)
         if L and R:
-            d = [(y0 - y1) for ((_, y0), (_, y1)) in zip(L, R)]
-            epipolar = math.sqrt(sum([i**2 for i in d]) / len(d))
+            epipolar = self.sc.epipolar_error(L, R)
 
-            disparities = [(x0 - x1) for ((x0, y0), (x1, y1)) in zip(L, R)]
-            pt3d = [scm.projectPixelTo3d((x, y), d) for ((x, y), d) in zip(L, disparities)]
-            def l2(p0, p1):
-                return math.sqrt(sum([(c0 - c1) ** 2 for (c0, c1) in zip(p0, p1)]))
-
-            # Compute the length from each horizontal and vertical lines, and return the mean
-            cc = self.board.n_cols
-            cr = self.board.n_rows
-            lengths = (
-                [l2(pt3d[cc * r + 0], pt3d[cc * r + (cc - 1)]) / (cc - 1) for r in range(cr)] +
-                [l2(pt3d[c + 0], pt3d[c + (cc * (cr - 1))]) / (cr - 1) for c in range(cc)])
-            dimension = sum(lengths) / len(lengths)
+            dimension = self.sc.chessboard_size(L, R, [self.board], msg=(lcmsg, rcmsg))
 
             print("epipolar error: %f pixels   dimension: %f m" % (epipolar, dimension))
         else:
