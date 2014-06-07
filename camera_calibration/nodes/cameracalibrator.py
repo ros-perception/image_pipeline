@@ -36,7 +36,7 @@ import rospy
 import sensor_msgs.msg
 import sensor_msgs.srv
 import message_filters
-from camera_calibration.approxsync import ApproximateSynchronizer
+from message_filters import ApproximateTimeSynchronizer
 
 import os
 try:
@@ -393,7 +393,7 @@ def main():
     if options.approximate == 0.0:
         sync = message_filters.TimeSynchronizer
     else:
-        sync = functools.partial(ApproximateSynchronizer, options.approximate)
+        sync = functools.partial(ApproximateTimeSynchronizer, options.approximate)
 
     num_ks = options.k_coefficients
 
