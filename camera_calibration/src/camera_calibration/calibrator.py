@@ -745,7 +745,9 @@ class MonoCalibrator(Calibrator):
         self.size = (self.db[0][1].shape[1], self.db[0][1].shape[0]) # TODO Needs to be set externally
         self.cal_fromcorners(self.good_corners)
         self.calibrated = True
-        print((self.ost())) # DEBUG
+        # DEBUG
+        print((self.report()))
+        print((self.ost()))
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
@@ -1048,7 +1050,9 @@ class StereoCalibrator(Calibrator):
         self.r.size = self.size
         self.cal_fromcorners(self.good_corners)
         self.calibrated = True
-        print((self.ost())) # DEBUG
+        # DEBUG
+        print((self.report()))
+        print((self.ost()))
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
