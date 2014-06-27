@@ -144,13 +144,15 @@ void DisparityNodelet::imageCb(const stereo_msgs::DisparityImageConstPtr& msg)
     
   for (int row = 0; row < disparity_color_.rows; ++row) {
     const float* d = dmat[row];
-    for (int col = 0; col < disparity_color_.cols; ++col) {
-      int index = (d[col] - min_disparity) * multiplier + 0.5;
+    cv::Vec3b *disparity_color = disparity_color_[row],
+              *disparity_color_end = disparity_color + disparity_color_.cols;
+    for (; disparity_color < disparity_color_end; ++disparity_color, ++d) {
+      int index = (*d - min_disparity) * multiplier + 0.5;
       index = std::min(255, std::max(0, index));
       // Fill as BGR
-      disparity_color_(row, col)[2] = colormap[3*index + 0];
-      disparity_color_(row, col)[1] = colormap[3*index + 1];
-      disparity_color_(row, col)[0] = colormap[3*index + 2];
+      (*disparity_color)[2] = colormap[3*index + 0];
+      (*disparity_color)[1] = colormap[3*index + 1];
+      (*disparity_color)[0] = colormap[3*index + 2];
     }
   }
 

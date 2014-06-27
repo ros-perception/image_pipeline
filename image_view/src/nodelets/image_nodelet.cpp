@@ -167,14 +167,8 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
   {
     cv::Mat float_image_bridge = cv_bridge::toCvShare(msg, msg->encoding)->image;
     cv::Mat_<float> float_image = float_image_bridge;
-    float max_val = 0;
-    for(int i = 0; i < float_image.rows; ++i)
-    {
-      for(int j = 0; j < float_image.cols; ++j)
-      {
-        max_val = std::max(max_val, float_image(i, j));
-      }
-    }
+    double max_val;
+    cv::minMaxIdx(float_image, 0, &max_val);
 
     if(max_val > 0)
     {
