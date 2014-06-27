@@ -33,6 +33,7 @@
 *********************************************************************/
 #include <ros/ros.h>
 #include <nodelet/loader.h>
+#include <opencv2/highgui/highgui.hpp>
 
 int main(int argc, char **argv)
 {
@@ -49,6 +50,13 @@ int main(int argc, char **argv)
 
   manager.load(ros::this_node::getName(), "image_view/disparity", remappings, my_argv);
 
-  ros::spin();
+  ROS_INFO("Press 'q' on the window to stop the node");
+
+  while(ros::ok())
+  {
+     char c(cv::waitKey(5));
+     if ((c == 'q') || (c == 'Q'))
+       break;
+  }
   return 0;
 }
