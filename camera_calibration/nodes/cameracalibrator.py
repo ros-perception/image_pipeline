@@ -293,7 +293,7 @@ class OpenCVCalibrationNode(CalibrationNode):
 
     def redraw_stereo(self, drawable):
         height = drawable.lscrib.shape[0]
-        width = drawable.lscrib.shape[0]
+        width = drawable.lscrib.shape[1]
 
         display = numpy.zeros((max(480, height), 2 * width + 100, 3), dtype=numpy.uint8)
         display[0:height, 0:width,:] = drawable.lscrib
