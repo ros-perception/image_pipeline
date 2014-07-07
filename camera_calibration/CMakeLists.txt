@@ -23,11 +23,3 @@ if(CATKIN_ENABLE_TESTING)
   )
   catkin_add_nosetests(test/multiple_boards.py)
 endif()
-
-install(PROGRAMS nodes/camera_calibrate_from_disk.py 
-                 nodes/cameracalibrator.py
-                 nodes/cameracheck.py
-                 nodes/camera_hammer.py
-                 scripts/tarfile_calibration.py
-        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
