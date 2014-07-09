@@ -130,9 +130,9 @@ class CalibrationNode:
     def handle_monocular(self, msg):
         if self.c == None:
             if self._camera_name:
-                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name)
+                self.c = MonoCalibrator(self._boards, flags=self._calib_flags, pattern=self._pattern, name=self._camera_name)
             else:
-                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern)
+                self.c = MonoCalibrator(self._boards, flags=self._calib_flags, pattern=self._pattern)
 
         # This should just call the MonoCalibrator
         drawable = self.c.handle_msg(msg)
