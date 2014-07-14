@@ -83,7 +83,7 @@ class TestDirected(unittest.TestCase):
 
     def test_monocular(self):
         # Run the calibrator, produce a calibration, check it
-        mc = MonoCalibrator([ board ], cv2.CALIB_FIX_K3)
+        mc = MonoCalibrator([ board ], flags=cv2.CALIB_FIX_K3)
         for dim in self.sizes:
             mc.cal(self.l[dim])
             self.assert_good_mono(mc, dim)
