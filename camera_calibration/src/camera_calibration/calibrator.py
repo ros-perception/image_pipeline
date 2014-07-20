@@ -310,21 +310,20 @@ class Calibrator(object):
 
         return list(zip(self._param_names, min_params, max_params, progress))
 
-    @staticmethod
-    def mk_object_points(boards, use_board_size = False):
+    def mk_object_points(self, boards, use_board_size = False):
         opts = []
         for i, b in enumerate(boards):
             num_pts = b.n_cols * b.n_rows
             opts_loc = numpy.zeros((num_pts, 1, 3), numpy.float32)
             for j in range(num_pts):
-                if use_board_size:
-                    opts_loc[j, 0, 0] = (j / b.n_cols) * b.dim
-                    opts_loc[j, 0, 1] = (j % b.n_cols) * b.dim
-                    opts_loc[j, 0, 2] = 0
+                opts_loc[j, 0, 0] = (j / b.n_cols)
+                if self.pattern == Patterns.ACircles:
+                    opts_loc[j, 0, 1] = 2*(j % b.n_cols) + (opts_loc[j, 0, 0] % 2)
                 else:
-                    opts_loc[j, 0, 0] = (j / b.n_cols) * 1.0
-                    opts_loc[j, 0, 1] = (j % b.n_cols) * 1.0
-                    opts_loc[j, 0, 2] = 0
+                    opts_loc[j, 0, 1] = (j % b.n_cols)
+                opts_loc[j, 0, 2] = 0
+                if use_board_size:
+                    opts_loc[j, 0, :] = opts_loc[j, 0, :] * b.dim
             opts.append(opts_loc)
         return opts
 
