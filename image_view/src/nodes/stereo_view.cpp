@@ -468,6 +468,7 @@ public:
     if (!last_right_image_.empty())
       cv::imshow("right", last_right_image_);
     cv::imshow("disparity", disparity_color_);
+    cv::waitKey(1);
   }
 
   void saveImage(const char* prefix, const cv::Mat& image)

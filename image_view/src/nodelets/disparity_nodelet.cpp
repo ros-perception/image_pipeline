@@ -131,6 +131,7 @@ void DisparityNodelet::imageCb(const stereo_msgs::DisparityImageConstPtr& msg)
 #endif
   
   cv::imshow(window_name_, disparity_color_);
+  cv::waitKey(1);
 }
 
 unsigned char DisparityNodelet::colormap[768] =
