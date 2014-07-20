@@ -33,15 +33,20 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import roslib
-import rostest
+import rosunit
 import rospy
 import cv2
-import unittest
-import tarfile
-import copy
-import os, sys
 
-from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo, image_from_archive
+import collections
+import copy
+import numpy
+import os
+import sys
+import tarfile
+import unittest
+
+from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, \
+    Patterns, CalibrationException, ChessboardInfo, image_from_archive
 
 board = ChessboardInfo()
 board.n_cols = 8
@@ -150,10 +155,147 @@ class TestDirected(unittest.TestCase):
         self.assertRaises(CalibrationException, lambda: mc.cal(self.limages))
 
 
+
+class TestArtificial(unittest.TestCase):
+    Setup = collections.namedtuple('Setup', ['pattern', 'cols', 'rows'])
+
+    def setUp(self):
+        # Define some image transforms that will simulate a camera position
+        M = []
+        cv2.getPerspectiveTransform
+        self.K = numpy.array([[500, 0, 250], [0, 500, 250], [0, 0, 1]], numpy.float32)
+        self.D = numpy.array([])
+
+        # Generate data for different grid types. For each grid type, define the different sizes of
+        # grid that are recognized (n row, n col)
+        # Patterns.Circles, Patterns.ACircles
+        self.setups = [ self.Setup(pattern=Patterns.Chessboard, cols=7, rows=8) ]
+        self.limages = []
+        self.rimages = []
+        for setup in self.setups:
+            self.limages.append([])
+            self.rimages.append([])
+            # Create the pattern
+            if setup.pattern == Patterns.Chessboard:
+                pattern = numpy.zeros((50*setup.rows, 50*setup.cols, 1), numpy.uint8)
+                pattern.fill(255)
+                for j in range(setup.rows):
+                    for i in range(j%2, setup.cols, 2):
+                        pattern[50*j:50*(j+1), 50*i:50*(i+1)].fill(0)
+
+            rows, cols, _ = pattern.shape
+            object_points_2d = numpy.array([[0, 0], [0, cols-1], [rows-1, cols-1], [rows-1, 0]], numpy.float32)
+            object_points_3d = numpy.array([[0, 0, 0], [0, cols-1, 0], [rows-1, cols-1, 0], [rows-1, 0, 0]], numpy.float32)
+            rvec = [ numpy.array([0, 0, 0], numpy.float32) ]
+            tvec = [ numpy.array([0, 0, 1], numpy.float32) ]
+            image_points = object_points_2d.copy()
+
+            for i in range(len(rvec)):
+                cv2.projectPoints(object_points_3d, rvec[i], tvec[i], self.K, self.D, image_points)
+
+                # deduce the perspective transform
+                M.append(cv2.getPerspectiveTransform(object_points_2d, image_points))
+
+            # project the pattern according to the different cameras
+            dsize = (480, 640)
+            for i in range(len(rvec)):
+                cv2.imshow("toto", pattern)
+                cv2.waitKey(0)
+                print(M[i])
+                pattern_warped = cv2.warpPerspective(pattern, M[i], dsize)
+                self.limages[-1].append(pattern_warped)
+                cv2.imshow("toto", pattern_warped)
+                cv2.waitKey(0)
+
+    def assert_good_mono(self, c, dim, max_err):
+        #c.report()
+        self.assert_(len(c.ost()) > 0)
+        lin_err = 0
+        n = 0
+        for img in self.l[dim]:
+            lin_err_local = c.linear_error_from_image(img)
+            if lin_err_local:
+                lin_err += lin_err_local
+                n += 1
+        if n > 0:
+            lin_err /= n
+        self.assert_(0.0 < lin_err, 'lin_err is %f' % lin_err)
+        self.assert_(lin_err < max_err, 'lin_err is %f' % lin_err)
+
+        flat = c.remap(img)
+        self.assertEqual(img.shape, flat.shape)
+
+    def test_monocular(self):
+        # Run the calibrator, produce a calibration, check it
+        for i, setup in enumerate(self.setups):
+            board = ChessboardInfo()
+            board.n_cols = setup.cols
+            board.n_rows = setup.rows
+            board.dim = 0.108
+
+            mc = MonoCalibrator([ board ], cv2.CALIB_FIX_K3)
+
+            for image in self.limages[i]:
+                mc.cal(image)
+                self.assert_good_mono(mc, dim, 1)
+
+            # Make another calibration, import previous calibration as a message,
+            # and assert that the new one is good.
+
+            #mc2 = MonoCalibrator([board])
+            #mc2.from_message(mc.as_message())
+            #self.assert_good_mono(mc2, dim, max_errs[i])
+
+    #def test_stereo(self):
+        #epierrors = [0.1, 0.2, 0.4, 1.0]
+        #for i, dim in enumerate(self.sizes):
+            #print("Dim =", dim)
+            #sc = StereoCalibrator([board], cv2.CALIB_FIX_K3)
+            #sc.cal(self.l[dim], self.r[dim])
+
+            #sc.report()
+            ##print sc.ost()
+
+            ## NOTE: epipolar error currently increases with resolution.
+            ## At highest res expect error ~0.75
+            #epierror = 0
+            #n = 0
+            #for l_img, r_img in zip(self.l[dim], self.r[dim]):
+                #epierror_local = sc.epipolar_error_from_images(l_img, r_img)
+                #if epierror_local:
+                    #epierror += epierror_local
+                    #n += 1
+            #epierror /= n
+            #self.assert_(epierror < epierrors[i], 'Epipolar error is %f for resolution i = %d' % (epierror, i))
+
+            #self.assertAlmostEqual(sc.chessboard_size_from_images(self.l[dim][0], self.r[dim][0]), .108, 2)
+
+            ##print sc.as_message()
+
+            #img = self.l[dim][0]
+            #flat = sc.l.remap(img)
+            #self.assertEqual(img.shape, flat.shape)
+            #flat = sc.r.remap(img)
+            #self.assertEqual(img.shape, flat.shape)
+
+            #sc2 = StereoCalibrator([board])
+            #sc2.from_message(sc.as_message())
+            ## sc2.set_alpha(1.0)
+            ##sc2.report()
+            #self.assert_(len(sc2.ost()) > 0)
+
+    #def test_nochecker(self):
+        ## Run with same images, but looking for an incorrect chessboard size (8, 7).
+        ## Should raise an exception because of lack of input points.
+        #new_board = copy.deepcopy(board)
+        #new_board.n_cols = 8
+        #new_board.n_rows = 7
+
+        #sc = StereoCalibrator([new_board])
+        #self.assertRaises(CalibrationException, lambda: sc.cal(self.limages, self.rimages))
+        #mc = MonoCalibrator([new_board])
+        #self.assertRaises(CalibrationException, lambda: mc.cal(self.limages))
+
 if __name__ == '__main__':
-    if 1:
-        rostest.unitrun('camera_calibration', 'directed', TestDirected)
-    else:
-        suite = unittest.TestSuite()
-        suite.addTest(TestDirected('test_stereo'))
-        unittest.TextTestRunner(verbosity=2).run(suite)
+    #rosunit.unitrun('camera_calibration', 'directed', TestDirected)
+    rosunit.unitrun('camera_calibration', 'artificial', TestArtificial)
