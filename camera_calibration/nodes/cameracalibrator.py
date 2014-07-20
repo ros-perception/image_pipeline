@@ -53,6 +53,32 @@ from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, Ches
 from std_msgs.msg import String
 from std_srvs.srv import Empty
 
+class DisplayThread(threading.Thread):
+    """
+    Thread that displays the current images
+    It is its own thread so that all display can be done
+    in one thread to overcome imshow limitations and 
+    https://github.com/ros-perception/image_pipeline/issues/85
+    """
+    def __init__(self, queue, opencv_calibration_node):
+        threading.Thread.__init__(self)
+        self.queue = queue
+        self.opencv_calibration_node = opencv_calibration_node
+
+        cv2.namedWindow("display", cv2.WINDOW_NORMAL)
+        cv2.setMouseCallback("display", self.opencv_calibration_node.on_mouse)
+        cv2.createTrackbar("scale", "display", 0, 100, self.opencv_calibration_node.on_scale)
+
+    def run(self):
+        while True:
+            im = self.queue.get()
+            cv2.imshow("display", im)
+            k = cv2.waitKey(6) & 0xFF
+            if k in [27, ord('q')]:
+                rospy.signal_shutdown('Quit')
+            elif k == ord('s'):
+                self.opencv_calibration_node.screendump(im)
+
 class ConsumerThread(threading.Thread):
     def __init__(self, queue, function):
         threading.Thread.__init__(self)
@@ -192,9 +218,11 @@ class OpenCVCalibrationNode(CalibrationNode):
     def __init__(self, *args):
 
         CalibrationNode.__init__(self, *args)
-        cv2.namedWindow("display", cv2.WINDOW_NORMAL)
-        cv2.setMouseCallback("display", self.on_mouse)
-        cv2.createTrackbar("scale", "display", 0, 100, self.on_scale)
+
+        self.queue_display = Queue()
+        display_thread = DisplayThread(self.queue_display, self)
+        display_thread.setDaemon(True)
+        display_thread.start()
 
     @classmethod
     def putText(cls, img, text, org, color = (0,0,0)):
@@ -216,14 +244,6 @@ class OpenCVCalibrationNode(CalibrationNode):
                     # Only shut down if we set camera info correctly, #3993
                     if self.do_upload():
                         rospy.signal_shutdown('Quit')
-                        
-                        
-
-    def waitkey(self):
-        k = cv2.waitKey(6)
-        if k in [27, ord('q')]:
-            rospy.signal_shutdown('Quit')
-        return k
 
     def on_scale(self, scalevalue):
         if self.c.calibrated:
@@ -289,7 +309,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 #print "linear", linerror
             self.putText(display, msg, (width, self.y(1)))
 
-        self.show(display)
+        self.queue_display.put(display)
 
     def redraw_stereo(self, drawable):
         height = drawable.lscrib.shape[0]
@@ -327,12 +347,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 self.putText(display, "dim", (2 * width, self.y(2)))
                 self.putText(display, "%.3f" % drawable.dim, (2 * width, self.y(3)))
 
-        self.show(display)
-
-    def show(self, im):
-        cv2.imshow("display", im)
-        if self.waitkey() == ord('s'):
-            self.screendump(im)
+        self.queue.display.put(display)
 
 
 def main():
