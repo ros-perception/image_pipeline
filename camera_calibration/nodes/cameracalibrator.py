@@ -274,7 +274,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         i = 0
         while os.access("/tmp/dump%d.png" % i, os.R_OK):
             i += 1
-        cv2.imsave("/tmp/dump%d.png" % i, im)
+        cv2.imwrite("/tmp/dump%d.png" % i, im)
 
     def redraw_monocular(self, drawable):
         height = drawable.scrib.shape[0]
