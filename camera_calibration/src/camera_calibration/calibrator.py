@@ -994,14 +994,14 @@ class StereoCalibrator(Calibrator):
             rscrib = cv2.cvtColor(rrect, cv2.COLOR_GRAY2BGR)
 
             # Draw rectified corners
-            if lcorners:
+            if lcorners is not None:
                 lundistorted = self.l.undistort_points(lcorners)
                 scrib_src = lundistorted.copy()
                 scrib_src[:,:,0] /= x_scale
                 scrib_src[:,:,1] /= y_scale
                 cv2.drawChessboardCorners(lscrib, (lboard.n_cols, lboard.n_rows), scrib_src, True)
 
-            if rcorners:
+            if rcorners is not None:
                 rundistorted = self.r.undistort_points(rcorners)
                 scrib_src = rundistorted.copy()
                 scrib_src[:,:,0] /= x_scale
@@ -1009,22 +1009,22 @@ class StereoCalibrator(Calibrator):
                 cv2.drawChessboardCorners(rscrib, (rboard.n_cols, rboard.n_rows), scrib_src, True)
 
             # Report epipolar error
-            if lcorners and rcorners:
+            if lcorners is not None and rcorners is not None:
                 epierror = self.epipolar_error(lundistorted, rundistorted, lboard)
 
         else:
             lscrib = cv2.cvtColor(lscrib_mono, cv2.COLOR_GRAY2BGR)
             rscrib = cv2.cvtColor(rscrib_mono, cv2.COLOR_GRAY2BGR)
             # Draw any detected chessboards onto display (downsampled) images
-            if lcorners:
+            if lcorners is not None:
                 cv2.drawChessboardCorners(lscrib, (lboard.n_cols, lboard.n_rows),
                                          ldownsampled_corners, True)
-            if rcorners:
+            if rcorners is not None:
                 cv2.drawChessboardCorners(rscrib, (rboard.n_cols, rboard.n_rows),
                                          rdownsampled_corners, True)
 
             # Add sample to database only if it's sufficiently different from any previous sample
-            if lcorners and rcorners:
+            if lcorners is not None and rcorners is not None:
                 params = self.get_parameters(lcorners, lboard, (lgray.shape[1], lgray.shape[0]))
                 if self.is_good_sample(params):
                     self.db.append( (params, lgray, rgray) )
