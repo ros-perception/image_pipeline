@@ -694,7 +694,7 @@ class MonoCalibrator(Calibrator):
             gray_remap = self.remap(gray)
             gray_rect = gray_remap
             if x_scale != 1.0 or y_scale != 1.0:
-                gray_rect = cv2.resize(gray_remap, (scrib_mono.shape[1], scrib_mono.shape[0]), numpy.uint8)
+                gray_rect = cv2.resize(gray_remap, (scrib_mono.shape[1], scrib_mono.shape[0]))
 
             scrib = cv2.cvtColor(gray_rect, cv2.COLOR_GRAY2BGR)
 
@@ -978,8 +978,8 @@ class StereoCalibrator(Calibrator):
             lrect = lremap
             rrect = rremap
             if x_scale != 1.0 or y_scale != 1.0:
-                lrect = cv2.resize(lremap, (lscrib_mono.shape[1], lscrib_mono.shape[0]), numpy.uint8)
-                rrect = cv2.resize(rremap, (rscrib_mono.shape[1], rscrib_mono.shape[0]), numpy.uint8)
+                lrect = cv2.resize(lremap, (lscrib_mono.shape[1], lscrib_mono.shape[0]))
+                rrect = cv2.resize(rremap, (rscrib_mono.shape[1], rscrib_mono.shape[0]))
 
             lscrib = cv2.cvtColor(lrect, cv2.COLOR_GRAY2BGR)
             rscrib = cv2.cvtColor(rrect, cv2.COLOR_GRAY2BGR)
