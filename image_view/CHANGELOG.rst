@@ -1,3 +1,10 @@
+Forthcoming
+-----------
+* make sure waitKey is called after imshow
+* remove GTK dependency
+* small speedups
+* Contributors: Vincent Rabaud
+
 1.12.5 (2014-05-11)
 -------------------
 * image_view: Add depend on gtk2
