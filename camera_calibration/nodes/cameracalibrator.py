@@ -65,11 +65,10 @@ class DisplayThread(threading.Thread):
         self.queue = queue
         self.opencv_calibration_node = opencv_calibration_node
 
+    def run(self):
         cv2.namedWindow("display", cv2.WINDOW_NORMAL)
         cv2.setMouseCallback("display", self.opencv_calibration_node.on_mouse)
         cv2.createTrackbar("scale", "display", 0, 100, self.opencv_calibration_node.on_scale)
-
-    def run(self):
         while True:
             im = self.queue.get()
             cv2.imshow("display", im)
@@ -347,7 +346,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 self.putText(display, "dim", (2 * width, self.y(2)))
                 self.putText(display, "%.3f" % drawable.dim, (2 * width, self.y(3)))
 
-        self.queue.display.put(display)
+        self.queue_display.put(display)
 
 
 def main():
