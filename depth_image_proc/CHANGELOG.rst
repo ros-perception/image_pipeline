@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.6 (2014-07-27)
+-------------------
 * Add point_cloud_xyzi nodelet
   This is for cameras that output depth and intensity images.
   It's based on the point_cloud_xyzrgb nodelet.

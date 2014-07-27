@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.6 (2014-07-27)
+-------------------
 * make sure the GUI is started in its processing thread and fix a typo
   This fully fixes `#85 <https://github.com/ros-perception/image_pipeline/issues/85>`_
 * fix bad call to save an image
