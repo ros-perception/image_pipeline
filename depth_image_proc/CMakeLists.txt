@@ -15,6 +15,7 @@ add_library(${PROJECT_NAME} src/nodelets/convert_metric.cpp
                              src/nodelets/disparity.cpp
                              src/nodelets/point_cloud_xyz.cpp
                              src/nodelets/point_cloud_xyzrgb.cpp
+                             src/nodelets/point_cloud_xyzi.cpp
                              src/nodelets/register.cpp
 )
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
