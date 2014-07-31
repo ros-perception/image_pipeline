@@ -393,7 +393,7 @@ def main():
     if options.approximate == 0.0:
         sync = message_filters.TimeSynchronizer
     else:
-        sync = functools.partial(ApproximateTimeSynchronizer, options.approximate)
+        sync = functools.partial(ApproximateTimeSynchronizer, slop=options.approximate)
 
     num_ks = options.k_coefficients
 
