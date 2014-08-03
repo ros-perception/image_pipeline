@@ -41,7 +41,6 @@
 
 #include <std_srvs/Empty.h>
 
-int g_count = 0;
 boost::format g_format;
 bool save_all_image, save_image_service;
 std::string encoding;
@@ -51,45 +50,91 @@ bool service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
   return true;
 }
 
-void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr& info)
-{
-  cv::Mat image;
-  try
-  {
-    image = cv_bridge::toCvShare(image_msg, encoding)->image;
-  } catch(cv_bridge::Exception)
-  {
-    ROS_ERROR("Unable to convert %s image to bgr8", image_msg->encoding.c_str());
-    return;
+/** Class to deal with which callback to call whether we have CameraInfo or not
+ */
+class Callbacks {
+public:
+  Callbacks() : is_first_image_(true), has_camera_info_(false), count_(0) {
   }
 
+  void callbackWithoutCameraInfo(const sensor_msgs::ImageConstPtr& image_msg)
+  {
+    if (is_first_image_) {
+      is_first_image_ = false;
+
+      // Wait a tiny bit to see whether callbackWithCameraInfo is called
+      ros::Duration(0.001).sleep();
+    }
+
+    if (has_camera_info_)
+      return;
+
+    // save the image
+    std::string filename;
+    if (!saveImage(image_msg, filename))
+      return;
+
+    count_++;
+  }
+
+  void callbackWithCameraInfo(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr& info)
+  {
+    has_camera_info_ = true;
+
+    // save the image
+    std::string filename;
+    if (!saveImage(image_msg, filename))
+      return;
+
+    // save the CameraInfo
+    if (info) {
+      filename = filename.replace(filename.rfind("."), filename.length(), ".ini");
+      camera_calibration_parsers::writeCalibration(filename, "camera", *info);
+    }
+
+    count_++;
+  }
+private:
+  bool saveImage(const sensor_msgs::ImageConstPtr& image_msg, std::string &filename) {
+    cv::Mat image;
+    try
+    {
+      image = cv_bridge::toCvShare(image_msg, encoding)->image;
+    } catch(cv_bridge::Exception)
+    {
+      ROS_ERROR("Unable to convert %s image to bgr8", image_msg->encoding.c_str());
+      return false;
+    }
+
     if (!image.empty()) {
-      std::string filename;
       try {
         filename = (g_format).str();
       } catch (...) { g_format.clear(); }
       try {
-        filename = (g_format % g_count).str();
+        filename = (g_format % count_).str();
       } catch (...) { g_format.clear(); }
       try { 
-        filename = (g_format % g_count % "jpg").str();
+        filename = (g_format % count_ % "jpg").str();
       } catch (...) { g_format.clear(); }
 
       if ( save_all_image || save_image_service ) {
         cv::imwrite(filename, image);
         ROS_INFO("Saved image %s", filename.c_str());
-        if (info) {
-          filename = filename.replace(filename.rfind("."), filename.length(),".ini");
-          camera_calibration_parsers::writeCalibration(filename, "camera", *info);
-        }
 
-        g_count++;
         save_image_service = false;
       }
     } else {
       ROS_WARN("Couldn't save image, no data!");
+      return false;
     }
-}
+    return true;
+  }
+
+private:
+  bool is_first_image_;
+  bool has_camera_info_;
+  size_t count_;
+};
 
 int main(int argc, char** argv)
 {
@@ -97,9 +142,15 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
   image_transport::ImageTransport it(nh);
   std::string topic = nh.resolveName("image");
-  image_transport::CameraSubscriber sub_camera = it.subscribeCamera(topic, 1, &callback);
-  image_transport::Subscriber sub_image = it.subscribe(topic, 1,
-                           boost::bind(callback, _1, sensor_msgs::CameraInfoConstPtr()));
+
+  Callbacks callbacks;
+  // Useful when CameraInfo is being published
+  image_transport::CameraSubscriber sub_image_and_camera = it.subscribeCamera(topic, 1,
+                                                                              &Callbacks::callbackWithCameraInfo,
+                                                                              &callbacks);
+  // Useful when CameraInfo is not being published
+  image_transport::Subscriber sub_image = it.subscribe(
+      topic, 1, boost::bind(&Callbacks::callbackWithoutCameraInfo, &callbacks, _1));
 
   ros::NodeHandle local_nh("~");
   std::string format_string;
