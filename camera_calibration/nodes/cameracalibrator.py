@@ -94,7 +94,8 @@ class ConsumerThread(threading.Thread):
 
 
 class CalibrationNode:
-    def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0, pattern=Patterns.Chessboard, camera_name=''):
+    def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
+                 pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -111,6 +112,7 @@ class CalibrationNode:
 
         self._boards = boards
         self._calib_flags = flags
+        self._checkerboard_flags = checkerboard_flags
         self._pattern = pattern
         self._camera_name = camera_name
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
@@ -155,9 +157,11 @@ class CalibrationNode:
     def handle_monocular(self, msg):
         if self.c == None:
             if self._camera_name:
-                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name)
+                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
+                                        checkerboard_flags=self._checkerboard_flags)
             else:
-                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern)
+                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern,
+                                        checkerboard_flags=self.checkerboard_flags)
 
         # This should just call the MonoCalibrator
         drawable = self.c.handle_msg(msg)
@@ -167,9 +171,11 @@ class CalibrationNode:
     def handle_stereo(self, msg):
         if self.c == None:
             if self._camera_name:
-                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name)
+                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
+                                          checkerboard_flags=self._checkerboard_flags)
             else:
-                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern)
+                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern,
+                                          checkerboard_flags=self._checkerboard_flags)
 
         drawable = self.c.handle_msg(msg)
         self.displaywidth = drawable.lscrib.shape[1] + drawable.rscrib.shape[1]
@@ -214,9 +220,9 @@ class OpenCVCalibrationNode(CalibrationNode):
     FONT_SCALE = 0.6
     FONT_THICKNESS = 2
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
 
-        CalibrationNode.__init__(self, *args)
+        CalibrationNode.__init__(self, *args, **kwargs)
 
         self.queue_display = Queue()
         display_thread = DisplayThread(self.queue_display, self)
@@ -389,6 +395,8 @@ def main():
     group.add_option("-k", "--k-coefficients",
                      type="int", default=2, metavar="NUM_COEFFS",
                      help="number of radial distortion coefficients to use (up to 6, default %default)")
+    group.add_option("--disable_calib_cb_fast_check", action='store_true', default=False,
+                     help="uses the CALIB_CB_FAST_CHECK flag for findChessboardCorners")
     parser.add_option_group(group)
     options, args = parser.parse_args()
 
@@ -441,8 +449,14 @@ def main():
     elif options.pattern != 'chessboard':
         print('Unrecognized pattern %s, defaulting to chessboard' % options.pattern)
 
+    if options.disable_calib_cb_fast_check:
+        checkerboard_flags = 0
+    else:
+        checkerboard_flags = cv2.CALIB_CB_FAST_CHECK
+
     rospy.init_node('cameracalibrator')
-    node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, pattern, options.camera_name)
+    node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
+                                 checkerboard_flags=checkerboard_flags)
     rospy.spin()
 
 if __name__ == "__main__":
