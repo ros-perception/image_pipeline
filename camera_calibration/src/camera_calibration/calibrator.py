@@ -202,7 +202,7 @@ class Calibrator(object):
     """
     Base class for calibration system
     """
-    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard, name='', checkerboard_flags=0):
+    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard, name='', checkerboard_flags=cv2.CALIB_CB_FAST_CHECK):
         # Ordering the dimensions for the different detectors is actually a minefield...
         if pattern == Patterns.Chessboard:
             # Make sure n_cols > n_rows to agree with OpenCV CB detector output
