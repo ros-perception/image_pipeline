@@ -1,3 +1,6 @@
+Forthcoming
+-----------
+
 1.12.6 (2014-07-27)
 -------------------
 * make sure waitKey is called after imshow

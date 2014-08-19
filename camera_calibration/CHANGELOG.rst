@@ -1,3 +1,12 @@
+Forthcoming
+-----------
+* install scripts in the local bin (they are now rosrun-able again)
+  fixes `#93 <https://github.com/ros-perception/image_pipeline/issues/93>`_
+* fix default Constructor for OpenCV flags
+  this does not change anything in practice as the flag is set by the node.
+  It just fixes the test.
+* Contributors: Vincent Rabaud
+
 1.12.6 (2014-07-27)
 -------------------
 * make sure the GUI is started in its processing thread and fix a typo
