@@ -47,7 +47,7 @@
 
 #include <image_geometry/stereo_camera_model.h>
 #include <opencv2/calib3d/calib3d.hpp>
-
+#include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 
 #include <sensor_msgs/image_encodings.h>
@@ -62,6 +62,11 @@ using namespace sensor_msgs;
 using namespace stereo_msgs;
 using namespace message_filters::sync_policies;
 
+enum StereoType
+{
+  BM, SGBM
+};
+  
 class DisparityNodelet : public nodelet::Nodelet
 {
   boost::shared_ptr<image_transport::ImageTransport> it_;
@@ -75,7 +80,7 @@ class DisparityNodelet : public nodelet::Nodelet
   typedef message_filters::Synchronizer<ApproximatePolicy> ApproximateSync;
   boost::shared_ptr<ExactSync> exact_sync_;
   boost::shared_ptr<ApproximateSync> approximate_sync_;
-
+  StereoType current_stereo_algorithm_;
   // Publications
   boost::mutex connect_mutex_;
   ros::Publisher pub_disparity_;
@@ -89,7 +94,7 @@ class DisparityNodelet : public nodelet::Nodelet
   // Processing state (note: only safe because we're single-threaded!)
   image_geometry::StereoCameraModel model_;
   cv::StereoBM block_matcher_; // contains scratch buffers for block matching
-
+  cv::StereoSGBM sg_block_matcher_;
   virtual void onInit();
 
   void connectCb();
@@ -188,25 +193,7 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   // Stereo parameters
   disp_msg->f = model_.right().fx();
   disp_msg->T = model_.baseline();
-
-  // Compute window of (potentially) valid disparities
-  cv::Ptr<CvStereoBMState> params = block_matcher_.state;
-  int border   = params->SADWindowSize / 2;
-  int left   = params->numberOfDisparities + params->minDisparity + border - 1;
-  int wtf = (params->minDisparity >= 0) ? border + params->minDisparity : std::max(border, -params->minDisparity);
-  int right  = disp_msg->image.width - 1 - wtf;
-  int top    = border;
-  int bottom = disp_msg->image.height - 1 - border;
-  disp_msg->valid_window.x_offset = left;
-  disp_msg->valid_window.y_offset = top;
-  disp_msg->valid_window.width    = right - left;
-  disp_msg->valid_window.height   = bottom - top;
-
-  // Disparity search range
-  disp_msg->min_disparity = params->minDisparity;
-  disp_msg->max_disparity = params->minDisparity + params->numberOfDisparities - 1;
-  disp_msg->delta_d = 1.0 / 16; // OpenCV uses 16 disparities per pixel
-
+  
   // Create cv::Mat views onto all buffers
   const cv::Mat_<uint8_t> l_image = cv_bridge::toCvShare(l_image_msg, sensor_msgs::image_encodings::MONO8)->image;
   const cv::Mat_<uint8_t> r_image = cv_bridge::toCvShare(r_image_msg, sensor_msgs::image_encodings::MONO8)->image;
@@ -214,8 +201,46 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
                              reinterpret_cast<float*>(&disp_msg->image.data[0]),
                              disp_msg->image.step);
 
+  // Compute window of (potentially) valid disparities
+  int border, left, wtf;
+  if (current_stereo_algorithm_ == BM) {
+    cv::Ptr<CvStereoBMState> params = block_matcher_.state;
+    int border   = params->SADWindowSize / 2;
+    int left   = params->numberOfDisparities + params->minDisparity + border - 1;
+    int wtf = (params->minDisparity >= 0) ? border + params->minDisparity : std::max(border, -params->minDisparity);
+    disp_msg->min_disparity = params->minDisparity;
+    disp_msg->max_disparity = params->minDisparity + params->numberOfDisparities - 1;
+  }
+  else if (current_stereo_algorithm_ == SGBM) {
+    int border   = sg_block_matcher_.SADWindowSize / 2;
+    int left   = sg_block_matcher_.numberOfDisparities + sg_block_matcher_.minDisparity + border - 1;
+    int wtf = (sg_block_matcher_.minDisparity >= 0) ? border + sg_block_matcher_.minDisparity : std::max(border, -sg_block_matcher_.minDisparity);
+    disp_msg->min_disparity = sg_block_matcher_.minDisparity;
+    disp_msg->max_disparity = sg_block_matcher_.minDisparity + sg_block_matcher_.numberOfDisparities - 1;
+  }
+  // Disparity search range
+  int right  = disp_msg->image.width - 1 - wtf;
+  int top    = border;
+  int bottom = disp_msg->image.height - 1 - border;
+  disp_msg->valid_window.x_offset = left;
+  disp_msg->valid_window.y_offset = top;
+  disp_msg->valid_window.width    = right - left;
+  disp_msg->valid_window.height   = bottom - top;
+  disp_msg->delta_d = 1.0 / 16; // OpenCV uses 16 disparities per pixel
+
   // Perform block matching to find the disparities
-  block_matcher_(l_image, r_image, disp_image, CV_32F);
+  if (current_stereo_algorithm_ == BM) {
+    block_matcher_(l_image, r_image, disp_image, CV_32F);
+  }
+  else if (current_stereo_algorithm_ == SGBM) {
+    cv::Mat disp;
+    sg_block_matcher_(l_image, r_image, disp);
+    disp.convertTo(disp_image, CV_32F);
+    disp_image = disp_image / 16;
+  }
+
+
+  
 
   // Adjust for any x-offset between the principal points: d' = d - (cx_l - cx_r)
   double cx_l = model_.left().cx();
@@ -232,18 +257,40 @@ void DisparityNodelet::configCb(Config &config, uint32_t level)
   config.prefilter_size |= 0x1; // must be odd
   config.correlation_window_size |= 0x1; // must be odd
   config.disparity_range = (config.disparity_range / 16) * 16; // must be multiple of 16
-
+  
+  // check stereo method
   // Note: With single-threaded NodeHandle, configCb and imageCb can't be called
   // concurrently, so this is thread-safe.
-  block_matcher_.state->preFilterSize       = config.prefilter_size;
-  block_matcher_.state->preFilterCap        = config.prefilter_cap;
-  block_matcher_.state->SADWindowSize       = config.correlation_window_size;
-  block_matcher_.state->minDisparity        = config.min_disparity;
-  block_matcher_.state->numberOfDisparities = config.disparity_range;
-  block_matcher_.state->uniquenessRatio     = config.uniqueness_ratio;
-  block_matcher_.state->textureThreshold    = config.texture_threshold;
-  block_matcher_.state->speckleWindowSize   = config.speckle_size;
-  block_matcher_.state->speckleRange        = config.speckle_range;
+  if (config.stereo_algorithm == 0) { // StereoBM
+    current_stereo_algorithm_ = BM;
+    block_matcher_.state->preFilterSize       = config.prefilter_size;
+    block_matcher_.state->preFilterCap        = config.prefilter_cap;
+    block_matcher_.state->SADWindowSize       = config.correlation_window_size;
+    block_matcher_.state->minDisparity        = config.min_disparity;
+    block_matcher_.state->numberOfDisparities = config.disparity_range;
+    block_matcher_.state->uniquenessRatio     = config.uniqueness_ratio;
+    block_matcher_.state->textureThreshold    = config.texture_threshold;
+    block_matcher_.state->speckleWindowSize   = config.speckle_size;
+    block_matcher_.state->speckleRange        = config.speckle_range;
+  }
+  else if (config.stereo_algorithm == 1) { // StereoSGBM
+    current_stereo_algorithm_ = SGBM;
+    sg_block_matcher_.preFilterCap        = config.prefilter_cap;
+    sg_block_matcher_.SADWindowSize       = config.correlation_window_size;
+    sg_block_matcher_.minDisparity        = config.min_disparity;
+    sg_block_matcher_.numberOfDisparities = config.disparity_range;
+    sg_block_matcher_.uniquenessRatio     = config.uniqueness_ratio;
+    sg_block_matcher_.speckleWindowSize   = config.speckle_size;
+    sg_block_matcher_.speckleRange        = config.speckle_range;
+    sg_block_matcher_.fullDP              = config.fullDP;
+    sg_block_matcher_.P1                  = config.P1;
+    sg_block_matcher_.P2                  = config.P2;
+    sg_block_matcher_.disp12MaxDiff       = config.disp12MaxDiff;
+  }
+  
+  
+  
+  
 }
 
 } // namespace stereo_image_proc
