@@ -47,7 +47,6 @@
 
 #include <image_geometry/stereo_camera_model.h>
 #include <opencv2/calib3d/calib3d.hpp>
-
 #include <cv_bridge/cv_bridge.h>
 
 #include <sensor_msgs/image_encodings.h>
@@ -77,7 +76,6 @@ class DisparityNodelet : public nodelet::Nodelet
   typedef message_filters::Synchronizer<ApproximatePolicy> ApproximateSync;
   boost::shared_ptr<ExactSync> exact_sync_;
   boost::shared_ptr<ApproximateSync> approximate_sync_;
-
   // Publications
   boost::mutex connect_mutex_;
   ros::Publisher pub_disparity_;
@@ -220,18 +218,29 @@ void DisparityNodelet::configCb(Config &config, uint32_t level)
   config.prefilter_size |= 0x1; // must be odd
   config.correlation_window_size |= 0x1; // must be odd
   config.disparity_range = (config.disparity_range / 16) * 16; // must be multiple of 16
-
+  
+  // check stereo method
   // Note: With single-threaded NodeHandle, configCb and imageCb can't be called
   // concurrently, so this is thread-safe.
-  block_matcher_.setPreFilterSize(config.prefilter_size);
   block_matcher_.setPreFilterCap(config.prefilter_cap);
   block_matcher_.setCorrelationWindowSize(config.correlation_window_size);
   block_matcher_.setMinDisparity(config.min_disparity);
   block_matcher_.setDisparityRange(config.disparity_range);
   block_matcher_.setUniquenessRatio(config.uniqueness_ratio);
-  block_matcher_.setTextureThreshold(config.texture_threshold);
   block_matcher_.setSpeckleSize(config.speckle_size);
   block_matcher_.setSpeckleRange(config.speckle_range);
+  if (config.stereo_algorithm == stereo_image_proc::Disparity_StereoBM) { // StereoBM
+    block_matcher_.setStereoType(StereoProcessor::BM);
+    block_matcher_.setPreFilterSize(config.prefilter_size);
+    block_matcher_.setTextureThreshold(config.texture_threshold);
+  }
+  else if (config.stereo_algorithm == stereo_image_proc::Disparity_StereoSGBM) { // StereoSGBM
+    block_matcher_.setStereoType(StereoProcessor::SGBM);
+    block_matcher_.setSgbmMode(config.fullDP);
+    block_matcher_.setP1(config.P1);
+    block_matcher_.setP2(config.P2);
+    block_matcher_.setDisp12MaxDiff(config.disp12MaxDiff);
+  }
 }
 
 } // namespace stereo_image_proc
