@@ -53,7 +53,7 @@ class Processor
 {
 public:
   Processor()
-    : interpolation_(CV_INTER_LINEAR)
+    : interpolation_(cv::INTER_LINEAR)
   {
   }
   

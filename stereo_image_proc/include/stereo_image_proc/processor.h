@@ -56,7 +56,7 @@ class StereoProcessor
 public:
   
   StereoProcessor()
-    : block_matcher_(cv::StereoBM::BASIC_PRESET)
+    //: block_matcher_(cv::StereoBM::BASIC_PRESET)
   {
   }
 
@@ -138,7 +138,7 @@ private:
   image_proc::Processor mono_processor_;
   
   mutable cv::Mat_<int16_t> disparity16_; // scratch buffer for 16-bit signed disparity image
-  mutable cv::StereoBM block_matcher_; // contains scratch buffers for block matching
+  mutable cv::Ptr<cv::StereoBM> block_matcher_; // contains scratch buffers for block matching
   // scratch buffers for speckle filtering
   mutable cv::Mat_<uint32_t> labels_;
   mutable cv::Mat_<uint32_t> wavefront_;
@@ -160,92 +160,93 @@ inline void StereoProcessor::setInterpolation(int interp)
 
 inline int StereoProcessor::getPreFilterSize() const
 {
-  return block_matcher_.state->preFilterSize;
+  return block_matcher_->getPreFilterSize();
 }
 
 inline void StereoProcessor::setPreFilterSize(int size)
 {
-  block_matcher_.state->preFilterSize = size;
+  block_matcher_->setPreFilterSize(size);
 }
 
 inline int StereoProcessor::getPreFilterCap() const
 {
-  return block_matcher_.state->preFilterCap;
+  return block_matcher_->getPreFilterCap();
 }
 
 inline void StereoProcessor::setPreFilterCap(int cap)
 {
-  block_matcher_.state->preFilterCap = cap;
+  block_matcher_->setPreFilterCap(cap);
 }
 
 inline int StereoProcessor::getCorrelationWindowSize() const
 {
-  return block_matcher_.state->SADWindowSize;
+  return block_matcher_->getBlockSize();
 }
 
 inline void StereoProcessor::setCorrelationWindowSize(int size)
 {
-  block_matcher_.state->SADWindowSize = size;
+  //block_matcher_.state->SADWindowSize = size;
+  block_matcher_->setBlockSize(size);
 }
 
 inline int StereoProcessor::getMinDisparity() const
 {
-  return block_matcher_.state->minDisparity;
+  return block_matcher_->getMinDisparity();
 }
 
 inline void StereoProcessor::setMinDisparity(int min_d)
 {
-  block_matcher_.state->minDisparity = min_d;
+  block_matcher_->setMinDisparity(min_d);
 }
 
 inline int StereoProcessor::getDisparityRange() const
 {
-  return block_matcher_.state->numberOfDisparities;
+  return block_matcher_->getNumDisparities();
 }
 
 inline void StereoProcessor::setDisparityRange(int range)
 {
-  block_matcher_.state->numberOfDisparities = range;
+  block_matcher_->setNumDisparities(range);
 }
 
 inline int StereoProcessor::getTextureThreshold() const
 {
-  return block_matcher_.state->textureThreshold;
+  return block_matcher_->getTextureThreshold();
 }
 
 inline void StereoProcessor::setTextureThreshold(int threshold)
 {
-  block_matcher_.state->textureThreshold = threshold;
+  block_matcher_->setTextureThreshold(threshold);
 }
 
 inline float StereoProcessor::getUniquenessRatio() const
 {
-  return block_matcher_.state->uniquenessRatio;
+  return block_matcher_->getUniquenessRatio();
 }
 
 inline void StereoProcessor::setUniquenessRatio(float ratio)
 {
-  block_matcher_.state->uniquenessRatio = ratio;
+  block_matcher_->setUniquenessRatio(ratio);
 }
 
 inline int StereoProcessor::getSpeckleSize() const
 {
-  return block_matcher_.state->speckleWindowSize;
+  return block_matcher_->getSpeckleWindowSize();
 }
 
 inline void StereoProcessor::setSpeckleSize(int size)
 {
-  block_matcher_.state->speckleWindowSize = size;
+  block_matcher_->setSpeckleWindowSize(size);
 }
 
 inline int StereoProcessor::getSpeckleRange() const
 {
-  return block_matcher_.state->speckleRange;
+  return block_matcher_->getSpeckleRange();
 }
 
 inline void StereoProcessor::setSpeckleRange(int range)
 {
-  block_matcher_.state->speckleRange = range;
+  block_matcher_->setSpeckleRange(range);
 }
 
 } //namespace stereo_image_proc

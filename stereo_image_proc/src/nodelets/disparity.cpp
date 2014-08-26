@@ -88,7 +88,7 @@ class DisparityNodelet : public nodelet::Nodelet
   
   // Processing state (note: only safe because we're single-threaded!)
   image_geometry::StereoCameraModel model_;
-  cv::StereoBM block_matcher_; // contains scratch buffers for block matching
+  cv::Ptr<cv::StereoBM> block_matcher_; // contains scratch buffers for block matching
 
   virtual void onInit();
 
@@ -190,10 +190,11 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   disp_msg->T = model_.baseline();
 
   // Compute window of (potentially) valid disparities
-  cv::Ptr<CvStereoBMState> params = block_matcher_.state;
-  int border   = params->SADWindowSize / 2;
-  int left   = params->numberOfDisparities + params->minDisparity + border - 1;
-  int wtf = (params->minDisparity >= 0) ? border + params->minDisparity : std::max(border, -params->minDisparity);
+  cv::Ptr<cv::StereoBM> params = block_matcher_;
+  //int border   = params->SADWindowSize / 2;
+  int border   = params->getBlockSize() / 2;// NOT SURE ABOUT IT
+  int left   = params->getNumDisparities() + params->getMinDisparity() + border - 1;
+  int wtf = (params->getMinDisparity() >= 0) ? border + params->getMinDisparity() : std::max(border, -params->getMinDisparity());
   int right  = disp_msg->image.width - 1 - wtf;
   int top    = border;
   int bottom = disp_msg->image.height - 1 - border;
@@ -203,8 +204,8 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   disp_msg->valid_window.height   = bottom - top;
 
   // Disparity search range
-  disp_msg->min_disparity = params->minDisparity;
-  disp_msg->max_disparity = params->minDisparity + params->numberOfDisparities - 1;
+  disp_msg->min_disparity = params->getMinDisparity();
+  disp_msg->max_disparity = params->getMinDisparity() + params->getNumDisparities() - 1;
   disp_msg->delta_d = 1.0 / 16; // OpenCV uses 16 disparities per pixel
 
   // Create cv::Mat views onto all buffers
@@ -215,7 +216,7 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
                              disp_msg->image.step);
 
   // Perform block matching to find the disparities
-  block_matcher_(l_image, r_image, disp_image, CV_32F);
+  block_matcher_->compute(l_image, r_image, disp_image);
 
   // Adjust for any x-offset between the principal points: d' = d - (cx_l - cx_r)
   double cx_l = model_.left().cx();
@@ -235,15 +236,16 @@ void DisparityNodelet::configCb(Config &config, uint32_t level)
 
   // Note: With single-threaded NodeHandle, configCb and imageCb can't be called
   // concurrently, so this is thread-safe.
-  block_matcher_.state->preFilterSize       = config.prefilter_size;
-  block_matcher_.state->preFilterCap        = config.prefilter_cap;
-  block_matcher_.state->SADWindowSize       = config.correlation_window_size;
-  block_matcher_.state->minDisparity        = config.min_disparity;
-  block_matcher_.state->numberOfDisparities = config.disparity_range;
-  block_matcher_.state->uniquenessRatio     = config.uniqueness_ratio;
-  block_matcher_.state->textureThreshold    = config.texture_threshold;
-  block_matcher_.state->speckleWindowSize   = config.speckle_size;
-  block_matcher_.state->speckleRange        = config.speckle_range;
+  block_matcher_->setPreFilterSize(config.prefilter_size);
+  block_matcher_->setPreFilterCap(config.prefilter_cap);
+  //block_matcher_.state->SADWindowSize       = config.correlation_window_size;
+  block_matcher_->setBlockSize(config.correlation_window_size);//NOT SURE IF ITS THE SAME
+  block_matcher_->setMinDisparity(config.min_disparity);
+  block_matcher_->setNumDisparities(config.disparity_range);
+  block_matcher_->setUniquenessRatio(config.uniqueness_ratio);
+  block_matcher_->setTextureThreshold(config.texture_threshold);
+  block_matcher_->setSpeckleWindowSize(config.speckle_size);
+  block_matcher_->setSpeckleRange(config.speckle_range);
 }
 
 } // namespace stereo_image_proc

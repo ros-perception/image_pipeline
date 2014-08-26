@@ -68,13 +68,13 @@ bool Processor::process(const sensor_msgs::ImageConstPtr& raw_image,
     /// @todo Faster to convert directly to mono when color is not requested, but OpenCV doesn't support
     int code = 0;
     if (raw_encoding == enc::BAYER_RGGB8)
-      code = CV_BayerBG2BGR;
+      code = cv::COLOR_BayerBG2BGR;
     else if (raw_encoding == enc::BAYER_BGGR8)
-      code = CV_BayerRG2BGR;
+      code = cv::COLOR_BayerRG2BGR;
     else if (raw_encoding == enc::BAYER_GBRG8)
-      code = CV_BayerGR2BGR;
+      code = cv::COLOR_BayerGR2BGR;
     else if (raw_encoding == enc::BAYER_GRBG8)
-      code = CV_BayerGB2BGR;
+      code = cv::COLOR_BayerGB2BGR;
     else {
       ROS_ERROR("[image_proc] Unsupported encoding '%s'", raw_encoding.c_str());
       return false;
@@ -83,13 +83,13 @@ bool Processor::process(const sensor_msgs::ImageConstPtr& raw_image,
     output.color_encoding = enc::BGR8;
     
     if (flags & MONO_EITHER)
-      cv::cvtColor(output.color, output.mono, CV_BGR2GRAY);
+      cv::cvtColor(output.color, output.mono, cv::COLOR_BGR2GRAY);
   }
   // Color case
   else if (raw_type == CV_8UC3) {
     output.color = raw;
     if (flags & MONO_EITHER) {
-      int code = (raw_encoding == enc::BGR8) ? CV_BGR2GRAY : CV_RGB2GRAY;
+      int code = (raw_encoding == enc::BGR8) ? cv::COLOR_BGR2GRAY : cv::COLOR_RGB2GRAY;
       cv::cvtColor(output.color, output.mono, code);
     }
   }

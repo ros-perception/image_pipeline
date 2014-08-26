@@ -40,7 +40,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::Ca
         cv::Size size(info->width, info->height);
 
         outputVideo.open(filename, 
-                CV_FOURCC(codec.c_str()[0],
+  cv::VideoWriter::fourcc(codec.c_str()[0],
                           codec.c_str()[1],
                           codec.c_str()[2],
                           codec.c_str()[3]), 
