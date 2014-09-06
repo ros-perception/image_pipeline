@@ -364,7 +364,7 @@ class Calibrator(object):
         width = img.shape[1]
         scale = math.sqrt( (width*height) / (640.*480.) )
         if scale > 1.0:
-            scrib = cv2.resize(img, (int(height / scale), int(width / scale)))
+            scrib = cv2.resize(img, (int(width / scale), int(height / scale)))
         else:
             scrib = img
         # Due to rounding, actual horizontal/vertical scaling may differ slightly
