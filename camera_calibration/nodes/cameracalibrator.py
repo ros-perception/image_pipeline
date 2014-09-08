@@ -149,9 +149,17 @@ class CalibrationNode:
         pass
 
     def queue_monocular(self, msg):
+        try:
+            self.q_mono.get(False, 0)
+        except Queue.Empty:
+            pass
         self.q_mono.put(msg)
 
     def queue_stereo(self, lmsg, rmsg):
+        try:
+            self.q_stereo.get(False, 0)
+        except Queue.Empty:
+            pass
         self.q_stereo.put((lmsg, rmsg))
 
     def handle_monocular(self, msg):
