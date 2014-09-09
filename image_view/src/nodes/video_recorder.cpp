@@ -38,15 +38,28 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::Ca
     else if (!outputVideo.isOpened() && info) {
 
         cv::Size size(info->width, info->height);
+#if (CV_MAJOR_VERSION > 2) || ((CV_MAJOR_VERSION==2) && ((CV_MINOR_VERSION>4) || (CV_MINOR_VERSION==4 && CV_SUBMINOR_VERSION>=9))) 
+        outputVideo.open(   filename,
+                            cv::VideoWriter::fourcc
+                                (codec.c_str()[0],
+                                codec.c_str()[1],
+                                codec.c_str()[2],
+                                codec.c_str()[3]),
+                            fps,
+                            size,
+                            true);
+#else
+        outputVideo.open(   filename,
+                            CV_FOURCC
+                                (codec.c_str()[0],
+                                codec.c_str()[1],
+                                codec.c_str()[2],
+                                codec.c_str()[3]),
+                            fps,
+                            size,
+                            true);
+#endif
 
-        outputVideo.open(filename, 
-                CV_FOURCC(codec.c_str()[0],
-                          codec.c_str()[1],
-                          codec.c_str()[2],
-                          codec.c_str()[3]), 
-                fps,
-                size,
-                true);
 
         if (!outputVideo.isOpened())
         {

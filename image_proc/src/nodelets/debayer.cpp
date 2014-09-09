@@ -216,19 +216,19 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
         int code = -1;
         if (raw_msg->encoding == enc::BAYER_RGGB8 ||
             raw_msg->encoding == enc::BAYER_RGGB16)
-          code = CV_BayerBG2BGR;
+          code = cv::COLOR_BayerBG2BGR;
         else if (raw_msg->encoding == enc::BAYER_BGGR8 ||
                  raw_msg->encoding == enc::BAYER_BGGR16)
-          code = CV_BayerRG2BGR;
+          code = cv::COLOR_BayerRG2BGR;
         else if (raw_msg->encoding == enc::BAYER_GBRG8 ||
                  raw_msg->encoding == enc::BAYER_GBRG16)
-          code = CV_BayerGR2BGR;
+          code = cv::COLOR_BayerGR2BGR;
         else if (raw_msg->encoding == enc::BAYER_GRBG8 ||
                  raw_msg->encoding == enc::BAYER_GRBG16)
-          code = CV_BayerGB2BGR;
+          code = cv::COLOR_BayerGB2BGR;
 
         if (algorithm == Debayer_VNG)
-          code += CV_BayerBG2BGR_VNG - CV_BayerBG2BGR;
+          code += cv::COLOR_BayerBG2BGR_VNG - cv::COLOR_BayerBG2BGR;
 
         cv::cvtColor(bayer, color, code);
       }

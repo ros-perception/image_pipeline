@@ -53,7 +53,11 @@ class Processor
 {
 public:
   Processor()
+#if (CV_MAJOR_VERSION > 2) || ((CV_MAJOR_VERSION==2) && ((CV_MINOR_VERSION>4) || (CV_MINOR_VERSION==4 && CV_SUBMINOR_VERSION>=9)))
+    : interpolation_(cv::INTER_LINEAR)
+#else
     : interpolation_(CV_INTER_LINEAR)
+#endif
   {
   }
   
