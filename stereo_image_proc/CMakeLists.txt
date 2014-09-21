@@ -15,7 +15,10 @@ catkin_package(
 
 include_directories(include)
 
-find_package(OpenCV REQUIRED calib3d)
+find_package(OpenCV REQUIRED)
+if (OpenCV_VERSION VERSION_EQUAL "3")
+  add_definitions("-DOPENCV3=1")
+endif()
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS}
                            ${OpenCV_INCLUDE_DIRS}
 )

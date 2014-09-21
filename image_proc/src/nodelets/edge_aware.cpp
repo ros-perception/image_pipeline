@@ -50,8 +50,8 @@ void debayerEdgeAware(const cv::Mat& bayer, cv::Mat& color)
   int bayer_line_step = bayer.step[0];
   int bayer_line_step2 = bayer_line_step * 2;
 
-  unsigned char* rgb_buffer = color.datastart;
-  unsigned char* bayer_pixel = bayer.datastart;
+  unsigned char* rgb_buffer = color.data;
+  unsigned char* bayer_pixel = bayer.data;
   unsigned yIdx, xIdx;
 
   int dh, dv;
@@ -432,8 +432,8 @@ void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
   int bayer_line_step = bayer.step[0];
   int bayer_line_step2 = bayer_line_step * 2;
 
-  unsigned char* rgb_buffer = color.datastart;
-  unsigned char* bayer_pixel = bayer.datastart;
+  unsigned char* rgb_buffer = color.data;
+  unsigned char* bayer_pixel = bayer.data;
   unsigned yIdx, xIdx;
 
   int dh, dv;

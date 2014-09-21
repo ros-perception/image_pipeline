@@ -56,8 +56,13 @@ class StereoProcessor
 public:
   
   StereoProcessor()
+#if OPENCV3
+  {
+    block_matcher_ = cv::createStereoBM();
+#else
     : block_matcher_(cv::StereoBM::BASIC_PRESET)
   {
+#endif
   }
 
   enum {
@@ -138,7 +143,11 @@ private:
   image_proc::Processor mono_processor_;
   
   mutable cv::Mat_<int16_t> disparity16_; // scratch buffer for 16-bit signed disparity image
+#if OPENCV3
+  mutable cv::Ptr<cv::StereoBM> block_matcher_; // contains scratch buffers for block matching
+#else
   mutable cv::StereoBM block_matcher_; // contains scratch buffers for block matching
+#endif
   // scratch buffers for speckle filtering
   mutable cv::Mat_<uint32_t> labels_;
   mutable cv::Mat_<uint32_t> wavefront_;
@@ -160,92 +169,164 @@ inline void StereoProcessor::setInterpolation(int interp)
 
 inline int StereoProcessor::getPreFilterSize() const
 {
+#if OPENCV3
+  return block_matcher_->getPreFilterSize();
+#else
   return block_matcher_.state->preFilterSize;
+#endif
 }
 
 inline void StereoProcessor::setPreFilterSize(int size)
 {
+#if OPENCV3
+  block_matcher_->setPreFilterSize(size);
+#else
   block_matcher_.state->preFilterSize = size;
+#endif
 }
 
 inline int StereoProcessor::getPreFilterCap() const
 {
+#if OPENCV3
+  return block_matcher_->getPreFilterCap();
+#else
   return block_matcher_.state->preFilterCap;
+#endif
 }
 
 inline void StereoProcessor::setPreFilterCap(int cap)
 {
+#if OPENCV3
+  block_matcher_->setPreFilterCap(cap);
+#else
   block_matcher_.state->preFilterCap = cap;
+#endif
 }
 
 inline int StereoProcessor::getCorrelationWindowSize() const
 {
+#if OPENCV3
+  return block_matcher_->getBlockSize();
+#else
   return block_matcher_.state->SADWindowSize;
+#endif
 }
 
 inline void StereoProcessor::setCorrelationWindowSize(int size)
 {
+#if OPENCV3
+  block_matcher_->setBlockSize(size);
+#else
   block_matcher_.state->SADWindowSize = size;
+#endif
 }
 
 inline int StereoProcessor::getMinDisparity() const
 {
+#if OPENCV3
+  return block_matcher_->getMinDisparity();
+#else
   return block_matcher_.state->minDisparity;
+#endif
 }
 
 inline void StereoProcessor::setMinDisparity(int min_d)
 {
+#if OPENCV3
+  block_matcher_->setMinDisparity(min_d);
+#else
   block_matcher_.state->minDisparity = min_d;
+#endif
 }
 
 inline int StereoProcessor::getDisparityRange() const
 {
+#if OPENCV3
+  return block_matcher_->getNumDisparities();
+#else
   return block_matcher_.state->numberOfDisparities;
+#endif
 }
 
 inline void StereoProcessor::setDisparityRange(int range)
 {
+#if OPENCV3
+  block_matcher_->setNumDisparities(range);
+#else
   block_matcher_.state->numberOfDisparities = range;
+#endif
 }
 
 inline int StereoProcessor::getTextureThreshold() const
 {
+#if OPENCV3
+  return block_matcher_->getTextureThreshold();
+#else
   return block_matcher_.state->textureThreshold;
+#endif
 }
 
 inline void StereoProcessor::setTextureThreshold(int threshold)
 {
+#if OPENCV3
+  block_matcher_->setTextureThreshold(threshold);
+#else
   block_matcher_.state->textureThreshold = threshold;
+#endif
 }
 
 inline float StereoProcessor::getUniquenessRatio() const
 {
+#if OPENCV3
+  return block_matcher_->getUniquenessRatio();
+#else
   return block_matcher_.state->uniquenessRatio;
+#endif
 }
 
 inline void StereoProcessor::setUniquenessRatio(float ratio)
 {
+#if OPENCV3
+  block_matcher_->setUniquenessRatio(ratio);
+#else
   block_matcher_.state->uniquenessRatio = ratio;
+#endif
 }
 
 inline int StereoProcessor::getSpeckleSize() const
 {
+#if OPENCV3
+  return block_matcher_->getSpeckleWindowSize();
+#else
   return block_matcher_.state->speckleWindowSize;
+#endif
 }
 
 inline void StereoProcessor::setSpeckleSize(int size)
 {
+#if OPENCV3
+  block_matcher_->setSpeckleWindowSize(size);
+#else
   block_matcher_.state->speckleWindowSize = size;
+#endif
 }
 
 inline int StereoProcessor::getSpeckleRange() const
 {
+#if OPENCV3
+  return block_matcher_->getSpeckleRange();
+#else
   return block_matcher_.state->speckleRange;
+#endif
 }
 
 inline void StereoProcessor::setSpeckleRange(int range)
 {
+#if OPENCV3
+  block_matcher_->setSpeckleRange(range);
+#else
   block_matcher_.state->speckleRange = range;
+#endif
 }
 
 } //namespace stereo_image_proc

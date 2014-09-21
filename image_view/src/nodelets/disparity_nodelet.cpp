@@ -78,7 +78,11 @@ void DisparityNodelet::onInit()
   bool autosize;
   local_nh.param("autosize", autosize, false);
 
+#if OPENCV3
+  cv::namedWindow(window_name_, autosize ? cv::WND_PROP_AUTOSIZE : 0);
+#else
   cv::namedWindow(window_name_, autosize ? CV_WINDOW_AUTOSIZE : 0);
+#endif
 
   sub_ = nh.subscribe<stereo_msgs::DisparityImage>(topic, 1, &DisparityNodelet::imageCb, this);
 }

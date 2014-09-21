@@ -360,13 +360,17 @@ public:
     filename_format_.parse(format_string);
 
     // Do GUI window setup
+#if OPENCV3
+    int flags = autosize ? cv::WND_PROP_AUTOSIZE : 0;
+#else
     int flags = autosize ? CV_WINDOW_AUTOSIZE : 0;
+#endif
     cv::namedWindow("left", flags);
     cv::namedWindow("right", flags);
     cv::namedWindow("disparity", flags);
-    cvSetMouseCallback("left",      &StereoView::mouseCb, this);
-    cvSetMouseCallback("right",     &StereoView::mouseCb, this);
-    cvSetMouseCallback("disparity", &StereoView::mouseCb, this);
+    cv::setMouseCallback("left",      &StereoView::mouseCb, this);
+    cv::setMouseCallback("right",     &StereoView::mouseCb, this);
+    cv::setMouseCallback("disparity", &StereoView::mouseCb, this);
 
     // Resolve topic names
     ros::NodeHandle nh;
@@ -410,7 +414,7 @@ public:
 
   ~StereoView()
   {
-    cvDestroyAllWindows();
+    cv::destroyAllWindows();
   }
 
   void imageCb(const ImageConstPtr& left, const ImageConstPtr& right,
@@ -484,12 +488,20 @@ public:
   
   static void mouseCb(int event, int x, int y, int flags, void* param)
   {
+#if OPENCV3
+    if (event == cv::EVENT_LBUTTONDOWN)
+#else
     if (event == CV_EVENT_LBUTTONDOWN)
+#endif
     {
       ROS_WARN_ONCE("Left-clicking no longer saves images. Right-click instead.");
       return;
     }
+#if OPENCV3
+    if (event != cv::EVENT_RBUTTONDOWN)
+#else
     if (event != CV_EVENT_RBUTTONDOWN)
+#endif
       return;
     
     StereoView *sv = (StereoView*)param;

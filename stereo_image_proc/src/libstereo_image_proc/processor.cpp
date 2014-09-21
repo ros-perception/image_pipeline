@@ -89,7 +89,11 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
   static const double inv_dpp = 1.0 / DPP;
 
   // Block matcher produces 16-bit signed (fixed point) disparity image
+#if OPENCV3
+  block_matcher_->compute(left_rect, right_rect, disparity16_);
+#else
   block_matcher_(left_rect, right_rect, disparity16_);
+#endif
 
   // Fill in DisparityImage image data, converting to 32-bit float
   sensor_msgs::Image& dimage = disparity.image;
