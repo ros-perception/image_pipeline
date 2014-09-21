@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.9 (2014-09-21)
+-------------------
 * fix bad Python
 * only analyze the latest image
   fixes `#97 <https://github.com/ros-perception/image_pipeline/issues/97>`_
