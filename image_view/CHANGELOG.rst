@@ -1,3 +1,9 @@
+Forthcoming
+-----------
+* get code to compile with OpenCV3
+  fixes `#96 <https://github.com/ros-perception/image_pipeline/issues/96>`_
+* Contributors: Vincent Rabaud
+
 1.12.8 (2014-08-19)
 -------------------
 
