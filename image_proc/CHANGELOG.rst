@@ -1,3 +1,6 @@
+Forthcoming
+-----------
+
 1.12.9 (2014-09-21)
 -------------------
 * get code to compile with OpenCV3
