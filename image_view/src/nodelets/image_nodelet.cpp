@@ -85,7 +85,8 @@ void ImageNodelet::onInit()
   // Command line argument parsing
   const std::vector<std::string>& argv = getMyArgv();
   // First positional argument is the transport type
-  std::string transport = "raw";
+  std::string transport;
+  local_nh.param("image_transport", transport, std::string("raw"));
   for (int i = 0; i < (int)argv.size(); ++i)
   {
     if (argv[i][0] != '-')
@@ -94,6 +95,7 @@ void ImageNodelet::onInit()
       break;
     }
   }
+  NODELET_INFO_STREAM("Using transport \"" << transport << "\"");
   // Internal option, should be used only by the image_view node
   bool shutdown_on_close = std::find(argv.begin(), argv.end(),
                                      "--shutdown-on-close") != argv.end();
