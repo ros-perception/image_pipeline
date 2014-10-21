@@ -5,7 +5,11 @@ find_package(catkin REQUIRED)
 catkin_package()
 
 find_package(Boost REQUIRED COMPONENTS signals thread)
-find_package(OpenCV REQUIRED highgui core)
+find_package(OpenCV REQUIRED)
+if (OpenCV_VERSION VERSION_EQUAL "3")
+  add_definitions("-DOPENCV3=1")
+endif()
+
 find_package(catkin REQUIRED camera_calibration_parsers cv_bridge image_transport message_filters nodelet rosconsole roscpp)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
                            ${catkin_INCLUDE_DIRS}

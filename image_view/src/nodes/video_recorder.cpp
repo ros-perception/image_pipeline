@@ -23,6 +23,9 @@
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <camera_calibration_parsers/parse.h>
+#if OPENCV3
+#include <opencv2/videoio.hpp>
+#endif
 
 cv::VideoWriter outputVideo;
 
@@ -40,7 +43,11 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::Ca
         cv::Size size(info->width, info->height);
 
         outputVideo.open(filename, 
+#if OPENCV3
+                cv::VideoWriter::fourcc(codec.c_str()[0],
+#else
                 CV_FOURCC(codec.c_str()[0],
+#endif
                           codec.c_str()[1],
                           codec.c_str()[2],
                           codec.c_str()[3]), 

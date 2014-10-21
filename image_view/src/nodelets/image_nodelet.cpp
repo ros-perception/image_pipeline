@@ -109,7 +109,11 @@ void ImageNodelet::onInit()
   local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
   filename_format_.parse(format_string);
 
+#if OPENCV3
+  cv::namedWindow(window_name_, autosize ? cv::WND_PROP_AUTOSIZE : 0);
+#else
   cv::namedWindow(window_name_, autosize ? CV_WINDOW_AUTOSIZE : 0);
+#endif
   cv::setMouseCallback(window_name_, &ImageNodelet::mouseCb, this);
 
   image_transport::ImageTransport it(nh);
@@ -172,13 +176,21 @@ void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
   // Trick to use NODELET_* logging macros in static function
   boost::function<const std::string&()> getName =
     boost::bind(&ImageNodelet::getName, this_);
-  
+
+#if OPENCV3
+  if (event == cv::EVENT_LBUTTONDOWN)
+#else
   if (event == CV_EVENT_LBUTTONDOWN)
+#endif
   {
     NODELET_WARN_ONCE("Left-clicking no longer saves images. Right-click instead.");
     return;
   }
+#if OPENCV3
+  if (event != cv::EVENT_RBUTTONDOWN)
+#else
   if (event != CV_EVENT_RBUTTONDOWN)
+#endif
     return;
   
   boost::lock_guard<boost::mutex> guard(this_->image_mutex_);

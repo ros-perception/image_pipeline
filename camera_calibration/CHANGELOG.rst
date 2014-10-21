@@ -1,3 +1,17 @@
+1.12.10 (2014-09-28)
+--------------------
+* Update calibrator.py
+  bugfix: stereo calibrator crashed after the signature of the method for the computation of the epipolar error changed but the function call was not updated
+* Contributors: Volker Grabe
+
+1.12.9 (2014-09-21)
+-------------------
+* fix bad Python
+* only analyze the latest image
+  fixes `#97 <https://github.com/ros-perception/image_pipeline/issues/97>`_
+* flips width and height during resize to give correct aspect ratio
+* Contributors: Russell Toris, Vincent Rabaud
+
 1.12.8 (2014-08-19)
 -------------------
 * install scripts in the local bin (they are now rosrun-able again)

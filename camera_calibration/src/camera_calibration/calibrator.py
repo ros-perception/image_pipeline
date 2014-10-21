@@ -1012,7 +1012,7 @@ class StereoCalibrator(Calibrator):
 
             # Report epipolar error
             if lcorners is not None and rcorners is not None:
-                epierror = self.epipolar_error(lundistorted, rundistorted, lboard)
+                epierror = self.epipolar_error(lundistorted, rundistorted)
 
         else:
             lscrib = cv2.cvtColor(lscrib_mono, cv2.COLOR_GRAY2BGR)
