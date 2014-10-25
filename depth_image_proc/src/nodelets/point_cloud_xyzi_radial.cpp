@@ -38,7 +38,7 @@
 #include <image_transport/subscriber_filter.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
+#include <message_filters/sync_policies/exact_time.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <boost/thread.hpp>
 #include "depth_traits.h"
@@ -49,7 +49,7 @@ namespace depth_image_proc {
 
   using namespace message_filters::sync_policies;
   namespace enc = sensor_msgs::image_encodings;
-  typedef ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> SyncPolicy;
+  typedef ExactTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> SyncPolicy;
 
   class PointCloudXyziRadialNodelet : public nodelet::Nodelet
   {
@@ -184,12 +184,12 @@ namespace depth_image_proc {
 	
 	// depth image can use different transport.(e.g. compressedDepth)
 	image_transport::TransportHints depth_hints("raw",ros::TransportHints(), private_nh, depth_image_transport_param);
-	sub_depth_.subscribe(*depth_it_, "image_raw_radial",       1, depth_hints);
+	sub_depth_.subscribe(*depth_it_, "image_raw_radial",       5, depth_hints);
 	
 	// intensity uses normal ros transport hints.
 	image_transport::TransportHints hints("raw", ros::TransportHints(), private_nh);
-	sub_intensity_.subscribe(*intensity_it_,   "image_raw", 1, hints);
-	sub_info_.subscribe(*intensity_nh_,   "camera_info",      1);
+	sub_intensity_.subscribe(*intensity_it_,   "image_raw", 5, hints);
+	sub_info_.subscribe(*intensity_nh_,   "camera_info",      5);
       }
   }
 
