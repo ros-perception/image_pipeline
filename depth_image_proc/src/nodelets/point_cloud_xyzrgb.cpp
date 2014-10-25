@@ -82,7 +82,6 @@ class PointCloudXyzrgbNodelet : public nodelet::Nodelet
   typedef ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> SyncPolicy;
   typedef message_filters::Synchronizer<SyncPolicy> Synchronizer;
   boost::shared_ptr<Synchronizer> sync_;
-  double range_max_;
 
   // Publications
   boost::mutex connect_mutex_;
@@ -118,7 +117,6 @@ void PointCloudXyzrgbNodelet::onInit()
   // Read parameters
   int queue_size;
   private_nh.param("queue_size", queue_size, 5);
-  private_nh.param("range_max", range_max_, 0.0);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   sync_.reset( new Synchronizer(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_) );
@@ -296,7 +294,7 @@ void PointCloudXyzrgbNodelet::convert(const sensor_msgs::ImageConstPtr& depth_ms
   float constant_x = unit_scaling / model_.fx();
   float constant_y = unit_scaling / model_.fy();
   float bad_point = std::numeric_limits<float>::quiet_NaN ();
-
+  
   const T* depth_row = reinterpret_cast<const T*>(&depth_msg->data[0]);
   int row_step = depth_msg->step / sizeof(T);
   const uint8_t* rgb = &rgb_msg->data[0];
@@ -310,6 +308,19 @@ void PointCloudXyzrgbNodelet::convert(const sensor_msgs::ImageConstPtr& depth_ms
       pcl::PointXYZRGB& pt = *pt_iter++;
       T depth = depth_row[u];
 
+      // Check for invalid measurements
+      if (!DepthTraits<T>::valid(depth))
+      {
+        pt.x = pt.y = pt.z = bad_point;
+      }
+      else
+      {
+        // Fill in XYZ
+        pt.x = (u - center_x) * depth * constant_x;
+        pt.y = (v - center_y) * depth * constant_y;
+        pt.z = DepthTraits<T>::toMeters(depth);
+      }
+
       // Fill in color
       RGBValue color;
       color.Red   = rgb[red_offset];
@@ -317,25 +328,6 @@ void PointCloudXyzrgbNodelet::convert(const sensor_msgs::ImageConstPtr& depth_ms
       color.Blue  = rgb[blue_offset];
       color.Alpha = 0;
       pt.rgb = color.float_value;
-
-      // Check for invalid measurements
-      if (!DepthTraits<T>::valid(depth))
-      {
-        if (range_max_ != 0.0)
-        {
-          depth = DepthTraits<T>::fromMeters(range_max_);
-        }
-        else
-        {
-          pt.x = pt.y = pt.z = bad_point;
-          continue;
-        }
-      }
-
-      // Fill in XYZ
-      pt.x = (u - center_x) * depth * constant_x;
-      pt.y = (v - center_y) * depth * constant_y;
-      pt.z = DepthTraits<T>::toMeters(depth);
     }
   }
 }

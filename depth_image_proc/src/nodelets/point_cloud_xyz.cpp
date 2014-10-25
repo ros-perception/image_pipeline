@@ -53,7 +53,6 @@ class PointCloudXyzNodelet : public nodelet::Nodelet
   boost::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::CameraSubscriber sub_depth_;
   int queue_size_;
-  double range_max_;
 
   // Publications
   boost::mutex connect_mutex_;
@@ -82,7 +81,6 @@ void PointCloudXyzNodelet::onInit()
 
   // Read parameters
   private_nh.param("queue_size", queue_size_, 5);
-  private_nh.param("range_max", range_max_, 0.0);
 
   // Monitor whether anyone is subscribed to the output
   ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudXyzNodelet::connectCb, this);
@@ -162,15 +160,8 @@ void PointCloudXyzNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg, 
       // Missing points denoted by NaNs
       if (!DepthTraits<T>::valid(depth))
       {
-        if (range_max_ != 0.0)
-        {
-          depth = DepthTraits<T>::fromMeters(range_max_);
-        }
-        else
-        {
-          pt.x = pt.y = pt.z = bad_point;
-          continue;
-        }
+        pt.x = pt.y = pt.z = bad_point;
+        continue;
       }
 
       // Fill in XYZ
