@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.11 (2014-10-26)
+--------------------
 * brings back window_thread
   This fixes `#102 <https://github.com/ros-perception/image_pipeline/issues/102>`_ fully
 * small optimizations
