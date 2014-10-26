@@ -48,7 +48,6 @@ class ImageNodelet : public nodelet::Nodelet
   image_transport::Subscriber sub_;
 
   boost::mutex image_mutex_;
-  sensor_msgs::ImageConstPtr last_msg_;
   cv::Mat last_image_;
   
   std::string window_name_;
@@ -127,41 +126,29 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
   image_mutex_.lock();
 
-  // May want to view raw bayer data, which CvBridge doesn't know about
-  if (msg->encoding.find("bayer") != std::string::npos)
-  {
-    last_image_ = cv::Mat(msg->height, msg->width, CV_8UC1,
-                          const_cast<uint8_t*>(&msg->data[0]), msg->step);
-  }
   // We want to scale floating point images so that they display nicely
-  else if(msg->encoding.find("F") != std::string::npos)
+  if(msg->encoding.find("F") != std::string::npos)
   {
-    cv::Mat float_image_bridge = cv_bridge::toCvShare(msg, msg->encoding)->image;
-    cv::Mat_<float> float_image = float_image_bridge;
+    cv::Mat float_image = cv_bridge::toCvShare(msg, msg->encoding)->image;
     double max_val;
     cv::minMaxIdx(float_image, 0, &max_val);
 
     if(max_val > 0)
-    {
-      float_image /= max_val;
-    }
-    last_image_ = float_image;
+      last_image_ = float_image / max_val;
+    else
+      last_image_ = float_image.clone();
   }
   else
   {
     // Convert to OpenCV native BGR color
     try {
-      last_image_ = cv_bridge::toCvShare(msg, "bgr8")->image;
+      last_image_ = cv_bridge::toCvCopy(msg, "bgr8")->image;
     }
     catch (cv_bridge::Exception& e) {
       NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image to bgr8: '%s'",
                              msg->encoding.c_str(), e.what());
     }
   }
-
-  // last_image_ may point to data owned by last_msg_, so we hang onto it for
-  // the sake of mouseCb.
-  last_msg_ = msg;
 
   // Must release the mutex before calling cv::imshow, or can deadlock against
   // OpenCV's window mutex.
@@ -197,7 +184,7 @@ void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
   
   boost::lock_guard<boost::mutex> guard(this_->image_mutex_);
 
-  const cv::Mat image = this_->last_image_;
+  const cv::Mat &image = this_->last_image_;
   if (image.empty())
   {
     NODELET_WARN("Couldn't save image, no data!");
