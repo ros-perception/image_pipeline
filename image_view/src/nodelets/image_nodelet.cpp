@@ -34,6 +34,7 @@
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
+#include "window_thread.h"
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -116,6 +117,8 @@ void ImageNodelet::onInit()
   cv::namedWindow(window_name_, autosize ? CV_WINDOW_AUTOSIZE : 0);
 #endif
   cv::setMouseCallback(window_name_, &ImageNodelet::mouseCb, this);
+
+  startWindowThread();
 
   image_transport::ImageTransport it(nh);
   image_transport::TransportHints hints(transport, ros::TransportHints(), getPrivateNodeHandle());
