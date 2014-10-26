@@ -1,3 +1,11 @@
+Forthcoming
+-----------
+* brings back window_thread
+  This fixes `#102 <https://github.com/ros-perception/image_pipeline/issues/102>`_ fully
+* small optimizations
+* add the image_transport parameter
+* Contributors: Vincent Rabaud
+
 1.12.10 (2014-09-28)
 --------------------
 
