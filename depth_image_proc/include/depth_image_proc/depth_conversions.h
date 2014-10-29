@@ -48,7 +48,8 @@ template<typename T>
 void convert(
     const sensor_msgs::ImageConstPtr& depth_msg,
     pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud_msg,
-    const image_geometry::PinholeCameraModel& model)
+    const image_geometry::PinholeCameraModel& model,
+    double range_max = 0.0)
 {
   // Use correct principal point from calibration
   float center_x = model.cx();
@@ -73,8 +74,15 @@ void convert(
       // Missing points denoted by NaNs
       if (!DepthTraits<T>::valid(depth))
       {
-        pt.x = pt.y = pt.z = bad_point;
-        continue;
+        if (range_max != 0.0)
+        {
+          depth = DepthTraits<T>::fromMeters(range_max);
+        }
+        else
+        {
+          pt.x = pt.y = pt.z = bad_point;
+          continue;
+        }
       }
 
       // Fill in XYZ
