@@ -44,7 +44,7 @@
 #include <message_filters/time_synchronizer.h>
 #include <sensor_msgs/image_encodings.h>
 #include <stereo_msgs/DisparityImage.h>
-#include "depth_traits.h"
+#include <depth_image_proc/depth_traits.h>
 
 namespace depth_image_proc {
 
