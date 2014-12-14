@@ -17,7 +17,7 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
 )
 
 # Nodelet library
-add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
+add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp)
 target_link_libraries(image_view ${catkin_LIBRARIES}
                                  ${OpenCV_LIBRARIES}
                                  ${Boost_LIBRARIES}

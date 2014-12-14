@@ -36,7 +36,6 @@
 #include <sensor_msgs/image_encodings.h>
 #include <stereo_msgs/DisparityImage.h>
 #include <opencv2/highgui/highgui.hpp>
-#include "window_thread.h"
 
 namespace image_view {
 
@@ -84,8 +83,6 @@ void DisparityNodelet::onInit()
 #else
   cv::namedWindow(window_name_, autosize ? CV_WINDOW_AUTOSIZE : 0);
 #endif
-
-  startWindowThread();
 
   sub_ = nh.subscribe<stereo_msgs::DisparityImage>(topic, 1, &DisparityNodelet::imageCb, this);
 }
