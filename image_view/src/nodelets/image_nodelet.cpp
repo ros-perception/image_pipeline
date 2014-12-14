@@ -153,10 +153,8 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
   // Must release the mutex before calling cv::imshow, or can deadlock against
   // OpenCV's window mutex.
   image_mutex_.unlock();
-  if (!last_image_.empty()) {
+  if (!last_image_.empty())
     cv::imshow(window_name_, last_image_);
-    cv::waitKey(1);
-  }
 }
 
 void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
