@@ -31,24 +31,14 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include <ros/ros.h>
-#include <nodelet/loader.h>
+#ifndef IMAGE_VIEW_WINDOW_THREAD_H
+#define IMAGE_VIEW_WINDOW_THREAD_H
 
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "image_view", ros::init_options::AnonymousName);
-  if (ros::names::remap("image") == "image") {
-    ROS_WARN("Topic 'image' has not been remapped! Typical command-line usage:\n"
-             "\t$ rosrun image_view image_view image:=<image topic> [transport]");
-  }
+namespace image_view {
 
-  nodelet::Loader manager(false);
-  nodelet::M_string remappings;
-  nodelet::V_string my_argv(argv + 1, argv + argc);
-  my_argv.push_back("--shutdown-on-close"); // Internal
+// Makes absolutely sure we only start the OpenCV window thread once
+void startWindowThread();
 
-  manager.load(ros::this_node::getName(), "image_view/image", remappings, my_argv);
+} // namespace image_view
 
-  ros::spin();
-  return 0;
-}
+#endif
