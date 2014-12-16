@@ -323,7 +323,7 @@ static unsigned char colormap[768] =
     255,  0, 0,
   };
 
-void increment(int* value)
+inline void increment(int* value)
 {
   ++(*value);
 }
