@@ -233,9 +233,9 @@ class OpenCVCalibrationNode(CalibrationNode):
         CalibrationNode.__init__(self, *args, **kwargs)
 
         self.queue_display = Queue()
-        display_thread = DisplayThread(self.queue_display, self)
-        display_thread.setDaemon(True)
-        display_thread.start()
+        self.display_thread = DisplayThread(self.queue_display, self)
+        self.display_thread.setDaemon(True)
+        self.display_thread.start()
 
     @classmethod
     def putText(cls, img, text, org, color = (0,0,0)):
