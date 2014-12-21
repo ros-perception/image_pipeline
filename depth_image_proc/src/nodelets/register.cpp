@@ -44,7 +44,7 @@
 #include <image_geometry/pinhole_camera_model.h>
 #include <Eigen/Geometry>
 #include <eigen_conversions/eigen_msg.h>
-#include "depth_traits.h"
+#include <depth_image_proc/depth_traits.h>
 
 namespace depth_image_proc {
 
