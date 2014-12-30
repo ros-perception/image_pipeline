@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.12 (2014-12-31)
+--------------------
 * Convert function to inline to avoid duplicates with image_transport
 * Revert "remove GTK dependency"
   This reverts commit a6e15e796a40385fbbf8da05966aa47d179dcb46.

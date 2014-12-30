@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.12 (2014-12-31)
+--------------------
 * adds range_max
 * exports depth_conversions
   with convert for xyz PC only
