@@ -16,9 +16,9 @@
   <buildtool_depend version_gte="0.5.68">catkin</buildtool_depend>
 
   <test_depend>rostest</test_depend>
+  <test_depend>camera_calibration_parsers</test_depend>
   
   <build_depend>boost</build_depend>
-  <build_depend>camera_calibration_parsers</build_depend>
   <build_depend>cv_bridge</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>image_geometry</build_depend>
