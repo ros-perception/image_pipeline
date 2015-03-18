@@ -326,25 +326,25 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   
 
   // Scale the intrinsic matrix
-  out_info->K[0] = out_info->K[0]/ float(decimation_x); 
-  out_info->K[2] = out_info->K[2]/ float(decimation_x);
-  out_info->K[4] = out_info->K[4]/ float(decimation_y);
-  out_info->K[5] = out_info->K[5]/ float(decimation_y);
+  out_info->K[0] = out_info->K[0]/ float(config.decimation_x); 
+  out_info->K[2] = out_info->K[2]/ float(config.decimation_x);
+  out_info->K[4] = out_info->K[4]/ float(config.decimation_y);
+  out_info->K[5] = out_info->K[5]/ float(config.decimation_y);
 
   // Scale the projection matrix
-  out_info->P[0] = out_info->P[0]/ float(decimation_x); 
-  out_info->P[2] = out_info->P[2]/ float(decimation_x);
-  out_info->P[3] = out_info->P[3]/ float(decimation_x);
-  out_info->P[5] = out_info->P[5]/ float(decimation_y); 
-  out_info->P[6] = out_info->P[6]/ float(decimation_y);
-  out_info->P[7] = out_info->P[7]/ float(decimation_y);
+  out_info->P[0] = out_info->P[0]/ float(config.decimation_x); 
+  out_info->P[2] = out_info->P[2]/ float(config.decimation_x);
+  out_info->P[3] = out_info->P[3]/ float(config.decimation_x);
+  out_info->P[5] = out_info->P[5]/ float(config.decimation_y); 
+  out_info->P[6] = out_info->P[6]/ float(config.decimation_y);
+  out_info->P[7] = out_info->P[7]/ float(config.decimation_y);
 
   out_info->binning_x = binning_x * config.decimation_x;
   out_info->binning_y = binning_y * config.decimation_y;
   out_info->roi.x_offset += config.x_offset * binning_x;
   out_info->roi.y_offset += config.y_offset * binning_y;
-  out_info->roi.height = int(height * 1.0/float(binning_y));
-  out_info->roi.width = int(width * 1.0/float(binning_x));
+  out_info->roi.height = output.image.size().height * binning_y;
+  out_info->roi.width = output.image.size().width* binning_x;
   // If no ROI specified, leave do_rectify as-is. If ROI specified, set do_rectify = true.
   if (width != (int)image_msg->width || height != (int)image_msg->height)
     out_info->roi.do_rectify = true;
