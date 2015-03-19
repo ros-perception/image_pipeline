@@ -95,7 +95,7 @@ class ConsumerThread(threading.Thread):
 
 class CalibrationNode:
     def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
-                 pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0):
+                 pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0, queue_size = 0):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -110,6 +110,7 @@ class CalibrationNode:
                         print("Service not found")
                         rospy.signal_shutdown('Quit')
 
+        self._queue_size = queue_size
         self._boards = boards
         self._calib_flags = flags
         self._checkerboard_flags = checkerboard_flags
@@ -130,8 +131,8 @@ class CalibrationNode:
         self.set_right_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("right_camera"),
                                                                 sensor_msgs.srv.SetCameraInfo)
 
-        self.q_mono = Queue()
-        self.q_stereo = Queue()
+        self.q_mono = Queue( queue_size )
+        self.q_stereo = Queue( queue_size )
 
         self.c = None
 
@@ -232,7 +233,7 @@ class OpenCVCalibrationNode(CalibrationNode):
 
         CalibrationNode.__init__(self, *args, **kwargs)
 
-        self.queue_display = Queue()
+        self.queue_display = Queue( self._queue_size )
         self.display_thread = DisplayThread(self.queue_display, self)
         self.display_thread.setDaemon(True)
         self.display_thread.start()
@@ -370,6 +371,9 @@ def main():
     parser.add_option("-c", "--camera_name",
                      type="string", default='narrow_stereo',
                      help="name of the camera to appear in the calibration file")
+    parser.add_option("-Q", "--queue_size",
+                     type="int", default=0,
+                     help="maximum size of the image queues to use")
     group = OptionGroup(parser, "Chessboard Options",
                         "You must specify one or more chessboards as pairs of --size and --square options.")
     group.add_option("-p", "--pattern",
@@ -464,7 +468,7 @@ def main():
 
     rospy.init_node('cameracalibrator')
     node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
-                                 checkerboard_flags=checkerboard_flags)
+                                 checkerboard_flags=checkerboard_flags, queue_size=options.queue_size)
     rospy.spin()
 
 if __name__ == "__main__":
