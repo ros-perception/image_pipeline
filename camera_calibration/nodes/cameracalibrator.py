@@ -373,7 +373,7 @@ def main():
                      help="name of the camera to appear in the calibration file")
     parser.add_option("-Q", "--queue_size",
                      type="int", default=0,
-                     help="maximum size of the image queues to use")
+                     help="maximum size of the image queues to use (0 indicates infinite length queues)")
     group = OptionGroup(parser, "Chessboard Options",
                         "You must specify one or more chessboards as pairs of --size and --square options.")
     group.add_option("-p", "--pattern",
