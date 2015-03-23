@@ -41,7 +41,7 @@
 #include <message_filters/sync_policies/exact_time.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <boost/thread.hpp>
-#include "depth_traits.h"
+#include <depth_image_proc/depth_traits.h>
 
 #include <sensor_msgs/point_cloud2_iterator.h>
 
