@@ -49,6 +49,7 @@
 #include <stereo_msgs/DisparityImage.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
 
 namespace stereo_image_proc {
 
@@ -174,48 +175,34 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
   points_msg->header = disp_msg->header;
   points_msg->height = mat.rows;
   points_msg->width  = mat.cols;
-  points_msg->fields.resize (4);
-  points_msg->fields[0].name = "x";
-  points_msg->fields[0].offset = 0;
-  points_msg->fields[0].count = 1;
-  points_msg->fields[0].datatype = PointField::FLOAT32;
-  points_msg->fields[1].name = "y";
-  points_msg->fields[1].offset = 4;
-  points_msg->fields[1].count = 1;
-  points_msg->fields[1].datatype = PointField::FLOAT32;
-  points_msg->fields[2].name = "z";
-  points_msg->fields[2].offset = 8;
-  points_msg->fields[2].count = 1;
-  points_msg->fields[2].datatype = PointField::FLOAT32;
-  points_msg->fields[3].name = "rgb";
-  points_msg->fields[3].offset = 12;
-  points_msg->fields[3].count = 1;
-  points_msg->fields[3].datatype = PointField::FLOAT32;
-  //points_msg->is_bigendian = false; ???
-  static const int STEP = 16;
-  points_msg->point_step = STEP;
-  points_msg->row_step = points_msg->point_step * points_msg->width;
-  points_msg->data.resize (points_msg->row_step * points_msg->height);
+  points_msg->is_bigendian = false;
   points_msg->is_dense = false; // there may be invalid points
- 
+
+  sensor_msgs::PointCloud2Modifier pcd_modifier(*points_msg);
+  pcd_modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
+
+  sensor_msgs::PointCloud2Iterator<float> iter_x(*points_msg, "x");
+  sensor_msgs::PointCloud2Iterator<float> iter_y(*points_msg, "y");
+  sensor_msgs::PointCloud2Iterator<float> iter_z(*points_msg, "z");
+  sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(*points_msg, "r");
+  sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(*points_msg, "g");
+  sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*points_msg, "b");
+
   float bad_point = std::numeric_limits<float>::quiet_NaN ();
-  int offset = 0;
   for (int v = 0; v < mat.rows; ++v)
   {
-    for (int u = 0; u < mat.cols; ++u, offset += STEP)
+    for (int u = 0; u < mat.cols; ++u, ++iter_x, ++iter_y, ++iter_z)
     {
       if (isValidPoint(mat(v,u)))
       {
-        // x,y,z,rgba
-        memcpy (&points_msg->data[offset + 0], &mat(v,u)[0], sizeof (float));
-        memcpy (&points_msg->data[offset + 4], &mat(v,u)[1], sizeof (float));
-        memcpy (&points_msg->data[offset + 8], &mat(v,u)[2], sizeof (float));
+        // x,y,z
+        *iter_x = mat(v, u)[0];
+        *iter_y = mat(v, u)[1];
+        *iter_z = mat(v, u)[2];
       }
       else
       {
-        memcpy (&points_msg->data[offset + 0], &bad_point, sizeof (float));
-        memcpy (&points_msg->data[offset + 4], &bad_point, sizeof (float));
-        memcpy (&points_msg->data[offset + 8], &bad_point, sizeof (float));
+        *iter_x = *iter_y = *iter_z = bad_point;
       }
     }
   }
@@ -223,7 +210,6 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
   // Fill in color
   namespace enc = sensor_msgs::image_encodings;
   const std::string& encoding = l_image_msg->encoding;
-  offset = 0;
   if (encoding == enc::MONO8)
   {
     const cv::Mat_<uint8_t> color(l_image_msg->height, l_image_msg->width,
@@ -231,18 +217,10 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
                                   l_image_msg->step);
     for (int v = 0; v < mat.rows; ++v)
     {
-      for (int u = 0; u < mat.cols; ++u, offset += STEP)
+      for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b)
       {
-        if (isValidPoint(mat(v,u)))
-        {
-          uint8_t g = color(v,u);
-          int32_t rgb = (g << 16) | (g << 8) | g;
-          memcpy (&points_msg->data[offset + 12], &rgb, sizeof (int32_t));
-        }
-        else
-        {
-          memcpy (&points_msg->data[offset + 12], &bad_point, sizeof (float));
-        }
+        uint8_t g = color(v,u);
+        *iter_r = *iter_g = *iter_b = g;
       }
     }
   }
@@ -253,18 +231,12 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
                                     l_image_msg->step);
     for (int v = 0; v < mat.rows; ++v)
     {
-      for (int u = 0; u < mat.cols; ++u, offset += STEP)
+      for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b)
       {
-        if (isValidPoint(mat(v,u)))
-        {
-          const cv::Vec3b& rgb = color(v,u);
-          int32_t rgb_packed = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
-          memcpy (&points_msg->data[offset + 12], &rgb_packed, sizeof (int32_t));
-        }
-        else
-        {
-          memcpy (&points_msg->data[offset + 12], &bad_point, sizeof (float));
-        }
+        const cv::Vec3b& rgb = color(v,u);
+        *iter_r = rgb[0];
+        *iter_g = rgb[1];
+        *iter_b = rgb[2];
       }
     }
   }
@@ -275,18 +247,12 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
                                     l_image_msg->step);
     for (int v = 0; v < mat.rows; ++v)
     {
-      for (int u = 0; u < mat.cols; ++u, offset += STEP)
+      for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b)
       {
-        if (isValidPoint(mat(v,u)))
-        {
-          const cv::Vec3b& bgr = color(v,u);
-          int32_t rgb_packed = (bgr[2] << 16) | (bgr[1] << 8) | bgr[0];
-          memcpy (&points_msg->data[offset + 12], &rgb_packed, sizeof (int32_t));
-        }
-        else
-        {
-          memcpy (&points_msg->data[offset + 12], &bad_point, sizeof (float));
-        }
+        const cv::Vec3b& bgr = color(v,u);
+        *iter_r = bgr[2];
+        *iter_g = bgr[1];
+        *iter_b = bgr[0];
       }
     }
   }

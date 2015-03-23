@@ -37,9 +37,32 @@
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
+#include "window_thread.h"
 
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
+
+#ifdef HAVE_GTK
+#include <gtk/gtk.h>
+
+// Platform-specific workaround for #3026: image_view doesn't close when
+// closing image window. On platforms using GTK+ we connect this to the
+// window's "destroy" event so that image_view exits.
+static void destroyNode(GtkWidget *widget, gpointer data)
+{
+  /// @todo On ros::shutdown(), the node hangs. Why?
+  //ros::shutdown();
+  exit(0); // brute force solution
+}
+
+static void destroyNodelet(GtkWidget *widget, gpointer data)
+{
+  // We can't actually unload the nodelet from here, but we can at least
+  // unsubscribe from the image topic.
+  reinterpret_cast<image_transport::Subscriber*>(data)->shutdown();
+}
+#endif
+
 
 namespace image_view {
 
@@ -48,7 +71,6 @@ class ImageNodelet : public nodelet::Nodelet
   image_transport::Subscriber sub_;
 
   boost::mutex image_mutex_;
-  sensor_msgs::ImageConstPtr last_msg_;
   cv::Mat last_image_;
   
   std::string window_name_;
@@ -85,7 +107,8 @@ void ImageNodelet::onInit()
   // Command line argument parsing
   const std::vector<std::string>& argv = getMyArgv();
   // First positional argument is the transport type
-  std::string transport = "raw";
+  std::string transport;
+  local_nh.param("image_transport", transport, std::string("raw"));
   for (int i = 0; i < (int)argv.size(); ++i)
   {
     if (argv[i][0] != '-')
@@ -94,6 +117,7 @@ void ImageNodelet::onInit()
       break;
     }
   }
+  NODELET_INFO_STREAM("Using transport \"" << transport << "\"");
   // Internal option, should be used only by the image_view node
   bool shutdown_on_close = std::find(argv.begin(), argv.end(),
                                      "--shutdown-on-close") != argv.end();
@@ -115,6 +139,18 @@ void ImageNodelet::onInit()
   cv::namedWindow(window_name_, autosize ? CV_WINDOW_AUTOSIZE : 0);
 #endif
   cv::setMouseCallback(window_name_, &ImageNodelet::mouseCb, this);
+  
+#ifdef HAVE_GTK
+  // Register appropriate handler for when user closes the display window
+  GtkWidget *widget = GTK_WIDGET( cvGetWindowHandle(window_name_.c_str()) );
+  if (shutdown_on_close)
+    g_signal_connect(widget, "destroy", G_CALLBACK(destroyNode), NULL);
+  else
+    g_signal_connect(widget, "destroy", G_CALLBACK(destroyNodelet), &sub_);
+#endif
+
+  // Start the OpenCV window thread so we don't have to waitKey() somewhere
+  startWindowThread();
 
   image_transport::ImageTransport it(nh);
   image_transport::TransportHints hints(transport, ros::TransportHints(), getPrivateNodeHandle());
@@ -125,31 +161,23 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
   image_mutex_.lock();
 
-  // May want to view raw bayer data, which CvBridge doesn't know about
-  if (msg->encoding.find("bayer") != std::string::npos)
-  {
-    last_image_ = cv::Mat(msg->height, msg->width, CV_8UC1,
-                          const_cast<uint8_t*>(&msg->data[0]), msg->step);
-  }
   // We want to scale floating point images so that they display nicely
-  else if(msg->encoding.find("F") != std::string::npos)
+  if(msg->encoding.find("F") != std::string::npos)
   {
-    cv::Mat float_image_bridge = cv_bridge::toCvShare(msg, msg->encoding)->image;
-    cv::Mat_<float> float_image = float_image_bridge;
+    cv::Mat float_image = cv_bridge::toCvShare(msg, msg->encoding)->image;
     double max_val;
     cv::minMaxIdx(float_image, 0, &max_val);
 
     if(max_val > 0)
-    {
-      float_image /= max_val;
-    }
-    last_image_ = float_image;
+      last_image_ = float_image / max_val;
+    else
+      last_image_ = float_image.clone();
   }
   else
   {
     // Convert to OpenCV native BGR color
     try {
-      last_image_ = cv_bridge::toCvShare(msg, "bgr8")->image;
+      last_image_ = cv_bridge::toCvCopy(msg, "bgr8")->image;
     }
     catch (cv_bridge::Exception& e) {
       NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image to bgr8: '%s'",
@@ -157,17 +185,11 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
     }
   }
 
-  // last_image_ may point to data owned by last_msg_, so we hang onto it for
-  // the sake of mouseCb.
-  last_msg_ = msg;
-
   // Must release the mutex before calling cv::imshow, or can deadlock against
   // OpenCV's window mutex.
   image_mutex_.unlock();
-  if (!last_image_.empty()) {
+  if (!last_image_.empty())
     cv::imshow(window_name_, last_image_);
-    cv::waitKey(1);
-  }
 }
 
 void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
@@ -195,7 +217,7 @@ void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
   
   boost::lock_guard<boost::mutex> guard(this_->image_mutex_);
 
-  const cv::Mat image = this_->last_image_;
+  const cv::Mat &image = this_->last_image_;
   if (image.empty())
   {
     NODELET_WARN("Couldn't save image, no data!");

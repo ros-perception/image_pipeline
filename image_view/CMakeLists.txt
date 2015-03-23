@@ -10,15 +10,21 @@ if (OpenCV_VERSION VERSION_EQUAL "3")
   add_definitions("-DOPENCV3=1")
 endif()
 
+find_package(GTK2)
 find_package(catkin REQUIRED camera_calibration_parsers cv_bridge image_transport message_filters nodelet rosconsole roscpp)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
                            ${catkin_INCLUDE_DIRS}
+                           ${GTK2_INCLUDE_DIRS}
                            ${OpenCV_INCLUDE_DIRS}
 )
+add_definitions(-DHAVE_GTK)
+
 
 # Nodelet library
-add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp)
+add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
 target_link_libraries(image_view ${catkin_LIBRARIES}
+                                 ${GTK_LIBRARIES}
+                                 ${GTK2_LIBRARIES}
                                  ${OpenCV_LIBRARIES}
                                  ${Boost_LIBRARIES}
 )
@@ -41,6 +47,8 @@ target_link_libraries(disparity_view ${catkin_LIBRARIES}
 add_executable(stereo_view src/nodes/stereo_view.cpp)
 target_link_libraries(stereo_view ${Boost_LIBRARIES}
                                   ${catkin_LIBRARIES}
+                                  ${GTK_LIBRARIES}
+                                  ${GTK2_LIBRARIES}
                                   ${OpenCV_LIBRARIES}
 )
 

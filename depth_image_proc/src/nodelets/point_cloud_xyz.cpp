@@ -37,7 +37,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <boost/thread.hpp>
-#include "depth_traits.h"
+#include <depth_image_proc/depth_conversions.h>
 
 #include <sensor_msgs/point_cloud2_iterator.h>
 
@@ -65,10 +65,6 @@ class PointCloudXyzNodelet : public nodelet::Nodelet
 
   void depthCb(const sensor_msgs::ImageConstPtr& depth_msg,
                const sensor_msgs::CameraInfoConstPtr& info_msg);
-
-  // Handles float or uint16 depths
-  template<typename T>
-  void convert(const sensor_msgs::ImageConstPtr& depth_msg, PointCloud::Ptr& cloud_msg);
 };
 
 void PointCloudXyzNodelet::onInit()
@@ -120,11 +116,11 @@ void PointCloudXyzNodelet::depthCb(const sensor_msgs::ImageConstPtr& depth_msg,
 
   if (depth_msg->encoding == enc::TYPE_16UC1)
   {
-    convert<uint16_t>(depth_msg, cloud_msg);
+    convert<uint16_t>(depth_msg, cloud_msg, model_);
   }
   else if (depth_msg->encoding == enc::TYPE_32FC1)
   {
-    convert<float>(depth_msg, cloud_msg);
+    convert<float>(depth_msg, cloud_msg, model_);
   }
   else
   {
@@ -133,45 +129,6 @@ void PointCloudXyzNodelet::depthCb(const sensor_msgs::ImageConstPtr& depth_msg,
   }
 
   pub_point_cloud_.publish (cloud_msg);
-}
-
-template<typename T>
-void PointCloudXyzNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg, PointCloud::Ptr& cloud_msg)
-{
-  // Use correct principal point from calibration
-  float center_x = model_.cx();
-  float center_y = model_.cy();
-
-  // Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
-  double unit_scaling = DepthTraits<T>::toMeters( T(1) );
-  float constant_x = unit_scaling / model_.fx();
-  float constant_y = unit_scaling / model_.fy();
-  float bad_point = std::numeric_limits<float>::quiet_NaN();
-
-  sensor_msgs::PointCloud2Iterator<float> iter_x(*cloud_msg, "x");
-  sensor_msgs::PointCloud2Iterator<float> iter_y(*cloud_msg, "y");
-  sensor_msgs::PointCloud2Iterator<float> iter_z(*cloud_msg, "z");
-  const T* depth_row = reinterpret_cast<const T*>(&depth_msg->data[0]);
-  int row_step = depth_msg->step / sizeof(T);
-  for (int v = 0; v < (int)cloud_msg->height; ++v, depth_row += row_step)
-  {
-    for (int u = 0; u < (int)cloud_msg->width; ++u, ++iter_x, ++iter_y, ++iter_z)
-    {
-      T depth = depth_row[u];
-
-      // Missing points denoted by NaNs
-      if (!DepthTraits<T>::valid(depth))
-      {
-        *iter_x = *iter_y = *iter_z = bad_point;
-        continue;
-      }
-
-      // Fill in XYZ
-      *iter_x = (u - center_x) * depth * constant_x;
-      *iter_y = (v - center_y) * depth * constant_y;
-      *iter_z = DepthTraits<T>::toMeters(depth);
-    }
-  }
 }
 
 } // namespace depth_image_proc

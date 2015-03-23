@@ -1,3 +1,14 @@
+1.12.12 (2014-12-31)
+--------------------
+* adds range_max
+* exports depth_conversions
+  with convert for xyz PC only
+* exports DepthTraits
+* Contributors: enriquefernandez
+
+1.12.11 (2014-10-26)
+--------------------
+
 1.12.10 (2014-09-28)
 --------------------
 

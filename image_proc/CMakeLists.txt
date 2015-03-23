@@ -3,7 +3,7 @@ project(image_proc)
 
 find_package(catkin REQUIRED)
 
-find_package(catkin REQUIRED camera_calibration_parsers cv_bridge dynamic_reconfigure image_geometry image_transport nodelet roscpp sensor_msgs)
+find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_geometry image_transport nodelet roscpp sensor_msgs)
 find_package(OpenCV REQUIRED)
 if (OpenCV_VERSION VERSION_EQUAL "3")
   add_definitions("-DOPENCV3=1")

@@ -49,6 +49,18 @@
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 
+#ifdef HAVE_GTK
+#include <gtk/gtk.h>
+
+// Platform-specific workaround for #3026: image_view doesn't close when
+// closing image window. On platforms using GTK+ we connect this to the
+// window's "destroy" event so that image_view exits.
+static void destroy(GtkWidget *widget, gpointer data)
+{
+  ros::shutdown();
+}
+#endif
+
 namespace enc = sensor_msgs::image_encodings;
 
 // colormap for disparities, RGB
@@ -311,7 +323,7 @@ static unsigned char colormap[768] =
     255,  0, 0,
   };
 
-void increment(int* value)
+inline void increment(int* value)
 {
   ++(*value);
 }
@@ -371,6 +383,18 @@ public:
     cv::setMouseCallback("left",      &StereoView::mouseCb, this);
     cv::setMouseCallback("right",     &StereoView::mouseCb, this);
     cv::setMouseCallback("disparity", &StereoView::mouseCb, this);
+#if OPENCV3
+#else
+#ifdef HAVE_GTK
+    g_signal_connect(GTK_WIDGET( cvGetWindowHandle("left") ),
+                     "destroy", G_CALLBACK(destroy), NULL);
+    g_signal_connect(GTK_WIDGET( cvGetWindowHandle("right") ),
+                     "destroy", G_CALLBACK(destroy), NULL);
+    g_signal_connect(GTK_WIDGET( cvGetWindowHandle("disparity") ),
+                     "destroy", G_CALLBACK(destroy), NULL);
+#endif
+    cvStartWindowThread();
+#endif
 
     // Resolve topic names
     ros::NodeHandle nh;
@@ -472,7 +496,6 @@ public:
     if (!last_right_image_.empty())
       cv::imshow("right", last_right_image_);
     cv::imshow("disparity", disparity_color_);
-    cv::waitKey(1);
   }
 
   void saveImage(const char* prefix, const cv::Mat& image)

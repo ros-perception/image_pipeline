@@ -1,3 +1,26 @@
+1.12.12 (2014-12-31)
+--------------------
+* Convert function to inline to avoid duplicates with image_transport
+* Revert "remove GTK dependency"
+  This reverts commit a6e15e796a40385fbbf8da05966aa47d179dcb46.
+  Conflicts:
+  image_view/CMakeLists.txt
+  image_view/src/nodelets/disparity_nodelet.cpp
+  image_view/src/nodes/stereo_view.cpp
+* Revert "make sure waitKey is called after imshow"
+  This reverts commit d13e3ed6af819459bca221ece779964a74beefac.
+* Revert "brings back window_thread"
+  This reverts commit 41a655e8e99910c13a3e7f1ebfdd083207cef76f.
+* Contributors: Gary Servin, Vincent Rabaud
+
+1.12.11 (2014-10-26)
+--------------------
+* brings back window_thread
+  This fixes `#102 <https://github.com/ros-perception/image_pipeline/issues/102>`_ fully
+* small optimizations
+* add the image_transport parameter
+* Contributors: Vincent Rabaud
+
 1.12.10 (2014-09-28)
 --------------------
 
