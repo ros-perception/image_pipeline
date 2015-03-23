@@ -39,12 +39,10 @@ import message_filters
 from message_filters import ApproximateTimeSynchronizer
 
 import os
-try:
-    from queue import Queue, Empty as QueueEmptyException
-except ImportError:
-    from Queue import Queue, Empty as QueueEmptyException
+from collections import deque
 import threading
 import functools
+import time
 
 import cv2
 import numpy
@@ -70,7 +68,10 @@ class DisplayThread(threading.Thread):
         cv2.setMouseCallback("display", self.opencv_calibration_node.on_mouse)
         cv2.createTrackbar("scale", "display", 0, 100, self.opencv_calibration_node.on_scale)
         while True:
-            im = self.queue.get()
+            # wait for an image (could happen at the very beginning when the queue is still empty)
+            while len(self.queue) == 0:
+                time.sleep(0.1)
+            im = self.queue[0]
             cv2.imshow("display", im)
             k = cv2.waitKey(6) & 0xFF
             if k in [27, ord('q')]:
@@ -86,11 +87,10 @@ class ConsumerThread(threading.Thread):
 
     def run(self):
         while True:
-            while True:
-                m = self.queue.get()
-                if self.queue.empty():
-                    break
-            self.function(m)
+            # wait for an image (could happen at the very beginning when the queue is still empty)
+            while len(self.queue) == 0:
+                time.sleep(0.1)
+            self.function(self.queue[0])
 
 
 class CalibrationNode:
@@ -130,8 +130,8 @@ class CalibrationNode:
         self.set_right_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("right_camera"),
                                                                 sensor_msgs.srv.SetCameraInfo)
 
-        self.q_mono = Queue()
-        self.q_stereo = Queue()
+        self.q_mono = deque([], 1)
+        self.q_stereo = deque([], 1)
 
         self.c = None
 
@@ -149,18 +149,10 @@ class CalibrationNode:
         pass
 
     def queue_monocular(self, msg):
-        try:
-            self.q_mono.get(False, 0)
-        except QueueEmptyException:
-            pass
-        self.q_mono.put(msg)
+        self.q_mono.append(msg)
 
     def queue_stereo(self, lmsg, rmsg):
-        try:
-            self.q_stereo.get(False, 0)
-        except QueueEmptyException:
-            pass
-        self.q_stereo.put((lmsg, rmsg))
+        self.q_stereo.append((lmsg, rmsg))
 
     def handle_monocular(self, msg):
         if self.c == None:
@@ -232,7 +224,7 @@ class OpenCVCalibrationNode(CalibrationNode):
 
         CalibrationNode.__init__(self, *args, **kwargs)
 
-        self.queue_display = Queue()
+        self.queue_display = deque([], 1)
         self.display_thread = DisplayThread(self.queue_display, self)
         self.display_thread.setDaemon(True)
         self.display_thread.start()
@@ -322,7 +314,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 #print "linear", linerror
             self.putText(display, msg, (width, self.y(1)))
 
-        self.queue_display.put(display)
+        self.queue_display.append(display)
 
     def redraw_stereo(self, drawable):
         height = drawable.lscrib.shape[0]
@@ -360,7 +352,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 self.putText(display, "dim", (2 * width, self.y(2)))
                 self.putText(display, "%.3f" % drawable.dim, (2 * width, self.y(3)))
 
-        self.queue_display.put(display)
+        self.queue_display.append(display)
 
 
 def main():
