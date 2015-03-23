@@ -148,7 +148,7 @@ namespace depth_image_proc {
 	else if (!sub_depth_)
 	{
 	    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-	    sub_depth_ = it_->subscribeCamera("image_raw_radial",
+	    sub_depth_ = it_->subscribeCamera("image_raw",
 					      queue_size_,
 					      &PointCloudXyzRadialNodelet::depthCb,
 					      this, hints);
