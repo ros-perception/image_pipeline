@@ -1,5 +1,5 @@
-]Forthcoming
-------------
+1.12.13 (2015-04-06)
+--------------------
 * Add radial point cloud processors
 * Contributors: Hunter Laux
 

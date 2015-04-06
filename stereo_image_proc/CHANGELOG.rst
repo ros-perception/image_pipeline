@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.13 (2015-04-06)
+--------------------
 * get code to compile with OpenCV3
 * modify pointcloud data format of stereo_image_proc using point_cloud2_iterator
 * Contributors: Hiroaki Yaguchi, Vincent Rabaud
