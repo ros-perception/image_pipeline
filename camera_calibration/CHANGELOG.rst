@@ -1,3 +1,9 @@
+Forthcoming
+-----------
+* replace Queue by deque of fixed size for simplicity
+  That is a potential fix for `#112 <https://github.com/ros-perception/image_pipeline/issues/112>`_
+* Contributors: Vincent Rabaud
+
 1.12.12 (2014-12-31)
 --------------------
 * try to improve `#112 <https://github.com/ros-perception/image_pipeline/issues/112>`_

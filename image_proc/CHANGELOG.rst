@@ -1,3 +1,8 @@
+Forthcoming
+-----------
+* fix dependencies
+* Contributors: Vincent Rabaud
+
 1.12.12 (2014-12-31)
 --------------------
 
