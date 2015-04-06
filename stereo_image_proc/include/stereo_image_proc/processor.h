@@ -58,7 +58,7 @@ public:
   StereoProcessor()
 #if OPENCV3
   {
-    block_matcher_ = cv::createStereoBM();
+    block_matcher_ = cv::StereoBM::create();
 #else
     : block_matcher_(cv::StereoBM::BASIC_PRESET)
   {
