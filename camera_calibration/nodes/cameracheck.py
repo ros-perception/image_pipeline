@@ -153,7 +153,7 @@ class CameraCheckerNode:
         (image, camera) = msg
         gray = self.mkgray(image)
         C = self.image_corners(gray)
-        if C:
+        if C is not None:
             linearity_rms = self.mc.linear_error(C, self.board)
 
             # Add in reprojection check
@@ -167,10 +167,11 @@ class CameraCheckerNode:
             # Convert rotation into a 3x3 Rotation Matrix
             rot3x3, _ = cv2.Rodrigues(rot)
             # Reproject model points into image
-            object_points_world = numpy.asmatrix(rot3x3) * (numpy.asmatrix(object_points.squeeze().T) + numpy.asmatrix(trans))
+            object_points_world = numpy.asmatrix(rot3x3) * numpy.asmatrix(object_points.squeeze().T) + numpy.asmatrix(trans)
             reprojected_h = camera_matrix * object_points_world
             reprojected   = (reprojected_h[0:2, :] / reprojected_h[2, :])
-            reprojection_errors = image_points.squeeze().T - reprojected.T
+            reprojection_errors = image_points.squeeze().T - reprojected
+
             reprojection_rms = numpy.sqrt(numpy.sum(numpy.array(reprojection_errors) ** 2) / numpy.product(reprojection_errors.shape))
 
             # Print the results
