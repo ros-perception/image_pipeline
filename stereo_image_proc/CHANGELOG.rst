@@ -1,3 +1,7 @@
+1.12.13 Fork (2015-054-13)
+--------------------
+* add OpenCV's SGBD stereo support
+
 1.12.13 (2015-04-06)
 --------------------
 * get code to compile with OpenCV3

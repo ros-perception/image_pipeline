@@ -56,7 +56,7 @@
 #include <stereo_image_proc/DisparityConfig.h>
 #include <dynamic_reconfigure/server.h>
 
-#include <stereo_image_proc/processor.h>
+#include <stereo_image_proc/sg_processor.h>
 
 namespace stereo_image_proc {
 
@@ -90,7 +90,7 @@ class DisparityNodelet : public nodelet::Nodelet
   
   // Processing state (note: only safe because we're single-threaded!)
   image_geometry::StereoCameraModel model_;
-  stereo_image_proc::StereoProcessor block_matcher_; // contains scratch buffers for block matching
+  stereo_image_proc::SGStereoProcessor block_matcher_; // contains scratch buffers for block matching
 
   virtual void onInit();
 
@@ -221,6 +221,7 @@ void DisparityNodelet::configCb(Config &config, uint32_t level)
   config.correlation_window_size |= 0x1; // must be odd
   config.disparity_range = (config.disparity_range / 16) * 16; // must be multiple of 16
 
+  return;
   // Note: With single-threaded NodeHandle, configCb and imageCb can't be called
   // concurrently, so this is thread-safe.
   block_matcher_.setPreFilterSize(config.prefilter_size);
