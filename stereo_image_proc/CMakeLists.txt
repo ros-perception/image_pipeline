@@ -5,7 +5,7 @@ find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_geometry image_
 find_package(Boost REQUIRED COMPONENTS thread)
 
 # Dynamic reconfigure support
-generate_dynamic_reconfigure_options(cfg/Disparity.cfg)
+generate_dynamic_reconfigure_options(cfg/Disparity.cfg cfg/SGDisparity.cfg)
 
 catkin_package(
   CATKIN_DEPENDS image_geometry image_proc sensor_msgs stereo_msgs
@@ -22,9 +22,11 @@ endif()
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS}
                            ${OpenCV_INCLUDE_DIRS}
 )
+MESSAGE(${OpenCV_VERSION})
 
 # Nodelet library
-add_library(${PROJECT_NAME} src/libstereo_image_proc/processor.cpp src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp)
+add_library(${PROJECT_NAME} src/libstereo_image_proc/processor.cpp src/libstereo_image_proc/sg_processor.cpp  
+			src/nodelets/disparity.cpp src/nodelets/sg_disparity.cpp src/nodelets/point_cloud2.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}
                                       ${OpenCV_LIBRARIES}
 )
@@ -41,6 +43,14 @@ add_executable(stereoimageproc_exe src/nodes/stereo_image_proc.cpp)
 target_link_libraries(stereoimageproc_exe stereo_image_proc)
 SET_TARGET_PROPERTIES(stereoimageproc_exe PROPERTIES OUTPUT_NAME stereo_image_proc)
 install(TARGETS stereoimageproc_exe
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+# Standalone node for semi-global method
+add_executable(semi_global_stereoimageproc_exe src/nodes/semi_global_stereo_image_proc.cpp)
+target_link_libraries(semi_global_stereoimageproc_exe stereo_image_proc)
+SET_TARGET_PROPERTIES(semi_global_stereoimageproc_exe PROPERTIES OUTPUT_NAME semi_global_stereo_image_proc)
+install(TARGETS semi_global_stereoimageproc_exe
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
