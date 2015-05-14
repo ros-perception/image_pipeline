@@ -84,6 +84,7 @@ void SGStereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat
                                        const image_geometry::StereoCameraModel& model,
                                        stereo_msgs::DisparityImage& disparity) const
 {
+  ROS_INFO("Before disparity");
   // Fixed-point disparity is 16 times the true value: d = d_fp / 16.0 = x_l - x_r.
   static const int DPP = 16; // disparities per pixel
   static const double inv_dpp = 1.0 / DPP;
@@ -119,6 +120,7 @@ void SGStereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat
   disparity.min_disparity = getMinDisparity();
   disparity.max_disparity = getMinDisparity() + getDisparityRange() - 1;
   disparity.delta_d = inv_dpp;
+  ROS_INFO("After disparity");
 }
 
 inline bool isValidPoint(const cv::Vec3f& pt)

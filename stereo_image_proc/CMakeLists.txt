@@ -22,9 +22,11 @@ endif()
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS}
                            ${OpenCV_INCLUDE_DIRS}
 )
+MESSAGE(${OpenCV_VERSION})
 
 # Nodelet library
-add_library(${PROJECT_NAME} src/libstereo_image_proc/processor.cpp src/libstereo_image_proc/sg_processor.cpp  src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp)
+add_library(${PROJECT_NAME} src/libstereo_image_proc/processor.cpp src/libstereo_image_proc/sg_processor.cpp  
+			src/nodelets/disparity.cpp src/nodelets/sg_disparity.cpp src/nodelets/point_cloud2.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}
                                       ${OpenCV_LIBRARIES}
 )

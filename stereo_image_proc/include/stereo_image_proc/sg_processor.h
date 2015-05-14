@@ -60,12 +60,23 @@ public:
   {
     block_matcher_ = cv::StereoSGBM::create();
     block_matcher_->fullDP=false;
+
 #else
     : block_matcher_()
   {
-      block_matcher_.fullDP=false;
+      block_matcher_.SADWindowSize = 5;
+      block_matcher_.numberOfDisparities = 192;
+      block_matcher_.preFilterCap = 4;
+      block_matcher_.minDisparity = -64;
+      block_matcher_.uniquenessRatio = 1;
+      block_matcher_.speckleWindowSize = 150;
+      block_matcher_.speckleRange = 2;
+      block_matcher_.disp12MaxDiff = 10;
+      block_matcher_.fullDP = false;
+      block_matcher_.P1 = 600;
+      block_matcher_.P2 = 2400;
 #endif
-      ROS_ERROR("Semiglobal BM constructor.");
+
   }
 
   enum {
@@ -147,7 +158,7 @@ private:
   
   mutable cv::Mat_<int16_t> disparity16_; // scratch buffer for 16-bit signed disparity image
 #if OPENCV3
-  mutable cv::Ptr<cv::StereoBM> block_matcher_; // contains scratch buffers for block matching
+  mutable cv::Ptr<cv::StereoSGBM> block_matcher_; // contains scratch buffers for block matching
 #else
   mutable cv::StereoSGBM block_matcher_; // contains scratch buffers for block matching
 #endif

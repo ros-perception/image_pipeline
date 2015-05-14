@@ -56,7 +56,7 @@
 #include <stereo_image_proc/DisparityConfig.h>
 #include <dynamic_reconfigure/server.h>
 
-#include <stereo_image_proc/processor.h>
+#include <stereo_image_proc/sg_processor.h>
 
 namespace stereo_image_proc {
 
@@ -64,7 +64,7 @@ using namespace sensor_msgs;
 using namespace stereo_msgs;
 using namespace message_filters::sync_policies;
 
-class DisparityNodelet : public nodelet::Nodelet
+class SGDisparityNodelet : public nodelet::Nodelet
 {
   boost::shared_ptr<image_transport::ImageTransport> it_;
   
@@ -90,7 +90,7 @@ class DisparityNodelet : public nodelet::Nodelet
   
   // Processing state (note: only safe because we're single-threaded!)
   image_geometry::StereoCameraModel model_;
-  stereo_image_proc::StereoProcessor block_matcher_; // contains scratch buffers for block matching
+  stereo_image_proc::SGStereoProcessor block_matcher_; // contains scratch buffers for block matching
 
   virtual void onInit();
 
@@ -102,7 +102,7 @@ class DisparityNodelet : public nodelet::Nodelet
   void configCb(Config &config, uint32_t level);
 };
 
-void DisparityNodelet::onInit()
+void SGDisparityNodelet::onInit()
 {
   ros::NodeHandle &nh = getNodeHandle();
   ros::NodeHandle &private_nh = getPrivateNodeHandle();
@@ -120,7 +120,7 @@ void DisparityNodelet::onInit()
     approximate_sync_.reset( new ApproximateSync(ApproximatePolicy(queue_size),
                                                  sub_l_image_, sub_l_info_,
                                                  sub_r_image_, sub_r_info_) );
-    approximate_sync_->registerCallback(boost::bind(&DisparityNodelet::imageCb,
+    approximate_sync_->registerCallback(boost::bind(&SGDisparityNodelet::imageCb,
                                                     this, _1, _2, _3, _4));
   }
   else
@@ -128,25 +128,25 @@ void DisparityNodelet::onInit()
     exact_sync_.reset( new ExactSync(ExactPolicy(queue_size),
                                      sub_l_image_, sub_l_info_,
                                      sub_r_image_, sub_r_info_) );
-    exact_sync_->registerCallback(boost::bind(&DisparityNodelet::imageCb,
+    exact_sync_->registerCallback(boost::bind(&SGDisparityNodelet::imageCb,
                                               this, _1, _2, _3, _4));
   }
 
   // Set up dynamic reconfiguration
-  ReconfigureServer::CallbackType f = boost::bind(&DisparityNodelet::configCb,
+  ReconfigureServer::CallbackType f = boost::bind(&SGDisparityNodelet::configCb,
                                                   this, _1, _2);
   reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
   reconfigure_server_->setCallback(f);
 
   // Monitor whether anyone is subscribed to the output
-  ros::SubscriberStatusCallback connect_cb = boost::bind(&DisparityNodelet::connectCb, this);
+  ros::SubscriberStatusCallback connect_cb = boost::bind(&SGDisparityNodelet::connectCb, this);
   // Make sure we don't enter connectCb() between advertising and assigning to pub_disparity_
   boost::lock_guard<boost::mutex> lock(connect_mutex_);
   pub_disparity_ = nh.advertise<DisparityImage>("disparity", 1, connect_cb, connect_cb);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void DisparityNodelet::connectCb()
+void SGDisparityNodelet::connectCb()
 {
   boost::lock_guard<boost::mutex> lock(connect_mutex_);
   if (pub_disparity_.getNumSubscribers() == 0)
@@ -169,7 +169,7 @@ void DisparityNodelet::connectCb()
   }
 }
 
-void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
+void SGDisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
                                const CameraInfoConstPtr& l_info_msg,
                                const ImageConstPtr& r_image_msg,
                                const CameraInfoConstPtr& r_info_msg)
@@ -214,15 +214,18 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   pub_disparity_.publish(disp_msg);
 }
 
-void DisparityNodelet::configCb(Config &config, uint32_t level)
+void SGDisparityNodelet::configCb(Config &config, uint32_t level)
 {
   // Tweak all settings to be valid
   config.prefilter_size |= 0x1; // must be odd
   config.correlation_window_size |= 0x1; // must be odd
   config.disparity_range = (config.disparity_range / 16) * 16; // must be multiple of 16
 
+  // DF Include SGBM specific options.
+
   // Note: With single-threaded NodeHandle, configCb and imageCb can't be called
   // concurrently, so this is thread-safe.
+  /*
   block_matcher_.setPreFilterSize(config.prefilter_size);
   block_matcher_.setPreFilterCap(config.prefilter_cap);
   block_matcher_.setCorrelationWindowSize(config.correlation_window_size);
@@ -232,10 +235,11 @@ void DisparityNodelet::configCb(Config &config, uint32_t level)
   block_matcher_.setTextureThreshold(config.texture_threshold);
   block_matcher_.setSpeckleSize(config.speckle_size);
   block_matcher_.setSpeckleRange(config.speckle_range);
+  */
 }
 
 } // namespace stereo_image_proc
 
 // Register nodelet
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(stereo_image_proc::DisparityNodelet,nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(stereo_image_proc::SGDisparityNodelet,nodelet::Nodelet)
