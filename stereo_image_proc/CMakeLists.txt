@@ -5,7 +5,7 @@ find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_geometry image_
 find_package(Boost REQUIRED COMPONENTS thread)
 
 # Dynamic reconfigure support
-generate_dynamic_reconfigure_options(cfg/Disparity.cfg)
+generate_dynamic_reconfigure_options(cfg/Disparity.cfg cfg/SGDisparity.cfg)
 
 catkin_package(
   CATKIN_DEPENDS image_geometry image_proc sensor_msgs stereo_msgs

@@ -90,14 +90,14 @@ int main(int argc, char **argv)
   {
     ROS_WARN("Remapping 'camera' has no effect! Start stereo_image_proc in the "
              "stereo namespace instead.\nExample command-line usage:\n"
-             "\t$ ROS_NAMESPACE=%s rosrun stereo_image_proc stereo_image_proc",
+             "\t$ ROS_NAMESPACE=%s rosrun stereo_image_proc semi_global_stereo_image_proc",
              ros::names::remap("camera").c_str());
   }
   if (ros::this_node::getNamespace() == "/")
   {
     ROS_WARN("Started in the global namespace! This is probably wrong. Start "
              "stereo_image_proc in the stereo namespace.\nExample command-line usage:\n"
-             "\t$ ROS_NAMESPACE=my_stereo rosrun stereo_image_proc stereo_image_proc");
+             "\t$ ROS_NAMESPACE=my_stereo rosrun stereo_image_proc semi_global_stereo_image_proc");
   }
 
   // Shared parameters to be propagated to nodelet private namespaces

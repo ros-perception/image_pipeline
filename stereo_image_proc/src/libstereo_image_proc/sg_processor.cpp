@@ -309,6 +309,7 @@ void SGStereoProcessor::processPoints2(const stereo_msgs::DisparityImage& dispar
   else {
     ROS_WARN("Could not fill color channel of the point cloud, unrecognized encoding '%s'", encoding.c_str());
   }
+  ROS_INFO("POINTS2 GENERATED");
 }
 
 } //namespace stereo_image_proc

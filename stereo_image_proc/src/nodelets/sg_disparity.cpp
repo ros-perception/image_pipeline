@@ -53,7 +53,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <stereo_msgs/DisparityImage.h>
 
-#include <stereo_image_proc/DisparityConfig.h>
+#include <stereo_image_proc/SGDisparityConfig.h>
 #include <dynamic_reconfigure/server.h>
 
 #include <stereo_image_proc/sg_processor.h>
@@ -84,7 +84,7 @@ class SGDisparityNodelet : public nodelet::Nodelet
 
   // Dynamic reconfigure
   boost::recursive_mutex config_mutex_;
-  typedef stereo_image_proc::DisparityConfig Config;
+  typedef stereo_image_proc::SGDisparityConfig Config;
   typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
   boost::shared_ptr<ReconfigureServer> reconfigure_server_;
   
@@ -217,7 +217,6 @@ void SGDisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
 void SGDisparityNodelet::configCb(Config &config, uint32_t level)
 {
   // Tweak all settings to be valid
-  config.prefilter_size |= 0x1; // must be odd
   config.correlation_window_size |= 0x1; // must be odd
   config.disparity_range = (config.disparity_range / 16) * 16; // must be multiple of 16
 
@@ -225,8 +224,7 @@ void SGDisparityNodelet::configCb(Config &config, uint32_t level)
 
   // Note: With single-threaded NodeHandle, configCb and imageCb can't be called
   // concurrently, so this is thread-safe.
-  /*
-  block_matcher_.setPreFilterSize(config.prefilter_size);
+
   block_matcher_.setPreFilterCap(config.prefilter_cap);
   block_matcher_.setCorrelationWindowSize(config.correlation_window_size);
   block_matcher_.setMinDisparity(config.min_disparity);
@@ -235,7 +233,10 @@ void SGDisparityNodelet::configCb(Config &config, uint32_t level)
   block_matcher_.setTextureThreshold(config.texture_threshold);
   block_matcher_.setSpeckleSize(config.speckle_size);
   block_matcher_.setSpeckleRange(config.speckle_range);
-  */
+  block_matcher_.setFullDP(config.full_dp);
+  block_matcher_.setSmoothnessP1(config.p1);
+  block_matcher_.setSmoothnessP2(config.p2);
+  block_matcher_.setMaxDiff(config.max_diff);
 }
 
 } // namespace stereo_image_proc

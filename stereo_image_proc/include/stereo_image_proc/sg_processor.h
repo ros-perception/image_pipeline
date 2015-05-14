@@ -59,7 +59,17 @@ public:
 #if OPENCV3
   {
     block_matcher_ = cv::StereoSGBM::create();
-    block_matcher_->fullDP=false;
+    block_matcher_->SADWindowSize = 5;
+    block_matcher_->numberOfDisparities = 192;
+    block_matcher_->preFilterCap = 4;
+    block_matcher_->minDisparity = -64;
+    block_matcher_->uniquenessRatio = 1;
+    block_matcher_->speckleWindowSize = 150;
+    block_matcher_->speckleRange = 2;
+    block_matcher_->disp12MaxDiff = 10;
+    block_matcher_->fullDP = false;
+    block_matcher_->P1 = 600;
+    block_matcher_->P2 = 2400;
 
 #else
     : block_matcher_()
@@ -103,9 +113,6 @@ public:
 
   // Disparity pre-filtering parameters
 
-  int getPreFilterSize() const;
-  void setPreFilterSize(int size);
-
   int getPreFilterCap() const;
   void setPreFilterCap(int cap);
 
@@ -133,6 +140,20 @@ public:
 
   int getSpeckleRange() const;
   void setSpeckleRange(int range);
+
+  // Semi-global specific parameters
+
+  int getSmoothnessP1() const;
+  void setSmoothnessP1(int P1);
+
+  int getSmoothnessP2() const;
+  void setSmoothnessP2(int P2);
+
+  int getMaxDiff() const;
+  void setMaxDiff(int maxDiff);
+
+  int getFullDP() const;
+  void setFullDP(bool fullDP);
 
   // Do all the work!
   bool process(const sensor_msgs::ImageConstPtr& left_raw,
@@ -179,24 +200,6 @@ inline int SGStereoProcessor::getInterpolation() const
 inline void SGStereoProcessor::setInterpolation(int interp)
 {
   mono_processor_.interpolation_ = interp;
-}
-
-inline int SGStereoProcessor::getPreFilterSize() const
-{
-#if OPENCV3
-  return 0
-#else
-  return 0;
-#endif
-}
-
-inline void SGStereoProcessor::setPreFilterSize(int size)
-{
-#if OPENCV3
-  ;
-#else
-  ;
-#endif
 }
 
 inline int SGStereoProcessor::getPreFilterCap() const
@@ -343,6 +346,95 @@ inline void SGStereoProcessor::setSpeckleRange(int range)
 #endif
 }
 
+
+
+inline int SGStereoProcessor::getSmoothnessP1() const
+{
+#if OPENCV3
+  return block_matcher_->P1;
+#else
+  return block_matcher_.P1;
+#endif
+}
+
+inline void SGStereoProcessor::setSmoothnessP1(int P1)
+{
+#if OPENCV3
+  block_matcher_->P1 = P1;
+#else
+  block_matcher_.P1 = P1;
+#endif
+}
+
+inline int SGStereoProcessor::getSmoothnessP2() const
+{
+#if OPENCV3
+  return block_matcher_->P2;
+#else
+  return block_matcher_.P2;
+#endif
+}
+
+inline void SGStereoProcessor::setSmoothnessP2(int P2)
+{
+#if OPENCV3
+  block_matcher_->P2 = P2;
+#else
+  block_matcher_.P2 = P2;
+#endif
+}
+
+inline int SGStereoProcessor::getMaxDiff() const
+{
+#if OPENCV3
+  return block_matcher_->disp12MaxDiff;
+#else
+  return block_matcher_.disp12MaxDiff;
+#endif
+}
+
+inline void SGStereoProcessor::setMaxDiff(int maxDiff)
+{
+#if OPENCV3
+  block_matcher_->disp12MaxDiff = maxDiff;
+#else
+  block_matcher_.disp12MaxDiff = maxDiff;
+#endif
+}
+
+inline int SGStereoProcessor::getFullDP() const
+{
+#if OPENCV3
+  return block_matcher_->fullDP;
+#else
+  return block_matcher_.fullDP;
+#endif
+}
+
+inline void SGStereoProcessor::setFullDP(bool fullDP)
+{
+#if OPENCV3
+  block_matcher_->fullDP = fullDP;
+#else
+  block_matcher_.fullDP = fullDP;
+#endif
+}
+
 } //namespace stereo_image_proc
+
+//PARAMETER DESCRIPTION
+/*
+    * minDisparity – Minimum possible disparity value. Normally, it is zero but sometimes rectification algorithms can shift images, so this parameter needs to be adjusted accordingly.
+    * numDisparities – Maximum disparity minus minimum disparity. The value is always greater than zero. In the current implementation, this parameter must be divisible by 16.
+    * SADWindowSize – Matched block size. It must be an odd number >=1 . Normally, it should be somewhere in the 3..11 range.
+    * P1 – The first parameter controlling the disparity smoothness. See below.
+    * P2 – The second parameter controlling the disparity smoothness. The larger the values are, the smoother the disparity is. P1 is the penalty on the disparity change by plus or minus 1 between neighbor pixels. P2 is the penalty on the disparity change by more than 1 between neighbor pixels. The algorithm requires P2 > P1 . See stereo_match.cpp sample where some reasonably good P1 and P2 values are shown (like 8*number_of_image_channels*SADWindowSize*SADWindowSize and 32*number_of_image_channels*SADWindowSize*SADWindowSize , respectively).
+    * disp12MaxDiff – Maximum allowed difference (in integer pixel units) in the left-right disparity check. Set it to a non-positive value to disable the check.
+    * preFilterCap – Truncation value for the prefiltered image pixels. The algorithm first computes x-derivative at each pixel and clips its value by [-preFilterCap, preFilterCap] interval. The result values are passed to the Birchfield-Tomasi pixel cost function.
+    * uniquenessRatio – Margin in percentage by which the best (minimum) computed cost function value should “win” the second best value to consider the found match correct. Normally, a value within the 5-15 range is good enough.
+    * speckleWindowSize – Maximum size of smooth disparity regions to consider their noise speckles and invalidate. Set it to 0 to disable speckle filtering. Otherwise, set it somewhere in the 50-200 range.
+    * speckleRange – Maximum disparity variation within each connected component. If you do speckle filtering, set the parameter to a positive value, it will be implicitly multiplied by 16. Normally, 1 or 2 is good enough.
+    * fullDP – Set it to true to run the full-scale two-pass dynamic programming algorithm. It will consume O(W*H*numDisparities) bytes, which is large for 640x480 stereo and huge for HD-size pictures. By default, it is set to false .
+*/
 
 #endif
