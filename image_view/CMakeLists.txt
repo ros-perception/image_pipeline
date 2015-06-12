@@ -17,7 +17,9 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
                            ${GTK2_INCLUDE_DIRS}
                            ${OpenCV_INCLUDE_DIRS}
 )
-add_definitions(-DHAVE_GTK)
+if (NOT ANDROID)
+  add_definitions(-DHAVE_GTK)
+endif()
 
 
 # Nodelet library
