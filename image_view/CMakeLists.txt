@@ -10,15 +10,40 @@ if (OpenCV_VERSION VERSION_EQUAL "3")
   add_definitions("-DOPENCV3=1")
 endif()
 
-find_package(GTK2)
 find_package(catkin REQUIRED camera_calibration_parsers cv_bridge image_transport message_filters nodelet rosconsole roscpp)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
                            ${catkin_INCLUDE_DIRS}
-                           ${GTK2_INCLUDE_DIRS}
                            ${OpenCV_INCLUDE_DIRS}
 )
-add_definitions(-DHAVE_GTK)
 
+# Extra tools
+add_executable(extract_images src/nodes/extract_images.cpp)
+target_link_libraries(extract_images ${catkin_LIBRARIES}
+                                     ${OpenCV_LIBRARIES}
+)
+
+add_executable(image_saver src/nodes/image_saver.cpp)
+target_link_libraries(image_saver ${catkin_LIBRARIES}
+                                  ${OpenCV_LIBRARIES}
+)
+
+add_executable(video_recorder src/nodes/video_recorder.cpp)
+target_link_libraries(video_recorder ${catkin_LIBRARIES}
+                                     ${OpenCV_LIBRARIES}
+)
+
+install(TARGETS extract_images image_saver video_recorder
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+# Deal with the GUI's
+if(ANDROID)
+  return()
+endif()
+
+find_package(GTK2)
+add_definitions(-DHAVE_GTK)
+include_directories(SYSTEM ${GTK2_INCLUDE_DIRS})
 
 # Nodelet library
 add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
@@ -52,24 +77,7 @@ target_link_libraries(stereo_view ${Boost_LIBRARIES}
                                   ${OpenCV_LIBRARIES}
 )
 
-
-# Extra tools
-add_executable(extract_images src/nodes/extract_images.cpp)
-target_link_libraries(extract_images ${catkin_LIBRARIES}
-                                     ${OpenCV_LIBRARIES}
-)
-
-add_executable(image_saver src/nodes/image_saver.cpp)
-target_link_libraries(image_saver ${catkin_LIBRARIES}
-                                  ${OpenCV_LIBRARIES}
-)
-
-add_executable(video_recorder src/nodes/video_recorder.cpp)
-target_link_libraries(video_recorder ${catkin_LIBRARIES}
-                                     ${OpenCV_LIBRARIES}
-)
-
-install(TARGETS disparity_view extract_images image_saver video_recorder image_view_exe stereo_view
+install(TARGETS disparity_view image_view_exe stereo_view
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 install(FILES nodelet_plugins.xml
