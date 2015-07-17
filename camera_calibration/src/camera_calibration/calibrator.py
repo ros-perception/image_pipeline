@@ -98,7 +98,7 @@ def _get_outside_corners(corners, board):
 
 def _get_skew(corners, board):
     """
-    Get skew for given checkerboard detection. 
+    Get skew for given checkerboard detection.
     Scaled to [0,1], which 0 = no skew, 1 = high skew
     Skew is proportional to the divergence of three outside corners from 90 degrees.
     """
@@ -430,7 +430,6 @@ class Calibrator(object):
         print("R = ", numpy.ravel(r).tolist())
         print("P = ", numpy.ravel(p).tolist())
 
-    # TODO Get rid of OST format, show output as YAML instead
     def lrost(self, name, d, k, r, p):
         calmessage = (
         "# oST version 5.0 parameters\n"
@@ -465,6 +464,31 @@ class Calibrator(object):
         + " ".join(["%8f" % p[2,i] for i in range(4)]) + "\n"
         + "\n")
         assert len(calmessage) < 525, "Calibration info must be less than 525 bytes"
+        return calmessage
+
+    def lryaml(self, name, d, k, r, p):
+        calmessage = (""
+        + "image_width: " + str(self.size[0]) + "\n"
+        + "image_height: " + str(self.size[1]) + "\n"
+        + "camera_name: " + name + "\n"
+        + "camera_matrix:\n"
+        + "  rows: 3\n"
+        + "  cols: 3\n"
+        + "  data: [" + ", ".join(["%8f" % i for i in k.reshape(1,9)[0]]) + "]\n"
+        + "distortion_model: " + ("rational_polynomial" if d.size > 5 else "plumb_bob") + "\n"
+        + "distortion_coefficients:\n"
+        + "  rows: 1\n"
+        + "  cols: 5\n"
+        + "  data: [" + ", ".join(["%8f" % d[i,0] for i in range(d.shape[0])]) + "]\n"
+        + "rectification_matrix:\n"
+        + "  rows: 3\n"
+        + "  cols: 3\n"
+        + "  data: [" + ", ".join(["%8f" % i for i in r.reshape(1,9)[0]]) + "]\n"
+        + "projection_matrix:\n"
+        + "  rows: 3\n"
+        + "  cols: 4\n"
+        + "  data: [" + ", ".join(["%8f" % i for i in p.reshape(1,12)[0]]) + "]\n"
+        + "")
         return calmessage
 
     def do_save(self):
@@ -640,6 +664,9 @@ class MonoCalibrator(Calibrator):
     def ost(self):
         return self.lrost(self.name, self.distortion, self.intrinsics, self.R, self.P)
 
+    def yaml(self):
+        return self.lryaml(self.name, self.distortion, self.intrinsics, self.R, self.P)
+
     def linear_error_from_image(self, image):
         """
         Detect the checkerboard and compute the linear error.
@@ -764,7 +791,7 @@ class MonoCalibrator(Calibrator):
         ims = [("left-%04d.png" % i, im) for i,(_, im) in enumerate(self.db)]
         for (name, im) in ims:
             taradd(name, cv2.imencode(".png", im)[1].tostring())
-
+        taradd('ost.yaml', self.yaml())
         taradd('ost.txt', self.ost())
 
     def do_tarfile_calibration(self, filename):
@@ -912,6 +939,9 @@ class StereoCalibrator(Calibrator):
     def ost(self):
         return (self.lrost(self.name + "/left", self.l.distortion, self.l.intrinsics, self.l.R, self.l.P) +
           self.lrost(self.name + "/right", self.r.distortion, self.r.intrinsics, self.r.R, self.r.P))
+
+    def yaml(self, suffix, info):
+        return self.lryaml(self.name + suffix, info.distortion, info.intrinsics, info.R, info.P)
 
     # TODO Get rid of "from_images" versions of these, instead have function to get undistorted corners
     def epipolar_error_from_images(self, limage, rimage):
@@ -1070,7 +1100,8 @@ class StereoCalibrator(Calibrator):
 
         for (name, im) in ims:
             taradd(name, cv2.imencode(".png", im)[1].tostring())
-
+        taradd('left.yaml', self.yaml("/left", self.l))
+        taradd('right.yaml', self.yaml("/right", self.r))
         taradd('ost.txt', self.ost())
 
     def do_tarfile_calibration(self, filename):
