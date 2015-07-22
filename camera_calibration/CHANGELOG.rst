@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.14 (2015-07-22)
+--------------------
 * remove camera_hammer and install Python nodes properly
   camera_hammer was just a test for camera info, nothing to do with
   calibration. Plus the test was basic.

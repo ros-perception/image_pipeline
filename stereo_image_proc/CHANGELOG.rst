@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.14 (2015-07-22)
+--------------------
 * add StereoSGBM and it can be chosen from dynamic_reconfigure
 * Contributors: Ryohei Ueda
 
