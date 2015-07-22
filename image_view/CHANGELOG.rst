@@ -1,3 +1,10 @@
+Forthcoming
+-----------
+* reduce the differences between OpenCV2 and 3
+* do not build GUIs on Android
+  This fixes `#137 <https://github.com/ros-perception/image_pipeline/issues/137>`_
+* Contributors: Vincent Rabaud
+
 1.12.13 (2015-04-06)
 --------------------
 

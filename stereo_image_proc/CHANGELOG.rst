@@ -1,3 +1,8 @@
+Forthcoming
+-----------
+* add StereoSGBM and it can be chosen from dynamic_reconfigure
+* Contributors: Ryohei Ueda
+
 1.12.13 (2015-04-06)
 --------------------
 * get code to compile with OpenCV3
