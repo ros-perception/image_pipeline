@@ -18,8 +18,8 @@
 *****************************************************************************/
 
 #include <opencv2/highgui/highgui.hpp>
-
 #include <ros/ros.h>
+#include <sensor_msgs/image_encodings.h>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <camera_calibration_parsers/parse.h>
@@ -34,6 +34,10 @@ std::string encoding;
 std::string codec;
 int fps;
 std::string filename;
+double min_depth_range = 0.0;
+double max_depth_range = 5.5;
+bool use_dynamic_range = false;
+
 
 void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr& info)
 {
@@ -66,22 +70,20 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::Ca
     }
     else if (outputVideo.isOpened() && info) return;
 
-    cv::Mat image;
     try
     {
-        image = cv_bridge::toCvShare(image_msg, encoding)->image;
+      const cv::Mat image = cv_bridge::cvtColorForDisplay(image_msg, encoding, use_dynamic_range, min_depth_range, max_depth_range)->image;
+      if (!image.empty()) {
+        outputVideo << image;
+        ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[1F");
+        g_count++;
+      } else {
+          ROS_WARN("Frame skipped, no data!");
+      }
     } catch(cv_bridge::Exception)
     {
         ROS_ERROR("Unable to convert %s image to %s", image_msg->encoding.c_str(), encoding.c_str());
         return;
-    }
-
-    if (!image.empty()) {
-        outputVideo << image;
-        ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[1F");
-        g_count++;
-    } else {
-        ROS_WARN("Frame skipped, no data!");
     }
 }
 
@@ -89,22 +91,25 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "video_recorder", ros::init_options::AnonymousName);
     ros::NodeHandle nh;
-    image_transport::ImageTransport it(nh);
-    std::string topic = nh.resolveName("image");
-    image_transport::CameraSubscriber sub_camera = it.subscribeCamera(topic, 1, &callback);
-    image_transport::Subscriber sub_image = it.subscribe(topic, 1,
-            boost::bind(callback, _1, sensor_msgs::CameraInfoConstPtr()));
-
     ros::NodeHandle local_nh("~");
     local_nh.param("filename", filename, std::string("output.avi"));
     local_nh.param("fps", fps, 15);
     local_nh.param("codec", codec, std::string("MJPG"));
     local_nh.param("encoding", encoding, std::string("bgr8"));
+    local_nh.param("min_depth_range", min_depth_range, 0.0);
+    local_nh.param("max_depth_range", max_depth_range, 5.5);
+    local_nh.param("use_dynamic_depth_range", use_dynamic_range, false);
 
     if (codec.size() != 4) {
         ROS_ERROR("The video codec must be a FOURCC identifier (4 chars)");
         exit(-1);
     }
+
+    image_transport::ImageTransport it(nh);
+    std::string topic = nh.resolveName("image");
+    image_transport::CameraSubscriber sub_camera = it.subscribeCamera(topic, 1, &callback);
+    image_transport::Subscriber sub_image = it.subscribe(topic, 1,
+            boost::bind(callback, _1, sensor_msgs::CameraInfoConstPtr()));
 
     ROS_INFO_STREAM("Waiting for topic " << topic << "...");
     ros::spin();
