@@ -130,6 +130,7 @@ void ImageNodelet::onInit()
   local_nh.param("autosize", autosize, false);
   
   std::string format_string;
+  
   local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
   filename_format_.parse(format_string);
 
@@ -168,6 +169,17 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
       last_image_ = float_image / max_val;
     else
       last_image_ = float_image.clone();
+  }
+  else if(msg->encoding.find("16") != std::string::npos)
+  {
+    cv::Mat uint16_image = cv_bridge::toCvShare(msg, msg->encoding)->image;
+    
+    double min;
+    double max;
+cv::minMaxIdx(uint16_image, &min, &max);
+// expand your range to 0..255. Similar to histEq();
+  uint16_image.convertTo(last_image_,CV_8UC1, 255 / (max-min), -min); 
+//uint16_image.convertTo(last_image_, CV_8U);
   }
   else
   {
