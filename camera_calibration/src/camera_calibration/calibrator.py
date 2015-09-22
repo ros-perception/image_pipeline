@@ -237,13 +237,9 @@ class Calibrator(object):
         Convert a message into a 8-bit 1 channel monochrome OpenCV image
         """
         # as cv_bridge automatically scales, we need to remove that behavior
-        if msg.encoding=='16UC1':
+        if msg.encoding=='16UC1' or msg.encoding.endswith('16'):
             uint16_image = self.br.imgmsg_to_cv2(msg)
-            mono8 = uint16_image.astype(numpy.uint8) # why not using cv2.convertScaleAbs(b, alpha=(255.0/65535.0)) which rescale to uint8 .. here we just clip to 0,255
-            return mono8
-        if msg.encoding.endswith('16'):
-            mono16 = self.br.imgmsg_to_cv2(msg, "mono16")
-            mono8 = mono16.astype(numpy.uint8)
+            mono8 = uint16_image.astype(numpy.uint8)
             return mono8
         elif 'FC1' in msg.encoding:
             # floating point image handling
