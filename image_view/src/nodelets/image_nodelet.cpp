@@ -34,6 +34,7 @@
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
+#include <sensor_msgs/image_encodings.h>
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -172,12 +173,20 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
   else
   {
     // Convert to OpenCV native BGR color
-    try {
-      last_image_ = cv_bridge::toCvCopy(msg, "bgr8")->image;
-    }
-    catch (cv_bridge::Exception& e) {
-      NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image to bgr8: '%s'",
-                             msg->encoding.c_str(), e.what());
+    if (msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
+      // Standardize pixel values to 0-255 to visualize depth image
+      cv::Mat input_image = cv_bridge::toCvCopy(msg)->image;
+      double min, max;
+      cv::minMaxIdx(input_image, &min, &max);
+      cv::convertScaleAbs(input_image, last_image_, 255 / max);
+    } else {
+      try {
+        last_image_ = cv_bridge::toCvCopy(msg, "bgr8")->image;
+      }
+      catch (cv_bridge::Exception& e) {
+        NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image to bgr8: '%s'",
+                              msg->encoding.c_str(), e.what());
+      }
     }
   }
 
