@@ -158,27 +158,15 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
   image_mutex_.lock();
 
   // We want to scale floating point images so that they display nicely
-  if(msg->encoding.find("F") != std::string::npos)
-  {
-    cv::Mat float_image = cv_bridge::toCvShare(msg, msg->encoding)->image;
-    double max_val;
-    cv::minMaxIdx(float_image, 0, &max_val);
+  bool do_dynamic_scaling = (msg->encoding.find("F") != std::string::npos);
 
-    if(max_val > 0)
-      last_image_ = float_image / max_val;
-    else
-      last_image_ = float_image.clone();
+  // Convert to OpenCV native BGR color
+  try {
+    last_image_ = cvtColorForDisplay(cv_bridge::toCvShare(msg), "", do_dynamic_scaling)->image;
   }
-  else
-  {
-    // Convert to OpenCV native BGR color
-    try {
-      last_image_ = cv_bridge::toCvCopy(msg, "bgr8")->image;
-    }
-    catch (cv_bridge::Exception& e) {
-      NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image to bgr8: '%s'",
+  catch (cv_bridge::Exception& e) {
+    NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
                              msg->encoding.c_str(), e.what());
-    }
   }
 
   // Must release the mutex before calling cv::imshow, or can deadlock against
