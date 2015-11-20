@@ -38,6 +38,7 @@
   <run_depend>libopencv-dev</run_depend>
   <run_depend>message_filters</run_depend>
   <run_depend>nodelet</run_depend>
+  <run_depend>python-opencv</run_depend>
   <run_depend>rosconsole</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>std_srvs</run_depend>
