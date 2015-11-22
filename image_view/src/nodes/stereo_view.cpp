@@ -379,8 +379,7 @@ public:
     cv::setMouseCallback("left",      &StereoView::mouseCb, this);
     cv::setMouseCallback("right",     &StereoView::mouseCb, this);
     cv::setMouseCallback("disparity", &StereoView::mouseCb, this);
-#if OPENCV3
-#else
+#if CV_MAJOR_VERSION == 2
 #ifdef HAVE_GTK
     g_signal_connect(GTK_WIDGET( cvGetWindowHandle("left") ),
                      "destroy", G_CALLBACK(destroy), NULL);

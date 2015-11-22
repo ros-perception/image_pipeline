@@ -5,9 +5,6 @@ find_package(catkin REQUIRED)
 
 find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_geometry image_transport nodelet roscpp sensor_msgs)
 find_package(OpenCV REQUIRED)
-if (OpenCV_VERSION VERSION_EQUAL "3")
-  add_definitions("-DOPENCV3=1")
-endif()
 find_package(Boost REQUIRED COMPONENTS thread)
 
 # Dynamic reconfigure support

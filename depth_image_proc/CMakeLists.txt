@@ -10,9 +10,6 @@ catkin_package(
 find_package(Boost REQUIRED)
 find_package(Eigen REQUIRED)
 find_package(OpenCV)
-if (OpenCV_VERSION VERSION_EQUAL "3")
-  add_definitions("-DOPENCV3=1")
-endif()
 include_directories(include
         SYSTEM ${BOOST_INCLUDE_DIRS}
                ${catkin_INCLUDE_DIRS}

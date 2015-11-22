@@ -90,7 +90,7 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
 
   // Block matcher produces 16-bit signed (fixed point) disparity image
   if (current_stereo_algorithm_ == BM)
-#if OPENCV3
+#if CV_MAJOR_VERSION == 3
     block_matcher_->compute(left_rect, right_rect, disparity16_);
   else
     sg_block_matcher_->compute(left_rect, right_rect, disparity16_);

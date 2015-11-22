@@ -100,8 +100,7 @@ void DisparityNodelet::onInit()
   local_nh.param("autosize", autosize, false);
 
   cv::namedWindow(window_name_, autosize ? cv::WND_PROP_AUTOSIZE : 0);
-#if OPENCV3
-#else
+#if CV_MAJOR_VERSION ==2
 #ifdef HAVE_GTK
   // Register appropriate handler for when user closes the display window
   GtkWidget *widget = GTK_WIDGET( cvGetWindowHandle(window_name_.c_str()) );

@@ -53,11 +53,7 @@ class Processor
 {
 public:
   Processor()
-#if OPENCV3
     : interpolation_(cv::INTER_LINEAR)
-#else
-    : interpolation_(CV_INTER_LINEAR)
-#endif
   {
   }
   
