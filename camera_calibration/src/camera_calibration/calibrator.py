@@ -46,7 +46,7 @@ import random
 import sensor_msgs.msg
 import tarfile
 import time
-
+from distutils.version import LooseVersion
 
 
 # Supported calibration patterns
@@ -846,13 +846,23 @@ class StereoCalibrator(Calibrator):
 
         self.T = numpy.zeros((3, 1), dtype=numpy.float64)
         self.R = numpy.eye(3, dtype=numpy.float64)
-        cv2.stereoCalibrate(opts, lipts, ripts, self.size,
-                           self.l.intrinsics, self.l.distortion,
-                           self.r.intrinsics, self.r.distortion,
-                           self.R,                            # R
-                           self.T,                            # T
-                           criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
-                           flags = flags)
+        if LooseVersion(cv2.__version__).version[0] == '2':
+            cv2.stereoCalibrate(opts, lipts, ripts, self.size,
+                               self.l.intrinsics, self.l.distortion,
+                               self.r.intrinsics, self.r.distortion,
+                               self.R,                            # R
+                               self.T,                            # T
+                               criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
+                               flags = flags)
+        else:
+            cv2.stereoCalibrate(opts, lipts, ripts,
+                               self.l.intrinsics, self.l.distortion,
+                               self.r.intrinsics, self.r.distortion,
+                               self.size,
+                               self.R,                            # R
+                               self.T,                            # T
+                               criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
+                               flags = flags)
 
         self.set_alpha(0.0)
 
