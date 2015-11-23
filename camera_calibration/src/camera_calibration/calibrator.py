@@ -846,7 +846,7 @@ class StereoCalibrator(Calibrator):
 
         self.T = numpy.zeros((3, 1), dtype=numpy.float64)
         self.R = numpy.eye(3, dtype=numpy.float64)
-        if LooseVersion(cv2.__version__).version[0] == '2':
+        if LooseVersion(cv2.__version__).version[0] == 2:
             cv2.stereoCalibrate(opts, lipts, ripts, self.size,
                                self.l.intrinsics, self.l.distortion,
                                self.r.intrinsics, self.r.distortion,
