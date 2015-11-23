@@ -1,0 +1,42 @@
+sudo: required
+
+dist: trusty
+
+language: generic
+
+python:
+  - 2.7
+
+compiler:
+  - gcc
+  - clang
+
+env:
+  matrix:
+    - ROS_DISTRO=indigo
+
+# command to install dependencies
+install:
+  - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
+  - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+  - sudo apt-get update -qq
+  - sudo apt-get install python-rosdep python-catkin-tools -qq
+  - sudo rosdep init
+  - rosdep update
+  # Make a workspace
+  - mkdir -p /tmp/image_pipeline_ws/src
+  # Add this folder to the workspace
+  - ln -s $(pwd) /tmp/image_pipeline_ws/src/image_pipeline
+  # Install dependencies
+  - cd /tmp/image_pipeline_ws
+  - rosdep install --from-paths src --ignore-src --rosdistro $ROS_DISTRO -y
+
+# command to run tests
+script:
+  - source /opt/ros/$ROS_DISTRO/setup.bash
+  - cd /tmp/image_pipeline_ws
+  - catkin build -iv
+  - catkin run_tests image_pipeline -iv
+
+notifications:
+  email: false
