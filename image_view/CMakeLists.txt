@@ -59,6 +59,7 @@ add_executable(image_view_exe src/nodes/image_view.cpp)
 SET_TARGET_PROPERTIES(image_view_exe PROPERTIES OUTPUT_NAME image_view)
 target_link_libraries(image_view_exe ${catkin_LIBRARIES}
                                      ${OpenCV_LIBRARIES}
+                                     ${Boost_LIBRARIES}
 )
 
 add_executable(disparity_view src/nodes/disparity_view.cpp)

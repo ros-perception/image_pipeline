@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -32,7 +32,64 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 #include <ros/ros.h>
-#include <nodelet/loader.h>
+#include <image_transport/image_transport.h>
+
+#include <cv_bridge/cv_bridge.h>
+#include <opencv2/highgui/highgui.hpp>
+
+#include <boost/format.hpp>
+#include <boost/thread.hpp>
+
+int g_count;
+bool g_new_msg = false;
+cv::Mat g_last_image;
+boost::format g_filename_format;
+boost::mutex g_image_mutex;
+
+void imageCb(const sensor_msgs::ImageConstPtr& msg)
+{
+  // We want to scale floating point images so that they display nicely
+  bool do_dynamic_scaling = (msg->encoding.find("F") != std::string::npos);
+
+  // Convert to OpenCV native BGR color
+  try {
+    g_last_image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(msg), "",
+                                                 do_dynamic_scaling)->image;
+    g_new_msg = true;
+  } catch (cv_bridge::Exception& e) {
+    ROS_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
+                       msg->encoding.c_str(), e.what());
+  }
+}
+
+static void mouseCb(int event, int x, int y, int flags, void* param)
+{
+  if (event == cv::EVENT_LBUTTONDOWN) {
+    ROS_WARN_ONCE("Left-clicking no longer saves images. Right-click instead.");
+    return;
+  } else if (event != cv::EVENT_RBUTTONDOWN) {
+    return;
+  }
+
+  const cv::Mat &image = g_last_image;
+
+  if (image.empty()) {
+    ROS_WARN("Couldn't save image, no data!");
+    return;
+  }
+
+  g_image_mutex.lock();
+  std::string filename = (g_filename_format % g_count).str();
+  if (cv::imwrite(filename, image)) {
+    ROS_INFO("Saved image %s", filename.c_str());
+    g_count++;
+  } else {
+    /// @todo Show full path, ask if user has permission to write there
+    ROS_ERROR("Failed to save image.");
+  }
+  g_image_mutex.unlock();
+}
+
 
 int main(int argc, char **argv)
 {
@@ -42,13 +99,44 @@ int main(int argc, char **argv)
              "\t$ rosrun image_view image_view image:=<image topic> [transport]");
   }
 
-  nodelet::Loader manager(false);
-  nodelet::M_string remappings;
-  nodelet::V_string my_argv(argv + 1, argv + argc);
-  my_argv.push_back("--shutdown-on-close"); // Internal
+  ros::NodeHandle nh;
+  ros::NodeHandle local_nh("~");
 
-  manager.load(ros::this_node::getName(), "image_view/image", remappings, my_argv);
+  // Default window name is the resolved topic name
+  std::string topic = nh.resolveName("image");
+  std::string window_name;
+  local_nh.param("window_name", window_name, topic);
 
-  ros::spin();
+  std::string format_string;
+  local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
+  g_filename_format.parse(format_string);
+
+  bool autosize;
+  local_nh.param("autosize", autosize, false);
+  cv::namedWindow(window_name, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
+  cv::setMouseCallback(window_name, &mouseCb);
+
+  // Start the OpenCV window thread so we don't have to waitKey() somewhere
+  cv::startWindowThread();
+
+  std::string transport("raw");
+  image_transport::ImageTransport it(nh);
+  image_transport::TransportHints hints(transport, ros::TransportHints(), local_nh);
+  image_transport::Subscriber sub = it.subscribe(topic, 1, imageCb, hints);
+
+  ros::Rate rate(10);
+  while (ros::ok()) {
+    if (g_new_msg && !g_last_image.empty()) {
+      g_image_mutex.lock();
+      const cv::Mat &image = g_last_image;
+      cv::imshow(window_name, image);
+      g_new_msg = false;
+      g_image_mutex.unlock();
+    }
+    ros::spinOnce();
+    rate.sleep();
+  }
+
+  cv::destroyWindow(window_name);
   return 0;
 }
