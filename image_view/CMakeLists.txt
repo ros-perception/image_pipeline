@@ -85,6 +85,8 @@ install(FILES nodelet_plugins.xml
 
 # Python programs
 catkin_install_python(
-  PROGRAMS scripts/extract_images_sync
+  PROGRAMS
+  scripts/extract_images_sync
+  scripts/image_saver_sync
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
