@@ -115,6 +115,7 @@ int main(int argc, char **argv)
   local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
   g_filename_format.parse(format_string);
 
+  // Handle window size
   bool autosize;
   local_nh.param("autosize", autosize, false);
   cv::namedWindow(g_window_name, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
@@ -123,7 +124,21 @@ int main(int argc, char **argv)
   // Start the OpenCV window thread so we don't have to waitKey() somewhere
   cv::startWindowThread();
 
-  std::string transport("raw");
+  // Handle transport
+  // priority:
+  //    1. command line argument
+  //    2. rosparam '~image_transport'
+  std::string transport;
+  local_nh.param("image_transport", transport, std::string("raw"));
+  ros::V_string myargv;
+  ros::removeROSArgs(argc, argv, myargv);
+  for (size_t i = 1; i < myargv.size(); ++i) {
+    if (myargv[i][0] != '-') {
+      transport = myargv[i];
+      break;
+    }
+  }
+  ROS_INFO_STREAM("Using transport \"" << transport << "\"");
   image_transport::ImageTransport it(nh);
   image_transport::TransportHints hints(transport, ros::TransportHints(), local_nh);
   image_transport::Subscriber sub = it.subscribe(topic, 1, imageCb, hints);
