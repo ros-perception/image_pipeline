@@ -39,6 +39,7 @@
 
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
+#include <boost/filesystem.hpp>
 
 int g_count;
 cv::Mat g_last_image;
@@ -90,8 +91,8 @@ static void mouseCb(int event, int x, int y, int flags, void* param)
     ROS_INFO("Saved image %s", filename.c_str());
     g_count++;
   } else {
-    /// @todo Show full path, ask if user has permission to write there
-    ROS_ERROR("Failed to save image.");
+    boost::filesystem::path full_path = boost::filesystem::complete(filename);
+    ROS_ERROR_STREAM("Failed to save image. Have permission to write there?: " << full_path);
   }
 }
 
