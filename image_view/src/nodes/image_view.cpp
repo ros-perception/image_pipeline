@@ -41,24 +41,29 @@
 #include <boost/thread.hpp>
 
 int g_count;
-bool g_new_msg = false;
 cv::Mat g_last_image;
 boost::format g_filename_format;
 boost::mutex g_image_mutex;
+std::string g_window_name;
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
   // We want to scale floating point images so that they display nicely
   bool do_dynamic_scaling = (msg->encoding.find("F") != std::string::npos);
 
+  boost::mutex::scoped_lock lock(g_image_mutex);
+
   // Convert to OpenCV native BGR color
   try {
     g_last_image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(msg), "",
                                                  do_dynamic_scaling)->image;
-    g_new_msg = true;
   } catch (cv_bridge::Exception& e) {
     ROS_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
                        msg->encoding.c_str(), e.what());
+  }
+  if (!g_last_image.empty()) {
+    const cv::Mat &image = g_last_image;
+    cv::imshow(g_window_name, image);
   }
 }
 
@@ -71,6 +76,8 @@ static void mouseCb(int event, int x, int y, int flags, void* param)
     return;
   }
 
+  boost::mutex::scoped_lock lock(g_image_mutex);
+
   const cv::Mat &image = g_last_image;
 
   if (image.empty()) {
@@ -78,7 +85,6 @@ static void mouseCb(int event, int x, int y, int flags, void* param)
     return;
   }
 
-  g_image_mutex.lock();
   std::string filename = (g_filename_format % g_count).str();
   if (cv::imwrite(filename, image)) {
     ROS_INFO("Saved image %s", filename.c_str());
@@ -87,7 +93,6 @@ static void mouseCb(int event, int x, int y, int flags, void* param)
     /// @todo Show full path, ask if user has permission to write there
     ROS_ERROR("Failed to save image.");
   }
-  g_image_mutex.unlock();
 }
 
 
@@ -104,8 +109,7 @@ int main(int argc, char **argv)
 
   // Default window name is the resolved topic name
   std::string topic = nh.resolveName("image");
-  std::string window_name;
-  local_nh.param("window_name", window_name, topic);
+  local_nh.param("window_name", g_window_name, topic);
 
   std::string format_string;
   local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
@@ -113,8 +117,8 @@ int main(int argc, char **argv)
 
   bool autosize;
   local_nh.param("autosize", autosize, false);
-  cv::namedWindow(window_name, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
-  cv::setMouseCallback(window_name, &mouseCb);
+  cv::namedWindow(g_window_name, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
+  cv::setMouseCallback(g_window_name, &mouseCb);
 
   // Start the OpenCV window thread so we don't have to waitKey() somewhere
   cv::startWindowThread();
@@ -124,19 +128,8 @@ int main(int argc, char **argv)
   image_transport::TransportHints hints(transport, ros::TransportHints(), local_nh);
   image_transport::Subscriber sub = it.subscribe(topic, 1, imageCb, hints);
 
-  ros::Rate rate(10);
-  while (ros::ok()) {
-    if (g_new_msg && !g_last_image.empty()) {
-      g_image_mutex.lock();
-      const cv::Mat &image = g_last_image;
-      cv::imshow(window_name, image);
-      g_new_msg = false;
-      g_image_mutex.unlock();
-    }
-    ros::spinOnce();
-    rate.sleep();
-  }
+  ros::spin();
 
-  cv::destroyWindow(window_name);
+  cv::destroyWindow(g_window_name);
   return 0;
 }
