@@ -49,8 +49,13 @@ std::string g_window_name;
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
-  // We want to scale floating point images so that they display nicely
-  bool do_dynamic_scaling = (msg->encoding.find("F") != std::string::npos);
+  // We want to scale floating point images and 16UC1 images
+  // so that they display nicely. They are depth images in most cases.
+  bool do_dynamic_scaling = false;
+  if ((msg->encoding.find("F") != std::string::npos) ||
+      (msg->encoding == "16UC1")) {
+     do_dynamic_scaling = true;
+  }
 
   boost::mutex::scoped_lock lock(g_image_mutex);
 
