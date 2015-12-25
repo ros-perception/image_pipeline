@@ -17,6 +17,7 @@ include_directories(include
 )
 
 add_library(${PROJECT_NAME} src/nodelets/convert_metric.cpp
+                             src/nodelets/crop_foremost.cpp
                              src/nodelets/disparity.cpp
                              src/nodelets/point_cloud_xyz.cpp
                              src/nodelets/point_cloud_xyzrgb.cpp
