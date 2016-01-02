@@ -81,3 +81,9 @@ install(TARGETS disparity_view image_view_exe stereo_view
 install(FILES nodelet_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
+
+# Python programs
+catkin_install_python(
+  PROGRAMS scripts/extract_images_sync
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
