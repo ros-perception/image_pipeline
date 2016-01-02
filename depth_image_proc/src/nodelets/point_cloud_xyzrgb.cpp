@@ -42,6 +42,7 @@
 #include <image_transport/subscriber_filter.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
@@ -65,8 +66,11 @@ class PointCloudXyzrgbNodelet : public nodelet::Nodelet
   image_transport::SubscriberFilter sub_depth_, sub_rgb_;
   message_filters::Subscriber<sensor_msgs::CameraInfo> sub_info_;
   typedef ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> SyncPolicy;
+  typedef ExactTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> ExactSyncPolicy;
   typedef message_filters::Synchronizer<SyncPolicy> Synchronizer;
+  typedef message_filters::Synchronizer<ExactSyncPolicy> ExactSynchronizer;
   boost::shared_ptr<Synchronizer> sync_;
+  boost::shared_ptr<ExactSynchronizer> exact_sync_;
 
   // Publications
   boost::mutex connect_mutex_;
@@ -102,10 +106,20 @@ void PointCloudXyzrgbNodelet::onInit()
   // Read parameters
   int queue_size;
   private_nh.param("queue_size", queue_size, 5);
+  bool use_exact_sync;
+  private_nh.param("exact_sync", use_exact_sync, false);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
-  sync_.reset( new Synchronizer(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_) );
-  sync_->registerCallback(boost::bind(&PointCloudXyzrgbNodelet::imageCb, this, _1, _2, _3));
+  if (use_exact_sync)
+  {
+    exact_sync_.reset( new ExactSynchronizer(ExactSyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_) );
+    exact_sync_->registerCallback(boost::bind(&PointCloudXyzrgbNodelet::imageCb, this, _1, _2, _3));
+  }
+  else
+  {
+    sync_.reset( new Synchronizer(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_) );
+    sync_->registerCallback(boost::bind(&PointCloudXyzrgbNodelet::imageCb, this, _1, _2, _3));
+  }
   
   // Monitor whether anyone is subscribed to the output
   ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudXyzrgbNodelet::connectCb, this);
