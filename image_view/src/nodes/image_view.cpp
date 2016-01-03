@@ -31,8 +31,11 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+#include <image_view/ImageViewConfig.h>
+
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
+#include <dynamic_reconfigure/server.h>
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -46,23 +49,22 @@ cv::Mat g_last_image;
 boost::format g_filename_format;
 boost::mutex g_image_mutex;
 std::string g_window_name;
+bool g_do_dynamic_scaling;
+
+void reconfigureCb(image_view::ImageViewConfig &config, uint32_t level)
+{
+  boost::mutex::scoped_lock lock(g_image_mutex);
+  g_do_dynamic_scaling = config.do_dynamic_scaling;
+}
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
-  // We want to scale floating point images and 16UC1 images
-  // so that they display nicely. They are depth images in most cases.
-  bool do_dynamic_scaling = false;
-  if ((msg->encoding.find("F") != std::string::npos) ||
-      (msg->encoding == "16UC1")) {
-     do_dynamic_scaling = true;
-  }
-
   boost::mutex::scoped_lock lock(g_image_mutex);
 
   // Convert to OpenCV native BGR color
   try {
     g_last_image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(msg), "",
-                                                 do_dynamic_scaling)->image;
+                                                 g_do_dynamic_scaling)->image;
   } catch (cv_bridge::Exception& e) {
     ROS_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
                        msg->encoding.c_str(), e.what());
@@ -148,6 +150,11 @@ int main(int argc, char **argv)
   image_transport::ImageTransport it(nh);
   image_transport::TransportHints hints(transport, ros::TransportHints(), local_nh);
   image_transport::Subscriber sub = it.subscribe(topic, 1, imageCb, hints);
+
+  dynamic_reconfigure::Server<image_view::ImageViewConfig> srv;
+  dynamic_reconfigure::Server<image_view::ImageViewConfig>::CallbackType f =
+    boost::bind(&reconfigureCb, _1, _2);
+  srv.setCallback(f);
 
   ros::spin();
 
