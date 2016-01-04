@@ -9,12 +9,14 @@ catkin_package(
 
 find_package(Boost REQUIRED)
 find_package(Eigen REQUIRED)
-find_package(OpenCV)
 include_directories(include
         SYSTEM ${BOOST_INCLUDE_DIRS}
                ${catkin_INCLUDE_DIRS}
                ${EIGEN_INCLUDE_DIRS}
 )
+
+# set rpath
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_library(${PROJECT_NAME} src/nodelets/convert_metric.cpp
                              src/nodelets/disparity.cpp

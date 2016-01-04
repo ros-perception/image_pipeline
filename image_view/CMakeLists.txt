@@ -5,29 +5,24 @@ find_package(catkin REQUIRED)
 catkin_package()
 
 find_package(Boost REQUIRED COMPONENTS signals thread)
-find_package(OpenCV REQUIRED)
 
 find_package(catkin REQUIRED camera_calibration_parsers cv_bridge image_transport message_filters nodelet rosconsole roscpp)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
                            ${catkin_INCLUDE_DIRS}
-                           ${OpenCV_INCLUDE_DIRS}
 )
+
+# set rpath
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Extra tools
 add_executable(extract_images src/nodes/extract_images.cpp)
-target_link_libraries(extract_images ${catkin_LIBRARIES}
-                                     ${OpenCV_LIBRARIES}
-)
+target_link_libraries(extract_images ${catkin_LIBRARIES})
 
 add_executable(image_saver src/nodes/image_saver.cpp)
-target_link_libraries(image_saver ${catkin_LIBRARIES}
-                                  ${OpenCV_LIBRARIES}
-)
+target_link_libraries(image_saver ${catkin_LIBRARIES})
 
 add_executable(video_recorder src/nodes/video_recorder.cpp)
-target_link_libraries(video_recorder ${catkin_LIBRARIES}
-                                     ${OpenCV_LIBRARIES}
-)
+target_link_libraries(video_recorder ${catkin_LIBRARIES})
 
 install(TARGETS extract_images image_saver video_recorder
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -47,7 +42,6 @@ add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nod
 target_link_libraries(image_view ${catkin_LIBRARIES}
                                  ${GTK_LIBRARIES}
                                  ${GTK2_LIBRARIES}
-                                 ${OpenCV_LIBRARIES}
                                  ${Boost_LIBRARIES}
 )
 install(TARGETS image_view
@@ -58,21 +52,17 @@ install(TARGETS image_view
 add_executable(image_view_exe src/nodes/image_view.cpp)
 SET_TARGET_PROPERTIES(image_view_exe PROPERTIES OUTPUT_NAME image_view)
 target_link_libraries(image_view_exe ${catkin_LIBRARIES}
-                                     ${OpenCV_LIBRARIES}
                                      ${Boost_LIBRARIES}
 )
 
 add_executable(disparity_view src/nodes/disparity_view.cpp)
-target_link_libraries(disparity_view ${catkin_LIBRARIES}
-                                     ${OpenCV_LIBRARIES}
-)
+target_link_libraries(disparity_view ${catkin_LIBRARIES})
 
 add_executable(stereo_view src/nodes/stereo_view.cpp)
 target_link_libraries(stereo_view ${Boost_LIBRARIES}
                                   ${catkin_LIBRARIES}
                                   ${GTK_LIBRARIES}
                                   ${GTK2_LIBRARIES}
-                                  ${OpenCV_LIBRARIES}
 )
 
 install(TARGETS disparity_view image_view_exe stereo_view
