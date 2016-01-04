@@ -15,16 +15,15 @@ catkin_package(
 
 include_directories(include)
 
-find_package(OpenCV REQUIRED)
-include_directories(SYSTEM ${catkin_INCLUDE_DIRS}
-                           ${OpenCV_INCLUDE_DIRS}
-)
+include_directories(SYSTEM ${catkin_INCLUDE_DIRS})
+
+# set rpath
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Nodelet library
 add_library(${PROJECT_NAME} src/libstereo_image_proc/processor.cpp src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}
-                                      ${OpenCV_LIBRARIES}
-)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 install(TARGETS ${PROJECT_NAME}
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
