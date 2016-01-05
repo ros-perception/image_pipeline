@@ -36,6 +36,9 @@
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/image_encodings.h>
 #include <boost/thread.hpp>
+#include <cv_bridge/cv_bridge.h>
+#include <cstdint>
+#include <opencv2/imgproc/imgproc.hpp>
 
 namespace depth_image_proc {
 
@@ -91,45 +94,73 @@ void CropForemostNodelet::connectCb()
 
 void CropForemostNodelet::depthCb(const sensor_msgs::ImageConstPtr& raw_msg)
 {
-  if (raw_msg->encoding != enc::TYPE_32FC1)
+  cv_bridge::CvImagePtr cv_ptr;
+  try
   {
-    NODELET_ERROR_THROTTLE(2, "Expected data of type [%s], got [%s]", enc::TYPE_32FC1.c_str(),
-                           raw_msg->encoding.c_str());
+    cv_ptr = cv_bridge::toCvCopy(raw_msg);
+  }
+  catch (cv_bridge::Exception& e)
+  {
+    ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
   }
 
-  // Allocate new Image message
-  sensor_msgs::ImagePtr crop_msg( new sensor_msgs::Image );
-  crop_msg->header   = raw_msg->header;
-  crop_msg->encoding = raw_msg->encoding;
-  crop_msg->height   = raw_msg->height;
-  crop_msg->width    = raw_msg->width;
-  crop_msg->step     = raw_msg->step;
-  crop_msg->data.resize( crop_msg->height * crop_msg->step);
 
-  float bad_point = std::numeric_limits<float>::quiet_NaN();
+  if (raw_msg->encoding == enc::TYPE_8UC1){
 
-  // First step: 
-  // Search the foremost distance from the depth camera
-  const float* raw_data = reinterpret_cast<const float*>(&raw_msg->data[0]);
-  float* crop_data = reinterpret_cast<float*>(&crop_msg->data[0]);
-  float min = std::numeric_limits<float>::infinity();
-  for (unsigned int index=0; index < crop_msg->height * crop_msg->width; ++index)
-  {
-    float tmp = raw_data[index];
-    tmp = (tmp!=0) ? tmp : bad_point;
-    min = tmp < min ? tmp : min;
+    // search the min value without invalid value "0"
+    cv::MatIterator_<uint8_t>ind = std::min_element(cv_ptr->image.begin<uint8_t>(), cv_ptr->image.end<uint8_t>(), [](uint8_t a, uint8_t b) {
+      return (a == 0) ? false : (b == 0) || a < b;
+    });
+    cv::threshold(cv_ptr->image, cv_ptr->image, *ind + (uint8_t)distance_, 0, CV_THRESH_TOZERO_INV);
+
+  }else if (raw_msg->encoding == enc::TYPE_8SC1){
+
+    // search the min value without invalid value "0"
+    cv::MatIterator_<int8_t>ind = std::min_element(cv_ptr->image.begin<int8_t>(), cv_ptr->image.end<int8_t>(), [](int8_t a, int8_t b) {
+      return (a == 0) ? false : (b == 0) || a < b;
+    });
+    cv::threshold(cv_ptr->image, cv_ptr->image, *ind + (int8_t)distance_, 0, CV_THRESH_TOZERO_INV);
+
+  }else if (raw_msg->encoding == enc::TYPE_16UC1){
+
+    // search the min value without invalid value "0"
+    cv::MatIterator_<uint16_t>ind = std::min_element(cv_ptr->image.begin<uint16_t>(), cv_ptr->image.end<uint16_t>(), [](uint16_t a, uint16_t b) {
+      return (a == 0) ? false : (b == 0) || a < b;
+    });
+
+    // 8 bit or 32 bit floating array is required to use cv::threshold
+    cv::Mat1f mf(raw_msg->width, raw_msg->height);
+    cv_ptr->image.convertTo(mf, CV_32F);
+    cv::threshold(mf, mf, (double)*ind + distance_, 0, CV_THRESH_TOZERO_INV);
+    mf.convertTo(cv_ptr->image, CV_16U);
+
+  }else if (raw_msg->encoding == enc::TYPE_16SC1){
+
+    // search the min value without invalid value "0"
+    cv::MatIterator_<int16_t>ind = std::min_element(cv_ptr->image.begin<int16_t>(), cv_ptr->image.end<int16_t>(), [](int16_t a, int16_t b) {
+      return (a == 0) ? false : (b == 0) || a < b;
+    });
+
+    // 8 bit or 32 bit floating array is required to use cv::threshold
+    cv::Mat1f mf(raw_msg->width, raw_msg->height);
+    cv_ptr->image.convertTo(mf, CV_32F);
+    cv::threshold(mf, mf, (double)*ind + distance_, 0, CV_THRESH_TOZERO_INV);
+    mf.convertTo(cv_ptr->image, CV_16S);
+
+  //}else if (raw_msg->encoding == enc::TYPE_32SC1){
+  }else if (raw_msg->encoding == enc::TYPE_32FC1){
+    cv::MatIterator_<float>ind = std::min_element(cv_ptr->image.begin<float>(), cv_ptr->image.end<float>(), [](float a, float b) {
+      return (a == 0.) ? false : (b == 0.) || a < b;
+    });
+    cv::threshold(cv_ptr->image, cv_ptr->image, *ind + distance_, 0, CV_THRESH_TOZERO_INV);
+  //}else if (raw_msg->encoding == enc::TYPE_64FC1){
+  }else{
+    NODELET_ERROR_THROTTLE(2, "Only 8UC1, 8SC1, 16UC1, 16SC1, and 32FC1 image is acceptable, got [%s]", raw_msg->encoding.c_str());
+    return;
   }
 
-  // Second step:
-  // Eliminate far data from searched foremost distance
-  for (unsigned int index=0; index < crop_msg->height * crop_msg->width; ++index)
-  {
-    float tmp = raw_data[index];
-    crop_data[index] = min + distance_ > tmp ? tmp : bad_point;
-  }
-
-  pub_depth_.publish(crop_msg);
+  pub_depth_.publish(cv_ptr->toImageMsg());
 }
 
 } // namespace depth_image_proc
