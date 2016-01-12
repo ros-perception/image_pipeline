@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(depth_image_proc)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
 find_package(catkin REQUIRED cmake_modules cv_bridge eigen_conversions image_geometry image_transport message_filters nodelet sensor_msgs stereo_msgs tf2 tf2_ros)
 
 catkin_package(
