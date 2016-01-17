@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.15 (2016-01-17)
+--------------------
 * better 16 handling in mkgray
   This re-uses `#150 <https://github.com/ros-perception/image_pipeline/issues/150>`_ and therefore closes `#150 <https://github.com/ros-perception/image_pipeline/issues/150>`_
 * fix OpenCV2 compatibility

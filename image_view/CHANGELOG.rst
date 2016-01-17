@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.15 (2016-01-17)
+--------------------
 * simplify the OpenCV dependency
 * [image_view] Configure do_dynamic_scaling param with dynamic_reconfigure
 * [image_view] Scale 16UC1 depth image

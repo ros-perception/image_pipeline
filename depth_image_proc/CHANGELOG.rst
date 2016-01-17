@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.15 (2016-01-17)
+--------------------
 * Add option for exact time sync for point_cloud_xyzrgb
 * simplify OpenCV3 conversion
 * Contributors: Kentaro Wada, Vincent Rabaud

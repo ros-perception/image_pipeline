@@ -1,6 +1,6 @@
 <package>
   <name>camera_calibration</name>
-  <version>1.12.14</version>
+  <version>1.12.15</version>
   <description>
      camera_calibration allows easy calibration of monocular or stereo
      cameras using a checkerboard calibration target.
