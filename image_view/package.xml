@@ -19,11 +19,10 @@
   <test_depend>rostest</test_depend>
   
   <build_depend>camera_calibration_parsers</build_depend>
-  <build_depend>cv_bridge</build_depend>
+  <build_depend version_gte="1.11.10">cv_bridge</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>gtk2</build_depend>
   <build_depend>image_transport</build_depend>
-  <build_depend>libopencv-dev</build_depend>
   <build_depend>message_filters</build_depend>
   <build_depend>message_generation</build_depend>
   <build_depend>nodelet</build_depend>
@@ -38,7 +37,6 @@
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>gtk2</run_depend>
   <run_depend>image_transport</run_depend>
-  <run_depend>libopencv-dev</run_depend>
   <run_depend>message_filters</run_depend>
   <run_depend>nodelet</run_depend>
   <run_depend>python-opencv</run_depend>
