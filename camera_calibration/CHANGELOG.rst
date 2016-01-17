@@ -1,3 +1,12 @@
+Forthcoming
+-----------
+* better 16 handling in mkgray
+  This re-uses `#150 <https://github.com/ros-perception/image_pipeline/issues/150>`_ and therefore closes `#150 <https://github.com/ros-perception/image_pipeline/issues/150>`_
+* fix OpenCV2 compatibility
+* fix tests with OpenCV3
+* [Calibrator]: add yaml file with calibration data in output
+* Contributors: Vincent Rabaud, sambrose
+
 1.12.14 (2015-07-22)
 --------------------
 * remove camera_hammer and install Python nodes properly

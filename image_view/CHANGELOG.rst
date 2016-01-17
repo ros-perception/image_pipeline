@@ -1,3 +1,23 @@
+Forthcoming
+-----------
+* simplify the OpenCV dependency
+* [image_view] Configure do_dynamic_scaling param with dynamic_reconfigure
+* [image_view] Scale 16UC1 depth image
+* fix compilation
+* Extract images which are synchronized with message_filters
+* [image_view] Show full path when failed to save image
+* [image_view] Enable to specify transport with arg
+* [image_view] feedback: no need threading for callback
+* [image_view/image_view] Make as a node
+* Added sensor_msgs::Image conversion to cv::Mat from rqt_image_view in
+  order to be able to create videos from kinect depth images (cv_bridge
+  currently doesn't support 16UC1 image encoding).
+  Code adapted from:
+  https://github.com/ros-visualization/rqt_common_plugins/blob/groovy-devel/rqt_image_view/src/rqt_image_view/image_view.cpp
+* simplify OpenCV3 conversion
+* use the color conversion for display from cv_bridge
+* Contributors: Carlos Costa, Kentaro Wada, Vincent Rabaud
+
 1.12.14 (2015-07-22)
 --------------------
 * reduce the differences between OpenCV2 and 3

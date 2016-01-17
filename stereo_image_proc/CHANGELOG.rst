@@ -1,3 +1,8 @@
+Forthcoming
+-----------
+* simplify OpenCV3 conversion
+* Contributors: Vincent Rabaud
+
 1.12.14 (2015-07-22)
 --------------------
 * add StereoSGBM and it can be chosen from dynamic_reconfigure
