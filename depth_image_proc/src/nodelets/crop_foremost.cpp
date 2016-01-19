@@ -103,30 +103,33 @@ void CropForemostNodelet::depthCb(const sensor_msgs::ImageConstPtr& raw_msg)
     return;
   }
 
+  // Check the number of channels
+  if(sensor_msgs::image_encodings::numChannels(raw_msg->encoding) != 1){
+    NODELET_ERROR_THROTTLE(2, "Only grayscale image is acceptable, got [%s]", raw_msg->encoding.c_str());
+    return;
+  }
+
   // search the min value without invalid value "0"
   double minVal;
   cv::minMaxIdx(cv_ptr->image, &minVal, 0, 0, 0, cv_ptr->image != 0);
 
-  // 8 bit or 32 bit floating array is required to use cv::threshold
-  if (raw_msg->encoding == enc::TYPE_8UC1 || raw_msg->encoding == enc::TYPE_8SC1 || raw_msg->encoding == enc::TYPE_32FC1){
-    cv::threshold(cv_ptr->image, cv_ptr->image, minVal + distance_, 0, CV_THRESH_TOZERO_INV);
-  }else if (raw_msg->encoding == enc::TYPE_16UC1 || raw_msg->encoding == enc::TYPE_16SC1 
-            || raw_msg->encoding == enc::TYPE_32SC1 || raw_msg->encoding == enc::TYPE_64FC1){
-    cv_ptr->image.convertTo(cv_ptr->image, CV_32F);
-    cv::threshold(cv_ptr->image, cv_ptr->image, minVal + distance_, 1, CV_THRESH_TOZERO_INV);
+  int imtype = cv_bridge::getCvType(raw_msg->encoding);
+  switch (imtype){
+    case CV_8UC1:
+    case CV_8SC1:
+    case CV_32F:
+      cv::threshold(cv_ptr->image, cv_ptr->image, minVal + distance_, 0, CV_THRESH_TOZERO_INV);
+      break;
+    case CV_16UC1:
+    case CV_16SC1:
+    case CV_32SC1:
+    case CV_64F:
+      // 8 bit or 32 bit floating array is required to use cv::threshold
+      cv_ptr->image.convertTo(cv_ptr->image, CV_32F);
+      cv::threshold(cv_ptr->image, cv_ptr->image, minVal + distance_, 1, CV_THRESH_TOZERO_INV);
 
-    if(raw_msg->encoding == enc::TYPE_16UC1){
-      cv_ptr->image.convertTo(cv_ptr->image, CV_16U);
-    }else if(raw_msg->encoding == enc::TYPE_16SC1){
-      cv_ptr->image.convertTo(cv_ptr->image, CV_16S);
-    }else if(raw_msg->encoding == enc::TYPE_32SC1){
-      cv_ptr->image.convertTo(cv_ptr->image, CV_32S);
-    }else if(raw_msg->encoding == enc::TYPE_64FC1){
-      cv_ptr->image.convertTo(cv_ptr->image, CV_64F);
-    }
-  }else{
-    NODELET_ERROR_THROTTLE(2, "Only grayscale image is acceptable, got [%s]", raw_msg->encoding.c_str());
-    return;
+      cv_ptr->image.convertTo(cv_ptr->image, imtype);
+      break;
   }
 
   pub_depth_.publish(cv_ptr->toImageMsg());
