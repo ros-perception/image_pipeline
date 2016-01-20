@@ -62,4 +62,12 @@
     </description>
   </class>
 
+  <class name="depth_image_proc/crop_foremost"
+	 type="depth_image_proc::CropForemostNodelet"
+	 base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet to crop a depth image from foremost depth to a specific range.
+    </description>
+  </class>
+
 </library>

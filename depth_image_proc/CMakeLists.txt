@@ -9,7 +9,7 @@ catkin_package(
 
 find_package(Boost REQUIRED)
 find_package(Eigen REQUIRED)
-find_package(OpenCV)
+find_package(OpenCV REQUIRED)
 include_directories(include
         SYSTEM ${BOOST_INCLUDE_DIRS}
                ${catkin_INCLUDE_DIRS}
@@ -17,6 +17,7 @@ include_directories(include
 )
 
 add_library(${PROJECT_NAME} src/nodelets/convert_metric.cpp
+                             src/nodelets/crop_foremost.cpp
                              src/nodelets/disparity.cpp
                              src/nodelets/point_cloud_xyz.cpp
                              src/nodelets/point_cloud_xyzrgb.cpp
@@ -25,7 +26,7 @@ add_library(${PROJECT_NAME} src/nodelets/convert_metric.cpp
                              src/nodelets/point_cloud_xyzi_radial.cpp
                              src/nodelets/register.cpp
 )
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 install(DIRECTORY include/${PROJECT_NAME}/
     DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
