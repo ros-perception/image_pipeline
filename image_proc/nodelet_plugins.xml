@@ -25,4 +25,12 @@
     </description>
   </class>
 
+  <class name="image_proc/crop_nonZero"
+	 type="image_proc::CropNonZeroNodelet"
+	 base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet to crop the largest valid (Non Zero) area of the image.
+    </description>
+  </class>
+
 </library>
