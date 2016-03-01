@@ -1,0 +1,9 @@
+<launch>
+  <group ns="camera">
+  <node name="rectify_image_proc" pkg="image_proc" type="image_proc"
+      output="screen">
+  </node>
+  </group>
+  <test test-name="image_proc_test_rectify" pkg="image_proc" type="image_proc_test_rectify">
+  </test>
+</launch>
