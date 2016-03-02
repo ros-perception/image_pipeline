@@ -122,6 +122,8 @@ private:
         ROS_INFO("Saved image %s", filename.c_str());
 
         save_image_service = false;
+      } else {
+        return false;
       }
     } else {
       ROS_WARN("Couldn't save image, no data!");
