@@ -72,6 +72,7 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   if (!g_last_image.empty()) {
     const cv::Mat &image = g_last_image;
     cv::imshow(g_window_name, image);
+    cv::waitKey(3);
   }
 }
 
