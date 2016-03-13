@@ -122,7 +122,17 @@ void RectifyNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   }
 
   // If zero distortion, just pass the message along
-  if (info_msg->D.empty() || info_msg->D[0] == 0.0)
+  bool zero_distortion = true;
+  for (size_t i = 0; i < info_msg->D.size(); ++i)
+  {
+    if (info_msg->D[i] != 0.0)
+    {
+      zero_distortion = false;
+      break;
+    }
+  }
+  // This will be true if D is empty/zero sized
+  if (zero_distortion)
   {
     pub_rect_.publish(image_msg);
     return;
