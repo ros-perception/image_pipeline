@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.16 (2016-03-19)
+--------------------
 * Remove code for roslib on .cfg files
   Closes `#185 <https://github.com/ros-perception/image_pipeline/issues/185>`_
 * add cv::waitKey for opencv3 installed from source to fix freezing issue

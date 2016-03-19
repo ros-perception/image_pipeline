@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.16 (2016-03-19)
+--------------------
 * check number of channels before the process
 * search minimum value with OpenCV
 * Use OpenCV to be faster

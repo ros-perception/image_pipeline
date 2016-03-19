@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.16 (2016-03-19)
+--------------------
 * clean OpenCV dependency in package.xml
 * issue `#180 <https://github.com/ros-perception/image_pipeline/issues/180>`_ Check if all distortion coefficients are zero.
   Test with:
