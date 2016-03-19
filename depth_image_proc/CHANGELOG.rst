@@ -1,3 +1,11 @@
+Forthcoming
+-----------
+* check number of channels before the process
+* search minimum value with OpenCV
+* Use OpenCV to be faster
+* Add a feature for a depth image to crop foremost image
+* Contributors: Kenta Yonekura
+
 1.12.15 (2016-01-17)
 --------------------
 * Add option for exact time sync for point_cloud_xyzrgb

@@ -1,3 +1,8 @@
+Forthcoming
+-----------
+* clean OpenCV dependency in package.xml
+* Contributors: Vincent Rabaud
+
 1.12.15 (2016-01-17)
 --------------------
 * simplify OpenCV3 conversion

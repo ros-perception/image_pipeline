@@ -1,3 +1,15 @@
+Forthcoming
+-----------
+* clean OpenCV dependency in package.xml
+* issue `#180 <https://github.com/ros-perception/image_pipeline/issues/180>`_ Check if all distortion coefficients are zero.
+  Test with:
+  rostest --reuse-master --text image_proc test_rectify.xml
+  Can also test interactively with vimjay image_rect.launch, which brings up an rqt gui and camera info distortion coefficients can be dynamically reconfigured.
+* Add a feature to crop the largest valid (non zero) area
+  Remove unnecessary headers
+  change a filename to fit for the ROS convention
+* Contributors: Kenta Yonekura, Lucas Walter, Vincent Rabaud
+
 1.12.15 (2016-01-17)
 --------------------
 * simplify OpenCV3 conversion

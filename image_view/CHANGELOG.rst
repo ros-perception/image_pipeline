@@ -1,3 +1,13 @@
+Forthcoming
+-----------
+* Remove code for roslib on .cfg files
+  Closes `#185 <https://github.com/ros-perception/image_pipeline/issues/185>`_
+* add cv::waitKey for opencv3 installed from source to fix freezing issue
+* when no image is saved, do not save camera info
+  When the images are not recorded because "save_all_image" is false and "save_image_service" is false, the frame count should not be incremented and the camera info should not be written to disk.
+* Add std_srvs to catkin find_package()
+* Contributors: Jeremy Kerfs, Jochen Sprickerhof, Kentaro Wada, Krishneel
+
 1.12.15 (2016-01-17)
 --------------------
 * simplify the OpenCV dependency
