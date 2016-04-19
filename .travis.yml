@@ -58,7 +58,7 @@ script:
   - catkin build -p1 -j1 --no-status
   - catkin run_tests -p1 -j1
   - catkin_test_results --all build
-  - catkin clean -b
+  - catkin clean -b --yes
   - catkin config --install
   - catkin build -p1 -j1 --no-status
 after_failure:
