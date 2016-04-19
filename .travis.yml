@@ -55,12 +55,12 @@ before_script:
 script:
   - source /opt/ros/$ROS_DISTRO/setup.bash
   - cd ~/catkin_ws
-  - catkin build -p1 -j1
+  - catkin build -p1 -j1 --no-status
   - catkin run_tests -p1 -j1
   - catkin_test_results --all build
   - catkin clean -b
   - catkin config --install
-  - catkin build -p1 -j1
+  - catkin build -p1 -j1 --no-status
 after_failure:
   - find ${HOME}/.ros/test_results -type f -exec echo "== {} ==" \; -exec cat {} \;
   - for file in ${HOME}/.ros/log/rostest-*; do echo "=== $file ==="; cat $file; done
