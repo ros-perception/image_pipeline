@@ -506,7 +506,7 @@ def image_from_archive(archive, name):
     Used for tarfile loading and unit test.
     """
     member = archive.getmember(name)
-    imagefiledata = numpy.fromstring(archive.extractfile(member).read(-1), numpy.uint8)
+    imagefiledata = numpy.fromstring(archive.extractfile(member).read(), numpy.uint8)
     imagefiledata.resize((1, imagefiledata.size))
     return cv2.imdecode(imagefiledata, cv2.IMREAD_COLOR)
 
