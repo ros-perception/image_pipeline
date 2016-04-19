@@ -6,6 +6,8 @@ env:
   - OPENCV_VERSION=3 ROS_DISTRO=indigo
   - OPENCV_VERSION=2 ROS_DISTRO=jade
   - OPENCV_VERSION=3 ROS_DISTRO=jade
+# Version of 4 does not make sense but it's to pass the test below.
+  - OPENCV_VERSION=4 ROS_DISTRO=kinetic
 # Install system dependencies, namely ROS.
 before_install:
   # Define some config vars.
@@ -47,7 +49,7 @@ before_script:
 
   # package depdencies: install using rosdep.
   - cd ~/catkin_ws
-  - rosdep install -y -r --from-paths src --ignore-src --rosdistro $ROS_DISTRO
+  - rosdep install -q -y -r --from-paths src --ignore-src --rosdistro $ROS_DISTRO
 
 # Compile and test.
 script:
