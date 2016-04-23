@@ -7,7 +7,8 @@ env:
   - OPENCV_VERSION=2 ROS_DISTRO=jade
   - OPENCV_VERSION=3 ROS_DISTRO=jade
 # Version of 4 does not make sense but it's to pass the test below.
-  - OPENCV_VERSION=4 ROS_DISTRO=kinetic
+# Disabled as Travis does not support Xenial
+#  - OPENCV_VERSION=4 ROS_DISTRO=kinetic
 # Install system dependencies, namely ROS.
 before_install:
   # Define some config vars.
