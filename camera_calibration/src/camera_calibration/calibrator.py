@@ -501,7 +501,7 @@ class Calibrator(object):
 
 def image_from_archive(archive, name):
     """
-    Load image PGM file from tar archive. 
+    Load image PGM file from tar archive.
 
     Used for tarfile loading and unit test.
     """
@@ -523,7 +523,7 @@ class MonoDrawable(ImageDrawable):
         ImageDrawable.__init__(self)
         self.scrib = None
         self.linear_error = -1.0
-                
+
 
 class StereoDrawable(ImageDrawable):
     def __init__(self):
@@ -578,10 +578,10 @@ class MonoCalibrator(Calibrator):
 
     def cal_fromcorners(self, good):
         """
-        :param good: Good corner positions and boards 
+        :param good: Good corner positions and boards
         :type good: [(corners, ChessboardInfo)]
 
-        
+
         """
         boards = [ b for (_, b) in good ]
 
@@ -789,7 +789,7 @@ class MonoCalibrator(Calibrator):
             ti.mtime = int(time.time())
             tf.addfile(tarinfo=ti, fileobj=s)
 
-        ims = [("left-%04d.png" % i, im) for i,(_, im) in enumerate(self.db)]
+        ims = [("left-%06d.png" % i, im) for i,(_, im) in enumerate(self.db)]
         for (name, im) in ims:
             taradd(name, cv2.imencode(".png", im)[1].tostring())
         taradd('ost.yaml', self.yaml())
@@ -867,7 +867,7 @@ class StereoCalibrator(Calibrator):
         lipts = [ l for (l, _, _) in good ]
         ripts = [ r for (_, r, _) in good ]
         boards = [ b for (_, _, b) in good ]
-        
+
         opts = self.mk_object_points(boards, True)
 
         flags = cv2.CALIB_FIX_INTRINSIC
@@ -911,7 +911,7 @@ class StereoCalibrator(Calibrator):
                          self.T,
                          self.l.R, self.r.R, self.l.P, self.r.P,
                          alpha = a)
-        
+
         cv2.initUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.l.R, self.l.P, self.size, cv2.CV_32FC1,
                                    self.l.mapx, self.l.mapy)
         cv2.initUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.r.R, self.r.P, self.size, cv2.CV_32FC1,
@@ -1098,8 +1098,8 @@ class StereoCalibrator(Calibrator):
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
-        ims = ([("left-%04d.png"  % i, im) for i,(_, im, _) in enumerate(self.db)] +
-               [("right-%04d.png" % i, im) for i,(_, _, im) in enumerate(self.db)])
+        ims = ([("left-%06d.png"  % i, im) for i,(_, im, _) in enumerate(self.db)] +
+               [("right-%06d.png" % i, im) for i,(_, _, im) in enumerate(self.db)])
 
         def taradd(name, buf):
             s = StringIO(buf)
@@ -1122,7 +1122,7 @@ class StereoCalibrator(Calibrator):
 
         if not len(limages) == len(rimages):
             raise CalibrationException("Left, right images don't match. %d left images, %d right" % (len(limages), len(rimages)))
-        
+
         ##\todo Check that the filenames match and stuff
 
         self.cal(limages, rimages)

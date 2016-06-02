@@ -121,7 +121,7 @@ int main(int argc, char **argv)
   local_nh.param("window_name", g_window_name, topic);
 
   std::string format_string;
-  local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
+  local_nh.param("filename_format", format_string, std::string("frame%06i.jpg"));
   g_filename_format.parse(format_string);
 
   // Handle window size

@@ -57,8 +57,8 @@ class TestDirected(unittest.TestCase):
     def setUp(self):
         tar_path = roslib.packages.find_resource('camera_calibration', 'camera_calibration.tar.gz')[0]
         self.tar = tarfile.open(tar_path, 'r')
-        self.limages = [image_from_archive(self.tar, "wide/left%04d.pgm" % i) for i in range(3, 15)]
-        self.rimages = [image_from_archive(self.tar, "wide/right%04d.pgm" % i) for i in range(3, 15)]
+        self.limages = [image_from_archive(self.tar, "wide/left%06d.pgm" % i) for i in range(3, 15)]
+        self.rimages = [image_from_archive(self.tar, "wide/right%06d.pgm" % i) for i in range(3, 15)]
         self.l = {}
         self.r = {}
         self.sizes = [(320,240), (640,480), (800,600), (1024,768)]
@@ -70,7 +70,7 @@ class TestDirected(unittest.TestCase):
                 rri = cv2.resize(ri, (dim[0], dim[1]))
                 self.l[dim].append(rli)
                 self.r[dim].append(rri)
-                
+
     def assert_good_mono(self, c, dim, max_err):
         #c.report()
         self.assert_(len(c.ost()) > 0)
@@ -214,7 +214,7 @@ class TestArtificial(unittest.TestCase):
             for i in range(len(rvec)):
                 R = numpy.array(rvec[i], numpy.float32)
                 T = numpy.array(tvec[i], numpy.float32)
-            
+
                 image_points, _ = cv2.projectPoints(object_points_3d, R, T, self.K, self.D)
 
                 # deduce the perspective transform

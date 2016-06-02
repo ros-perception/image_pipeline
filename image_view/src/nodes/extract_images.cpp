@@ -68,7 +68,7 @@ public:
     ros::NodeHandle local_nh("~");
 
     std::string format_string;
-    local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
+    local_nh.param("filename_format", format_string, std::string("frame%06i.jpg"));
     filename_format_.parse(format_string);
 
     local_nh.param("sec_per_frame", sec_per_frame_, 0.1);

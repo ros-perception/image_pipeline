@@ -51,7 +51,7 @@ class ExtractImagesSync(object):
     def __init__(self):
         self.seq = 0
         self.fname_fmt = rospy.get_param(
-            '~filename_format', 'frame%04i_%i.jpg')
+            '~filename_format', 'frame%06i_%i.jpg')
         img_topics = rospy.get_param('~inputs', None)
         if img_topics is None:
             rospy.logwarn("""\

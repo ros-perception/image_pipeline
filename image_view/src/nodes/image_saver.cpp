@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -113,7 +113,7 @@ private:
       try {
         filename = (g_format % count_).str();
       } catch (...) { g_format.clear(); }
-      try { 
+      try {
         filename = (g_format % count_ % "jpg").str();
       } catch (...) { g_format.clear(); }
 
@@ -156,7 +156,7 @@ int main(int argc, char** argv)
 
   ros::NodeHandle local_nh("~");
   std::string format_string;
-  local_nh.param("filename_format", format_string, std::string("left%04i.%s"));
+  local_nh.param("filename_format", format_string, std::string("left%06i.%s"));
   local_nh.param("encoding", encoding, std::string("bgr8"));
   local_nh.param("save_all_image", save_all_image, true);
   g_format.parse(format_string);

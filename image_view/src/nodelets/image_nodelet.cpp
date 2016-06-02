@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -72,13 +72,13 @@ class ImageNodelet : public nodelet::Nodelet
 
   boost::mutex image_mutex_;
   cv::Mat last_image_;
-  
+
   std::string window_name_;
   boost::format filename_format_;
   int count_;
 
   virtual void onInit();
-  
+
   void imageCb(const sensor_msgs::ImageConstPtr& msg);
 
   static void mouseCb(int event, int x, int y, int flags, void* param);
@@ -128,14 +128,14 @@ void ImageNodelet::onInit()
 
   bool autosize;
   local_nh.param("autosize", autosize, false);
-  
+
   std::string format_string;
-  local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
+  local_nh.param("filename_format", format_string, std::string("frame%06i.jpg"));
   filename_format_.parse(format_string);
 
   cv::namedWindow(window_name_, autosize ? cv::WND_PROP_AUTOSIZE : 0);
   cv::setMouseCallback(window_name_, &ImageNodelet::mouseCb, this);
-  
+
 #ifdef HAVE_GTK
   // Register appropriate handler for when user closes the display window
   GtkWidget *widget = GTK_WIDGET( cvGetWindowHandle(window_name_.c_str()) );
@@ -190,7 +190,7 @@ void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
   }
   if (event != cv::EVENT_RBUTTONDOWN)
     return;
-  
+
   boost::lock_guard<boost::mutex> guard(this_->image_mutex_);
 
   const cv::Mat &image = this_->last_image_;
