@@ -52,6 +52,8 @@ class ExtractImagesSync(object):
         self.seq = 0
         self.fname_fmt = rospy.get_param(
             '~filename_format', 'frame%04i_%i.jpg')
+        self.do_dynamic_scaling = rospy.get_param(
+            '~do_dynamic_scaling', False)
         img_topics = rospy.get_param('~inputs', None)
         if img_topics is None:
             rospy.logwarn("""\
@@ -79,6 +81,12 @@ _inputs:='[<image_topic>, <image_topic>]'""")
         bridge = cv_bridge.CvBridge()
         for i, imgmsg in enumerate(imgmsgs):
             img = bridge.imgmsg_to_cv2(imgmsg)
+            channels = img.shape[2] if img.ndim == 3 else 1
+            encoding_in = bridge.dtype_with_channels_to_cvtype2(
+                img.dtype, channels)
+            img = cv_bridge.cvtColorForDisplay(
+                img, encoding_in=encoding_in, encoding_out='',
+                do_dynamic_scaling=self.do_dynamic_scaling)
             fname = self.fname_fmt % (seq, i)
             print('Save image as {0}'.format(fname))
             cv2.imwrite(fname, img)
