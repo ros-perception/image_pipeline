@@ -39,12 +39,11 @@ double max_depth_range = 5.5;
 bool use_dynamic_range = false;
 
 
-void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr& info)
+void callback(const sensor_msgs::ImageConstPtr& image_msg)
 {
-    if (!outputVideo.isOpened() && !info) return;
-    else if (!outputVideo.isOpened() && info) {
+    if (!outputVideo.isOpened()) {
 
-        cv::Size size(info->width, info->height);
+        cv::Size size(image_msg->width, image_msg->height);
 
         outputVideo.open(filename, 
 #if CV_MAJOR_VERSION == 3
@@ -68,7 +67,6 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::Ca
         ROS_INFO_STREAM("Starting to record " << codec << " video at " << size << "@" << fps << "fps. Press Ctrl+C to stop recording." );
 
     }
-    else if (outputVideo.isOpened() && info) return;
 
     try
     {
@@ -107,9 +105,7 @@ int main(int argc, char** argv)
 
     image_transport::ImageTransport it(nh);
     std::string topic = nh.resolveName("image");
-    image_transport::CameraSubscriber sub_camera = it.subscribeCamera(topic, 1, &callback);
-    image_transport::Subscriber sub_image = it.subscribe(topic, 1,
-            boost::bind(callback, _1, sensor_msgs::CameraInfoConstPtr()));
+    ros::Subscriber sub_image = nh.subscribe(topic, 1, &callback);
 
     ROS_INFO_STREAM("Waiting for topic " << topic << "...");
     ros::spin();
