@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.17 (2016-07-11)
+--------------------
 * fix typo np -> numpy
 * fix failing tests
 * Contributors: Shingo Kitagawa, Vincent Rabaud

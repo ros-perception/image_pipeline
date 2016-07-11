@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.17 (2016-07-11)
+--------------------
 * Fix timestamp to get correct fps in video_recorder
 * Get correct fps in video_recorder.cpp
 * Do dynamic scaling for float images
