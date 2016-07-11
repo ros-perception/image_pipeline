@@ -1,3 +1,6 @@
+Forthcoming
+-----------
+
 1.12.16 (2016-03-19)
 --------------------
 * clean OpenCV dependency in package.xml

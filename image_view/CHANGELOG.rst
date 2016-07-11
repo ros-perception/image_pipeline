@@ -1,3 +1,10 @@
+Forthcoming
+-----------
+* Fix timestamp to get correct fps in video_recorder
+* Get correct fps in video_recorder.cpp
+* Do dynamic scaling for float images
+* Contributors: Kentaro Wada
+
 1.12.16 (2016-03-19)
 --------------------
 * Remove code for roslib on .cfg files
