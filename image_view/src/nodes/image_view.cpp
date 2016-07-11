@@ -50,11 +50,13 @@ boost::format g_filename_format;
 boost::mutex g_image_mutex;
 std::string g_window_name;
 bool g_do_dynamic_scaling;
+int g_colormap;
 
 void reconfigureCb(image_view::ImageViewConfig &config, uint32_t level)
 {
   boost::mutex::scoped_lock lock(g_image_mutex);
   g_do_dynamic_scaling = config.do_dynamic_scaling;
+  g_colormap = config.colormap;
 }
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
@@ -63,8 +65,11 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
 
   // Convert to OpenCV native BGR color
   try {
+    cv_bridge::CvtColorForDisplayOptions options;
+    options.do_dynamic_scaling = g_do_dynamic_scaling;
+    options.colormap = g_colormap;
     g_last_image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(msg), "",
-                                                 g_do_dynamic_scaling)->image;
+                                                 options)->image;
   } catch (cv_bridge::Exception& e) {
     ROS_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
                        msg->encoding.c_str(), e.what());

@@ -162,7 +162,9 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
 
   // Convert to OpenCV native BGR color
   try {
-    last_image_ = cvtColorForDisplay(cv_bridge::toCvShare(msg), "", do_dynamic_scaling)->image;
+    cv_bridge::CvtColorForDisplayOptions options;
+    options.do_dynamic_scaling = do_dynamic_scaling;
+    last_image_ = cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options)->image;
   }
   catch (cv_bridge::Exception& e) {
     NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",

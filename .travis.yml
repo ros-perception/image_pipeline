@@ -3,9 +3,13 @@ dist: trusty
 language: generic
 env:
   - OPENCV_VERSION=2 ROS_DISTRO=indigo
+  - OPENCV_VERSION=2 ROS_DISTRO=indigo ROSINSTALL_FILE="$TRAVIS_BUILD_DIR/.travis.rosinstall"
   - OPENCV_VERSION=3 ROS_DISTRO=indigo
+  - OPENCV_VERSION=3 ROS_DISTRO=indigo ROSINSTALL_FILE="$TRAVIS_BUILD_DIR/.travis.rosinstall"
   - OPENCV_VERSION=2 ROS_DISTRO=jade
+  - OPENCV_VERSION=2 ROS_DISTRO=jade ROSINSTALL_FILE="$TRAVIS_BUILD_DIR/.travis.rosinstall"
   - OPENCV_VERSION=3 ROS_DISTRO=jade
+  - OPENCV_VERSION=3 ROS_DISTRO=jade ROSINSTALL_FILE="$TRAVIS_BUILD_DIR/.travis.rosinstall"
 # Version of 4 does not make sense but it's to pass the test below.
 # Disabled as Travis does not support Xenial
 #  - OPENCV_VERSION=4 ROS_DISTRO=kinetic
@@ -15,7 +19,6 @@ before_install:
   - export ROS_CI_DESKTOP=`lsb_release -cs`  # e.g. [precise|trusty]
   - export CI_SOURCE_PATH=$(pwd)
   - export REPOSITORY_NAME=${PWD##*/}
-  - export ROSINSTALL_FILE=$CI_SOURCE_PATH/dependencies.rosinstall
   - export CATKIN_OPTIONS=$CI_SOURCE_PATH/catkin.options
   - export ROS_PARALLEL_JOBS='-j8 -l6'
   # Install ROS

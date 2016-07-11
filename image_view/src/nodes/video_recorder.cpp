@@ -79,7 +79,11 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::Ca
 
     try
     {
-      const cv::Mat image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, use_dynamic_range, min_depth_range, max_depth_range)->image;
+      cv_bridge::CvtColorForDisplayOptions options;
+      options.do_dynamic_scaling = use_dynamic_range;
+      options.min_image_value = min_depth_range;
+      options.max_image_value = max_depth_range;
+      const cv::Mat image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image;
       if (!image.empty()) {
         outputVideo << image;
         ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[1F");
