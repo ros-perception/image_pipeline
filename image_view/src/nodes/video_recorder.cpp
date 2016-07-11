@@ -30,6 +30,7 @@
 cv::VideoWriter outputVideo;
 
 int g_count = 0;
+ros::Time g_last_wrote_time = ros::Time(0);
 std::string encoding;
 std::string codec;
 int fps;
@@ -70,6 +71,12 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::Ca
     }
     else if (outputVideo.isOpened() && info) return;
 
+    if ((image_msg->header.stamp - g_last_wrote_time) < ros::Duration(1 / fps))
+    {
+      // Skip to get video with correct fps
+      return;
+    }
+
     try
     {
       const cv::Mat image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, use_dynamic_range, min_depth_range, max_depth_range)->image;
@@ -77,6 +84,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::Ca
         outputVideo << image;
         ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[1F");
         g_count++;
+        g_last_wrote_time = image_msg->header.stamp;
       } else {
           ROS_WARN("Frame skipped, no data!");
       }
