@@ -1,3 +1,11 @@
+Forthcoming
+-----------
+* Use image_transport::Subscriber aside from ros::Subscriber
+* Refactor: Remove subscription of camera_info in video_recorder
+* Add colormap options for displaying image topic
+* Use CvtColorForDisplayOptions for cvtColorForDisplay
+* Contributors: Kentaro Wada, Vincent Rabaud
+
 1.12.17 (2016-07-11)
 --------------------
 * Fix timestamp to get correct fps in video_recorder
