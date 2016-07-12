@@ -1,6 +1,6 @@
 <package>
   <name>image_proc</name>
-  <version>1.12.17</version>
+  <version>1.12.18</version>
   <description>Single image rectification and color processing.</description>
   <author>Patrick Mihelich</author>
   <author>Kurt Konolige</author>

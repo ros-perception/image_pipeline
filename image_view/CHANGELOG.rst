@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.18 (2016-07-12)
+--------------------
 * Use image_transport::Subscriber aside from ros::Subscriber
 * Refactor: Remove subscription of camera_info in video_recorder
 * Add colormap options for displaying image topic

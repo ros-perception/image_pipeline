@@ -1,6 +1,6 @@
 <package>
   <name>depth_image_proc</name>
-  <version>1.12.17</version>
+  <version>1.12.18</version>
   <description>
 
      Contains nodelets for processing depth images such as those
