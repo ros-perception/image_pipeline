@@ -35,9 +35,9 @@ std::string encoding;
 std::string codec;
 int fps;
 std::string filename;
-double min_depth_range = 0.0;
-double max_depth_range = 5.5;
-bool use_dynamic_range = false;
+double min_depth_range;
+double max_depth_range;
+bool use_dynamic_range;
 
 
 void callback(const sensor_msgs::ImageConstPtr& image_msg)
@@ -106,8 +106,9 @@ int main(int argc, char** argv)
     local_nh.param("fps", fps, 15);
     local_nh.param("codec", codec, std::string("MJPG"));
     local_nh.param("encoding", encoding, std::string("bgr8"));
+    // cv_bridge::CvtColorForDisplayOptions
     local_nh.param("min_depth_range", min_depth_range, 0.0);
-    local_nh.param("max_depth_range", max_depth_range, 5.5);
+    local_nh.param("max_depth_range", max_depth_range, 0.0);
     local_nh.param("use_dynamic_depth_range", use_dynamic_range, false);
 
     if (codec.size() != 4) {
