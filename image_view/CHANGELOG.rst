@@ -1,3 +1,18 @@
+Forthcoming
+-----------
+* Add colormap option in video_recorder
+* Merge pull request `#203 <https://github.com/ros-perception/image_pipeline/issues/203>`_ from wkentaro/video-recorder-timestamp
+  [image_view] Stamped video output filename for video recorder
+* bump version requirement for cv_bridge dep
+  Closes `#215 <https://github.com/ros-perception/image_pipeline/issues/215>`_
+* Request for saving image with start/end two triggers
+* Stamped video output filename
+  - _filename:=output.avi _stamped_filename:=false -> output.avi
+  - _filename:=_out.avi _stamped_filename:=true -> 1466299931.584632829_out.avi
+  - _filename:=$HOME/.ros/.avi _stamped_filename:=true -> /home/ubuntu/.ros/1466299931.584632829.avi
+* Revert max_depth_range to default value for cvtColorForDisplay
+* Contributors: Kentaro Wada, Vincent Rabaud
+
 1.12.18 (2016-07-12)
 --------------------
 * Use image_transport::Subscriber aside from ros::Subscriber
