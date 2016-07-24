@@ -38,6 +38,7 @@ std::string filename;
 double min_depth_range;
 double max_depth_range;
 bool use_dynamic_range;
+int colormap;
 
 
 void callback(const sensor_msgs::ImageConstPtr& image_msg)
@@ -81,6 +82,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
       options.do_dynamic_scaling = use_dynamic_range;
       options.min_image_value = min_depth_range;
       options.max_image_value = max_depth_range;
+      options.colormap = colormap;
       const cv::Mat image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image;
       if (!image.empty()) {
         outputVideo << image;
@@ -112,6 +114,7 @@ int main(int argc, char** argv)
     local_nh.param("min_depth_range", min_depth_range, 0.0);
     local_nh.param("max_depth_range", max_depth_range, 0.0);
     local_nh.param("use_dynamic_depth_range", use_dynamic_range, false);
+    local_nh.param("colormap", colormap, -1);
 
     if (stamped_filename) {
       std::size_t found = filename.find_last_of("/\\");
