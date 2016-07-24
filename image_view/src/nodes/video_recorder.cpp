@@ -103,6 +103,8 @@ int main(int argc, char** argv)
     ros::NodeHandle nh;
     ros::NodeHandle local_nh("~");
     local_nh.param("filename", filename, std::string("output.avi"));
+    bool stamped_filename;
+    local_nh.param("stamped_filename", stamped_filename, false);
     local_nh.param("fps", fps, 15);
     local_nh.param("codec", codec, std::string("MJPG"));
     local_nh.param("encoding", encoding, std::string("bgr8"));
@@ -110,6 +112,16 @@ int main(int argc, char** argv)
     local_nh.param("min_depth_range", min_depth_range, 0.0);
     local_nh.param("max_depth_range", max_depth_range, 0.0);
     local_nh.param("use_dynamic_depth_range", use_dynamic_range, false);
+
+    if (stamped_filename) {
+      std::size_t found = filename.find_last_of("/\\");
+      std::string path = filename.substr(0, found + 1);
+      std::string basename = filename.substr(found + 1);
+      std::stringstream ss;
+      ss << ros::Time::now().toNSec() << basename;
+      filename = path + ss.str();
+      ROS_INFO("Video recording to %s", filename.c_str());
+    }
 
     if (codec.size() != 4) {
         ROS_ERROR("The video codec must be a FOURCC identifier (4 chars)");
