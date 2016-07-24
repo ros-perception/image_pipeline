@@ -19,7 +19,7 @@
   <test_depend>rostest</test_depend>
   
   <build_depend>camera_calibration_parsers</build_depend>
-  <build_depend version_gte="1.11.10">cv_bridge</build_depend>
+  <build_depend version_gte="1.11.13">cv_bridge</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>gtk2</build_depend>
   <build_depend>image_transport</build_depend>
