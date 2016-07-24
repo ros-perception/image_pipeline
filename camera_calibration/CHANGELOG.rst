@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.19 (2016-07-24)
+--------------------
 * Fix array check in camerachecky.py
   This closes `#205 <https://github.com/ros-perception/image_pipeline/issues/205>`_
 * Contributors: Vincent Rabaud

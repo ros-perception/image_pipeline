@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.19 (2016-07-24)
+--------------------
 * Add colormap option in video_recorder
 * Merge pull request `#203 <https://github.com/ros-perception/image_pipeline/issues/203>`_ from wkentaro/video-recorder-timestamp
   [image_view] Stamped video output filename for video recorder
