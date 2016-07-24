@@ -40,10 +40,13 @@
 #include <boost/format.hpp>
 
 #include <std_srvs/Empty.h>
+#include <std_srvs/Trigger.h>
 
 boost::format g_format;
 bool save_all_image, save_image_service;
 std::string encoding;
+bool request_start_end;
+
 
 bool service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
   save_image_service = true;
@@ -55,6 +58,27 @@ bool service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
 class Callbacks {
 public:
   Callbacks() : is_first_image_(true), has_camera_info_(false), count_(0) {
+  }
+
+  bool callbackStartSave(std_srvs::Trigger::Request &req,
+                         std_srvs::Trigger::Response &res)
+  {
+    ROS_INFO("Received start saving request");
+    start_time_ = ros::Time::now();
+    end_time_ = ros::Time(0);
+
+    res.success = true;
+    return true;
+  }
+
+  bool callbackEndSave(std_srvs::Trigger::Request &req,
+                       std_srvs::Trigger::Response &res)
+  {
+    ROS_INFO("Received end saving request");
+    end_time_ = ros::Time::now();
+
+    res.success = true;
+    return true;
   }
 
   void callbackWithoutCameraInfo(const sensor_msgs::ImageConstPtr& image_msg)
@@ -69,6 +93,19 @@ public:
     if (has_camera_info_)
       return;
 
+    // saving flag priority:
+    //  1. request by service.
+    //  2. request by topic about start and end.
+    //  3. flag 'save_all_image'.
+    if (!save_image_service && request_start_end) {
+      if (start_time_ == ros::Time(0))
+        return;
+      else if (start_time_ > image_msg->header.stamp)
+        return;  // wait for message which comes after start_time
+      else if ((end_time_ != ros::Time(0)) && (end_time_ < image_msg->header.stamp))
+        return;  // skip message which comes after end_time
+    }
+
     // save the image
     std::string filename;
     if (!saveImage(image_msg, filename))
@@ -80,6 +117,15 @@ public:
   void callbackWithCameraInfo(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr& info)
   {
     has_camera_info_ = true;
+
+    if (!save_image_service && request_start_end) {
+      if (start_time_ == ros::Time(0))
+        return;
+      else if (start_time_ > image_msg->header.stamp)
+        return;  // wait for message which comes after start_time
+      else if ((end_time_ != ros::Time(0)) && (end_time_ < image_msg->header.stamp))
+        return;  // skip message which comes after end_time
+    }
 
     // save the image
     std::string filename;
@@ -136,6 +182,8 @@ private:
   bool is_first_image_;
   bool has_camera_info_;
   size_t count_;
+  ros::Time start_time_;
+  ros::Time end_time_;
 };
 
 int main(int argc, char** argv)
@@ -159,8 +207,20 @@ int main(int argc, char** argv)
   local_nh.param("filename_format", format_string, std::string("left%04i.%s"));
   local_nh.param("encoding", encoding, std::string("bgr8"));
   local_nh.param("save_all_image", save_all_image, true);
+  local_nh.param("request_start_end", request_start_end, false);
   g_format.parse(format_string);
   ros::ServiceServer save = local_nh.advertiseService ("save", service);
+
+  if (request_start_end && !save_all_image)
+    ROS_WARN("'request_start_end' is true, so overwriting 'save_all_image' as true");
+
+  // FIXME(unkown): This does not make services appear
+  // if (request_start_end) {
+    ros::ServiceServer srv_start = local_nh.advertiseService(
+      "start", &Callbacks::callbackStartSave, &callbacks);
+    ros::ServiceServer srv_end = local_nh.advertiseService(
+      "end", &Callbacks::callbackEndSave, &callbacks);
+  // }
 
   ros::spin();
 }
