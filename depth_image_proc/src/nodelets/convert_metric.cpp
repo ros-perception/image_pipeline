@@ -87,31 +87,47 @@ void ConvertMetricNodelet::connectCb()
 
 void ConvertMetricNodelet::depthCb(const sensor_msgs::ImageConstPtr& raw_msg)
 {
-  if (raw_msg->encoding != enc::TYPE_16UC1)
-  {
-    NODELET_ERROR_THROTTLE(2, "Expected data of type [%s], got [%s]", enc::TYPE_16UC1.c_str(),
-                           raw_msg->encoding.c_str());
-    return;
-  }
-
   // Allocate new Image message
   sensor_msgs::ImagePtr depth_msg( new sensor_msgs::Image );
   depth_msg->header   = raw_msg->header;
-  depth_msg->encoding = enc::TYPE_32FC1;
   depth_msg->height   = raw_msg->height;
   depth_msg->width    = raw_msg->width;
-  depth_msg->step     = raw_msg->width * sizeof (float);
-  depth_msg->data.resize( depth_msg->height * depth_msg->step);
 
-  float bad_point = std::numeric_limits<float>::quiet_NaN ();
-
-  // Fill in the depth image data, converting mm to m
-  const uint16_t* raw_data = reinterpret_cast<const uint16_t*>(&raw_msg->data[0]);
-  float* depth_data = reinterpret_cast<float*>(&depth_msg->data[0]);
-  for (unsigned index = 0; index < depth_msg->height * depth_msg->width; ++index)
+  // Set data, encoding and step after converting the metric.
+  if (raw_msg->encoding == enc::TYPE_16UC1)
   {
-    uint16_t raw = raw_data[index];
-    depth_data[index] = (raw == 0) ? bad_point : (float)raw * 0.001f;
+    depth_msg->encoding = enc::TYPE_32FC1;
+    depth_msg->step     = raw_msg->width * (enc::bitDepth(depth_msg->encoding) / 8);
+    depth_msg->data.resize(depth_msg->height * depth_msg->step);
+    // Fill in the depth image data, converting mm to m
+    float bad_point = std::numeric_limits<float>::quiet_NaN ();
+    const uint16_t* raw_data = reinterpret_cast<const uint16_t*>(&raw_msg->data[0]);
+    float* depth_data = reinterpret_cast<float*>(&depth_msg->data[0]);
+    for (unsigned index = 0; index < depth_msg->height * depth_msg->width; ++index)
+    {
+      uint16_t raw = raw_data[index];
+      depth_data[index] = (raw == 0) ? bad_point : (float)raw * 0.001f;
+    }
+  }
+  else if (raw_msg->encoding == enc::TYPE_32FC1)
+  {
+    depth_msg->encoding = enc::TYPE_16UC1;
+    depth_msg->step     = raw_msg->width * (enc::bitDepth(depth_msg->encoding) / 8);
+    depth_msg->data.resize(depth_msg->height * depth_msg->step);
+    // Fill in the depth image data, converting m to mm
+    uint16_t bad_point = 0;
+    const float* raw_data = reinterpret_cast<const float*>(&raw_msg->data[0]);
+    uint16_t* depth_data = reinterpret_cast<uint16_t*>(&depth_msg->data[0]);
+    for (unsigned index = 0; index < depth_msg->height * depth_msg->width; ++index)
+    {
+      float raw = raw_data[index];
+      depth_data[index] = std::isnan(raw) ? bad_point : (uint16_t)(raw * 1000);
+    }
+  }
+  else
+  {
+    ROS_ERROR("Unsupported image conversion from %s.", raw_msg->encoding.c_str());
+    return;
   }
 
   pub_depth_.publish(depth_msg);
