@@ -100,7 +100,22 @@ class ImagePublisherNodelet : public nodelet::Nodelet
       if (flip_image_)
         cv::flip(image_, image_, flip_value_);
 
-      sensor_msgs::ImagePtr out_img = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image_).toImageMsg();
+      std::string encoding = sensor_msgs::image_encodings::BGR8;
+      switch ( image_.type() ) {
+        case CV_8UC3:
+          encoding = sensor_msgs::image_encodings::BGR8; break;
+        case CV_8UC1:
+          encoding = sensor_msgs::image_encodings::MONO8; break;
+        case CV_16UC1:
+          encoding = sensor_msgs::image_encodings::MONO16; break;
+        case CV_16UC3:
+          encoding = sensor_msgs::image_encodings::BGR16; break;
+        case CV_8UC4:
+          encoding = sensor_msgs::image_encodings::BGRA8; break;
+        case CV_16UC4:
+          encoding = sensor_msgs::image_encodings::BGRA16; break;
+      }
+      sensor_msgs::ImagePtr out_img = cv_bridge::CvImage(std_msgs::Header(), encoding, image_).toImageMsg();
       out_img->header.frame_id = frame_id_;
       out_img->header.stamp = ros::Time::now();
       camera_info_.header.frame_id = out_img->header.frame_id;
@@ -124,6 +139,23 @@ class ImagePublisherNodelet : public nodelet::Nodelet
     subscriber_count_--;
   }
 
+  std::string depth2str(int depth) {
+    std::string r;
+
+    switch ( depth ) {
+      case CV_8U:  r = "8U"; break;
+      case CV_8S:  r = "8S"; break;
+      case CV_16U: r = "16U"; break;
+      case CV_16S: r = "16S"; break;
+      case CV_32S: r = "32S"; break;
+      case CV_32F: r = "32F"; break;
+      case CV_64F: r = "64F"; break;
+      default:     r = "User"; break;
+    }
+
+    return r;
+  }
+
 public:
   virtual void onInit()
   {
@@ -135,7 +167,8 @@ public:
     nh_.param("filename", filename_, std::string(""));
     NODELET_INFO("File name for publishing image is : %s", filename_.c_str());
     try {
-      image_ = cv::imread(filename_, CV_LOAD_IMAGE_COLOR);
+      image_ = cv::imread(filename_, CV_LOAD_IMAGE_ANYCOLOR | CV_LOAD_IMAGE_ANYDEPTH);
+      NODELET_INFO("width : %d, height : %d, depth : %s, channel : %d", image_.rows, image_.cols, depth2str(image_.depth()).c_str(), image_.channels());
       if ( image_.empty() ) { // if filename is motion file or device file
         try {  // if filename is number
           int num = boost::lexical_cast<int>(filename_);//num is 1234798797
@@ -174,14 +207,26 @@ public:
     else
       flip_image_ = false;
 
-    camera_info_.width = image_.cols;
-    camera_info_.height = image_.rows;
-    camera_info_.distortion_model = "plumb_bob";
-    camera_info_.D = list_of(0)(0)(0)(0)(0).convert_to_container<std::vector<double> >();
-    camera_info_.K = list_of(1)(0)(camera_info_.width/2)(0)(1)(camera_info_.height/2)(0)(0)(1);
-    camera_info_.R = list_of(1)(0)(0)(0)(1)(0)(0)(0)(1);
-    camera_info_.P = list_of(1)(0)(camera_info_.width/2)(0)(0)(1)(camera_info_.height/2)(0)(0)(0)(1)(0);
-
+    std::string camera_info_url;
+    nh_.param("camera_info_url", camera_info_url);
+    if ( !camera_info_url.empty() ) {
+      camera_info_manager::CameraInfoManager c(nh_);
+      try {
+        c.validateURL(camera_info_url);
+        c.loadCameraInfo(camera_info_url);
+        camera_info_ = c.getCameraInfo();
+      } catch(cv::Exception &e) {
+        NODELET_ERROR("camera calibration failed to load: %s %s %s %i", e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
+      }
+    } else {
+      camera_info_.width = image_.cols;
+      camera_info_.height = image_.rows;
+      camera_info_.distortion_model = "plumb_bob";
+      camera_info_.D = list_of(0)(0)(0)(0)(0).convert_to_container<std::vector<double> >();
+      camera_info_.K = list_of(1)(0)(camera_info_.width/2)(0)(1)(camera_info_.height/2)(0)(0)(1);
+      camera_info_.R = list_of(1)(0)(0)(0)(1)(0)(0)(0)(1);
+      camera_info_.P = list_of(1)(0)(camera_info_.width/2)(0)(0)(1)(camera_info_.height/2)(0)(0)(0)(1)(0);
+    }
     timer_ = nh_.createTimer(ros::Duration(1), &ImagePublisherNodelet::do_work, this);
 
     dynamic_reconfigure::Server<image_publisher::ImagePublisherConfig>::CallbackType f =
