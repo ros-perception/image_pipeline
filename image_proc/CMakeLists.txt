@@ -17,8 +17,7 @@ catkin_package(
   LIBRARIES ${PROJECT_NAME}
 )
 
-include_directories(SYSTEM ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
-include_directories(include)
+include_directories(include ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
 # Nodelet library
 add_library(${PROJECT_NAME} src/libimage_proc/processor.cpp

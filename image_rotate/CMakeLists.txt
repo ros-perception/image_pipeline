@@ -12,10 +12,7 @@ find_package(OpenCV REQUIRED core imgproc)
 find_package(Eigen REQUIRED)
 
 # add the executable
-include_directories(SYSTEM ${catkin_INCLUDE_DIRS}
-                           ${EIGEN_INCLUDE_DIRS}
-                           ${OpenCV_INCLUDE_DIRS}
-)
+include_directories(${catkin_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} SHARED src/nodelet/image_rotate_nodelet.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})

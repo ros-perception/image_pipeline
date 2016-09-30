@@ -8,9 +8,9 @@ catkin_package(CATKIN_DEPENDS dynamic_reconfigure)
 find_package(Boost REQUIRED COMPONENTS signals thread)
 find_package(OpenCV REQUIRED)
 
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
-                           ${catkin_INCLUDE_DIRS}
-                           ${OpenCV_INCLUDE_DIRS}
+include_directories(${Boost_INCLUDE_DIRS}
+                    ${catkin_INCLUDE_DIRS}
+                    ${OpenCV_INCLUDE_DIRS}
 )
 
 # Extra tools
@@ -40,7 +40,7 @@ endif()
 
 find_package(GTK2)
 add_definitions(-DHAVE_GTK)
-include_directories(SYSTEM ${GTK2_INCLUDE_DIRS})
+include_directories(${GTK2_INCLUDE_DIRS})
 
 # Nodelet library
 add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
