@@ -177,7 +177,7 @@ public:
     camera_info_.width = image_.cols;
     camera_info_.height = image_.rows;
     camera_info_.distortion_model = "plumb_bob";
-    camera_info_.D = list_of(0)(0)(0)(0)(0);
+    camera_info_.D = list_of(0)(0)(0)(0)(0).convert_to_container<std::vector<double> >();
     camera_info_.K = list_of(1)(0)(camera_info_.width/2)(0)(1)(camera_info_.height/2)(0)(0)(1);
     camera_info_.R = list_of(1)(0)(0)(0)(1)(0)(0)(0)(1);
     camera_info_.P = list_of(1)(0)(camera_info_.width/2)(0)(0)(1)(camera_info_.height/2)(0)(0)(0)(1)(0);

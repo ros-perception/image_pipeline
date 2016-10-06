@@ -16,9 +16,7 @@ catkin_package(
 include_directories(include)
 
 find_package(OpenCV REQUIRED)
-include_directories(SYSTEM ${catkin_INCLUDE_DIRS}
-                           ${OpenCV_INCLUDE_DIRS}
-)
+include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
 # Nodelet library
 add_library(${PROJECT_NAME} src/libstereo_image_proc/processor.cpp src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp)

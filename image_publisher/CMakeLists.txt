@@ -8,8 +8,7 @@ generate_dynamic_reconfigure_options(cfg/ImagePublisher.cfg)
 
 catkin_package()
 
-# add the executable
-include_directories(SYSTEM ${catkin_INCLUDE_DIRS})
+include_directories(${catkin_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} SHARED src/nodelet/image_publisher_nodelet.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
