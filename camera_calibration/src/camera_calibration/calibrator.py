@@ -1052,7 +1052,7 @@ class StereoCalibrator(Calibrator):
                 cv2.drawChessboardCorners(rscrib, (rboard.n_cols, rboard.n_rows), scrib_src, True)
 
             # Report epipolar error
-            if lcorners is not None and rcorners is not None:
+            if lcorners is not None and rcorners is not None and len(lcorners) == len(rcorners):
                 epierror = self.epipolar_error(lundistorted, rundistorted)
 
         else:
@@ -1067,7 +1067,7 @@ class StereoCalibrator(Calibrator):
                                          rdownsampled_corners, True)
 
             # Add sample to database only if it's sufficiently different from any previous sample
-            if lcorners is not None and rcorners is not None:
+            if lcorners is not None and rcorners is not None and len(lcorners) == len(rcorners):
                 params = self.get_parameters(lcorners, lboard, (lgray.shape[1], lgray.shape[0]))
                 if self.is_good_sample(params):
                     self.db.append( (params, lgray, rgray) )
