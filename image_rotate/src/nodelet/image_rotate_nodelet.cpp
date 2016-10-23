@@ -41,7 +41,6 @@
 *  2) tf and tf2
 *********************************************************************/
 
-#include <eigen_conversions/eigen_msg.h>
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <tf2_ros/transform_listener.h>
@@ -182,7 +181,7 @@ class ImageRotateNodelet : public nodelet::Nodelet
     transform.transform.translation.x = 0;
     transform.transform.translation.y = 0;
     transform.transform.translation.z = 0;
-    tf::quaternionEigenToMsg(Eigen::Quaterniond(Eigen::AngleAxis<double>(angle_, Eigen::Vector3d(0.0, 0.0, 1.0))), transform.transform.rotation);
+    tf2::convert(tf2::Quaternion(tf2::Vector3(0.0, 0.0, 1.0), angle_), transform.transform.rotation);
     transform.header.frame_id = msg->header.frame_id;
     transform.child_frame_id = frameWithDefault(config_.output_frame_id, msg->header.frame_id + "_rotated");
     transform.header.stamp = msg->header.stamp;
