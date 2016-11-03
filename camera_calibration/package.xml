@@ -24,7 +24,6 @@
   <url>http://www.ros.org/wiki/camera_calibration</url>
 
   <export>
-    <rosdoc config="rosdoc.yaml" />
     <architecture_independent/>
   </export>
 </package>
