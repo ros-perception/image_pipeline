@@ -10,6 +10,7 @@
   <url>http://www.ros.org/wiki/stereo_image_proc</url>
 
   <export>
+    <rosdoc config="rosdoc.yaml" />
     <nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
 
