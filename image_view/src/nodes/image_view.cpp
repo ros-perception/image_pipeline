@@ -90,8 +90,6 @@ static void mouseCb(int event, int x, int y, int flags, void* param)
     return;
   }
 
-  boost::mutex::scoped_lock lock(g_image_mutex);
-
   const cv::Mat &image = g_last_image;
 
   if (image.empty()) {
