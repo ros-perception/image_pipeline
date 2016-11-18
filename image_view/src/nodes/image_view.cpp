@@ -83,10 +83,10 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
 
 static void mouseCb(int event, int x, int y, int flags, void* param)
 {
-  if (event == cv::EVENT_LBUTTONDOWN) {
-    ROS_WARN_ONCE("Left-clicking no longer saves images. Right-click instead.");
+  if (event == cv::EVENT_RBUTTONDOWN) {
+    ROS_WARN_ONCE("Right-clicking no longer saves images. Left-click instead.");
     return;
-  } else if (event != cv::EVENT_RBUTTONDOWN) {
+  } else if (event != cv::EVENT_LBUTTONDOWN) {
     return;
   }
 
