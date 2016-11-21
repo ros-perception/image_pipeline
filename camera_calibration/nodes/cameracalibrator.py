@@ -43,6 +43,7 @@ from collections import deque
 import threading
 import functools
 import time
+import tempfile
 
 import cv2
 import numpy
@@ -95,7 +96,7 @@ class ConsumerThread(threading.Thread):
 
 class CalibrationNode:
     def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
-                 pattern=Patterns.Chessboard, camera_name='', folder_location='/tmp/', checkerboard_flags = 0):
+                 pattern=Patterns.Chessboard, camera_name='', folder_location=tempfile.gettempdir(), checkerboard_flags = 0):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -279,9 +280,9 @@ class OpenCVCalibrationNode(CalibrationNode):
 
     def screendump(self, im):
         i = 0
-        while os.access("/tmp/dump%d.png" % i, os.R_OK):
+        while os.access(tempfile.gettempdir()+"/dump%d.png" % i, os.R_OK):
             i += 1
-        cv2.imwrite("/tmp/dump%d.png" % i, im)
+        cv2.imwrite(tempfile.gettempdir()+"/dump%d.png" % i, im)
 
     def redraw_monocular(self, drawable):
         height = drawable.scrib.shape[0]
@@ -362,11 +363,11 @@ def main():
     parser = OptionParser("%prog --size SIZE1 --square SQUARE1 [ --size SIZE2 --square SQUARE2 ]",
                           description=None)
     parser.add_option("-c", "--camera_name",
-                     type="string", default='narrow_stereo',
-                     help="name of the camera to appear in the calibration file")
+                      type="string", default='narrow_stereo',
+                      help="name of the camera to appear in the calibration file")
     parser.add_option("-f", "--folder_location",
-                     type="string", default='/tmp/',
-                     help="Location of the folder where to save the calibration files")
+                      type="string", default=tempfile.gettempdir(),
+                      help="Location of the folder where to save the calibration files")
     group = OptionGroup(parser, "Chessboard Options",
                         "You must specify one or more chessboards as pairs of --size and --square options.")
     group.add_option("-p", "--pattern",

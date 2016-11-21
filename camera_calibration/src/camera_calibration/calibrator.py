@@ -46,6 +46,7 @@ import random
 import sensor_msgs.msg
 import tarfile
 import time
+import tempfile
 from distutils.version import LooseVersion
 
 
@@ -552,7 +553,7 @@ class MonoCalibrator(Calibrator):
         if 'name' not in kwargs:
             kwargs['name'] = 'narrow_stereo/left'
         if 'folder_location' not in kwargs:
-            kwargs['folder_location'] = '/tmp/'
+            kwargs['folder_location'] = tempfile.gettempdir()
         super(MonoCalibrator, self).__init__(*args, **kwargs)
 
     def cal(self, images):
@@ -774,7 +775,7 @@ class MonoCalibrator(Calibrator):
         # Dump should only occur if user wants it
         if dump:
             pickle.dump((self.is_mono, self.size, self.good_corners),
-                        open("/tmp/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
+                        open(tempfile.gettempdir()+"/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
         self.size = (self.db[0][1].shape[1], self.db[0][1].shape[0]) # TODO Needs to be set externally
         self.cal_fromcorners(self.good_corners)
         self.calibrated = True
@@ -824,7 +825,7 @@ class StereoCalibrator(Calibrator):
         if 'name' not in kwargs:
             kwargs['name'] = 'narrow_stereo'
         if 'folder_location' not in kwargs:
-            kwargs['folder_location'] = '/tmp/'
+            kwargs['folder_location'] = tempfile.gettempdir()
         super(StereoCalibrator, self).__init__(*args, **kwargs)
         self.l = MonoCalibrator(*args, **kwargs)
         self.r = MonoCalibrator(*args, **kwargs)
@@ -1092,7 +1093,7 @@ class StereoCalibrator(Calibrator):
         # Dump should only occur if user wants it
         if dump:
             pickle.dump((self.is_mono, self.size, self.good_corners),
-                        open("/tmp/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
+                        open(tempfile.gettempdir()+"/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
         self.size = (self.db[0][1].shape[1], self.db[0][1].shape[0]) # TODO Needs to be set externally
         self.l.size = self.size
         self.r.size = self.size
