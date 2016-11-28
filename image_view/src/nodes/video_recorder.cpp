@@ -27,10 +27,14 @@
 #include <opencv2/videoio.hpp>
 #endif
 
+#include <memory>
+#include <cmath>
+
 cv::VideoWriter outputVideo;
 
 int g_count = 0;
 ros::Time g_last_wrote_time = ros::Time(0);
+ros::Time g_start_time = ros::Time(0);
 std::string encoding;
 std::string codec;
 int fps;
@@ -40,6 +44,11 @@ double max_depth_range;
 bool use_dynamic_range;
 int colormap;
 
+cv::Mat imageBuff;
+int called = 0;
+int captured =0;
+
+ros::NodeHandle* _nh;
 
 void callback(const sensor_msgs::ImageConstPtr& image_msg)
 {
@@ -66,16 +75,12 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
             exit(-1);
         }
 
-        ROS_INFO_STREAM("Starting to record " << codec << " video at " << size << "@" << fps << "fps. Press Ctrl+C to stop recording." );
+        ROS_INFO_STREAM("Starting to record " << codec << " video at " << size << "@" << fps << "fps. Press Ctrl+C to stop recording."<< "\x1b[1F" );
 
     }
 
-    if ((image_msg->header.stamp - g_last_wrote_time) < ros::Duration(1 / fps))
-    {
-      // Skip to get video with correct fps
-      return;
-    }
-
+    
+    // ROS_INFO_STREAM("last rec:  " << (image_msg->header.stamp - g_last_wrote_time) <<" min time: "<<ros::Duration(1.0 / fps)); 
     try
     {
       cv_bridge::CvtColorForDisplayOptions options;
@@ -83,16 +88,63 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
       options.min_image_value = min_depth_range;
       options.max_image_value = max_depth_range;
       options.colormap = colormap;
-      const cv::Mat image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image;
-      if (!image.empty()) {
-        outputVideo << image;
-        ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[1F");
-        g_count++;
-        g_last_wrote_time = image_msg->header.stamp;
-      } else {
-          ROS_WARN("Frame skipped, no data!");
+      cv::Mat imageCapture = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image;
+      
+
+      captured++;        
+        
+      if(!imageCapture.empty())
+      {
+        if(g_count==0)
+        {
+          outputVideo << imageCapture;
+          g_last_wrote_time = ros::Time::now();
+          g_count++;
+
+           
+          ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[A");  
+          g_start_time = ros::Time::now(); 
+
+        }
+        else
+        {
+          float elapsedTime = (ros::Time::now() - g_start_time).toSec();
+          int missingFrame = (elapsedTime*fps) - g_count;
+
+          if(missingFrame<=0){
+            imageBuff = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image.clone();
+              return; //skip frame
+          }
+              
+
+          int imagePad = missingFrame-1;
+
+          for( auto x = 0; x<imagePad;x++)
+          {
+            outputVideo << imageBuff;
+            
+            g_count++;
+          }
+
+          outputVideo << imageCapture;
+
+          g_count++;
+
+          imageBuff = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image.clone();
+          
+          ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[A");
+
+        }
+        
       }
-    } catch(cv_bridge::Exception)
+        // _recTimer = std::move(tempTimer);
+
+      else {
+        ROS_WARN("Frame skipped, no data!");
+      }
+    }
+    
+    catch(cv_bridge::Exception)
     {
         ROS_ERROR("Unable to convert %s image to %s", image_msg->encoding.c_str(), encoding.c_str());
         return;
@@ -131,11 +183,27 @@ int main(int argc, char** argv)
         exit(-1);
     }
 
+    _nh = &nh;
+
+    int numRun = 10;
+    fps = 15;
+    float duration =60;
+
+    float totalTime = 0;
+
+
     image_transport::ImageTransport it(nh);
     std::string topic = nh.resolveName("image");
     image_transport::Subscriber sub_image = it.subscribe(topic, 1, callback);
 
     ROS_INFO_STREAM("Waiting for topic " << topic << "...");
+
+    
     ros::spin();
-    std::cout << "\nVideo saved as " << filename << std::endl;
+
+    std::cout << "\nVideo saved to " <<filename<<  std::endl;
+      
+    
+
+    
 }
