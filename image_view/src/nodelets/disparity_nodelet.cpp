@@ -68,6 +68,7 @@ class DisparityNodelet : public nodelet::Nodelet
   std::string window_name_;
   ros::Subscriber sub_;
   cv::Mat_<cv::Vec3b> disparity_color_;
+  bool initialized;
   
   virtual void onInit();
   
@@ -84,6 +85,7 @@ DisparityNodelet::~DisparityNodelet()
 
 void DisparityNodelet::onInit()
 {
+  initialized = false;
   ros::NodeHandle nh = getNodeHandle();
   ros::NodeHandle local_nh = getPrivateNodeHandle();
   const std::vector<std::string>& argv = getMyArgv();
@@ -99,7 +101,7 @@ void DisparityNodelet::onInit()
   bool autosize;
   local_nh.param("autosize", autosize, false);
 
-  cv::namedWindow(window_name_, autosize ? cv::WND_PROP_AUTOSIZE : 0);
+  //cv::namedWindow(window_name_, autosize ? cv::WND_PROP_AUTOSIZE : 0);
 #if CV_MAJOR_VERSION ==2
 #ifdef HAVE_GTK
   // Register appropriate handler for when user closes the display window
@@ -109,10 +111,9 @@ void DisparityNodelet::onInit()
   else
     g_signal_connect(widget, "destroy", G_CALLBACK(destroyNodelet), &sub_);
 #endif
-#endif
-
   // Start the OpenCV window thread so we don't have to waitKey() somewhere
   startWindowThread();
+#endif
 
   sub_ = nh.subscribe<stereo_msgs::DisparityImage>(topic, 1, &DisparityNodelet::imageCb, this);
 }
@@ -134,6 +135,10 @@ void DisparityNodelet::imageCb(const stereo_msgs::DisparityImageConstPtr& msg)
     return;
   }
   
+  if(!initialized) {
+    cv::namedWindow(window_name_, false ? cv::WND_PROP_AUTOSIZE : 0);
+    initialized = true;
+  }
   // Colormap and display the disparity image
   float min_disparity = msg->min_disparity;
   float max_disparity = msg->max_disparity;
@@ -163,8 +168,9 @@ void DisparityNodelet::imageCb(const stereo_msgs::DisparityImageConstPtr& msg)
   cv::Point tl(valid.x_offset, valid.y_offset), br(valid.x_offset + valid.width, valid.y_offset + valid.height);
   cv::rectangle(disparity_color_, tl, br, CV_RGB(255,0,0), 1);
 #endif
-  
+
   cv::imshow(window_name_, disparity_color_);
+  cv::waitKey(10);
 }
 
 unsigned char DisparityNodelet::colormap[768] =
