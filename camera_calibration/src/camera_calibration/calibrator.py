@@ -47,6 +47,7 @@ import sensor_msgs.msg
 import tarfile
 import time
 import tempfile
+import yaml
 from distutils.version import LooseVersion
 
 
@@ -496,6 +497,7 @@ class Calibrator(object):
         return calmessage
 
     def do_save(self):
+        self.do_yaml_save(self.folder_location)
         filename = self.folder_location + '/calibrationdata.tar.gz'
         tf = tarfile.open(filename, 'w:gz')
         self.do_tarfile_save(tf) # Must be overridden in subclasses
@@ -782,6 +784,11 @@ class MonoCalibrator(Calibrator):
         # DEBUG
         print((self.report()))
         print((self.ost()))
+
+    def do_yaml_save(self, folder_location):
+        yaml_file = file(folder_location + 'ost.yaml', 'w')
+        yaml.dump(self.yaml(), yaml_file)
+        yaml_file.close()
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
@@ -1102,6 +1109,15 @@ class StereoCalibrator(Calibrator):
         # DEBUG
         print((self.report()))
         print((self.ost()))
+
+    def do_yaml_save(self, folder_location):
+        left_yaml_file = file(folder_location + '/left.yaml', 'w')
+        yaml.dump(self.yaml("/left", self.l), left_yaml_file)
+        left_yaml_file.close()
+
+        right_yaml_file = file(folder_location + '/right.yaml', 'w')
+        yaml.dump(self.yaml("/right", self.r), right_yaml_file)
+        right_yaml_file.close()
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
