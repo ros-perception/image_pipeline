@@ -788,7 +788,6 @@ class MonoCalibrator(Calibrator):
     def do_yaml_save(self, folder_location):
         with open(folder_location + '/ost.yaml', 'w') as yaml_file:
             yaml.dump(self.yaml(), yaml_file)
-        yaml_file.close()
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
@@ -1111,13 +1110,9 @@ class StereoCalibrator(Calibrator):
         print((self.ost()))
 
     def do_yaml_save(self, folder_location):
-        left_yaml_file = file(folder_location + '/left.yaml', 'w')
-        yaml.dump(self.yaml("/left", self.l), left_yaml_file)
-        left_yaml_file.close()
-
-        right_yaml_file = file(folder_location + '/right.yaml', 'w')
-        yaml.dump(self.yaml("/right", self.r), right_yaml_file)
-        right_yaml_file.close()
+        with open(folder_location + '/left.yaml', 'w') as left_yaml_file, open(folder_location + '/right.yaml', 'w') as right_yaml_file:
+            yaml.dump(self.yaml("/left", self.l), left_yaml_file)
+            yaml.dump(self.yaml("/right", self.r), right_yaml_file)
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
