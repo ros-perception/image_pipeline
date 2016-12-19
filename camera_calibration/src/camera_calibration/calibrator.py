@@ -205,7 +205,7 @@ class Calibrator(object):
     Base class for calibration system
     """
     def __init__(self, boards, flags=0, pattern=Patterns.Chessboard, name='',
-                folder_location='', checkerboard_flags=cv2.CALIB_CB_FAST_CHECK):
+                 folder_location=tempfile.gettempdir(), checkerboard_flags=cv2.CALIB_CB_FAST_CHECK):
         # Ordering the dimensions for the different detectors is actually a minefield...
         if pattern == Patterns.Chessboard:
             # Make sure n_cols > n_rows to agree with OpenCV CB detector output
@@ -786,8 +786,8 @@ class MonoCalibrator(Calibrator):
         print((self.ost()))
 
     def do_yaml_save(self, folder_location):
-        yaml_file = file(folder_location + 'ost.yaml', 'w')
-        yaml.dump(self.yaml(), yaml_file)
+        with open(folder_location + '/ost.yaml', 'w') as yaml_file:
+            yaml.dump(self.yaml(), yaml_file)
         yaml_file.close()
 
     def do_tarfile_save(self, tf):
