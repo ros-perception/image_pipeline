@@ -486,11 +486,16 @@ public:
     // Must release the mutex before calling cv::imshow, or can deadlock against
     // OpenCV's window mutex.
     image_mutex_.unlock();
-    if (!last_left_image_.empty())
+    if (!last_left_image_.empty()) {
       cv::imshow("left", last_left_image_);
-    if (!last_right_image_.empty())
+      cv::waitKey(1);
+    }
+    if (!last_right_image_.empty()) {
       cv::imshow("right", last_right_image_);
+      cv::waitKey(1);
+    }
     cv::imshow("disparity", disparity_color_);
+    cv::waitKey(1);
   }
 
   void saveImage(const char* prefix, const cv::Mat& image)
