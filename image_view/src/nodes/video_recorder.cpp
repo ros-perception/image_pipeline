@@ -33,7 +33,7 @@
 cv::VideoWriter outputVideo;
 
 int g_count = 0;
-ros::Time g_last_wrote_time = ros::Time(0);
+
 ros::Time g_start_time = ros::Time(0);
 std::string encoding;
 std::string codec;
@@ -45,8 +45,6 @@ bool use_dynamic_range;
 int colormap;
 
 cv::Mat imageBuff;
-int called = 0;
-int captured =0;
 
 ros::NodeHandle* _nh;
 
@@ -78,9 +76,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
         ROS_INFO_STREAM("Starting to record " << codec << " video at " << size << "@" << fps << "fps. Press Ctrl+C to stop recording."<< "\x1b[1F" );
 
     }
-
-    
-    // ROS_INFO_STREAM("last rec:  " << (image_msg->header.stamp - g_last_wrote_time) <<" min time: "<<ros::Duration(1.0 / fps)); 
+        
     try
     {
       cv_bridge::CvtColorForDisplayOptions options;
@@ -88,26 +84,21 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
       options.min_image_value = min_depth_range;
       options.max_image_value = max_depth_range;
       options.colormap = colormap;
-      cv::Mat imageCapture = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image;
-      
-
-      captured++;        
+      const cv::Mat imageCapture = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image;
         
       if(!imageCapture.empty())
       {
         if(g_count==0)
         {
           outputVideo << imageCapture;
-          g_last_wrote_time = ros::Time::now();
-          g_count++;
 
+          g_count++;
            
           ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[A");  
           g_start_time = ros::Time::now(); 
 
         }
-        else
-        {
+        else{
           float elapsedTime = (ros::Time::now() - g_start_time).toSec();
           int missingFrame = (elapsedTime*fps) - g_count;
 
@@ -119,7 +110,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
 
           int imagePad = missingFrame-1;
 
-          for( auto x = 0; x<imagePad;x++)
+          for( int x = 0; x<imagePad;x++)
           {
             outputVideo << imageBuff;
             
@@ -130,14 +121,13 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
 
           g_count++;
 
-          imageBuff = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image.clone();
+          imageBuff = imageCapture.clone();
           
           ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[A");
 
         }
         
       }
-        // _recTimer = std::move(tempTimer);
 
       else {
         ROS_WARN("Frame skipped, no data!");
@@ -186,24 +176,19 @@ int main(int argc, char** argv)
     _nh = &nh;
 
     int numRun = 10;
-    fps = 15;
+
     float duration =60;
 
     float totalTime = 0;
-
 
     image_transport::ImageTransport it(nh);
     std::string topic = nh.resolveName("image");
     image_transport::Subscriber sub_image = it.subscribe(topic, 1, callback);
 
     ROS_INFO_STREAM("Waiting for topic " << topic << "...");
-
     
     ros::spin();
 
     std::cout << "\nVideo saved to " <<filename<<  std::endl;
-      
-    
-
     
 }
