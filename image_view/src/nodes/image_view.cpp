@@ -51,12 +51,16 @@ boost::mutex g_image_mutex;
 std::string g_window_name;
 bool g_do_dynamic_scaling;
 int g_colormap;
+double g_min_image_value;
+double g_max_image_value;
 
 void reconfigureCb(image_view::ImageViewConfig &config, uint32_t level)
 {
   boost::mutex::scoped_lock lock(g_image_mutex);
   g_do_dynamic_scaling = config.do_dynamic_scaling;
   g_colormap = config.colormap;
+  g_min_image_value = config.min_image_value;
+  g_max_image_value = config.max_image_value;
 }
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
@@ -68,6 +72,21 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
     cv_bridge::CvtColorForDisplayOptions options;
     options.do_dynamic_scaling = g_do_dynamic_scaling;
     options.colormap = g_colormap;
+    // Set min/max value for scaling to visualize depth/float image.
+    if (g_min_image_value == g_max_image_value) {
+      // Not specified by rosparam, then set default value.
+      // Because of current sensor limitation, we use 10m as default of max range of depth
+      // with consistency to the configuration in rqt_image_view.
+      options.min_image_value = 0;
+      if (msg->encoding == "32FC1") {
+        options.max_image_value = 10;  // 10 [m]
+      } else if (msg->encoding == "16UC1") {
+        options.max_image_value = 10 * 1000;  // 10 * 1000 [mm]
+      }
+    } else {
+      options.min_image_value = g_min_image_value;
+      options.max_image_value = g_max_image_value;
+    }
     g_last_image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(msg), "",
                                                  options)->image;
   } catch (cv_bridge::Exception& e) {
