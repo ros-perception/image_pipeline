@@ -49,6 +49,8 @@ cv::Mat g_last_image;
 boost::format g_filename_format;
 boost::mutex g_image_mutex;
 std::string g_window_name;
+bool g_gui;
+ros::Publisher g_pub;
 bool g_do_dynamic_scaling;
 int g_colormap;
 double g_min_image_value;
@@ -68,6 +70,7 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   boost::mutex::scoped_lock lock(g_image_mutex);
 
   // Convert to OpenCV native BGR color
+  cv_bridge::CvImageConstPtr cv_ptr;
   try {
     cv_bridge::CvtColorForDisplayOptions options;
     options.do_dynamic_scaling = g_do_dynamic_scaling;
@@ -87,16 +90,19 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
       options.min_image_value = g_min_image_value;
       options.max_image_value = g_max_image_value;
     }
-    g_last_image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(msg), "",
-                                                 options)->image;
+    cv_ptr = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options);
+    g_last_image = cv_ptr->image;
   } catch (cv_bridge::Exception& e) {
     ROS_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
                        msg->encoding.c_str(), e.what());
   }
-  if (!g_last_image.empty()) {
+  if (g_gui && !g_last_image.empty()) {
     const cv::Mat &image = g_last_image;
     cv::imshow(g_window_name, image);
     cv::waitKey(3);
+  }
+  if (g_pub.getNumSubscribers() > 0) {
+    g_pub.publish(cv_ptr);
   }
 }
 
@@ -143,19 +149,22 @@ int main(int argc, char **argv)
   // Default window name is the resolved topic name
   std::string topic = nh.resolveName("image");
   local_nh.param("window_name", g_window_name, topic);
+  local_nh.param("gui", g_gui, true);  // gui/no_gui mode
 
-  std::string format_string;
-  local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
-  g_filename_format.parse(format_string);
+  if (g_gui) {
+    std::string format_string;
+    local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
+    g_filename_format.parse(format_string);
 
-  // Handle window size
-  bool autosize;
-  local_nh.param("autosize", autosize, false);
-  cv::namedWindow(g_window_name, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
-  cv::setMouseCallback(g_window_name, &mouseCb);
+    // Handle window size
+    bool autosize;
+    local_nh.param("autosize", autosize, false);
+    cv::namedWindow(g_window_name, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
+    cv::setMouseCallback(g_window_name, &mouseCb);
 
-  // Start the OpenCV window thread so we don't have to waitKey() somewhere
-  cv::startWindowThread();
+    // Start the OpenCV window thread so we don't have to waitKey() somewhere
+    cv::startWindowThread();
+  }
 
   // Handle transport
   // priority:
@@ -175,6 +184,7 @@ int main(int argc, char **argv)
   image_transport::ImageTransport it(nh);
   image_transport::TransportHints hints(transport, ros::TransportHints(), local_nh);
   image_transport::Subscriber sub = it.subscribe(topic, 1, imageCb, hints);
+  g_pub = local_nh.advertise<sensor_msgs::Image>("output", 1);
 
   dynamic_reconfigure::Server<image_view::ImageViewConfig> srv;
   dynamic_reconfigure::Server<image_view::ImageViewConfig>::CallbackType f =
@@ -183,6 +193,8 @@ int main(int argc, char **argv)
 
   ros::spin();
 
-  cv::destroyWindow(g_window_name);
+  if (g_gui) {
+    cv::destroyWindow(g_window_name);
+  }
   return 0;
 }
