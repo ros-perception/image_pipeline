@@ -153,6 +153,10 @@ def _get_corners(img, board, refine = True, checkerboard_flags=0):
     if not all([(BORDER < corners[i, 0, 0] < (w - BORDER)) and (BORDER < corners[i, 0, 1] < (h - BORDER)) for i in range(corners.shape[0])]):
         ok = False
 
+    # Ensure that all corner-arrays are going from top to bottom.
+    if corners[0, 0, 1] > corners[-1, 0, 1]:
+        corners = numpy.copy(numpy.flipud(corners))
+
     if refine and ok:
         # Use a radius of half the minimum distance between corners. This should be large enough to snap to the
         # correct corner, but not so large as to include a wrong corner in the search window.
