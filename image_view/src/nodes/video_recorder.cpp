@@ -96,7 +96,6 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
            
           ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[A");  
           g_start_time = ros::Time::now(); 
-
         }
         else{
           float elapsedTime = (ros::Time::now() - g_start_time).toSec();
@@ -105,15 +104,13 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
           if(missingFrame<=0){
             imageBuff = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image.clone();
               return; //skip frame
-          }
-              
+          }              
 
           int imagePad = missingFrame-1;
 
-          for( int x = 0; x<imagePad;x++)
+          for(int x = 0; x<imagePad; x++)
           {
-            outputVideo << imageBuff;
-            
+            outputVideo << imageBuff;            
             g_count++;
           }
 
@@ -132,8 +129,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
       else {
         ROS_WARN("Frame skipped, no data!");
       }
-    }
-    
+    }    
     catch(cv_bridge::Exception)
     {
         ROS_ERROR("Unable to convert %s image to %s", image_msg->encoding.c_str(), encoding.c_str());
@@ -175,12 +171,6 @@ int main(int argc, char** argv)
 
     _nh = &nh;
 
-    int numRun = 10;
-
-    float duration =60;
-
-    float totalTime = 0;
-
     image_transport::ImageTransport it(nh);
     std::string topic = nh.resolveName("image");
     image_transport::Subscriber sub_image = it.subscribe(topic, 1, callback);
@@ -190,5 +180,4 @@ int main(int argc, char** argv)
     ros::spin();
 
     std::cout << "\nVideo saved to " <<filename<<  std::endl;
-    
 }
