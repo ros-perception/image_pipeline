@@ -32,10 +32,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import BytesIO
 import cv2
 import cv_bridge
 import image_geometry
@@ -786,7 +783,7 @@ class MonoCalibrator(Calibrator):
         """ Write images and calibration solution to a tarfile object """
 
         def taradd(name, buf):
-            s = StringIO(buf)
+            s = BytesIO(buf)
             ti = tarfile.TarInfo(name)
             ti.size = len(s.getvalue())
             ti.uname = 'calibrator'
@@ -796,8 +793,8 @@ class MonoCalibrator(Calibrator):
         ims = [("left-%04d.png" % i, im) for i,(_, im) in enumerate(self.db)]
         for (name, im) in ims:
             taradd(name, cv2.imencode(".png", im)[1].tostring())
-        taradd('ost.yaml', self.yaml())
-        taradd('ost.txt', self.ost())
+        taradd('ost.yaml', self.yaml().encode('utf-8'))
+        taradd('ost.txt', self.ost().encode('utf-8'))
 
     def do_tarfile_calibration(self, filename):
         archive = tarfile.open(filename, 'r')
@@ -1106,7 +1103,7 @@ class StereoCalibrator(Calibrator):
                [("right-%04d.png" % i, im) for i,(_, _, im) in enumerate(self.db)])
 
         def taradd(name, buf):
-            s = StringIO(buf)
+            s = BytesIO(buf)
             ti = tarfile.TarInfo(name)
             ti.size = len(s.getvalue())
             ti.uname = 'calibrator'
@@ -1115,9 +1112,9 @@ class StereoCalibrator(Calibrator):
 
         for (name, im) in ims:
             taradd(name, cv2.imencode(".png", im)[1].tostring())
-        taradd('left.yaml', self.yaml("/left", self.l))
-        taradd('right.yaml', self.yaml("/right", self.r))
-        taradd('ost.txt', self.ost())
+        taradd('left.yaml', self.yaml("/left", self.l).encode('utf-8'))
+        taradd('right.yaml', self.yaml("/right", self.r).encode('utf-8'))
+        taradd('ost.txt', self.ost().encode('utf-8'))
 
     def do_tarfile_calibration(self, filename):
         archive = tarfile.open(filename, 'r')
