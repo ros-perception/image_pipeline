@@ -98,7 +98,7 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
                 if f.startswith('left') and (f.endswith('.pgm') or f.endswith('png')):
                     filedata = archive.extractfile(f).read()
                     file_bytes = numpy.asarray(bytearray(filedata), dtype=numpy.uint8)
-                    im=cv2.imdecode(file_bytes,cv2.CV_LOAD_IMAGE_COLOR)
+                    im=cv2.imdecode(file_bytes,cv2.IMREAD_COLOR)
 
                     bridge = cv_bridge.CvBridge()
                     try:
@@ -128,7 +128,7 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
                     # LEFT IMAGE
                     filedata = archive.extractfile(l).read()
                     file_bytes = numpy.asarray(bytearray(filedata), dtype=numpy.uint8)
-                    im_left=cv2.imdecode(file_bytes,cv2.CV_LOAD_IMAGE_COLOR)
+                    im_left=cv2.imdecode(file_bytes,cv2.IMREAD_COLOR)
        
                     bridge = cv_bridge.CvBridge()
                     try:
@@ -139,7 +139,7 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
                     #RIGHT IMAGE
                     filedata = archive.extractfile(r).read()
                     file_bytes = numpy.asarray(bytearray(filedata), dtype=numpy.uint8)
-                    im_right=cv2.imdecode(file_bytes,cv2.CV_LOAD_IMAGE_COLOR)
+                    im_right=cv2.imdecode(file_bytes,cv2.IMREAD_COLOR)
                     try:
                         msg_right=bridge.cv2_to_imgmsg(im_right, "bgr8")
                     except cv_bridge.CvBridgeError as e:
