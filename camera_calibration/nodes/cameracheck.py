@@ -42,6 +42,7 @@ import os
 import sys
 import operator
 import time
+import functools
 try:
     from queue import Queue
 except ImportError:
@@ -190,7 +191,7 @@ class CameraCheckerNode:
         if L is not None and R is not None:
             epipolar = self.sc.epipolar_error(L, R)
 
-            dimension = self.sc.chessboard_size(L, R, [self.board], msg=(lcmsg, rcmsg))
+            dimension = self.sc.chessboard_size(L, R, self.board, msg=(lcmsg, rcmsg))
 
             print("epipolar error: %f pixels   dimension: %f m" % (epipolar, dimension))
         else:
