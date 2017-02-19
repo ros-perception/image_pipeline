@@ -42,6 +42,7 @@ import os
 import sys
 import operator
 import time
+import functools
 try:
     from queue import Queue
 except ImportError:
@@ -52,6 +53,8 @@ import tarfile
 import cv2
 
 import message_filters
+from message_filters import ApproximateTimeSynchronizer
+
 import image_geometry
 import numpy
 
@@ -84,7 +87,7 @@ class ConsumerThread(threading.Thread):
 
 class CameraCheckerNode:
 
-    def __init__(self, chess_size, dim):
+    def __init__(self, chess_size, dim, approximate=0):
         self.board = ChessboardInfo()
         self.board.n_cols = chess_size[0]
         self.board.n_rows = chess_size[1]
@@ -98,7 +101,12 @@ class CameraCheckerNode:
             (camera_topic, sensor_msgs.msg.CameraInfo),
         ]
 
-        tsm = message_filters.TimeSynchronizer([message_filters.Subscriber(topic, type) for (topic, type) in tosync_mono], 10)
+        if approximate <= 0:
+            sync = message_filters.TimeSynchronizer
+        else:
+            sync = functools.partial(ApproximateTimeSynchronizer, slop=approximate)
+
+        tsm = sync([message_filters.Subscriber(topic, type) for (topic, type) in tosync_mono], 10)
         tsm.registerCallback(self.queue_monocular)
 
         left_topic = rospy.resolve_name("stereo") + "/left/image_rect"
@@ -113,7 +121,7 @@ class CameraCheckerNode:
             (right_camera_topic, sensor_msgs.msg.CameraInfo)
         ]
 
-        tss = message_filters.TimeSynchronizer([message_filters.Subscriber(topic, type) for (topic, type) in tosync_stereo], 10)
+        tss = sync([message_filters.Subscriber(topic, type) for (topic, type) in tosync_stereo], 10)
         tss.registerCallback(self.queue_stereo)
 
         self.br = cv_bridge.CvBridge()
@@ -190,7 +198,7 @@ class CameraCheckerNode:
         if L is not None and R is not None:
             epipolar = self.sc.epipolar_error(L, R)
 
-            dimension = self.sc.chessboard_size(L, R, [self.board], msg=(lcmsg, rcmsg))
+            dimension = self.sc.chessboard_size(L, R, self.board, msg=(lcmsg, rcmsg))
 
             print("epipolar error: %f pixels   dimension: %f m" % (epipolar, dimension))
         else:
@@ -202,10 +210,15 @@ def main():
     parser = OptionParser()
     parser.add_option("-s", "--size", default="8x6", help="specify chessboard size as nxm [default: %default]")
     parser.add_option("-q", "--square", default=".108", help="specify chessboard square size in meters [default: %default]")
+    parser.add_option("--approximate",
+                      type="float", default=0.0,
+                      help="allow specified slop (in seconds) when pairing images from unsynchronized stereo cameras")
+    
     options, args = parser.parse_args()
     size = tuple([int(c) for c in options.size.split('x')])
     dim = float(options.square)
-    CameraCheckerNode(size, dim)
+    approximate = float(options.approximate)
+    CameraCheckerNode(size, dim, approximate)
     rospy.spin()
 
 if __name__ == "__main__":
