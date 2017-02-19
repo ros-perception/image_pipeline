@@ -148,7 +148,7 @@ private:
       image = cv_bridge::toCvShare(image_msg, encoding)->image;
     } catch(cv_bridge::Exception)
     {
-      ROS_ERROR("Unable to convert %s image to bgr8", image_msg->encoding.c_str());
+      ROS_ERROR("Unable to convert %s image to %s", image_msg->encoding.c_str(), encoding.c_str());
       return false;
     }
 
