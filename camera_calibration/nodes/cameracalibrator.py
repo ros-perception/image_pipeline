@@ -261,9 +261,9 @@ class OpenCVCalibrationNode(CalibrationNode):
             color = (155, 155, 80)
         else:
             color = (224, 224, 224)
-        cv2.circle(dst, (size[0] / 2, size[1] / 2), min(size) / 2, color, -1)
+        cv2.circle(dst, (size[0] // 2, size[1] // 2), min(size) // 2, color, -1)
         (w, h) = self.getTextSize(label)
-        self.putText(dst, label, ((size[0] - w) / 2, (size[1] + h) / 2), (255,255,255))
+        self.putText(dst, label, ((size[0] - w) // 2, (size[1] + h) // 2), (255,255,255))
 
     def buttons(self, display):
         x = self.displaywidth
@@ -295,7 +295,7 @@ class OpenCVCalibrationNode(CalibrationNode):
             if drawable.params:
                  for i, (label, lo, hi, progress) in enumerate(drawable.params):
                     (w,_) = self.getTextSize(label)
-                    self.putText(display, label, (width + (100 - w) / 2, self.y(i)))
+                    self.putText(display, label, (width + (100 - w) // 2, self.y(i)))
                     color = (0,255,0)
                     if progress < 1.0:
                         color = (0, int(progress*255.), 255)
@@ -331,7 +331,7 @@ class OpenCVCalibrationNode(CalibrationNode):
             if drawable.params:
                 for i, (label, lo, hi, progress) in enumerate(drawable.params):
                     (w,_) = self.getTextSize(label)
-                    self.putText(display, label, (2 * width + (100 - w) / 2, self.y(i)))
+                    self.putText(display, label, (2 * width + (100 - w) // 2, self.y(i)))
                     color = (0,255,0)
                     if progress < 1.0:
                         color = (0, int(progress*255.), 255)
