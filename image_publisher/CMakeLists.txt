@@ -19,7 +19,7 @@ install(TARGETS image_publisher
 
 add_executable(image_publisher_exe src/node/image_publisher.cpp)
 SET_TARGET_PROPERTIES(image_publisher_exe PROPERTIES OUTPUT_NAME image_publisher)
-target_link_libraries(image_publisher_exe ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(image_publisher_exe ${catkin_LIBRARIES})
 
 install(TARGETS image_publisher_exe
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
