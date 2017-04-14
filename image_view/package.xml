@@ -18,7 +18,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <test_depend>rostest</test_depend>
-  
+
   <build_depend>camera_calibration_parsers</build_depend>
   <build_depend version_gte="1.11.13">cv_bridge</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
@@ -40,7 +40,6 @@
   <run_depend>image_transport</run_depend>
   <run_depend>message_filters</run_depend>
   <run_depend>nodelet</run_depend>
-  <run_depend>python-opencv</run_depend>
   <run_depend>rosconsole</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>std_srvs</run_depend>
