@@ -25,7 +25,11 @@
     </description>
   </class>
 
+  <!-- Deprecated Nodelet API -->
   <class name="image_proc/crop_nonZero"
+	 type="image_proc::CropNonZeroNodelet"
+	 base_class_type="nodelet::Nodelet" />
+  <class name="image_proc/crop_non_zero"
 	 type="image_proc::CropNonZeroNodelet"
 	 base_class_type="nodelet::Nodelet">
     <description>
