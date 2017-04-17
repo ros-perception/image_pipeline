@@ -1,0 +1,150 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Software License Agreement (BSD License)
+#
+#  Copyright (c) 2015, Willow Garage, Inc.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#
+#   * Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#   * Redistributions in binary form must reproduce the above
+#     copyright notice, this list of conditions and the following
+#     disclaimer in the documentation and/or other materials provided
+#     with the distribution.
+#   * Neither the name of the Willow Garage nor the names of its
+#     contributors may be used to endorse or promote products derived
+#     from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+#  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+#  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+#  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+#  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+#  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+#  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+#  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+#  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+"""Save images of multiple topics with timestamp synchronization by request.
+
+Usage:
+    1. Request by service
+        $ rosrun image_view image_saver_sync _inputs:='[<topic_0>, <topic_1>]' \
+            _request_start_end:=true
+        $ rosservice call /image_saver_sync/save '{}'
+
+    2. Request by topic
+        $ rosrun image_view image_saver_sync _inputs:='[<topic_0>, <topic_1>]' \
+            _request_start_end:=true
+        $ rosservice call std_msgs/Trigger /image_saver_sync/start
+        $ rosservice call std_msgs/Trigger /image_saver_sync/end
+
+"""
+
+import sys
+import threading
+
+import cv2
+
+import cv_bridge
+import message_filters
+import rospy
+from sensor_msgs.msg import Image
+from std_msgs.msg import Header
+from std_srvs.srv import Trigger
+from std_srvs.srv import TriggerResponse
+
+
+class ImageSaverSync(object):
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.seq = 0
+        self.requested_time = None
+        self.start_time, self.end_time = None, None
+        self.fname_fmt = rospy.get_param(
+            '~filename_format', 'frame%04i_%i.jpg')
+        self.request_start_end = rospy.get_param('~request_start_end', False)
+        # initialize image subscribers
+        img_topics = rospy.get_param('~inputs', None)
+        if img_topics is None:
+            rospy.logwarn("""\
+image_saver_sync: rosparam '~inputs' has not been specified! \
+Typical command-line usage:
+\t$ rosrun image_view image_saver_sync _inputs:=<image_topic>
+\t$ rosrun image_view image_saver_sync \
+_inputs:='[<image_topic>, <image_topic>]'""")
+            sys.exit(1)
+        if not isinstance(img_topics, list):
+            img_topics = [img_topics]
+        subs = []
+        for t in img_topics:
+            subs.append(message_filters.Subscriber(t, Image))
+        if rospy.get_param('~approximate_sync', False):
+            sync = message_filters.ApproximateTimeSynchronizer(
+                subs, queue_size=100, slop=.1)
+        else:
+            sync = message_filters.TimeSynchronizer(
+                subs, queue_size=100)
+        sync.registerCallback(self.save)
+        if (self.request_start_end):
+            server_start = rospy.Service('~start', Trigger, self._req_start)
+            server_end = rospy.Service('~end', Trigger, self._req_end)
+        server_save = rospy.Service('~save', Trigger, self._req_save)
+
+    def _req_start(self, req):
+        rospy.loginfo('Received start saving request')
+        with self.lock:
+            self.start_time = rospy.Time.now()
+        return TriggerResponse(success=True, message='Started')
+
+    def _req_end(self, req):
+        rospy.loginfo('Received end saving request')
+        with self.lock:
+            self.end_time = rospy.Time.now()
+        return TriggerResponse(success=True, message='Ended')
+
+    def _req_save(self, req):
+        with self.lock:
+            self.requested_time = rospy.Time.now()
+        return TriggerResponse(success=True, message='SaveRequested')
+
+    def save(self, *imgmsgs):
+        # saving flag priority:
+        #  1. request by service.
+        #  2. request by service about start and end.
+        if self.requested_time is not None:
+            if imgmsgs[0].header.stamp < self.requested_time:
+                return
+        else:
+            if not self.request_start_end:
+                return
+            if self.start_time is None:
+                return
+            elif self.start_time > imgmsgs[0].header.stamp:
+                return
+            elif ((self.end_time is not None) and
+                  (self.end_time < imgmsgs[0].header.stamp)):
+                return
+        seq = self.seq
+        bridge = cv_bridge.CvBridge()
+        for i, imgmsg in enumerate(imgmsgs):
+            img = bridge.imgmsg_to_cv2(imgmsg)
+            fname = self.fname_fmt % (seq, i)
+            print('Save image as {0}'.format(fname))
+            cv2.imwrite(fname, img)
+        with self.lock:
+            self.requested_time = None
+        self.seq = seq + 1
+
+
+if __name__ == '__main__':
+    rospy.init_node('image_saver_sync')
+    saver = ImageSaverSync()
+    rospy.spin()
