@@ -16,6 +16,14 @@
     </description>
   </class>
 
+  <class name="image_proc/resize"
+         type="image_proc::ResizeNodelet"
+         base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet to resize image and camera_info.
+    </description>
+  </class>
+
   <class name="image_proc/crop_decimate"
 	 type="image_proc::CropDecimateNodelet"
 	 base_class_type="nodelet::Nodelet">
