@@ -54,16 +54,11 @@ protected:
   ros::Subscriber sub_image_;
 
   // Dynamic reconfigure
-  boost::mutex mutex_;
+  boost::recursive_mutex config_mutex_;
   typedef image_proc::ResizeConfig Config;
   typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
   boost::shared_ptr<ReconfigureServer> reconfigure_server_;
-  bool use_scale_;
-  int interpolation_;
-  int height_;
-  int width_;
-  double scale_height_;
-  double scale_width_;
+  Config config_;
 
   virtual void onInit();
   virtual void subscribe();
@@ -80,7 +75,7 @@ void ResizeNodelet::onInit()
   nodelet_topic_tools::NodeletLazy::onInit();
 
   // Set up dynamic reconfigure
-  reconfigure_server_.reset(new ReconfigureServer(*pnh_));
+  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, *pnh_));
   ReconfigureServer::CallbackType f = boost::bind(&ResizeNodelet::configCb, this, _1, _2);
   reconfigure_server_->setCallback(f);
 
@@ -92,14 +87,7 @@ void ResizeNodelet::onInit()
 
 void ResizeNodelet::configCb(Config &config, uint32_t level)
 {
-  boost::mutex::scoped_lock lock(mutex_);
-
-  interpolation_ = config.interpolation;
-  use_scale_ = config.use_scale;
-  height_ = config.height;
-  width_ = config.width;
-  scale_height_ = config.scale_height;
-  scale_width_ = config.scale_width;
+  config_ = config;
 }
 
 void ResizeNodelet::subscribe()
@@ -116,25 +104,29 @@ void ResizeNodelet::unsubscribe()
 
 void ResizeNodelet::infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg)
 {
-  boost::mutex::scoped_lock lock(mutex_);
+  Config config;
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);
+    config = config_;
+  }
 
   sensor_msgs::CameraInfo dst_info_msg = *info_msg;
 
   double scale_y;
   double scale_x;
-  if (use_scale_)
+  if (config.use_scale)
   {
-    scale_y = scale_height_;
-    scale_x = scale_width_;
-    dst_info_msg.height = static_cast<int>(info_msg->height * scale_height_);
-    dst_info_msg.width = static_cast<int>(info_msg->width * scale_width_);
+    scale_y = config.scale_height;
+    scale_x = config.scale_width;
+    dst_info_msg.height = static_cast<int>(info_msg->height * config.scale_height);
+    dst_info_msg.width = static_cast<int>(info_msg->width * config.scale_width);
   }
   else
   {
-    scale_y = static_cast<double>(height_) / info_msg->height;
-    scale_x = static_cast<double>(width_) / info_msg->width;
-    dst_info_msg.height = height_;
-    dst_info_msg.width = width_;
+    scale_y = static_cast<double>(config.height) / info_msg->height;
+    scale_x = static_cast<double>(config.width) / info_msg->width;
+    dst_info_msg.height = config.height;
+    dst_info_msg.width = config.width;
   }
 
   dst_info_msg.K[0] = dst_info_msg.K[0] * scale_x;  // fx
@@ -153,19 +145,24 @@ void ResizeNodelet::infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg)
 
 void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg)
 {
-  boost::mutex::scoped_lock lock(mutex_);
+  Config config;
+  {
+    boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);
+    config = config_;
+  }
 
   cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_msg);
 
-  if (use_scale_)
+  if (config.use_scale)
   {
-    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(0, 0), scale_width_, scale_height_, interpolation_);
+    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(0, 0),
+               config.scale_width, config.scale_height, config.interpolation);
   }
   else
   {
-    int height = height_ == -1 ? image_msg->height : height_;
-    int width = width_ == -1 ? image_msg->width : width_;
-    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(width, height), 0, 0, interpolation_);
+    int height = config.height == -1 ? image_msg->height : config.height;
+    int width = config.width == -1 ? image_msg->width : config.width;
+    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(width, height), 0, 0, config.interpolation);
   }
 
   pub_image_.publish(cv_ptr->toImageMsg());
