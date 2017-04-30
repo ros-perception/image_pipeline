@@ -1,3 +1,38 @@
+Forthcoming
+-----------
+* DisparityViewNodelet: fixed freeze (`#244 <https://github.com/ros-perception/image_pipeline/issues/244>`_)
+* launch image view with a predefined window size (`#257 <https://github.com/ros-perception/image_pipeline/issues/257>`_)
+* Remove python-opencv run_depend for image_view (`#270 <https://github.com/ros-perception/image_pipeline/issues/270>`_)
+  The `python-opencv` dependency pulls in the system OpenCV v2.4 which is
+  not required since the `image_view` package depends on `cv_bridge` which
+  pulls in `opencv3` and `opencv3` provides the python library that
+  `image_view` can use.
+* Fix encoding error message (`#253 <https://github.com/ros-perception/image_pipeline/issues/253>`_)
+  * Fix encoding error message
+  * Update image_saver.cpp
+  Allow compilation on older compilers
+* Including stereo_msgs dep fixes `#248 <https://github.com/ros-perception/image_pipeline/issues/248>`_ (`#249 <https://github.com/ros-perception/image_pipeline/issues/249>`_)
+* Add no gui mode to just visualize & publish with image_view (`#241 <https://github.com/ros-perception/image_pipeline/issues/241>`_)
+* stere_view: fixed empty left, right, disparity windows with opencv3
+* Apply value scaling to depth/float image with min/max image value
+  If min/max image value is specified we just use it, and if not,
+  - 32FC1: we assume depth image with meter metric, and 10[m] as the max range.
+  - 16UC1: we assume depth image with milimeter metric, and 10 * 1000[mm] as the max range.
+* Depends on cv_bridge 1.11.13 for CvtColorForDisplayOptions
+  Close `#238 <https://github.com/ros-perception/image_pipeline/issues/238>`_
+* fix doc jobs
+  This is a proper fix for `#233 <https://github.com/ros-perception/image_pipeline/issues/233>`_
+* address gcc6 build error
+  With gcc6, compiling fails with `stdlib.h: No such file or directory`,
+  as including '-isystem /usr/include' breaks with gcc6, cf.,
+  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=70129.
+  This commit addresses this issue for this package in the same way
+  it was addressed in various other ROS packages. A list of related
+  commits and pull requests is at:
+  https://github.com/ros/rosdistro/issues/12783
+  Signed-off-by: Lukas Bulwahn <lukas.bulwahn@oss.bmw-carit.de>
+* Contributors: Christopher Wecht, Kartik Mohta, Kei Okada, Kentaro Wada, Lukas Bulwahn, Léonard Gérard, Vincent Rabaud, cwecht, mryellow
+
 1.12.19 (2016-07-24)
 --------------------
 * Add colormap option in video_recorder

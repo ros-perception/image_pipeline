@@ -1,3 +1,20 @@
+Forthcoming
+-----------
+* properly save bytes buffer as such
+  This is useful for Python 3 and fixes `#256 <https://github.com/ros-perception/image_pipeline/issues/256>`_.
+* Get tests slightly looser.
+  OpenCV 3.2 gives slightly different results apparently.
+* Use floor division where necessary. (`#247 <https://github.com/ros-perception/image_pipeline/issues/247>`_)
+* Fix and Improve Camera Calibration Checker Node (`#254 <https://github.com/ros-perception/image_pipeline/issues/254>`_)
+  * Fix according to calibrator.py API
+  * Add approximate to cameracheck
+* Force first corner off chessboard to be uppler left.
+  Fixes `#140 <https://github.com/ros-perception/image_pipeline/issues/140>`_
+* fix doc jobs
+  This is a proper fix for `#233 <https://github.com/ros-perception/image_pipeline/issues/233>`_
+* During stereo calibration check that the number of corners detected in the left and right images are the same. This fixes `ros-perception/image_pipeline#225 <https://github.com/ros-perception/image_pipeline/issues/225>`_
+* Contributors: Léonard Gérard, Martin Peris, Vincent Rabaud, hgaiser
+
 1.12.19 (2016-07-24)
 --------------------
 * Fix array check in camerachecky.py

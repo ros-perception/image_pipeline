@@ -1,3 +1,23 @@
+Forthcoming
+-----------
+* Add nodelet to resize image and camera_info (`#273 <https://github.com/ros-perception/image_pipeline/issues/273>`_)
+  * Add nodelet to resize image and camera_info
+  * Depends on nodelet_topic_tools
+  * Use recursive_mutex for mutex guard for dynamic reconfiguring
+* Fix nodelet name: crop_nonZero ->  crop_non_zero (`#269 <https://github.com/ros-perception/image_pipeline/issues/269>`_)
+  Fix https://github.com/ros-perception/image_pipeline/issues/217
+* Fix permission of executable files unexpectedly (`#260 <https://github.com/ros-perception/image_pipeline/issues/260>`_)
+* address gcc6 build error
+  With gcc6, compiling fails with `stdlib.h: No such file or directory`,
+  as including '-isystem /usr/include' breaks with gcc6, cf.,
+  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=70129.
+  This commit addresses this issue for this package in the same way
+  it was addressed in various other ROS packages. A list of related
+  commits and pull requests is at:
+  https://github.com/ros/rosdistro/issues/12783
+  Signed-off-by: Lukas Bulwahn <lukas.bulwahn@oss.bmw-carit.de>
+* Contributors: Kentaro Wada, Lukas Bulwahn
+
 1.12.19 (2016-07-24)
 --------------------
 
