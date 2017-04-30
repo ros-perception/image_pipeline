@@ -36,6 +36,7 @@ try:
     from cStringIO import StringIO
 except ImportError:
     from io import StringIO
+from io import BytesIO
 import cv2
 import cv_bridge
 import image_geometry
@@ -786,7 +787,10 @@ class MonoCalibrator(Calibrator):
         """ Write images and calibration solution to a tarfile object """
 
         def taradd(name, buf):
-            s = StringIO(buf)
+            if isinstance(buf, basestring):
+                s = StringIO(buf)
+            else:
+                s = BytesIO(buf)
             ti = tarfile.TarInfo(name)
             ti.size = len(s.getvalue())
             ti.uname = 'calibrator'
@@ -1106,7 +1110,10 @@ class StereoCalibrator(Calibrator):
                [("right-%04d.png" % i, im) for i,(_, _, im) in enumerate(self.db)])
 
         def taradd(name, buf):
-            s = StringIO(buf)
+            if isinstance(buf, basestring):
+                s = StringIO(buf)
+            else:
+                s = BytesIO(buf)
             ti = tarfile.TarInfo(name)
             ti.size = len(s.getvalue())
             ti.uname = 'calibrator'
