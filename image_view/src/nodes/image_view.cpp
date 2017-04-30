@@ -162,6 +162,18 @@ int main(int argc, char **argv)
     cv::namedWindow(g_window_name, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
     cv::setMouseCallback(g_window_name, &mouseCb);
 
+    if(autosize == false)
+    {
+      if(local_nh.hasParam("width") && local_nh.hasParam("height"))
+      {
+        int width;
+        local_nh.getParam("width", width);
+        int height;
+        local_nh.getParam("height", height);
+        cv::resizeWindow(g_window_name, width, height);
+      }
+    }
+
     // Start the OpenCV window thread so we don't have to waitKey() somewhere
     cv::startWindowThread();
   }
