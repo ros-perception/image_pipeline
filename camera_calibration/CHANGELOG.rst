@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.20 (2017-04-30)
+--------------------
 * properly save bytes buffer as such
   This is useful for Python 3 and fixes `#256 <https://github.com/ros-perception/image_pipeline/issues/256>`_.
 * Get tests slightly looser.

@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.20 (2017-04-30)
+--------------------
 * Fix CMake warnings about Eigen.
 * Convert depth image metric from [m] to [mm]
 * address gcc6 build error

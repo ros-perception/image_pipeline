@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.20 (2017-04-30)
+--------------------
 * Fix CMake warnings about Eigen.
 * address gcc6 build error
   With gcc6, compiling fails with `stdlib.h: No such file or directory`,

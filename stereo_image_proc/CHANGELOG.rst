@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.20 (2017-04-30)
+--------------------
 * fix doc jobs
   This is a proper fix for `#233 <https://github.com/ros-perception/image_pipeline/issues/233>`_
 * address gcc6 build error
