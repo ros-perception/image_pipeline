@@ -55,6 +55,7 @@ class CropDecimateNodelet : public nodelet::Nodelet
   boost::shared_ptr<image_transport::ImageTransport> it_in_, it_out_;
   image_transport::CameraSubscriber sub_;
   int queue_size_;
+  std::string target_frame_id_;
 
   boost::mutex connect_mutex_;
   image_transport::CameraPublisher pub_;
@@ -87,6 +88,7 @@ void CropDecimateNodelet::onInit()
 
   // Read parameters
   private_nh.param("queue_size", queue_size_, 5);
+  private_nh.param("target_frame_id", target_frame_id_, std::string());
 
   // Set up dynamic reconfigure
   reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
@@ -330,7 +332,12 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   // If no ROI specified, leave do_rectify as-is. If ROI specified, set do_rectify = true.
   if (width != (int)image_msg->width || height != (int)image_msg->height)
     out_info->roi.do_rectify = true;
-  
+
+  if (!target_frame_id_.empty()) {
+    out_image->header.frame_id = target_frame_id_;
+    out_info->header.frame_id = target_frame_id_;
+  }
+
   pub_.publish(out_image, out_info);
 }
 
