@@ -43,6 +43,7 @@ from collections import deque
 import threading
 import functools
 import time
+import tempfile
 
 import cv2
 import numpy
@@ -55,7 +56,7 @@ class DisplayThread(threading.Thread):
     """
     Thread that displays the current images
     It is its own thread so that all display can be done
-    in one thread to overcome imshow limitations and 
+    in one thread to overcome imshow limitations and
     https://github.com/ros-perception/image_pipeline/issues/85
     """
     def __init__(self, queue, opencv_calibration_node):
@@ -95,7 +96,7 @@ class ConsumerThread(threading.Thread):
 
 class CalibrationNode:
     def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
-                 pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0):
+                 pattern=Patterns.Chessboard, camera_name='', folder_location=tempfile.gettempdir(), checkerboard_flags = 0):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -115,6 +116,8 @@ class CalibrationNode:
         self._checkerboard_flags = checkerboard_flags
         self._pattern = pattern
         self._camera_name = camera_name
+        self._folder_location = folder_location
+
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = synchronizer([lsub, rsub], 4)
@@ -122,7 +125,7 @@ class CalibrationNode:
 
         msub = message_filters.Subscriber('image', sensor_msgs.msg.Image)
         msub.registerCallback(self.queue_monocular)
-        
+
         self.set_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"),
                                                           sensor_msgs.srv.SetCameraInfo)
         self.set_left_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("left_camera"),
@@ -142,7 +145,7 @@ class CalibrationNode:
         sth = ConsumerThread(self.q_stereo, self.handle_stereo)
         sth.setDaemon(True)
         sth.start()
-        
+
     def redraw_stereo(self, *args):
         pass
     def redraw_monocular(self, *args):
@@ -158,10 +161,10 @@ class CalibrationNode:
         if self.c == None:
             if self._camera_name:
                 self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
-                                        checkerboard_flags=self._checkerboard_flags)
+                                        folder_location=self._folder_location, checkerboard_flags=self._checkerboard_flags)
             else:
                 self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern,
-                                        checkerboard_flags=self.checkerboard_flags)
+                                        folder_location=self._folder_location, checkerboard_flags=self.checkerboard_flags)
 
         # This should just call the MonoCalibrator
         drawable = self.c.handle_msg(msg)
@@ -172,16 +175,16 @@ class CalibrationNode:
         if self.c == None:
             if self._camera_name:
                 self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
-                                          checkerboard_flags=self._checkerboard_flags)
+                                          folder_location=self._folder_location, checkerboard_flags=self._checkerboard_flags)
             else:
                 self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern,
-                                          checkerboard_flags=self._checkerboard_flags)
+                                          folder_location=self._folder_location, checkerboard_flags=self._checkerboard_flags)
 
         drawable = self.c.handle_msg(msg)
         self.displaywidth = drawable.lscrib.shape[1] + drawable.rscrib.shape[1]
         self.redraw_stereo(drawable)
-            
- 
+
+
     def check_set_camera_info(self, response):
         if response.success:
             return True
@@ -274,12 +277,12 @@ class OpenCVCalibrationNode(CalibrationNode):
     def y(self, i):
         """Set up right-size images"""
         return 30 + 40 * i
-        
+
     def screendump(self, im):
         i = 0
-        while os.access("/tmp/dump%d.png" % i, os.R_OK):
+        while os.access(tempfile.gettempdir()+"/dump%d.png" % i, os.R_OK):
             i += 1
-        cv2.imwrite("/tmp/dump%d.png" % i, im)
+        cv2.imwrite(tempfile.gettempdir()+"/dump%d.png" % i, im)
 
     def redraw_monocular(self, drawable):
         height = drawable.scrib.shape[0]
@@ -360,8 +363,11 @@ def main():
     parser = OptionParser("%prog --size SIZE1 --square SQUARE1 [ --size SIZE2 --square SQUARE2 ]",
                           description=None)
     parser.add_option("-c", "--camera_name",
-                     type="string", default='narrow_stereo',
-                     help="name of the camera to appear in the calibration file")
+                      type="string", default='narrow_stereo',
+                      help="name of the camera to appear in the calibration file")
+    parser.add_option("-f", "--folder_location",
+                      type="string", default=tempfile.gettempdir(),
+                      help="Location of the folder where to save the calibration files")
     group = OptionGroup(parser, "Chessboard Options",
                         "You must specify one or more chessboards as pairs of --size and --square options.")
     group.add_option("-p", "--pattern",
@@ -398,11 +404,11 @@ def main():
     group.add_option("--disable_calib_cb_fast_check", action='store_true', default=False,
                      help="uses the CALIB_CB_FAST_CHECK flag for findChessboardCorners")
     parser.add_option_group(group)
-    options, args = parser.parse_args()
+    (options, args) = parser.parse_args()
 
     if len(options.size) != len(options.square):
         parser.error("Number of size and square inputs must be the same!")
-    
+
     if not options.square:
         options.square.append("0.108")
         options.size.append("8x6")
@@ -456,7 +462,7 @@ def main():
 
     rospy.init_node('cameracalibrator')
     node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
-                                 checkerboard_flags=checkerboard_flags)
+                                 options.folder_location, checkerboard_flags=checkerboard_flags)
     rospy.spin()
 
 if __name__ == "__main__":
