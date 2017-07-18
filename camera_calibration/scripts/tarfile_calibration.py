@@ -46,7 +46,7 @@ import rospy
 import sensor_msgs.srv
 
 def waitkey():
-    k = cv2.waitKey(6)
+    k = cv2.waitKey(0)
     return k
 
 def display(win_name, img):
