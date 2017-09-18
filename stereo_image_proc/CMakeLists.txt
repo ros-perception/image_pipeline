@@ -4,6 +4,8 @@ project(stereo_image_proc)
 find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_geometry image_proc image_transport message_filters nodelet sensor_msgs stereo_msgs)
 find_package(Boost REQUIRED COMPONENTS thread)
 
+add_compile_options(-std=c++11)
+
 # Dynamic reconfigure support
 generate_dynamic_reconfigure_options(cfg/Disparity.cfg)
 

@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(image_proc)
 
+add_compile_options(-std=c++11)
+
 find_package(catkin REQUIRED)
 
 find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_geometry image_transport nodelet nodelet_topic_tools roscpp sensor_msgs)
