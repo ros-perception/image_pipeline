@@ -85,6 +85,10 @@ int main(int argc, char **argv)
     ros::param::set(rectify_color_name, shared_params);
   manager.load(rectify_color_name, "image_proc/rectify", remappings, my_argv);
 
+  // Resize nodelet, image_raw -> image_resized
+  std::string resizer_name = ros::this_node::getName() + "_resize";
+  manager.load(resizer_name, "image_proc/resize", remappings, my_argv);
+
   // Check for only the original camera topics
   ros::V_string topics;
   topics.push_back(ros::names::resolve("image_raw"));
