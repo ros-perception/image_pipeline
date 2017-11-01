@@ -120,7 +120,7 @@ template <typename T>
 void debayer2x2toBGR(const cv::Mat& src, cv::Mat& dst, int R, int G1, int G2, int B)
 {
   typedef cv::Vec<T, 3> DstPixel; // 8- or 16-bit BGR
-  dst.create(src.rows / 2, src.cols / 2, cv::traits::Type<DstPixel>::value);
+  dst.create(src.rows / 2, src.cols / 2, cv::DataType<DstPixel>::type);
 
   int src_row_step = src.step1();
   int dst_row_step = dst.step1();
