@@ -22,6 +22,9 @@ include_directories(include)
 find_package(OpenCV REQUIRED)
 include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
+# See note in image_proc/CMakeLists.txt
+add_definitions(-DOPENCV_TRAITS_ENABLE_DEPRECATED)
+
 # Nodelet library
 add_library(${PROJECT_NAME} src/libstereo_image_proc/processor.cpp src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}

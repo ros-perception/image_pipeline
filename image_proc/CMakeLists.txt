@@ -23,6 +23,10 @@ catkin_package(
 
 include_directories(include ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
+# Temporary fix for DataType deprecation in OpenCV 3.3.1. We continue to use the deprecated form for now because
+# the new one is not available in OpenCV 2.4 (on Trusty).
+add_definitions(-DOPENCV_TRAITS_ENABLE_DEPRECATED)
+
 # Nodelet library
 add_library(${PROJECT_NAME} src/libimage_proc/processor.cpp
                                 src/nodelets/debayer.cpp
