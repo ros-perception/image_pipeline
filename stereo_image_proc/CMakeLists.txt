@@ -22,7 +22,7 @@ include_directories(include)
 find_package(OpenCV REQUIRED)
 include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 
-# Temporary fix for DataType deprecation in OpenCV 3.3.1
+# See note in image_proc/CMakeLists.txt
 add_definitions(-DOPENCV_TRAITS_ENABLE_DEPRECATED)
 
 # Nodelet library
