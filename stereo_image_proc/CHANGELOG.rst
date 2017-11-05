@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.21 (2017-11-05)
+--------------------
 * Updated fix for traits change. (`#303 <https://github.com/ros-perception/image_pipeline/issues/303>`_)
 * Fix C++11 compilation
   This fixes `#292 <https://github.com/ros-perception/image_pipeline/issues/292>`_ and `#291 <https://github.com/ros-perception/image_pipeline/issues/291>`_

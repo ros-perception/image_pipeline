@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.21 (2017-11-05)
+--------------------
 * re-add the calibration nodes but now using the Python modules.
   Fixes `#298 <https://github.com/ros-perception/image_pipeline/issues/298>`_
 * Move nodes to Python module.

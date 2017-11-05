@@ -1,6 +1,6 @@
 <package>
   <name>image_publisher</name>
-  <version>1.12.20</version>
+  <version>1.12.21</version>
   <description>
     <p>
       Contains a node publish an image stream from single image file

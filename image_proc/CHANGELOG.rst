@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.12.21 (2017-11-05)
+--------------------
 * Fix image_resize nodelet (`#299 <https://github.com/ros-perception/image_pipeline/issues/299>`_)
   Update interpolation types
   Add arguments to enable disable each nodelet
