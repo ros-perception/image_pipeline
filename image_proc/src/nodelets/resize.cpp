@@ -80,7 +80,7 @@ void ResizeNodelet::onInit()
   reconfigure_server_->setCallback(f);
 
   pub_info_ = advertise<sensor_msgs::CameraInfo>(*pnh_, "camera_info", 1);
-  pub_image_ = advertise<sensor_msgs::Image>(*pnh_, "image", 1);
+  pub_image_ = advertise<sensor_msgs::Image>(*pnh_, "out_image", 1);
 
   onInitPostProcess();
 }
@@ -93,7 +93,7 @@ void ResizeNodelet::configCb(Config &config, uint32_t level)
 void ResizeNodelet::subscribe()
 {
   sub_info_ = nh_->subscribe("camera_info", 1, &ResizeNodelet::infoCb, this);
-  sub_image_ = nh_->subscribe("image", 1, &ResizeNodelet::imageCb, this);
+  sub_image_ = nh_->subscribe("in_image", 1, &ResizeNodelet::imageCb, this);
 }
 
 void ResizeNodelet::unsubscribe()
@@ -151,21 +151,32 @@ void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg)
     config = config_;
   }
 
-  cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_msg);
+  cv_bridge::CvImageConstPtr cv_ptr;
+  try
+  {
+    cv_ptr = cv_bridge::toCvShare(image_msg, sensor_msgs::image_encodings::BGR8);
+  }
+  catch (cv_bridge::Exception& e)
+  {
+    ROS_ERROR("cv_bridge exception: %s", e.what());
+    return;
+  }
+  cv::Mat buffer;
 
   if (config.use_scale)
   {
-    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(0, 0),
+    cv::resize(cv_ptr->image, buffer, cv::Size(0, 0),
                config.scale_width, config.scale_height, config.interpolation);
   }
   else
   {
     int height = config.height == -1 ? image_msg->height : config.height;
     int width = config.width == -1 ? image_msg->width : config.width;
-    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(width, height), 0, 0, config.interpolation);
+    cv::resize(cv_ptr->image, buffer, cv::Size(width, height), 0, 0, config.interpolation);
   }
 
-  pub_image_.publish(cv_ptr->toImageMsg());
+  sensor_msgs::ImagePtr out_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", buffer).toImageMsg();  
+  pub_image_.publish(out_msg);
 }
 
 }  // namespace image_proc

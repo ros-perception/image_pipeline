@@ -1,29 +1,63 @@
+<?xml version="1.0"?>
 <!-- Launch in the camera namespace containing "image_raw" and "camera_info" -->
 <launch>
+  <!-- Manager name must be globally qualified -->
+  <arg name="manager" /> 
+  <!-- Worker threads -->
+  <arg name="num_worker_threads" default="4"/>
 
-  <arg name="manager" /> <!-- Must be globally qualified -->
-  <arg name="respawn" default="false" />
-  <!-- TODO Arguments for debayer, interpolation methods? -->
+  <arg name="respawn"               default="false" />
+  <arg name="debayer"               default="true" />
+  <arg name="monochrome_rect"       default="true" />
+  <arg name="color_rect"            default="true" />
+  <arg name="color_rect_in_topic"   default="image_color" />
+  <arg name="color_rect_out_topic"  default="image_rect_color" />
+
+  <arg name="image_resize"          default="true" />
+  <arg name="image_resize_factor"   default="0.3" />
+  <arg name="resize_in_topic"       default="image" />
+  <arg name="resize_out_topic"      default="image" />
 
   <arg     if="$(arg respawn)" name="bond" value="" />
   <arg unless="$(arg respawn)" name="bond" value="--no-bond" />
 
+  <!-- Optionally launch manager in GDB, for debugging -->
+  <arg name="debug" default="false" />
+  <arg if="$(arg debug)" name="launch_prefix" value="xterm -e gdb --args" />
+  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+
+  <!-- Nodelet manager -->
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager"
+        output="screen" launch-prefix="$(arg launch_prefix)">
+     <param name="num_worker_threads" value="$(arg num_worker_threads)" />
+  </node>
+
   <!-- Debayered images -->
-  <node pkg="nodelet" type="nodelet" name="debayer"
+  <!-- TODO Arguments for debayer, interpolation methods? -->
+  <node if="$(arg debayer)" pkg="nodelet" type="nodelet" name="debayer"
         args="load image_proc/debayer $(arg manager) $(arg bond)"
 	respawn="$(arg respawn)" />
 
   <!-- Monochrome rectified image -->
-  <node pkg="nodelet" type="nodelet" name="rectify_mono"
+  <node if="$(arg monochrome_rect)" pkg="nodelet" type="nodelet" name="rectify_mono"
         args="load image_proc/rectify $(arg manager) $(arg bond)"
 	respawn="$(arg respawn)" />
 
   <!-- Color rectified image -->
-  <node pkg="nodelet" type="nodelet" name="rectify_color"
+  <node if="$(arg color_rect)" pkg="nodelet" type="nodelet" name="rectify_color"
         args="load image_proc/rectify $(arg manager) $(arg bond)"
 	respawn="$(arg respawn)">
-    <remap from="image_mono" to="image_color" />
-    <remap from="image_rect" to="image_rect_color" />
-  </node>  
+    <remap from="image_mono" to="$(arg color_rect_in_topic)" />
+    <remap from="image_rect" to="$(arg color_rect_out_topic)" />
+  </node>
+
+  <!-- Color image resize-->
+  <node  if="$(arg image_resize)" pkg="nodelet" type="nodelet" name="resize_image"
+         args="load image_proc/resize $(arg manager) $(arg bond)" respawn="$(arg respawn)">
+    <param name="scale_height" value="$(arg image_resize_factor)" />
+    <param name="scale_width" value="$(arg image_resize_factor)" />
+    <remap from="in_image" to="$(arg resize_in_topic)" />
+    <remap from="resize_image/out_image" to="$(arg resize_out_topic)" />
+  </node>
 
 </launch>
