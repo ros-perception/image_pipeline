@@ -1,3 +1,10 @@
+Forthcoming
+-----------
+* re-add the calibration nodes but now using the Python modules.
+  Fixes `#298 <https://github.com/ros-perception/image_pipeline/issues/298>`_
+* Move nodes to Python module.
+* Contributors: Vincent Rabaud
+
 1.12.20 (2017-04-30)
 --------------------
 * properly save bytes buffer as such
@@ -13,7 +20,7 @@
 * fix doc jobs
   This is a proper fix for `#233 <https://github.com/ros-perception/image_pipeline/issues/233>`_
 * During stereo calibration check that the number of corners detected in the left and right images are the same. This fixes `ros-perception/image_pipeline#225 <https://github.com/ros-perception/image_pipeline/issues/225>`_
-* Contributors: Léonard Gérard, Martin Peris, Vincent Rabaud, hgaiser
+* Contributors: Leonard Gerard, Martin Peris, Vincent Rabaud, hgaiser
 
 1.12.19 (2016-07-24)
 --------------------

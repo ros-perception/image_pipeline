@@ -1,3 +1,8 @@
+Forthcoming
+-----------
+* call namedWindow from same thread as imshow, need waitKay, now cvStartWindowThreads is null funciton on window_QT.h (`#279 <https://github.com/ros-perception/image_pipeline/issues/279>`_)
+* Contributors: Kei Okada
+
 1.12.20 (2017-04-30)
 --------------------
 * DisparityViewNodelet: fixed freeze (`#244 <https://github.com/ros-perception/image_pipeline/issues/244>`_)
@@ -31,7 +36,7 @@
   commits and pull requests is at:
   https://github.com/ros/rosdistro/issues/12783
   Signed-off-by: Lukas Bulwahn <lukas.bulwahn@oss.bmw-carit.de>
-* Contributors: Christopher Wecht, Kartik Mohta, Kei Okada, Kentaro Wada, Lukas Bulwahn, Léonard Gérard, Vincent Rabaud, cwecht, mryellow
+* Contributors: Christopher Wecht, Kartik Mohta, Kei Okada, Kentaro Wada, Lukas Bulwahn, Leonard Gerard, Vincent Rabaud, cwecht, mryellow
 
 1.12.19 (2016-07-24)
 --------------------

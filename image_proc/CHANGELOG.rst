@@ -1,3 +1,17 @@
+Forthcoming
+-----------
+* Fix image_resize nodelet (`#299 <https://github.com/ros-perception/image_pipeline/issues/299>`_)
+  Update interpolation types
+  Add arguments to enable disable each nodelet
+  Add default arguments for image_resize and image_rect
+  Use toCVShare instead of toCVCopy
+  Include image_resize in image_proc
+* Updated fix for traits change. (`#303 <https://github.com/ros-perception/image_pipeline/issues/303>`_)
+* Fix C++11 compilation
+  This fixes `#292 <https://github.com/ros-perception/image_pipeline/issues/292>`_ and `#291 <https://github.com/ros-perception/image_pipeline/issues/291>`_
+* [image_proc][crop_decimate] support changing target image frame_id (`#276 <https://github.com/ros-perception/image_pipeline/issues/276>`_)
+* Contributors: Furushchev, Mike Purvis, Vincent Rabaud, bikramak
+
 1.12.20 (2017-04-30)
 --------------------
 * Add nodelet to resize image and camera_info (`#273 <https://github.com/ros-perception/image_pipeline/issues/273>`_)

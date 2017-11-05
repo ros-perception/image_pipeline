@@ -1,3 +1,10 @@
+Forthcoming
+-----------
+* Updated fix for traits change. (`#303 <https://github.com/ros-perception/image_pipeline/issues/303>`_)
+* Fix C++11 compilation
+  This fixes `#292 <https://github.com/ros-perception/image_pipeline/issues/292>`_ and `#291 <https://github.com/ros-perception/image_pipeline/issues/291>`_
+* Contributors: Mike Purvis, Vincent Rabaud
+
 1.12.20 (2017-04-30)
 --------------------
 * fix doc jobs

@@ -2,6 +2,9 @@
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.12.20 (2017-04-30)
 --------------------
 * explicitly cast to std::vector<double> to make gcc6 happy

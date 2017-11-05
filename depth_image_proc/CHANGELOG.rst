@@ -1,3 +1,9 @@
+Forthcoming
+-----------
+* Fix C++11 compilation
+  This fixes `#292 <https://github.com/ros-perception/image_pipeline/issues/292>`_ and `#291 <https://github.com/ros-perception/image_pipeline/issues/291>`_
+* Contributors: Vincent Rabaud
+
 1.12.20 (2017-04-30)
 --------------------
 * Fix CMake warnings about Eigen.
