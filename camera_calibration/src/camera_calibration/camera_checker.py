@@ -32,33 +32,24 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import cv2
+import cv_bridge
+import functools
+import message_filters
+import numpy
 import rospy
 import sensor_msgs.msg
 import sensor_msgs.srv
-import cv_bridge
+import threading
 
-import math
-import os
-import sys
-import operator
-import time
-import functools
+from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, ChessboardInfo
+from message_filters import ApproximateTimeSynchronizer
+
 try:
     from queue import Queue
 except ImportError:
     from Queue import Queue
-import threading
-import tarfile
 
-import cv2
-
-import message_filters
-from message_filters import ApproximateTimeSynchronizer
-
-import image_geometry
-import numpy
-
-from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, ChessboardInfo
 
 def mean(seq):
     return sum(seq) / len(seq)
@@ -203,23 +194,3 @@ class CameraCheckerNode:
             print("epipolar error: %f pixels   dimension: %f m" % (epipolar, dimension))
         else:
             print("no chessboard")
-
-def main():
-    from optparse import OptionParser
-    rospy.init_node('cameracheck')
-    parser = OptionParser()
-    parser.add_option("-s", "--size", default="8x6", help="specify chessboard size as nxm [default: %default]")
-    parser.add_option("-q", "--square", default=".108", help="specify chessboard square size in meters [default: %default]")
-    parser.add_option("--approximate",
-                      type="float", default=0.0,
-                      help="allow specified slop (in seconds) when pairing images from unsynchronized stereo cameras")
-    
-    options, args = parser.parse_args()
-    size = tuple([int(c) for c in options.size.split('x')])
-    dim = float(options.square)
-    approximate = float(options.approximate)
-    CameraCheckerNode(size, dim, approximate)
-    rospy.spin()
-
-if __name__ == "__main__":
-    main()
