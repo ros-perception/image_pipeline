@@ -155,8 +155,19 @@ def _get_corners(img, board, refine = True, checkerboard_flags=0):
         ok = False
 
     # Ensure that all corner-arrays are going from top to bottom.
-    if corners[0, 0, 1] > corners[-1, 0, 1]:
-        corners = numpy.copy(numpy.flipud(corners))
+    if board.n_rows!=board.n_cols:
+        if corners[0, 0, 1] > corners[-1, 0, 1]:
+            corners = numpy.copy(numpy.flipud(corners))
+    else:
+        direction_corners=(corners[-1]-corners[0])>=numpy.array([[0.0,0.0]])
+    
+        if not numpy.all(direction_corners):
+            if not numpy.any(direction_corners):
+                corners = numpy.copy(numpy.flipud(corners))
+            elif direction_corners[0][0]:
+                corners=numpy.rot90(corners.reshape(board.n_rows,board.n_cols,2)).reshape(board.n_cols*board.n_rows,1,2)
+            else:
+                corners=numpy.rot90(corners.reshape(board.n_rows,board.n_cols,2),3).reshape(board.n_cols*board.n_rows,1,2)
 
     if refine and ok:
         # Use a radius of half the minimum distance between corners. This should be large enough to snap to the
