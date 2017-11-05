@@ -74,8 +74,10 @@ class ImageNodelet : public nodelet::Nodelet
   cv::Mat last_image_;
   
   std::string window_name_;
+  bool autosize_;
   boost::format filename_format_;
   int count_;
+  bool initialized_;
 
   virtual void onInit();
   
@@ -90,7 +92,7 @@ public:
 };
 
 ImageNodelet::ImageNodelet()
-  : filename_format_(""), count_(0)
+  : filename_format_(""), count_(0), initialized_(false)
 {
 }
 
@@ -126,16 +128,12 @@ void ImageNodelet::onInit()
   std::string topic = nh.resolveName("image");
   local_nh.param("window_name", window_name_, topic);
 
-  bool autosize;
-  local_nh.param("autosize", autosize, false);
+  local_nh.param("autosize", autosize_, false);
   
   std::string format_string;
   local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
   filename_format_.parse(format_string);
 
-  cv::namedWindow(window_name_, autosize ? cv::WND_PROP_AUTOSIZE : 0);
-  cv::setMouseCallback(window_name_, &ImageNodelet::mouseCb, this);
-  
 #ifdef HAVE_GTK
   // Register appropriate handler for when user closes the display window
   GtkWidget *widget = GTK_WIDGET( cvGetWindowHandle(window_name_.c_str()) );
@@ -155,6 +153,12 @@ void ImageNodelet::onInit()
 
 void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
+  if ( ! initialized_ ) {
+    cv::namedWindow(window_name_, autosize_ ? cv::WND_PROP_AUTOSIZE : 0);
+    cv::setMouseCallback(window_name_, &ImageNodelet::mouseCb, this);
+    initialized_ = true;
+  }
+
   image_mutex_.lock();
 
   // We want to scale floating point images so that they display nicely
@@ -174,8 +178,10 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
   // Must release the mutex before calling cv::imshow, or can deadlock against
   // OpenCV's window mutex.
   image_mutex_.unlock();
-  if (!last_image_.empty())
+  if (!last_image_.empty()) {
     cv::imshow(window_name_, last_image_);
+    cv::waitKey(1);
+  }
 }
 
 void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
