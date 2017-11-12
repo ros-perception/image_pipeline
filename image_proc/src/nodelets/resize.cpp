@@ -38,6 +38,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
+#include <image_transport/image_transport.h>
 
 #include "image_proc/ResizeConfig.h"
 
@@ -48,10 +49,13 @@ class ResizeNodelet : public nodelet_topic_tools::NodeletLazy
 {
 protected:
   // ROS communication
-  ros::Publisher pub_image_;
+  image_transport::Publisher pub_image_;
+  image_transport::Subscriber sub_image_;
   ros::Publisher pub_info_;
   ros::Subscriber sub_info_;
-  ros::Subscriber sub_image_;
+
+
+
 
   // Dynamic reconfigure
   boost::recursive_mutex config_mutex_;
