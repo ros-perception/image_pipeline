@@ -53,6 +53,7 @@ protected:
   image_transport::Subscriber sub_image_;
   ros::Publisher pub_info_;
   ros::Subscriber sub_info_;
+  boost::shared_ptr<image_transport::ImageTransport> it_;
 
 
 
@@ -77,6 +78,8 @@ protected:
 void ResizeNodelet::onInit()
 {
   nodelet_topic_tools::NodeletLazy::onInit();
+  ros::NodeHandle &nh         = getNodeHandle();
+  it_.reset(new image_transport::ImageTransport(nh));
 
   // Set up dynamic reconfigure
   reconfigure_server_.reset(new ReconfigureServer(config_mutex_, *pnh_));
@@ -84,7 +87,7 @@ void ResizeNodelet::onInit()
   reconfigure_server_->setCallback(f);
 
   pub_info_ = advertise<sensor_msgs::CameraInfo>(*pnh_, "camera_info", 1);
-  pub_image_ = advertise<sensor_msgs::Image>(*pnh_, "out_image", 1);
+  pub_image_ = it_->advertise("out_image", 1);
 
   onInitPostProcess();
 }
@@ -97,7 +100,7 @@ void ResizeNodelet::configCb(Config &config, uint32_t level)
 void ResizeNodelet::subscribe()
 {
   sub_info_ = nh_->subscribe("camera_info", 1, &ResizeNodelet::infoCb, this);
-  sub_image_ = nh_->subscribe("in_image", 1, &ResizeNodelet::imageCb, this);
+  sub_image_ = it_->subscribe("in_image", 1, &ResizeNodelet::imageCb, this);
 }
 
 void ResizeNodelet::unsubscribe()
