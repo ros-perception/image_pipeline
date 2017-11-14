@@ -31,10 +31,15 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+#include <boost/make_shared.hpp>
+#include <boost/version.hpp>
+#if ((BOOST_VERSION / 100) % 1000) >= 53
+#include <boost/thread/lock_guard.hpp>
+#endif
+
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
 #include <nodelet/nodelet.h>
-#include <nodelet_topic_tools/nodelet_lazy.h>
 #include <ros/ros.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
@@ -45,18 +50,18 @@
 namespace image_proc
 {
 
-class ResizeNodelet : public nodelet_topic_tools::NodeletLazy
+class ResizeNodelet : public nodelet::Nodelet
 {
 protected:
   // ROS communication
   image_transport::Publisher pub_image_;
-  image_transport::Subscriber sub_image_;
+  image_transport::CameraSubscriber sub_image_;
   ros::Publisher pub_info_;
   ros::Subscriber sub_info_;
+  int queue_size_;
+
   boost::shared_ptr<image_transport::ImageTransport> it_;
-
-
-
+  boost::mutex connect_mutex_;
 
   // Dynamic reconfigure
   boost::recursive_mutex config_mutex_;
@@ -66,10 +71,10 @@ protected:
   Config config_;
 
   virtual void onInit();
-  virtual void subscribe();
-  virtual void unsubscribe();
 
-  void imageCb(const sensor_msgs::ImageConstPtr& image_msg);
+  void connectCb();
+
+  void imageCb(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr &info_msg);
   void infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg);
 
   void configCb(Config &config, uint32_t level);
@@ -77,36 +82,43 @@ protected:
 
 void ResizeNodelet::onInit()
 {
-  nodelet_topic_tools::NodeletLazy::onInit();
   ros::NodeHandle &nh         = getNodeHandle();
-  it_.reset(new image_transport::ImageTransport(nh));
+  ros::NodeHandle &private_nh = getPrivateNodeHandle();
+  it_.reset(new image_transport::ImageTransport(private_nh));
 
   // Set up dynamic reconfigure
-  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, *pnh_));
+  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
   ReconfigureServer::CallbackType f = boost::bind(&ResizeNodelet::configCb, this, _1, _2);
   reconfigure_server_->setCallback(f);
 
-  pub_info_ = advertise<sensor_msgs::CameraInfo>(*pnh_, "camera_info", 1);
-  pub_image_ = it_->advertise("out_image", 1);
+  // Monitor whether anyone is subscribed to the output
+  typedef image_transport::SubscriberStatusCallback ConnectCB;
+  ConnectCB connect_cb = boost::bind(&ResizeNodelet::connectCb, this);
+  // Make sure we don't enter connectCb() between advertising and assigning to pub_XXX
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
 
-  onInitPostProcess();
+  pub_image_ = it_->advertise("out_image", 1, connect_cb, connect_cb);
+  pub_info_ = private_nh.advertise<sensor_msgs::CameraInfo>("camera_info", 1);
+}
+
+// Handles (un)subscribing when clients (un)subscribe
+void ResizeNodelet::connectCb()
+{
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
+  if (pub_image_.getNumSubscribers() == 0)
+  {
+    sub_image_.shutdown();
+  }
+  else if (!sub_image_)
+  {
+    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
+    sub_image_ = it_->subscribeCamera("/camera_bottom_front/image_raw", queue_size_, &ResizeNodelet::imageCb, this, hints);
+  }
 }
 
 void ResizeNodelet::configCb(Config &config, uint32_t level)
 {
   config_ = config;
-}
-
-void ResizeNodelet::subscribe()
-{
-  sub_info_ = nh_->subscribe("camera_info", 1, &ResizeNodelet::infoCb, this);
-  sub_image_ = it_->subscribe("in_image", 1, &ResizeNodelet::imageCb, this);
-}
-
-void ResizeNodelet::unsubscribe()
-{
-  sub_info_.shutdown();
-  sub_image_.shutdown();
 }
 
 void ResizeNodelet::infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg)
@@ -150,7 +162,8 @@ void ResizeNodelet::infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg)
   pub_info_.publish(dst_info_msg);
 }
 
-void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg)
+void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
+                            const sensor_msgs::CameraInfoConstPtr& info_msg)
 {
   Config config;
   {
@@ -184,6 +197,7 @@ void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg)
 
   sensor_msgs::ImagePtr out_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", buffer).toImageMsg();  
   pub_image_.publish(out_msg);
+  infoCb(info_msg);
 }
 
 }  // namespace image_proc
