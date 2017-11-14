@@ -112,7 +112,7 @@ void ResizeNodelet::connectCb()
   else if (!sub_image_)
   {
     image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-    sub_image_ = it_->subscribeCamera("/camera_bottom_front/image_raw", queue_size_, &ResizeNodelet::imageCb, this, hints);
+    sub_image_ = it_->subscribeCamera("in_image", queue_size_, &ResizeNodelet::imageCb, this, hints);
   }
 }
 
