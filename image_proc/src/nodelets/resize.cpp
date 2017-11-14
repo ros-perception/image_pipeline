@@ -123,6 +123,7 @@ void ResizeNodelet::configCb(Config &config, uint32_t level)
 
 void ResizeNodelet::infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg)
 {
+  ROS_INFO("info");
   Config config;
   {
     boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);
@@ -165,6 +166,7 @@ void ResizeNodelet::infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg)
 void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
                             const sensor_msgs::CameraInfoConstPtr& info_msg)
 {
+  ROS_INFO("image CB");
   Config config;
   {
     boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);
