@@ -2,9 +2,7 @@
 <!-- Launch in the camera namespace containing "image_raw" and "camera_info" -->
 <launch>
   <!-- Manager name must be globally qualified -->
-  <arg name="manager" /> 
-  <!-- Worker threads -->
-  <arg name="num_worker_threads" default="4"/>
+  <arg name="manager" />
 
   <arg name="respawn"               default="false" />
   <arg name="debayer"               default="true" />
@@ -20,17 +18,6 @@
 
   <arg     if="$(arg respawn)" name="bond" value="" />
   <arg unless="$(arg respawn)" name="bond" value="--no-bond" />
-
-  <!-- Optionally launch manager in GDB, for debugging -->
-  <arg name="debug" default="false" />
-  <arg if="$(arg debug)" name="launch_prefix" value="xterm -e gdb --args" />
-  <arg unless="$(arg debug)" name="launch_prefix" value="" />
-
-  <!-- Nodelet manager -->
-  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager"
-        output="screen" launch-prefix="$(arg launch_prefix)">
-     <param name="num_worker_threads" value="$(arg num_worker_threads)" />
-  </node>
 
   <!-- Debayered images -->
   <!-- TODO Arguments for debayer, interpolation methods? -->
