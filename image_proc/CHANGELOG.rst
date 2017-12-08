@@ -1,3 +1,10 @@
+Forthcoming
+-----------
+* Merge pull request `#311 <https://github.com/ros-perception/image_pipeline/issues/311>`_ from knorth55/revert-299
+  Revert "Fix image_resize nodelet (`#299 <https://github.com/ros-perception/image_pipeline/issues/299>`_)"
+  This reverts commit 32e19697ebce47101b063c6a02b95dfa2c5dbc52.
+* Contributors: Shingo Kitagawa, Tully Foote
+
 1.12.21 (2017-11-05)
 --------------------
 * Fix image_resize nodelet (`#299 <https://github.com/ros-perception/image_pipeline/issues/299>`_)

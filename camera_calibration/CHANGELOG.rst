@@ -1,3 +1,9 @@
+Forthcoming
+-----------
+* Changed flags CV_LOAD_IMAGE_COLOR by IMREAD_COLOR to adapt to Opencv3. (`#252 <https://github.com/ros-perception/image_pipeline/issues/252>`_)
+* Fixed stereo calibration problem with chessboard with the same number of rows and cols by rotating the corners to same direction.
+* Contributors: jbosch
+
 1.12.21 (2017-11-05)
 --------------------
 * re-add the calibration nodes but now using the Python modules.
