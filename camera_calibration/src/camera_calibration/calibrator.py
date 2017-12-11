@@ -160,7 +160,7 @@ def _get_corners(img, board, refine = True, checkerboard_flags=0):
             corners = numpy.copy(numpy.flipud(corners))
     else:
         direction_corners=(corners[-1]-corners[0])>=numpy.array([[0.0,0.0]])
-    
+
         if not numpy.all(direction_corners):
             if not numpy.any(direction_corners):
                 corners = numpy.copy(numpy.flipud(corners))
@@ -218,7 +218,7 @@ class Calibrator(object):
     """
     Base class for calibration system
     """
-    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard, name='', checkerboard_flags=cv2.CALIB_CB_FAST_CHECK):
+    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard, name='', distortion_model='', checkerboard_flags=cv2.CALIB_CB_FAST_CHECK):
         # Ordering the dimensions for the different detectors is actually a minefield...
         if pattern == Patterns.Chessboard:
             # Make sure n_cols > n_rows to agree with OpenCV CB detector output
@@ -234,6 +234,7 @@ class Calibrator(object):
         self.calibrated = False
         self.calib_flags = flags
         self.checkerboard_flags = checkerboard_flags
+        self.distortion_model = distortion_model
         self.pattern = pattern
         self.br = cv_bridge.CvBridge()
 
@@ -491,13 +492,21 @@ class Calibrator(object):
         + "camera_matrix:\n"
         + "  rows: 3\n"
         + "  cols: 3\n"
-        + "  data: [" + ", ".join(["%8f" % i for i in k.reshape(1,9)[0]]) + "]\n"
-        + "distortion_model: " + ("rational_polynomial" if d.size > 5 else "plumb_bob") + "\n"
-        + "distortion_coefficients:\n"
-        + "  rows: 1\n"
-        + "  cols: 5\n"
-        + "  data: [" + ", ".join(["%8f" % d[i,0] for i in range(d.shape[0])]) + "]\n"
-        + "rectification_matrix:\n"
+        + "  data: [" + ", ".join(["%8f" % i for i in k.reshape(1,9)[0]]) + "]\n")
+        if self.distortion_model == 'equidistant':
+            calmessage = calmessage + ("distortion_model: " +
+            "equidistant" + "\n"
+            + "distortion_coefficients:\n"
+            + "  rows: 1\n"
+            + "  cols: 4\n"
+            + "  data: [" + ", ".join(["%8f" % d[i,0] for i in range(d.shape[0])]) + "]\n")
+        else:
+            calmessage = calmessage + ("distortion_model: " + ("rational_polynomial" if d.size > 5 else "plumb_bob") + "\n"
+            + "distortion_coefficients:\n"
+            + "  rows: 1\n"
+            + "  cols: " + min(d.size,5) + "\n"
+            + "  data: [" + ", ".join(["%8f" % d[i,0] for i in range(d.shape[0])]) + "]\n")
+        calmessage = calmessage + ("rectification_matrix:\n"
         + "  rows: 3\n"
         + "  cols: 3\n"
         + "  data: [" + ", ".join(["%8f" % i for i in r.reshape(1,9)[0]]) + "]\n"
@@ -517,7 +526,7 @@ class Calibrator(object):
 
 def image_from_archive(archive, name):
     """
-    Load image PGM file from tar archive. 
+    Load image PGM file from tar archive.
 
     Used for tarfile loading and unit test.
     """
@@ -539,7 +548,7 @@ class MonoDrawable(ImageDrawable):
         ImageDrawable.__init__(self)
         self.scrib = None
         self.linear_error = -1.0
-                
+
 
 class StereoDrawable(ImageDrawable):
     def __init__(self):
@@ -565,6 +574,7 @@ class MonoCalibrator(Calibrator):
     def __init__(self, *args, **kwargs):
         if 'name' not in kwargs:
             kwargs['name'] = 'narrow_stereo/left'
+        #print("kwargs[distortion_model] = "+kwargs['distortion_model'])
         super(MonoCalibrator, self).__init__(*args, **kwargs)
 
     def cal(self, images):
@@ -594,10 +604,10 @@ class MonoCalibrator(Calibrator):
 
     def cal_fromcorners(self, good):
         """
-        :param good: Good corner positions and boards 
+        :param good: Good corner positions and boards
         :type good: [(corners, ChessboardInfo)]
 
-        
+
         """
         boards = [ b for (_, b) in good ]
 
@@ -605,18 +615,25 @@ class MonoCalibrator(Calibrator):
         opts = self.mk_object_points(boards)
 
         self.intrinsics = numpy.zeros((3, 3), numpy.float64)
-        if self.calib_flags & cv2.CALIB_RATIONAL_MODEL:
-            self.distortion = numpy.zeros((8, 1), numpy.float64) # rational polynomial
-        else:
-            self.distortion = numpy.zeros((5, 1), numpy.float64) # plumb bob
         # If FIX_ASPECT_RATIO flag set, enforce focal lengths have 1/1 ratio
         self.intrinsics[0,0] = 1.0
         self.intrinsics[1,1] = 1.0
-        cv2.calibrateCamera(
-                   opts, ipts,
-                   self.size, self.intrinsics,
-                   self.distortion,
-                   flags = self.calib_flags)
+        if self.distortion_model == 'equidistant':
+            self.distortion = numpy.zeros((4,1), numpy.float64) # equidistant
+            cv2.fisheye.calibrate(opts, ipts,
+                                  self.size, self.intrinsics,
+                                  self.distortion, flags = self.calib_flags)
+            print("Computed distortion parameters: " + str(self.distortion))
+        else:
+            if self.calib_flags & cv2.CALIB_RATIONAL_MODEL:
+                self.distortion = numpy.zeros((8, 1), numpy.float64) # rational polynomial
+            else:
+                self.distortion = numpy.zeros((5, 1), numpy.float64) # plumb bob
+            cv2.calibrateCamera(
+                       opts, ipts,
+                       self.size, self.intrinsics,
+                       self.distortion,
+                       flags = self.calib_flags)
 
         # R is identity matrix for monocular calibration
         self.R = numpy.eye(3, dtype=numpy.float64)
@@ -635,11 +652,23 @@ class MonoCalibrator(Calibrator):
         # NOTE: Prior to Electric, this code was broken such that we never actually saved the new
         # camera matrix. In effect, this enforced P = [K|0] for monocular cameras.
         # TODO: Verify that OpenCV #1199 gets applied (improved GetOptimalNewCameraMatrix)
-        ncm, _ = cv2.getOptimalNewCameraMatrix(self.intrinsics, self.distortion, self.size, a)
-        for j in range(3):
-            for i in range(3):
-                self.P[j,i] = ncm[j, i]
-        self.mapx, self.mapy = cv2.initUndistortRectifyMap(self.intrinsics, self.distortion, self.R, ncm, self.size, cv2.CV_32FC1)
+
+        if self.distortion_model == 'equidistant':
+            ncm = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(
+                self.intrinsics, self.distortion, self.size, numpy.eye(3))
+            for j in range(3):
+                for i in range(3):
+                    self.P[j,i] = ncm[j, i]
+            self.mapx, self.mapy = cv2.fisheye.initUndistortRectifyMap(
+                self.intrinsics, self.distortion, self.R, ncm, self.size, cv2.CV_32FC1)
+        else:
+            ncm, _ = cv2.getOptimalNewCameraMatrix(self.intrinsics,
+                self.distortion, self.size, a)
+            for j in range(3):
+                for i in range(3):
+                    self.P[j,i] = ncm[j, i]
+            self.mapx, self.mapy = cv2.initUndistortRectifyMap(self.intrinsics,
+                self.distortion, self.R, ncm, self.size, cv2.CV_32FC1)
 
     def remap(self, src):
         """
@@ -657,8 +686,10 @@ class MonoCalibrator(Calibrator):
 
         Apply the post-calibration undistortion to the source points
         """
-
-        return cv2.undistortPoints(src, self.intrinsics, self.distortion, R = self.R, P = self.P)
+        if self.distortion_model == 'equidistant':
+            return cv2.fisheye.undistortPoints(src, self.intrinsics, self.distortion, R = self.R, P = self.P)
+        else:
+            return cv2.undistortPoints(src, self.intrinsics, self.distortion, R = self.R, P = self.P)
 
     def as_message(self):
         """ Return the camera calibration as a CameraInfo message """
@@ -886,7 +917,7 @@ class StereoCalibrator(Calibrator):
         lipts = [ l for (l, _, _) in good ]
         ripts = [ r for (_, r, _) in good ]
         boards = [ b for (_, _, b) in good ]
-        
+
         opts = self.mk_object_points(boards, True)
 
         flags = cv2.CALIB_FIX_INTRINSIC
@@ -930,7 +961,7 @@ class StereoCalibrator(Calibrator):
                          self.T,
                          self.l.R, self.r.R, self.l.P, self.r.P,
                          alpha = a)
-        
+
         cv2.initUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.l.R, self.l.P, self.size, cv2.CV_32FC1,
                                    self.l.mapx, self.l.mapy)
         cv2.initUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.r.R, self.r.P, self.size, cv2.CV_32FC1,
@@ -1144,7 +1175,7 @@ class StereoCalibrator(Calibrator):
 
         if not len(limages) == len(rimages):
             raise CalibrationException("Left, right images don't match. %d left images, %d right" % (len(limages), len(rimages)))
-        
+
         ##\todo Check that the filenames match and stuff
 
         self.cal(limages, rimages)

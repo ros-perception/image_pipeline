@@ -91,8 +91,7 @@ class ConsumerThread(threading.Thread):
 
 
 class CalibrationNode:
-    def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
-                 pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0):
+    def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0, pattern=Patterns.Chessboard, camera_name='', distortion_model='', checkerboard_flags = 0):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -112,6 +111,8 @@ class CalibrationNode:
         self._checkerboard_flags = checkerboard_flags
         self._pattern = pattern
         self._camera_name = camera_name
+        self._distortion_model = distortion_model
+        print("Distortion Model: "+self._distortion_model)
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = synchronizer([lsub, rsub], 4)
@@ -154,11 +155,9 @@ class CalibrationNode:
     def handle_monocular(self, msg):
         if self.c == None:
             if self._camera_name:
-                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
-                                        checkerboard_flags=self._checkerboard_flags)
+                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name, distortion_model=self._distortion_model, checkerboard_flags=self._checkerboard_flags)
             else:
-                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern,
-                                        checkerboard_flags=self.checkerboard_flags)
+                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, distortion_model=self._distortion_model, checkerboard_flags=self._checkerboard_flags)
 
         # This should just call the MonoCalibrator
         drawable = self.c.handle_msg(msg)
@@ -168,11 +167,10 @@ class CalibrationNode:
     def handle_stereo(self, msg):
         if self.c == None:
             if self._camera_name:
-                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
-                                          checkerboard_flags=self._checkerboard_flags)
+                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name, distortion_model=self._distortion_model,  checkerboard_flags=self._checkerboard_flags)
             else:
-                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern,
-                                          checkerboard_flags=self._checkerboard_flags)
+                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern, distortion_model=self._distortion_model,
+                checkerboard_flags=self._checkerboard_flags)
 
         drawable = self.c.handle_msg(msg)
         self.displaywidth = drawable.lscrib.shape[1] + drawable.rscrib.shape[1]
