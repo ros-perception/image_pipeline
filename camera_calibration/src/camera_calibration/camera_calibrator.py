@@ -112,7 +112,6 @@ class CalibrationNode:
         self._pattern = pattern
         self._camera_name = camera_name
         self._distortion_model = distortion_model
-        print("Distortion Model: "+self._distortion_model)
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = synchronizer([lsub, rsub], 4)

@@ -623,7 +623,6 @@ class MonoCalibrator(Calibrator):
             cv2.fisheye.calibrate(opts, ipts,
                                   self.size, self.intrinsics,
                                   self.distortion, flags = self.calib_flags)
-            print("Computed distortion parameters: " + str(self.distortion))
         else:
             if self.calib_flags & cv2.CALIB_RATIONAL_MODEL:
                 self.distortion = numpy.zeros((8, 1), numpy.float64) # rational polynomial
@@ -655,7 +654,7 @@ class MonoCalibrator(Calibrator):
 
         if self.distortion_model == 'equidistant':
             ncm = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(
-                self.intrinsics, self.distortion, self.size, self.R, balance=1)
+                self.intrinsics, self.distortion, self.size, self.R)
             for j in range(3):
                 for i in range(3):
                     self.P[j,i] = ncm[j, i]
@@ -914,35 +913,52 @@ class StereoCalibrator(Calibrator):
         self.l.cal_fromcorners(lcorners)
         self.r.cal_fromcorners(rcorners)
 
+        #if numpy.any(numpy.isnan(self.l.intrinsics)) or numpy.any(numpy.isnan(self.r.intrinsics)):
+        print("Left:\n"+str(self.l.intrinsics)+"\n"+str(self.l.distortion)+"\n")
+        print("Right:\n"+str(self.r.intrinsics)+"\n"+str(self.r.distortion)+"\n")
+        #return False
+
         lipts = [ l for (l, _, _) in good ]
         ripts = [ r for (_, r, _) in good ]
         boards = [ b for (_, _, b) in good ]
 
         opts = self.mk_object_points(boards, True)
 
-        flags = cv2.CALIB_FIX_INTRINSIC
-
         self.T = numpy.zeros((3, 1), dtype=numpy.float64)
         self.R = numpy.eye(3, dtype=numpy.float64)
-        if LooseVersion(cv2.__version__).version[0] == 2:
-            cv2.stereoCalibrate(opts, lipts, ripts, self.size,
-                               self.l.intrinsics, self.l.distortion,
-                               self.r.intrinsics, self.r.distortion,
-                               self.R,                            # R
-                               self.T,                            # T
-                               criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
-                               flags = flags)
+        if self.distortion_model == 'equidistant':
+            import pdb; pdb.set_trace()
+            flags = cv2.fisheye.CALIB_FIX_INTRINSIC
+            cv2.fisheye.stereoCalibrate(opts, lipts, ripts,
+                                   self.l.intrinsics, self.l.distortion,
+                                   self.r.intrinsics, self.r.distortion,
+                                   self.size,
+                                   self.R,                            # R
+                                   self.T,                            # T
+                                   criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
+                                   flags = flags)
         else:
-            cv2.stereoCalibrate(opts, lipts, ripts,
-                               self.l.intrinsics, self.l.distortion,
-                               self.r.intrinsics, self.r.distortion,
-                               self.size,
-                               self.R,                            # R
-                               self.T,                            # T
-                               criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
-                               flags = flags)
+            flags = cv2.CALIB_FIX_INTRINSIC
+            if LooseVersion(cv2.__version__).version[0] == 2:
+                cv2.stereoCalibrate(opts, lipts, ripts, self.size,
+                                   self.l.intrinsics, self.l.distortion,
+                                   self.r.intrinsics, self.r.distortion,
+                                   self.R,                            # R
+                                   self.T,                            # T
+                                   criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
+                                   flags = flags)
+            else:
+                cv2.stereoCalibrate(opts, lipts, ripts,
+                                   self.l.intrinsics, self.l.distortion,
+                                   self.r.intrinsics, self.r.distortion,
+                                   self.size,
+                                   self.R,                            # R
+                                   self.T,                            # T
+                                   criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
+                                   flags = flags)
 
         self.set_alpha(0.0)
+        return True
 
     def set_alpha(self, a):
         """
@@ -952,20 +968,32 @@ class StereoCalibrator(Calibrator):
         original image are in calibrated image).
         """
 
-        cv2.stereoRectify(self.l.intrinsics,
-                         self.l.distortion,
-                         self.r.intrinsics,
-                         self.r.distortion,
-                         self.size,
-                         self.R,
-                         self.T,
-                         self.l.R, self.r.R, self.l.P, self.r.P,
-                         alpha = a)
-
-        cv2.initUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.l.R, self.l.P, self.size, cv2.CV_32FC1,
-                                   self.l.mapx, self.l.mapy)
-        cv2.initUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.r.R, self.r.P, self.size, cv2.CV_32FC1,
-                                   self.r.mapx, self.r.mapy)
+        if self.distortion_model == 'equidistant':
+            cv2.fisheye.stereoRectify(self.l.intrinsics, self.l.distortion,
+                self.r.intrinsics, self.r.distortion, self.size, self.R,
+                self.T, self.l.R, self.r.R, self.l.P, self.r.P)
+            cv2.fisheye.initUndistortRectifyMap(self.l.intrinsics,
+                self.l.distortion, self.l.R, self.l.P, self.size, cv2.CV_32FC1,
+                self.l.mapx, self.l.mapy)
+            cv2.fisheye.initUndistortRectifyMap(self.r.intrinsics,
+                self.r.distortion, self.r.R, self.r.P, self.size, cv2.CV_32FC1,
+                self.r.mapx, self.r.mapy)
+        else:
+            cv2.stereoRectify(self.l.intrinsics,
+                             self.l.distortion,
+                             self.r.intrinsics,
+                             self.r.distortion,
+                             self.size,
+                             self.R,
+                             self.T,
+                             self.l.R, self.r.R, self.l.P, self.r.P,
+                             alpha = a)
+            cv2.initUndistortRectifyMap(self.l.intrinsics, self.l.distortion,
+                self.l.R, self.l.P, self.size, cv2.CV_32FC1, self.l.mapx,
+                self.l.mapy)
+            cv2.initUndistortRectifyMap(self.r.intrinsics, self.r.distortion,
+                self.r.R, self.r.P, self.size, cv2.CV_32FC1, self.r.mapx,
+                self.r.mapy)
 
     def as_message(self):
         """
@@ -1140,11 +1168,13 @@ class StereoCalibrator(Calibrator):
         self.size = (self.db[0][1].shape[1], self.db[0][1].shape[0]) # TODO Needs to be set externally
         self.l.size = self.size
         self.r.size = self.size
-        self.cal_fromcorners(self.good_corners)
-        self.calibrated = True
-        # DEBUG
-        print((self.report()))
-        print((self.ost()))
+        if self.cal_fromcorners(self.good_corners):
+            self.calibrated = True
+            # DEBUG
+            print((self.report()))
+            print((self.ost()))
+        else:
+            print("Calibration failure. Collect more samples before trying again.")
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
