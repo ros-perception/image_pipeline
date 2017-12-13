@@ -655,7 +655,7 @@ class MonoCalibrator(Calibrator):
 
         if self.distortion_model == 'equidistant':
             ncm = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(
-                self.intrinsics, self.distortion, self.size, numpy.eye(3))
+                self.intrinsics, self.distortion, self.size, self.R, balance=1)
             for j in range(3):
                 for i in range(3):
                     self.P[j,i] = ncm[j, i]

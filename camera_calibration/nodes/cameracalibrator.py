@@ -52,7 +52,7 @@ def main():
                      help="name of the camera to appear in the calibration file")
     parser.add_option("-m", "--distortion_model",
                      type="string", default="plumb_bob",
-                     help="name of the distortion model to use - 'plumb_bob' (radtan) or 'equidistant' (fisheye).")
+                     help="name of the distortion model to use - 'plumb_bob' (radtan), 'rational' (rational polynomial), or 'equidistant' (fisheye).")
     group = OptionGroup(parser, "Chessboard Options",
                         "You must specify one or more chessboards as pairs of --size and --square options.")
     group.add_option("-p", "--pattern",
@@ -84,8 +84,8 @@ def main():
                      action="store_true", default=False,
                      help="set tangential distortion coefficients (p1, p2) to zero")
     group.add_option("-k", "--k-coefficients",
-                     type="int", default=2, metavar="NUM_COEFFS",
-                     help="number of radial distortion coefficients to use (up to 6, default %default)")
+                     type="int", default=None, metavar="NUM_COEFFS",
+                     help="number of radial distortion coefficients to use (up to 6, default 2)")
     group.add_option("--disable_calib_cb_fast_check", action='store_true', default=False,
                      help="uses the CALIB_CB_FAST_CHECK flag for findChessboardCorners")
     parser.add_option_group(group)
@@ -108,7 +108,13 @@ def main():
     else:
         sync = functools.partial(ApproximateTimeSynchronizer, slop=options.approximate)
 
-    num_ks = options.k_coefficients
+    if options.k_coefficients is None:
+        if options.distortion_model == 'equidistant':
+            num_ks = 4
+        elif options.distortion_model == 'rational':
+            num_ks = 6
+        else:
+            num_ks = 2
 
     calib_flags = 0
     if options.fix_principal_point:
@@ -153,7 +159,7 @@ def main():
     elif options.pattern != 'chessboard':
         print('Unrecognized pattern %s, defaulting to chessboard' % options.pattern)
 
-    if options.disable_calib_cb_fast_check:
+    if options.disable_calib_cb_fast_check or options.distortion_model == 'equidistant':
         checkerboard_flags = 0
     else:
         checkerboard_flags = cv2.CALIB_CB_FAST_CHECK
