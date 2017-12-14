@@ -913,11 +913,6 @@ class StereoCalibrator(Calibrator):
         self.l.cal_fromcorners(lcorners)
         self.r.cal_fromcorners(rcorners)
 
-        #if numpy.any(numpy.isnan(self.l.intrinsics)) or numpy.any(numpy.isnan(self.r.intrinsics)):
-        print("Left:\n"+str(self.l.intrinsics)+"\n"+str(self.l.distortion)+"\n")
-        print("Right:\n"+str(self.r.intrinsics)+"\n"+str(self.r.distortion)+"\n")
-        #return False
-
         lipts = [ l for (l, _, _) in good ]
         ripts = [ r for (_, r, _) in good ]
         boards = [ b for (_, _, b) in good ]
@@ -927,7 +922,6 @@ class StereoCalibrator(Calibrator):
         self.T = numpy.zeros((3, 1), dtype=numpy.float64)
         self.R = numpy.eye(3, dtype=numpy.float64)
         if self.distortion_model == 'equidistant':
-            import pdb; pdb.set_trace()
             flags = cv2.fisheye.CALIB_FIX_INTRINSIC
             cv2.fisheye.stereoCalibrate(opts, lipts, ripts,
                                    self.l.intrinsics, self.l.distortion,
