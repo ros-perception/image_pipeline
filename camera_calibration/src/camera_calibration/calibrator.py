@@ -1166,7 +1166,7 @@ class StereoCalibrator(Calibrator):
         self.size = (self.db[0][1].shape[1], self.db[0][1].shape[0]) # TODO Needs to be set externally
         self.l.size = self.size
         self.r.size = self.size
-        self.cal_fromcorners(self.good_corners):
+        self.cal_fromcorners(self.good_corners)
         self.calibrated = True
 
     def do_tarfile_save(self, tf):
