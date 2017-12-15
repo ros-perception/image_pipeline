@@ -268,6 +268,11 @@ class Calibrator(object):
             else:
                 mono_img = img.astype(numpy.uint8)
             return mono_img
+        elif '8UC1' in msg.encoding:
+            # Equivalent to mono8
+            img = self.br.imgmsg_to_cv2(msg, "passthrough")
+            mono_img = img.astype(numpy.uint8)
+            return mono_img
         else:
             return self.br.imgmsg_to_cv2(msg, "mono8")
 
