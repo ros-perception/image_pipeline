@@ -957,7 +957,6 @@ class StereoCalibrator(Calibrator):
                                    flags = flags)
 
         self.set_alpha(0.0)
-        return True
 
     def set_alpha(self, a):
         """
@@ -1167,13 +1166,8 @@ class StereoCalibrator(Calibrator):
         self.size = (self.db[0][1].shape[1], self.db[0][1].shape[0]) # TODO Needs to be set externally
         self.l.size = self.size
         self.r.size = self.size
-        if self.cal_fromcorners(self.good_corners):
-            self.calibrated = True
-            # DEBUG
-            print((self.report()))
-            print((self.ost()))
-        else:
-            print("Calibration failure. Collect more samples before trying again.")
+        self.cal_fromcorners(self.good_corners):
+        self.calibrated = True
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
