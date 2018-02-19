@@ -3,6 +3,16 @@ project(image_publisher)
 
 find_package(catkin REQUIRED COMPONENTS cv_bridge dynamic_reconfigure camera_info_manager sensor_msgs image_transport nodelet roscpp)
 
+find_package(OpenCV 3 REQUIRED
+  COMPONENTS
+    opencv_core
+    opencv_imgproc
+    opencv_imgcodecs
+    opencv_videoio
+    opencv_highgui
+  CONFIG
+)
+
 # generate the dynamic_reconfigure config file
 generate_dynamic_reconfigure_options(cfg/ImagePublisher.cfg)
 
@@ -11,7 +21,7 @@ catkin_package()
 include_directories(${catkin_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} SHARED src/nodelet/image_publisher_nodelet.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 install(TARGETS image_publisher
         DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -19,7 +29,7 @@ install(TARGETS image_publisher
 
 add_executable(image_publisher_exe src/node/image_publisher.cpp)
 SET_TARGET_PROPERTIES(image_publisher_exe PROPERTIES OUTPUT_NAME image_publisher)
-target_link_libraries(image_publisher_exe ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(image_publisher_exe ${catkin_LIBRARIES})
 
 install(TARGETS image_publisher_exe
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
