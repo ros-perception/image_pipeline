@@ -84,6 +84,10 @@ class CameraCheckerNode:
         self.board.n_rows = chess_size[1]
         self.board.dim = dim
 
+        # make sure n_cols is not smaller than n_rows, otherwise error computation will be off
+        if self.board.n_cols < self.board.n_rows:
+            self.board.n_cols, self.board.n_rows = self.board.n_rows, self.board.n_cols
+
         image_topic = rospy.resolve_name("monocular") + "/image_rect"
         camera_topic = rospy.resolve_name("monocular") + "/camera_info"
 
