@@ -51,7 +51,8 @@ void convert(
     const sensor_msgs::ImageConstPtr& depth_msg,
     PointCloud::Ptr& cloud_msg,
     const image_geometry::PinholeCameraModel& model,
-    double range_max = 0.0)
+    double range_max = 0.0,
+    double range_min = 0.0)
 {
   // Use correct principal point from calibration
   float center_x = model.cx();
@@ -88,10 +89,17 @@ void convert(
         }
       }
 
-      // Fill in XYZ
-      *iter_x = (u - center_x) * depth * constant_x;
-      *iter_y = (v - center_y) * depth * constant_y;
-      *iter_z = DepthTraits<T>::toMeters(depth);
+      if (DepthTraits<T>::toMeters(depth) > range_min)
+      {
+        // Fill in XYZ
+        *iter_x = (u - center_x) * depth * constant_x;
+        *iter_y = (v - center_y) * depth * constant_y;
+        *iter_z = DepthTraits<T>::toMeters(depth);
+      }
+      else
+      {
+        *iter_x = *iter_y = *iter_z = bad_point;
+      }
     }
   }
 }
