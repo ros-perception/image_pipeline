@@ -111,8 +111,7 @@ void CropDecimateNodelet::connectCb()
     sub_.shutdown();
   else if (!sub_)
   {
-    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-    sub_ = it_in_->subscribeCamera("image_raw", queue_size_, &CropDecimateNodelet::imageCb, this, hints);
+    sub_ = it_in_->subscribeCamera("image_raw", queue_size_, &CropDecimateNodelet::imageCb, this);
   }
 }
 
@@ -174,7 +173,7 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
 {
   /// @todo Check image dimensions match info_msg
   /// @todo Publish tweaks to config_ so they appear in reconfigure_gui
-
+  
   Config config;
   {
     boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);

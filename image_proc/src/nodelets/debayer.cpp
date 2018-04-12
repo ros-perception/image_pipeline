@@ -58,7 +58,7 @@ class DebayerNodelet : public nodelet::Nodelet
 {
   // ROS communication
   boost::shared_ptr<image_transport::ImageTransport> it_;
-  image_transport::Subscriber sub_raw_;
+  image_transport::Subscriber sub_;
   
   boost::mutex connect_mutex_;
   image_transport::Publisher pub_mono_;
@@ -105,11 +105,10 @@ void DebayerNodelet::connectCb()
 {
   boost::lock_guard<boost::mutex> lock(connect_mutex_);
   if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0)
-    sub_raw_.shutdown();
-  else if (!sub_raw_)
+    sub_.shutdown();
+  else if (!sub_)
   {
-    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-    sub_raw_ = it_->subscribe("image_raw", 1, &DebayerNodelet::imageCb, this, hints);
+    sub_ = it_->subscribe("image_raw", 1, &DebayerNodelet::imageCb, this);
   }
 }
 
@@ -131,7 +130,7 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
       {
         NODELET_WARN_THROTTLE(30,
                             "Raw image data from topic '%s' has unsupported depth: %d",
-                            sub_raw_.getTopic().c_str(), bit_depth);
+                            sub_.getTopic().c_str(), bit_depth);
       } else {
         // Use cv_bridge to convert to Mono. If a type is not supported,
         // it will error out there
@@ -164,7 +163,7 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
     // Warn if the user asked for color
     NODELET_WARN_THROTTLE(30,
                             "Color topic '%s' requested, but raw image data from topic '%s' is grayscale",
-                            pub_color_.getTopic().c_str(), sub_raw_.getTopic().c_str());
+                            pub_color_.getTopic().c_str(), sub_.getTopic().c_str());
   }
   else if (enc::isColor(raw_msg->encoding))
   {
@@ -255,12 +254,12 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
     NODELET_ERROR_THROTTLE(10,
                            "Raw image topic '%s' has ambiguous encoding '8UC3'. The "
                            "source should set the encoding to 'bgr8' or 'rgb8'.",
-                           sub_raw_.getTopic().c_str());
+                           sub_.getTopic().c_str());
   }
   else
   {
     NODELET_ERROR_THROTTLE(10, "Raw image topic '%s' has unsupported encoding '%s'",
-                           sub_raw_.getTopic().c_str(), raw_msg->encoding.c_str());
+                           sub_.getTopic().c_str(), raw_msg->encoding.c_str());
   }
 }
 

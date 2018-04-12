@@ -105,8 +105,7 @@ void RectifyNodelet::connectCb()
     sub_camera_.shutdown();
   else if (!sub_camera_)
   {
-    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-    sub_camera_ = it_->subscribeCamera("image_mono", queue_size_, &RectifyNodelet::imageCb, this, hints);
+    sub_camera_ = it_->subscribeCamera("image_mono", queue_size_, &RectifyNodelet::imageCb, this);
   }
 }
 
