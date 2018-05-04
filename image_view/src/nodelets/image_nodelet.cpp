@@ -39,6 +39,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "window_thread.h"
 
+#include <boost/bind.hpp>
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 
@@ -71,19 +72,23 @@ class ImageNodelet : public nodelet::Nodelet
   image_transport::Subscriber sub_;
 
   boost::mutex image_mutex_;
+  boost::condition_variable image_condition_;
   cv::Mat last_image_;
+
+  boost::thread window_thread_;
   
   std::string window_name_;
   bool autosize_;
   boost::format filename_format_;
   int count_;
-  bool initialized_;
 
   virtual void onInit();
   
   void imageCb(const sensor_msgs::ImageConstPtr& msg);
 
   static void mouseCb(int event, int x, int y, int flags, void* param);
+
+  void windowThread();  
 
 public:
   ImageNodelet();
@@ -92,13 +97,17 @@ public:
 };
 
 ImageNodelet::ImageNodelet()
-  : filename_format_(""), count_(0), initialized_(false)
+  : filename_format_(""), count_(0)
 {
 }
 
 ImageNodelet::~ImageNodelet()
 {
-  cv::destroyWindow(window_name_);
+  if (window_thread_.joinable())
+  {
+    window_thread_.interrupt();
+    window_thread_.join();
+  }
 }
 
 void ImageNodelet::onInit()
@@ -146,6 +155,8 @@ void ImageNodelet::onInit()
   // Start the OpenCV window thread so we don't have to waitKey() somewhere
   startWindowThread();
 
+  window_thread_ = boost::thread(&ImageNodelet::windowThread, this);
+
   image_transport::ImageTransport it(nh);
   image_transport::TransportHints hints(transport, ros::TransportHints(), getPrivateNodeHandle());
   sub_ = it.subscribe(topic, 1, &ImageNodelet::imageCb, this, hints);
@@ -153,14 +164,6 @@ void ImageNodelet::onInit()
 
 void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
-  if ( ! initialized_ ) {
-    cv::namedWindow(window_name_, autosize_ ? cv::WND_PROP_AUTOSIZE : 0);
-    cv::setMouseCallback(window_name_, &ImageNodelet::mouseCb, this);
-    initialized_ = true;
-  }
-
-  image_mutex_.lock();
-
   // We want to scale floating point images so that they display nicely
   bool do_dynamic_scaling = (msg->encoding.find("F") != std::string::npos);
 
@@ -168,19 +171,15 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
   try {
     cv_bridge::CvtColorForDisplayOptions options;
     options.do_dynamic_scaling = do_dynamic_scaling;
-    last_image_ = cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options)->image;
+    {
+      boost::unique_lock<boost::mutex> lock(image_mutex_);
+      last_image_ = cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options)->image;
+      image_condition_.notify_all();
+    }
   }
   catch (cv_bridge::Exception& e) {
     NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
                              msg->encoding.c_str(), e.what());
-  }
-
-  // Must release the mutex before calling cv::imshow, or can deadlock against
-  // OpenCV's window mutex.
-  image_mutex_.unlock();
-  if (!last_image_.empty()) {
-    cv::imshow(window_name_, last_image_);
-    cv::waitKey(1);
   }
 }
 
@@ -199,9 +198,11 @@ void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
   if (event != cv::EVENT_RBUTTONDOWN)
     return;
   
-  boost::lock_guard<boost::mutex> guard(this_->image_mutex_);
-
-  const cv::Mat &image = this_->last_image_;
+  cv::Mat image;
+  {
+    boost::unique_lock<boost::mutex> lock(this_->image_mutex_);
+    image = this_->last_image_.clone();
+  }
   if (image.empty())
   {
     NODELET_WARN("Couldn't save image, no data!");
@@ -219,6 +220,36 @@ void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
     /// @todo Show full path, ask if user has permission to write there
     NODELET_ERROR("Failed to save image.");
   }
+}
+
+void ImageNodelet::windowThread()
+{
+  cv::namedWindow(window_name_, autosize_ ? cv::WND_PROP_AUTOSIZE : 0);
+  cv::setMouseCallback(window_name_, &ImageNodelet::mouseCb, this);
+
+  try
+  {
+    while (true)
+    {
+      cv::Mat image;
+      {
+        boost::unique_lock<boost::mutex> lock(image_mutex_);
+        while (last_image_.empty())
+        {
+          image_condition_.wait(lock);
+        }
+        image = last_image_;
+        last_image_.release();
+      }
+      cv::imshow(window_name_, image);
+      cv::waitKey(1);
+    }
+  }
+  catch (const boost::thread_interrupted&)
+  {
+  }
+
+  cv::destroyWindow(window_name_);
 }
 
 } // namespace image_view
