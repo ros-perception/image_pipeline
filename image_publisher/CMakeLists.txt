@@ -18,6 +18,8 @@ generate_dynamic_reconfigure_options(cfg/ImagePublisher.cfg)
 
 catkin_package()
 
+find_package(OpenCV REQUIRED core videoio)
+
 include_directories(${catkin_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} SHARED src/nodelet/image_publisher_nodelet.cpp)
