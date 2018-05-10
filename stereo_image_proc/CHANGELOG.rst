@@ -1,3 +1,9 @@
+Forthcoming
+-----------
+* Removed unused mutable scratch buffers (`#315 <https://github.com/ros-perception/image_pipeline/issues/315>`_)
+  The uint32_t buffers conflicted with newer release of OpenCV3, as explained here https://github.com/ros-perception/image_pipeline/issues/310
+* Contributors: Miquel Massot
+
 1.12.22 (2017-12-08)
 --------------------
 

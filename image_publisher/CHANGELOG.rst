@@ -2,6 +2,18 @@
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix 'VideoCapture' undefined symbol error (`#318 <https://github.com/ros-perception/image_pipeline/issues/318>`_)
+  * fix 'VideoCapture' undefined symbol error
+  The following error occured when trying to run image_publisher:
+  [...]/devel/lib/image_publisher/image_publisher: symbol lookup error: [...]/devel/lib//libimage_publisher.so: undefined symbol: _ZN2cv12VideoCaptureC1Ev
+  Probably, changes in cv_bridge reducing the OpenCV component dependencies led to the error. See
+  https://github.com/ros-perception/vision_opencv/commit/8b5bbcbc1ce65734dc600695487909e0c67c1033
+  This is fixed by manually finding OpenCV with the required components and adding the dependencies to the library, not just the node.
+  * add image_publisher opencv 2 compatibility
+* Contributors: hannometer
+
 1.12.22 (2017-12-08)
 --------------------
 
