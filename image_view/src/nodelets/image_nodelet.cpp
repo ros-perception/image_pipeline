@@ -67,15 +67,55 @@ static void destroyNodelet(GtkWidget *widget, gpointer data)
 
 namespace image_view {
 
+class ThreadSafeImage
+{
+  boost::mutex mutex_;
+  boost::condition_variable condition_;
+  cv::Mat image_;
+
+public:
+  void set(const cv::Mat& image);
+
+  cv::Mat get();
+
+  cv::Mat pop();
+};
+
+void ThreadSafeImage::set(const cv::Mat& image)
+{
+  boost::unique_lock<boost::mutex> lock(mutex_);
+  image_ = image;
+  condition_.notify_one();
+}
+
+cv::Mat ThreadSafeImage::get()
+{
+  boost::unique_lock<boost::mutex> lock(mutex_);
+  return image_;
+}
+
+cv::Mat ThreadSafeImage::pop()
+{
+  cv::Mat image;
+  {
+    boost::unique_lock<boost::mutex> lock(mutex_);
+    while (image_.empty())
+    {
+      condition_.wait(lock);
+    }
+    image = image_;
+    image_.release();
+  }
+  return image;
+}
+
 class ImageNodelet : public nodelet::Nodelet
 {
   image_transport::Subscriber sub_;
 
-  boost::mutex image_mutex_;
-  boost::condition_variable image_condition_;
-  cv::Mat last_image_;
-
   boost::thread window_thread_;
+
+  ThreadSafeImage queued_image_, shown_image_;
   
   std::string window_name_;
   bool autosize_;
@@ -171,11 +211,7 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
   try {
     cv_bridge::CvtColorForDisplayOptions options;
     options.do_dynamic_scaling = do_dynamic_scaling;
-    {
-      boost::unique_lock<boost::mutex> lock(image_mutex_);
-      last_image_ = cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options)->image;
-      image_condition_.notify_all();
-    }
+    queued_image_.set(cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options)->image);
   }
   catch (cv_bridge::Exception& e) {
     NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
@@ -198,11 +234,7 @@ void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
   if (event != cv::EVENT_RBUTTONDOWN)
     return;
   
-  cv::Mat image;
-  {
-    boost::unique_lock<boost::mutex> lock(this_->image_mutex_);
-    image = this_->last_image_.clone();
-  }
+  cv::Mat image(this_->shown_image_.get());
   if (image.empty())
   {
     NODELET_WARN("Couldn't save image, no data!");
@@ -231,18 +263,10 @@ void ImageNodelet::windowThread()
   {
     while (true)
     {
-      cv::Mat image;
-      {
-        boost::unique_lock<boost::mutex> lock(image_mutex_);
-        while (last_image_.empty())
-        {
-          image_condition_.wait(lock);
-        }
-        image = last_image_;
-        last_image_.release();
-      }
+      cv::Mat image(queued_image_.pop());
       cv::imshow(window_name_, image);
       cv::waitKey(1);
+      shown_image_.set(image);
     }
   }
   catch (const boost::thread_interrupted&)
