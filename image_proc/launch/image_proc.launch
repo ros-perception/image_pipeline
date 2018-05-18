@@ -3,7 +3,12 @@
 
   <arg name="manager" /> <!-- Must be globally qualified -->
   <arg name="respawn" default="false" />
-  <!-- TODO Arguments for debayer, interpolation methods? -->
+  <arg name="approximate_sync" default="false" />
+  <arg name="debayer_method" default="0" doc="Debayering algorithm:
+    0 : Bilinear, Fast algorithm using bilinear interpolation
+    1 : EdgeAware, Edge-aware algorithm
+    2 : EdgeAwareWeighted, Weighted edge-aware algorithm
+    3 : VNG, Slow but high quality Variable Number of Gradients algorithm" />
 
   <arg     if="$(arg respawn)" name="bond" value="" />
   <arg unless="$(arg respawn)" name="bond" value="--no-bond" />
