@@ -495,7 +495,7 @@ class Calibrator(object):
         + "distortion_model: " + ("rational_polynomial" if d.size > 5 else "plumb_bob") + "\n"
         + "distortion_coefficients:\n"
         + "  rows: 1\n"
-        + "  cols: 5\n"
+        + "  cols: " + d.shape[0] + "\n"
         + "  data: [" + ", ".join(["%8f" % d[i,0] for i in range(d.shape[0])]) + "]\n"
         + "rectification_matrix:\n"
         + "  rows: 3\n"
