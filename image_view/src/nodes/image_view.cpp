@@ -99,7 +99,6 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   if (g_gui && !g_last_image.empty()) {
     const cv::Mat &image = g_last_image;
     cv::imshow(g_window_name, image);
-    cv::waitKey(3);
   }
   if (g_pub.getNumSubscribers() > 0) {
     g_pub.publish(cv_ptr);
@@ -134,6 +133,11 @@ static void mouseCb(int event, int x, int y, int flags, void* param)
   }
 }
 
+static void guiCb(const ros::TimerEvent&)
+{
+    // Process pending GUI events and return immediately
+    cv::waitKey(1);
+}
 
 int main(int argc, char **argv)
 {
@@ -145,6 +149,7 @@ int main(int argc, char **argv)
 
   ros::NodeHandle nh;
   ros::NodeHandle local_nh("~");
+  ros::Timer gui_timer;
 
   // Default window name is the resolved topic name
   std::string topic = nh.resolveName("image");
@@ -174,8 +179,11 @@ int main(int argc, char **argv)
       }
     }
 
-    // Start the OpenCV window thread so we don't have to waitKey() somewhere
-    cv::startWindowThread();
+    // Since cv::startWindowThread() triggers a crash in cv::waitKey()
+    // if OpenCV is compiled against GTK, we call cv::waitKey() from
+    // the ROS event loop periodically, instead.
+    /*cv::startWindowThread();*/
+    gui_timer = local_nh.createTimer(ros::Duration(0.1), guiCb);
   }
 
   // Handle transport
