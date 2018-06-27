@@ -216,5 +216,11 @@ int main(int argc, char **argv)
   if (g_gui) {
     cv::destroyWindow(g_window_name);
   }
+  // The publisher is a global variable, and therefore its scope exceeds those
+  // of the node handles in main(). Unfortunately, this will cause a crash
+  // when the publisher tries to shut down and all node handles are gone
+  // already. Therefore, we shut down the publisher now and avoid the annoying
+  // mutex assertion.
+  g_pub.shutdown();
   return 0;
 }
