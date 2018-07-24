@@ -61,6 +61,13 @@
       Nodelet to create a depth image registered to another camera frame.
     </description>
   </class>
+  <class name="depth_image_proc/register_to_depth"
+	 type="depth_image_proc::RegisterToDepthNodelet"
+	 base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet to create a rgb image registered to another depth camera frame.
+    </description>
+  </class>
 
   <class name="depth_image_proc/crop_foremost"
 	 type="depth_image_proc::CropForemostNodelet"
