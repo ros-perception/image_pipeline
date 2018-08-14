@@ -1,4 +1,4 @@
-#image_proc_tegra
+# image_proc_tegra
 
 A ROS nodelet for image rectification using OpenCV's gpu functions. This nodelet is useful to reduce CPU usage in rectifying large video streams.
 Needs OpenCV 3.4 with CUDA support
