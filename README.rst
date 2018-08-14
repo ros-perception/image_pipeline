@@ -8,7 +8,13 @@ This package fills the gap between getting raw images from a camera driver and h
 
 This Fork adds:
 
-<<<<<<< HEAD
-* image_proc_tegra: A camera rectification package for camera rectification with OpenCV >3 and CUDA support. Tested in Tegra cores. Faster than image_proc since it uses CUDA for rectification
- - It also implements a Nodelet for Fish eye cameras rectification, if calibrated with camera_calibration_fisheye
-* camera_calibration_fisheye: A calibration tool for fisheye cameras. It uses OpenCV >3.
+* image_proc_tegra(https://github.com/DavidTorresOcana/image_pipeline/tree/indigo/image_proc_tegra):
+- A camera rectification package for camera rectification with OpenCV >3 and CUDA support. Tested in Tegra cores. Faster than image_proc since it uses CUDA for rectification
+ - It also implements a Nodelet for Fisheye cameras rectification, if calibrated with camera_calibration_fisheye(https://github.com/DavidTorresOcana/image_pipeline/tree/indigo/camera_calibration_fisheye). It needs OpenCV 3 with CUDA suport
+ 
+* camera_calibration_fisheye(https://github.com/DavidTorresOcana/image_pipeline/tree/indigo/camera_calibration_fisheye): A calibration tool for fisheye cameras. It uses OpenCV >3.
+
+* image_proc_fisheye (https://github.com/DavidTorresOcana/image_pipeline/tree/indigo/image_proc_fisheye):
+Same as image_proc(https://github.com/DavidTorresOcana/image_pipeline/tree/indigo/image_proc) but for fisheye cameras calibrated with camera_calibration_fisheye(https://github.com/DavidTorresOcana/image_pipeline/tree/indigo/camera_calibration_fisheye). It does not need CUDA suport
+
+
