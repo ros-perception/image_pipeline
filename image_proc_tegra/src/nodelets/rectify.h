@@ -31,3 +31,24 @@ namespace image_proc_tegra
     };
 
 }
+
+namespace image_proc_tegra_fisheye
+{
+
+    class RectifyNodelet : public nodelet::Nodelet
+    {
+        public:
+            virtual void onInit();
+            void process_image(const sensor_msgs::ImageConstPtr& frame);
+            void camera_info(const sensor_msgs::CameraInfoConstPtr& info_msg);
+        private:
+            ros::Subscriber sub_;
+            ros::Subscriber sub_info_;
+            ros::Publisher pub_;
+            cv::cuda::GpuMat mapx_;
+            cv::cuda::GpuMat mapy_;
+            bool camera_set_;
+    };
+
+}
+

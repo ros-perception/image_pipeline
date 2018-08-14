@@ -1,0 +1,31 @@
+<package>
+  <name>camera_calibration_fisheye</name>
+  <version>1.12.23</version>
+  <description>
+     camera_calibration allows easy calibration of monocular or stereo
+     cameras using a checkerboard calibration target.
+  </description>
+  <author>James Bowman</author>
+  <author>Patrick Mihelich</author>
+  <author>David Torres</author>
+  <maintainer email="david.torre.ocana@gmail.com">David Torres</maintainer>
+
+  <buildtool_depend version_gte="0.5.68">catkin</buildtool_depend>
+
+  <test_depend>rostest</test_depend>
+
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>image_geometry</run_depend>
+  <run_depend>message_filters</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>std_srvs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+
+  <license>BSD</license>
+  <url>http://www.ros.org/wiki/camera_calibration</url>
+
+  <export>
+    <rosdoc config="rosdoc.yaml" />
+    <architecture_independent/>
+  </export>
+</package>
