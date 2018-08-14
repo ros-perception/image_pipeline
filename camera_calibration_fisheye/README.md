@@ -8,7 +8,8 @@ Camera Calibrator
 To run the cameracalibrator.py node for a monocular camera using an 8x6 chessboard with 108mm squares:
 
 
-```rosrun camera_calibration_fisheye cameracalibrator.py --size 8x6 --square 0.108 image:=/my_camera/image camera:=/my_camera
+```
+rosrun camera_calibration_fisheye cameracalibrator.py --size 8x6 --square 0.108 image:=/my_camera/image camera:=/my_camera
 ```
 When you click on the "Save" button after a succesfull calibration, the data (calibration data and images used for calibration) will be written to /tmp/calibrationdata.tar.gz.
 
