@@ -92,7 +92,7 @@ class ConsumerThread(threading.Thread):
 
 class CalibrationNode:
     def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
-                 pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0):
+                 pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0, max_chessboard_speed = -1):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -112,6 +112,7 @@ class CalibrationNode:
         self._checkerboard_flags = checkerboard_flags
         self._pattern = pattern
         self._camera_name = camera_name
+        self._max_chessboard_speed = max_chessboard_speed
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = synchronizer([lsub, rsub], 4)
@@ -155,10 +156,12 @@ class CalibrationNode:
         if self.c == None:
             if self._camera_name:
                 self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
-                                        checkerboard_flags=self._checkerboard_flags)
+                                        checkerboard_flags=self._checkerboard_flags,
+                                        max_chessboard_speed = self._max_chessboard_speed)
             else:
                 self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern,
-                                        checkerboard_flags=self.checkerboard_flags)
+                                        checkerboard_flags=self.checkerboard_flags,
+                                        max_chessboard_speed = self._max_chessboard_speed)
 
         # This should just call the MonoCalibrator
         drawable = self.c.handle_msg(msg)
@@ -169,10 +172,12 @@ class CalibrationNode:
         if self.c == None:
             if self._camera_name:
                 self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
-                                          checkerboard_flags=self._checkerboard_flags)
+                                          checkerboard_flags=self._checkerboard_flags,
+                                          max_chessboard_speed = self._max_chessboard_speed)
             else:
                 self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern,
-                                          checkerboard_flags=self._checkerboard_flags)
+                                          checkerboard_flags=self._checkerboard_flags,
+                                          max_chessboard_speed = self._max_chessboard_speed)
 
         drawable = self.c.handle_msg(msg)
         self.displaywidth = drawable.lscrib.shape[1] + drawable.rscrib.shape[1]
