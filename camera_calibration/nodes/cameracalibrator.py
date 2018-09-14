@@ -84,6 +84,9 @@ def main():
                      help="number of radial distortion coefficients to use (up to 6, default %default)")
     group.add_option("--disable_calib_cb_fast_check", action='store_true', default=False,
                      help="uses the CALIB_CB_FAST_CHECK flag for findChessboardCorners")
+    group.add_option("--max-chessboard-speed", type="float", default=-1.0,
+                     help="Do not use samples where the calibration pattern is moving faster \
+                     than this speed in px/frame. Set to eg. 0.5 for rolling shutter cameras.")
     parser.add_option_group(group)
     options, args = parser.parse_args()
 
@@ -143,7 +146,7 @@ def main():
 
     rospy.init_node('cameracalibrator')
     node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
-                                 checkerboard_flags=checkerboard_flags)
+                                 checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed)
     rospy.spin()
 
 if __name__ == "__main__":
