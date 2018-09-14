@@ -322,6 +322,7 @@ class Calibrator():
         corner_deltas = (corners - last_frame_corners).reshape(num_corners, 2)
         # Average distance travelled overall for all corners
         average_motion = numpy.average(numpy.linalg.norm(corner_deltas, axis = 1))
+        print ("average motion: %g" % average_motion)
         return average_motion <= self.max_chessboard_speed
 
     def is_good_sample(self, params, corners, last_frame_corners):
