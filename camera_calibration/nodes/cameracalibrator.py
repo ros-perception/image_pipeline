@@ -41,6 +41,7 @@ from camera_calibration.camera_calibrator import OpenCVCalibrationNode
 from camera_calibration.calibrator import ChessboardInfo, Patterns
 from message_filters import ApproximateTimeSynchronizer
 
+
 def main():
     from optparse import OptionParser, OptionGroup
     parser = OptionParser("%prog --size SIZE1 --square SQUARE1 [ --size SIZE2 --square SQUARE2 ]",
@@ -84,8 +85,8 @@ def main():
     group.add_option("--disable_calib_cb_fast_check", action='store_true', default=False,
                      help="uses the CALIB_CB_FAST_CHECK flag for findChessboardCorners")
     group.add_option("--max-chessboard-speed", type="float", default=-1.0,
-                     help="Do not use samples where the chessboard is moving faster than this speed in \
-                     px/frame. Set to eg. 0.5 for rolling shutter cameras.")
+                     help="Do not use samples where the calibration pattern is moving faster \
+                     than this speed in px/frame. Set to eg. 0.5 for rolling shutter cameras.")
     parser.add_option_group(group)
     options, args = parser.parse_args()
 
