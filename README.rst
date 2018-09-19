@@ -1,4 +1,4 @@
-# Fork of image_pipeline
+Fork of image_pipeline
 
 This package fills the gap between getting raw images from a camera driver and higher-level vision processing.
 
