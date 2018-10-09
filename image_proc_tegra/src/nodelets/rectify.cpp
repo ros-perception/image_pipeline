@@ -62,7 +62,9 @@ namespace image_proc_tegra_fisheye {
     cv_bridge::CvImageConstPtr image = cv_bridge::toCvShare(frame);
     cv::cuda::GpuMat image_gpu(image->image);
     cv::cuda::GpuMat image_gpu_rect(cv::Size(image->image.rows, image->image.cols), image->image.type());
-    cv::cuda::remap(image_gpu, image_gpu_rect, mapx_, mapy_, cv::INTER_LINEAR, cv::BORDER_CONSTANT);
+    //cv::cuda::remap(image_gpu, image_gpu_rect, mapx_, mapy_, cv::INTER_LINEAR, cv::BORDER_CONSTANT);
+    cv::cuda::remap(image_gpu, image_gpu_rect, mapx_, mapy_, cv::INTER_CUBIC, cv::BORDER_CONSTANT);
+
     cv::Mat image_rect = cv::Mat(image_gpu_rect);
 	
     cv_bridge::CvImage out_msg;

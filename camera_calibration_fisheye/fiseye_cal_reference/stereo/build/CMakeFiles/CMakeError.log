@@ -1,0 +1,56 @@
+Determining if the pthread_create exist failed with the following output:
+Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_fd4ab/fast"
+/usr/bin/make -f CMakeFiles/cmTC_fd4ab.dir/build.make CMakeFiles/cmTC_fd4ab.dir/build
+make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_fd4ab.dir/CheckSymbolExists.c.o
+/usr/bin/cc    -fPIC    -o CMakeFiles/cmTC_fd4ab.dir/CheckSymbolExists.c.o   -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTC_fd4ab
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_fd4ab.dir/link.txt --verbose=1
+/usr/bin/cc  -fPIC     CMakeFiles/cmTC_fd4ab.dir/CheckSymbolExists.c.o  -o cmTC_fd4ab -rdynamic 
+CMakeFiles/cmTC_fd4ab.dir/CheckSymbolExists.c.o: In function `main':
+CheckSymbolExists.c:(.text+0x14): undefined reference to `pthread_create'
+CheckSymbolExists.c:(.text+0x18): undefined reference to `pthread_create'
+collect2: error: ld returned 1 exit status
+CMakeFiles/cmTC_fd4ab.dir/build.make:97: recipe for target 'cmTC_fd4ab' failed
+make[1]: *** [cmTC_fd4ab] Error 1
+make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
+Makefile:126: recipe for target 'cmTC_fd4ab/fast' failed
+make: *** [cmTC_fd4ab/fast] Error 2
+
+File /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <pthread.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_a4183/fast"
+/usr/bin/make -f CMakeFiles/cmTC_a4183.dir/build.make CMakeFiles/cmTC_a4183.dir/build
+make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_a4183.dir/CheckFunctionExists.c.o
+/usr/bin/cc    -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_a4183.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.5/Modules/CheckFunctionExists.c
+Linking C executable cmTC_a4183
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a4183.dir/link.txt --verbose=1
+/usr/bin/cc  -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_a4183.dir/CheckFunctionExists.c.o  -o cmTC_a4183 -rdynamic -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+collect2: error: ld returned 1 exit status
+CMakeFiles/cmTC_a4183.dir/build.make:97: recipe for target 'cmTC_a4183' failed
+make[1]: *** [cmTC_a4183] Error 1
+make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
+Makefile:126: recipe for target 'cmTC_a4183/fast' failed
+make: *** [cmTC_a4183/fast] Error 2
+
+

@@ -639,10 +639,11 @@ class MonoCalibrator(Calibrator):
 
         # NOTE: see https://medium.com/@kennethjiang/calibrate-fisheye-lens-using-opencv-part-2-13990f1b157f
         ncm = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(self.intrinsics, self.distortion, self.size, numpy.eye(3), balance=a)
-        
         for j in range(3):
             for i in range(3):
                 self.P[j,i] = ncm[j, i]
+        
+        #self.P = self.intrinsics
         ##self.mapx, self.mapy = cv2.fisheye.initUndistortRectifyMap(self.intrinsics, self.distortion, self.R, ncm, self.size, cv2.CV_32FC1) # Use this to perform cropping 
         self.mapx, self.mapy = cv2.fisheye.initUndistortRectifyMap(self.intrinsics, self.distortion, self.R, self.intrinsics, self.size, cv2.CV_32FC1) #############################
 
@@ -653,7 +654,7 @@ class MonoCalibrator(Calibrator):
 
         Apply the post-calibration undistortion to the source image
         """
-        return cv2.remap(src, self.mapx, self.mapy, cv2.INTER_LINEAR)
+        return cv2.remap(src, self.mapx, self.mapy, cv2.INTER_LANCZOS4)
 
     def undistort_points(self, src):
         """

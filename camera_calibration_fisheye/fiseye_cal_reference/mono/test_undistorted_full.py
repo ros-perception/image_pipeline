@@ -9,8 +9,8 @@ import glob
 
 # You should replace these 3 lines with the output in calibration step
 DIM=(1920, 1208)
-K=np.array([[695.938094325298, 0.0, 947.823102161717], [0.0, 696.8169447082668, 651.7314027994207], [0.0, 0.0, 1.0]])
-D=np.array([[-0.02782443761588723], [-0.03224246650257987], [0.016825224749675603], [-0.0035259044552496525]])
+K=np.array([[696.0621148872598, 0.0, 947.6971496853826], [0.0, 696.9356605571118, 651.8101521495024], [0.0, 0.0, 1.0]])
+D=np.array([[-0.02814215088649154], [-0.03164955633645717], [0.016420714751802366], [-0.003441866971663222]])
 
 def undistort(img_path, balance=1.0, dim2=None, dim3=None):
     img = cv2.imread(img_path)
@@ -20,12 +20,16 @@ def undistort(img_path, balance=1.0, dim2=None, dim3=None):
         dim2 = dim1
     if not dim3:
         dim3 = dim1
+        
     scaled_K = K * dim1[0] / DIM[0]  # The values of K is to scale with image dimension.
     scaled_K[2][2] = 1.0  # Except that K[2][2] is always 1.0
     # This is how scaled_K, dim2 and balance are used to determine the final K used to un-distort image. OpenCV document failed to make this clear!
+    
     new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(scaled_K, D, dim2, np.eye(3), balance=balance)
+    print new_K
     map1, map2 = cv2.fisheye.initUndistortRectifyMap(scaled_K, D, np.eye(3), new_K, dim3, cv2.CV_16SC2)
-    undistorted_img = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+    
+    undistorted_img = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LANCZOS4, borderMode=cv2.BORDER_CONSTANT)
     cv2.imshow("undistorted", undistorted_img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

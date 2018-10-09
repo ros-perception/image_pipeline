@@ -29,8 +29,7 @@ def lryaml( name, d, k, r, p): # camera_name, distortion, intrinsics, R, P ...  
     + "")
     return calmessage
         
-        
-        
+
 CHECKERBOARD = (6,8)
 subpix_criteria = (cv2.TERM_CRITERIA_EPS+cv2.TERM_CRITERIA_MAX_ITER, 30, 0.1)
 calibration_flags = cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC+cv2.fisheye.CALIB_CHECK_COND+cv2.fisheye.CALIB_FIX_SKEW

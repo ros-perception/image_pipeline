@@ -1,0 +1,22 @@
+<library path="lib/libdepth_fisheye_image_proc">
+
+
+  <class name="depth_fisheye_image_proc/point_cloud_xyz"
+	 type="depth_fisheye_image_proc::PointCloudXyzNodelet"
+	 base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet to convert depth image to XYZ point cloud.
+    </description>
+  </class>
+
+  <class name="depth_fisheye_image_proc/point_cloud_xyzrgb"
+	 type="depth_fisheye_image_proc::PointCloudXyzrgbNodelet"
+	 base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet to combine registered depth image and RGB image into XYZRGB point cloud.
+    </description>
+  </class>
+
+
+
+</library>

@@ -67,8 +67,15 @@ void loadMonocularNodelets(nodelet::Loader& manager, const std::string& side,
   std::string rectify_mono_name = ros::this_node::getName() + "_rectify_mono_" + side;
   if (rectify_params.valid())
     ros::param::set(rectify_mono_name, rectify_params);
-  manager.load(rectify_mono_name, "image_proc/rectify", remappings, my_argv);
-
+ 
+ if(ros::this_node::getName().compare("stereo_image_proc_fiseye")){
+      remappings["image_raw"]  = image_mono_topic;
+      manager.load(rectify_mono_name, "image_proc_tegra_fisheye/RectifyNodelet", remappings, my_argv);
+  }
+  else{
+      manager.load(rectify_mono_name, "image_proc/rectify", remappings, my_argv);
+  }
+  
   // Rectify nodelet: image_color -> image_rect_color
   remappings.clear();
   remappings["image_mono"]  = image_color_topic;
@@ -77,8 +84,16 @@ void loadMonocularNodelets(nodelet::Loader& manager, const std::string& side,
   std::string rectify_color_name = ros::this_node::getName() + "_rectify_color_" + side;
   if (rectify_params.valid())
     ros::param::set(rectify_color_name, rectify_params);
-  manager.load(rectify_color_name, "image_proc/rectify", remappings, my_argv);
+
+  if(ros::this_node::getName().compare("stereo_image_proc_fiseye")){
+      remappings["image_raw"]  = image_color_topic;
+      manager.load(rectify_color_name, "image_proc_tegra_fisheye/RectifyNodelet", remappings, my_argv);
+  }
+  else{
+      manager.load(rectify_color_name, "image_proc/rectify", remappings, my_argv);
+  }
 }
+  
 
 int main(int argc, char **argv)
 {
