@@ -13,6 +13,12 @@ rosrun camera_calibration_fisheye cameracalibrator.py --size 8x6 --square 0.108 
 ```
 When you click on the "Save" button after a succesfull calibration, the data (calibration data and images used for calibration) will be written to /tmp/calibrationdata.tar.gz.
 
+To run the cameracalibrator.py node for a stereo camera:
+
+```
+rosrun camera_calibration_fisheye cameracalibrator.py --size 8x6 --square 0.108 right:=/my_stereo/right/image_raw left:=/my_stereo/left/image_raw left_camera:=/my_stereo/left right_camera:=/my_stereo/right
+```
+
 cameracalibrator.py supports the following options:
 
 ```
