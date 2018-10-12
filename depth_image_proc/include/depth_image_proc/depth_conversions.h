@@ -34,8 +34,8 @@
 #ifndef DEPTH_IMAGE_PROC_DEPTH_CONVERSIONS
 #define DEPTH_IMAGE_PROC_DEPTH_CONVERSIONS
 
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/point_cloud2_iterator.h>
+#include <sensor_msgs/msg/image.h>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <image_geometry/pinhole_camera_model.h>
 #include <depth_image_proc/depth_traits.h>
 
@@ -43,13 +43,13 @@
 
 namespace depth_image_proc {
 
-typedef sensor_msgs::PointCloud2 PointCloud;
+using PointCloud = sensor_msgs::msg::PointCloud2;
 
 // Handles float or uint16 depths
 template<typename T>
 void convert(
-    const sensor_msgs::ImageConstPtr& depth_msg,
-    PointCloud::Ptr& cloud_msg,
+    const sensor_msgs::msg::Image::ConstSharedPtr& depth_msg,
+    PointCloud::SharedPtr& cloud_msg,
     const image_geometry::PinholeCameraModel& model,
     double range_max = 0.0)
 {

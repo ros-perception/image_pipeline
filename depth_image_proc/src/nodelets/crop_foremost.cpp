@@ -31,66 +31,75 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-//#include <ros/ros.h>
-#include <nodelet/nodelet.h>
+#include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
-#include <boost/thread.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <depth_image_proc/visibility.h>
 
 namespace depth_image_proc {
 
 namespace enc = sensor_msgs::image_encodings;
 
-class CropForemostNodelet : public nodelet::Nodelet
+class CropForemostNode : public rclcpp::Node
 {
+public:
+  DEPTH_IMAGE_PROC_PUBLIC CropForemostNode();
+
+private:
   // Subscriptions
-  boost::shared_ptr<image_transport::ImageTransport> it_;
+  std::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::Subscriber sub_raw_;
 
   // Publications
-  boost::mutex connect_mutex_;
+  std::mutex connect_mutex_;
   image_transport::Publisher pub_depth_;
 
-  virtual void onInit();
+  void connectCb(rclcpp::Node::SharedPtr node);
 
-  void connectCb();
-
-  void depthCb(const sensor_msgs::ImageConstPtr& raw_msg);
+  void depthCb(const sensor_msgs::msg::Image::ConstSharedPtr& raw_msg);
 
   double distance_;
+
+  rclcpp::Logger logger_ = rclcpp::get_logger("CropForemostNode");
 };
 
-void CropForemostNodelet::onInit()
+CropForemostNode::CropForemostNode()
+: Node("CropForemostNode")
 {
-  ros::NodeHandle& nh = getNodeHandle();
-  ros::NodeHandle& private_nh = getPrivateNodeHandle();
-  private_nh.getParam("distance", distance_);
-  it_.reset(new image_transport::ImageTransport(nh));
+  rclcpp::Node::SharedPtr node = std::shared_ptr<rclcpp::Node>(this);
+  this->get_parameter("distance", distance_);
+  it_.reset(new image_transport::ImageTransport(node));
 
   // Monitor whether anyone is subscribed to the output
-  image_transport::SubscriberStatusCallback connect_cb = boost::bind(&CropForemostNodelet::connectCb, this);
+  // TODO(ros2) Implement when SubscriberStatusCallback is available
+  //image_transport::SubscriberStatusCallback connect_cb = std::bind(&CropForemostNode::connectCb, this);
+  connectCb(node);
   // Make sure we don't enter connectCb() between advertising and assigning to pub_depth_
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  pub_depth_ = it_->advertise("image", 1, connect_cb, connect_cb);
+  std::lock_guard<std::mutex> lock(connect_mutex_);
+  // TODO(ros2) Implement when SubscriberStatusCallback is available
+  //pub_depth_ = it_->advertise("image", 1, connect_cb, connect_cb);
+  pub_depth_ = it_->advertise("image", 1);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void CropForemostNodelet::connectCb()
+void CropForemostNode::connectCb(rclcpp::Node::SharedPtr node)
 {
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  if (pub_depth_.getNumSubscribers() == 0)
+  std::lock_guard<std::mutex> lock(connect_mutex_);
+  // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
+  //if (pub_depth_.getNumSubscribers() == 0)
+  if (0)
   {
     sub_raw_.shutdown();
   }
   else if (!sub_raw_)
   {
-    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-    sub_raw_ = it_->subscribe("image_raw", 1, &CropForemostNodelet::depthCb, this, hints);
+    image_transport::TransportHints hints(node, "raw");
+    sub_raw_ = it_->subscribe("image_raw", 1, &CropForemostNode::depthCb, this, &hints);
   }
 }
 
-void CropForemostNodelet::depthCb(const sensor_msgs::ImageConstPtr& raw_msg)
+void CropForemostNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr& raw_msg)
 {
   cv_bridge::CvImagePtr cv_ptr;
   try
@@ -99,13 +108,13 @@ void CropForemostNodelet::depthCb(const sensor_msgs::ImageConstPtr& raw_msg)
   }
   catch (cv_bridge::Exception& e)
   {
-    ROS_ERROR("cv_bridge exception: %s", e.what());
+    RCLCPP_ERROR(logger_, "cv_bridge exception: %s", e.what());
     return;
   }
 
   // Check the number of channels
   if(sensor_msgs::image_encodings::numChannels(raw_msg->encoding) != 1){
-    NODELET_ERROR_THROTTLE(2, "Only grayscale image is acceptable, got [%s]", raw_msg->encoding.c_str());
+    RCLCPP_ERROR(logger_, "Only grayscale image is acceptable, got [%s]", raw_msg->encoding.c_str());
     return;
   }
 
@@ -137,6 +146,7 @@ void CropForemostNodelet::depthCb(const sensor_msgs::ImageConstPtr& raw_msg)
 
 } // namespace depth_image_proc
 
-// Register as nodelet
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(depth_image_proc::CropForemostNodelet,nodelet::Nodelet);
+#include "class_loader/register_macro.hpp"
+
+// Register the component with class_loader.
+CLASS_LOADER_REGISTER_CLASS(depth_image_proc::CropForemostNode, rclcpp::Node)

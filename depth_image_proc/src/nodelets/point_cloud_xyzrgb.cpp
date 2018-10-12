@@ -31,108 +31,112 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include <boost/version.hpp>
-#if ((BOOST_VERSION / 100) % 1000) >= 53
-#include <boost/thread/lock_guard.hpp>
-#endif
-
-#include <ros/ros.h>
-#include <nodelet/nodelet.h>
+#include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/sync_policies/approximate_time.h>
-#include <sensor_msgs/image_encodings.h>
-#include <sensor_msgs/point_cloud2_iterator.h>
-#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/image_encodings.hpp>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <image_geometry/pinhole_camera_model.h>
 #include <depth_image_proc/depth_traits.h>
+#include <depth_image_proc/visibility.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
 
 namespace depth_image_proc {
 
 using namespace message_filters::sync_policies;
+using namespace std::placeholders;
 namespace enc = sensor_msgs::image_encodings;
 
-class PointCloudXyzrgbNodelet : public nodelet::Nodelet
+class PointCloudXyzrgbNode : public rclcpp::Node
 {
-  ros::NodeHandlePtr rgb_nh_;
-  boost::shared_ptr<image_transport::ImageTransport> rgb_it_, depth_it_;
-  
+public:
+  DEPTH_IMAGE_PROC_PUBLIC PointCloudXyzrgbNode();
+
+private:
   // Subscriptions
   image_transport::SubscriberFilter sub_depth_, sub_rgb_;
-  message_filters::Subscriber<sensor_msgs::CameraInfo> sub_info_;
-  typedef ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> SyncPolicy;
-  typedef ExactTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> ExactSyncPolicy;
-  typedef message_filters::Synchronizer<SyncPolicy> Synchronizer;
-  typedef message_filters::Synchronizer<ExactSyncPolicy> ExactSynchronizer;
-  boost::shared_ptr<Synchronizer> sync_;
-  boost::shared_ptr<ExactSynchronizer> exact_sync_;
+  message_filters::Subscriber<sensor_msgs::msg::CameraInfo> sub_info_;
+  using SyncPolicy =
+    message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image, sensor_msgs::msg::CameraInfo>;
+  using ExactSyncPolicy =
+    message_filters::sync_policies::ExactTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image, sensor_msgs::msg::CameraInfo>;
+  using Synchronizer = message_filters::Synchronizer<SyncPolicy>;
+  using ExactSynchronizer = message_filters::Synchronizer<ExactSyncPolicy>;
+  std::shared_ptr<Synchronizer> sync_;
+  std::shared_ptr<ExactSynchronizer> exact_sync_;
 
   // Publications
-  boost::mutex connect_mutex_;
-  typedef sensor_msgs::PointCloud2 PointCloud;
-  ros::Publisher pub_point_cloud_;
+  std::mutex connect_mutex_;
+  using PointCloud = sensor_msgs::msg::PointCloud2;
+  rclcpp::Publisher<PointCloud>::SharedPtr pub_point_cloud_;
 
   image_geometry::PinholeCameraModel model_;
 
-  virtual void onInit();
+  void connectCb(rclcpp::Node::SharedPtr node);
 
-  void connectCb();
-
-  void imageCb(const sensor_msgs::ImageConstPtr& depth_msg,
-               const sensor_msgs::ImageConstPtr& rgb_msg,
-               const sensor_msgs::CameraInfoConstPtr& info_msg);
+  void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& depth_msg,
+               const sensor_msgs::msg::Image::ConstSharedPtr& rgb_msg,
+               const sensor_msgs::msg::CameraInfo::ConstSharedPtr& info_msg);
 
   template<typename T>
-  void convert(const sensor_msgs::ImageConstPtr& depth_msg,
-               const sensor_msgs::ImageConstPtr& rgb_msg,
-               const PointCloud::Ptr& cloud_msg,
+  void convert(const sensor_msgs::msg::Image::ConstSharedPtr& depth_msg,
+               const sensor_msgs::msg::Image::ConstSharedPtr& rgb_msg,
+               const PointCloud::SharedPtr& cloud_msg,
                int red_offset, int green_offset, int blue_offset, int color_step);
+
+  rclcpp::Logger logger_ = rclcpp::get_logger("PointCloudXyzrgbNode");
 };
 
-void PointCloudXyzrgbNodelet::onInit()
+PointCloudXyzrgbNode::PointCloudXyzrgbNode()
+: Node("PointCloudXyzrgbNode")
 {
-  ros::NodeHandle& nh         = getNodeHandle();
-  ros::NodeHandle& private_nh = getPrivateNodeHandle();
-  rgb_nh_.reset( new ros::NodeHandle(nh, "rgb") );
-  ros::NodeHandle depth_nh(nh, "depth_registered");
-  rgb_it_  .reset( new image_transport::ImageTransport(*rgb_nh_) );
-  depth_it_.reset( new image_transport::ImageTransport(depth_nh) );
+  rclcpp::Node::SharedPtr node = std::shared_ptr<rclcpp::Node>(this);
 
   // Read parameters
   int queue_size;
-  private_nh.param("queue_size", queue_size, 5);
+  this->get_parameter_or("queue_size", queue_size, 5);
   bool use_exact_sync;
-  private_nh.param("exact_sync", use_exact_sync, false);
+  this->get_parameter_or("exact_sync", use_exact_sync, false);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   if (use_exact_sync)
   {
-    exact_sync_.reset( new ExactSynchronizer(ExactSyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_) );
-    exact_sync_->registerCallback(boost::bind(&PointCloudXyzrgbNodelet::imageCb, this, _1, _2, _3));
+    exact_sync_.reset(new ExactSynchronizer(ExactSyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_) );
+    exact_sync_->registerCallback(std::bind(&PointCloudXyzrgbNode::imageCb, this, _1, _2, _3));
   }
   else
   {
-    sync_.reset( new Synchronizer(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_) );
-    sync_->registerCallback(boost::bind(&PointCloudXyzrgbNodelet::imageCb, this, _1, _2, _3));
+    sync_.reset(new Synchronizer(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_) );
+    sync_->registerCallback(std::bind(&PointCloudXyzrgbNode::imageCb, this, _1, _2, _3));
   }
-  
+
   // Monitor whether anyone is subscribed to the output
-  ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudXyzrgbNodelet::connectCb, this);
+  // TODO(ros2) Implement when SubscriberStatusCallback is available
+  // ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudXyzrgbNode::connectCb, this);
+  connectCb(node);
+  // TODO(ros2) Implement when SubscriberStatusCallback is available
   // Make sure we don't enter connectCb() between advertising and assigning to pub_point_cloud_
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  pub_point_cloud_ = depth_nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
+  std::lock_guard<std::mutex> lock(connect_mutex_);
+  // TODO(ros2) Implement connect_cb when SubscriberStatusCallback is available
+  //pub_point_cloud_ = depth_nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
+  pub_point_cloud_ = create_publisher<sensor_msgs::msg::PointCloud2>("points");
+  // TODO(ros2) Implement connect_cb when SubscriberStatusCallback is available
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void PointCloudXyzrgbNodelet::connectCb()
+void PointCloudXyzrgbNode::connectCb(rclcpp::Node::SharedPtr node)
 {
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  if (pub_point_cloud_.getNumSubscribers() == 0)
+  std::lock_guard<std::mutex> lock(connect_mutex_);
+  // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
+  //if (pub_point_cloud_->getNumSubscribers() == 0)
+  if (0)
+  // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
   {
     sub_depth_.unsubscribe();
     sub_rgb_  .unsubscribe();
@@ -140,30 +144,29 @@ void PointCloudXyzrgbNodelet::connectCb()
   }
   else if (!sub_depth_.getSubscriber())
   {
-    ros::NodeHandle& private_nh = getPrivateNodeHandle();
     // parameter for depth_image_transport hint
     std::string depth_image_transport_param = "depth_image_transport";
 
     // depth image can use different transport.(e.g. compressedDepth)
-    image_transport::TransportHints depth_hints("raw",ros::TransportHints(), private_nh, depth_image_transport_param);
-    sub_depth_.subscribe(*depth_it_, "image_rect",       1, depth_hints);
+    image_transport::TransportHints depth_hints(node, "raw", depth_image_transport_param);
+    sub_depth_.subscribe(node, "depth_registered/image_rect", depth_hints.getTransport());
 
     // rgb uses normal ros transport hints.
-    image_transport::TransportHints hints("raw", ros::TransportHints(), private_nh);
-    sub_rgb_  .subscribe(*rgb_it_,   "image_rect_color", 1, hints);
-    sub_info_ .subscribe(*rgb_nh_,   "camera_info",      1);
+    image_transport::TransportHints hints(node);
+    sub_rgb_.subscribe(node, "rgb/image_rect_color", hints.getTransport());
+    sub_info_.subscribe(node, "rgb/camera_info");
   }
 }
 
-void PointCloudXyzrgbNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_msg,
-                                      const sensor_msgs::ImageConstPtr& rgb_msg_in,
-                                      const sensor_msgs::CameraInfoConstPtr& info_msg)
+void PointCloudXyzrgbNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& depth_msg,
+                                      const sensor_msgs::msg::Image::ConstSharedPtr& rgb_msg_in,
+                                      const sensor_msgs::msg::CameraInfo::ConstSharedPtr& info_msg)
 {
   // Check for bad inputs
   if (depth_msg->header.frame_id != rgb_msg_in->header.frame_id)
   {
-    NODELET_ERROR_THROTTLE(5, "Depth image frame id [%s] doesn't match RGB image frame id [%s]",
-                           depth_msg->header.frame_id.c_str(), rgb_msg_in->header.frame_id.c_str());
+    RCLCPP_ERROR(logger_, "Depth image frame id [%s] doesn't match RGB image frame id [%s]",
+                       depth_msg->header.frame_id.c_str(), rgb_msg_in->header.frame_id.c_str());
     return;
   }
 
@@ -171,21 +174,21 @@ void PointCloudXyzrgbNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_ms
   model_.fromCameraInfo(info_msg);
 
   // Check if the input image has to be resized
-  sensor_msgs::ImageConstPtr rgb_msg = rgb_msg_in;
+  sensor_msgs::msg::Image::ConstSharedPtr rgb_msg = rgb_msg_in;
   if (depth_msg->width != rgb_msg->width || depth_msg->height != rgb_msg->height)
   {
-    sensor_msgs::CameraInfo info_msg_tmp = *info_msg;
+    sensor_msgs::msg::CameraInfo info_msg_tmp = *info_msg;
     info_msg_tmp.width = depth_msg->width;
     info_msg_tmp.height = depth_msg->height;
     float ratio = float(depth_msg->width)/float(rgb_msg->width);
-    info_msg_tmp.K[0] *= ratio;
-    info_msg_tmp.K[2] *= ratio;
-    info_msg_tmp.K[4] *= ratio;
-    info_msg_tmp.K[5] *= ratio;
-    info_msg_tmp.P[0] *= ratio;
-    info_msg_tmp.P[2] *= ratio;
-    info_msg_tmp.P[5] *= ratio;
-    info_msg_tmp.P[6] *= ratio;
+    info_msg_tmp.k[0] *= ratio;
+    info_msg_tmp.k[2] *= ratio;
+    info_msg_tmp.k[4] *= ratio;
+    info_msg_tmp.k[5] *= ratio;
+    info_msg_tmp.p[0] *= ratio;
+    info_msg_tmp.p[2] *= ratio;
+    info_msg_tmp.p[5] *= ratio;
+    info_msg_tmp.p[6] *= ratio;
     model_.fromCameraInfo(info_msg_tmp);
 
     cv_bridge::CvImageConstPtr cv_ptr;
@@ -195,7 +198,7 @@ void PointCloudXyzrgbNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_ms
     }
     catch (cv_bridge::Exception& e)
     {
-      ROS_ERROR("cv_bridge exception: %s", e.what());
+      RCLCPP_ERROR(logger_, "cv_bridge exception: %s", e.what());
       return;
     }
     cv_bridge::CvImage cv_rsz;
@@ -207,9 +210,9 @@ void PointCloudXyzrgbNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_ms
     else
       rgb_msg = cv_bridge::toCvCopy(cv_rsz.toImageMsg(), enc::RGB8)->toImageMsg();
 
-    //NODELET_ERROR_THROTTLE(5, "Depth resolution (%ux%u) does not match RGB resolution (%ux%u)",
-    //                       depth_msg->width, depth_msg->height, rgb_msg->width, rgb_msg->height);
-    //return;
+    RCLCPP_ERROR(logger_, "Depth resolution (%ux%u) does not match RGB resolution (%ux%u)",
+                           depth_msg->width, depth_msg->height, rgb_msg->width, rgb_msg->height);
+    return;
   } else
     rgb_msg = rgb_msg_in;
 
@@ -244,7 +247,7 @@ void PointCloudXyzrgbNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_ms
     }
     catch (cv_bridge::Exception& e)
     {
-      NODELET_ERROR_THROTTLE(5, "Unsupported encoding [%s]: %s", rgb_msg->encoding.c_str(), e.what());
+      RCLCPP_ERROR(logger_, "Unsupported encoding [%s]: %s", rgb_msg->encoding.c_str(), e.what());
       return;
     }
     red_offset   = 0;
@@ -254,7 +257,7 @@ void PointCloudXyzrgbNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_ms
   }
 
   // Allocate new point cloud message
-  PointCloud::Ptr cloud_msg (new PointCloud);
+  PointCloud::SharedPtr cloud_msg (new PointCloud);
   cloud_msg->header = depth_msg->header; // Use depth image time stamp
   cloud_msg->height = depth_msg->height;
   cloud_msg->width  = depth_msg->width;
@@ -274,17 +277,17 @@ void PointCloudXyzrgbNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_ms
   }
   else
   {
-    NODELET_ERROR_THROTTLE(5, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
+    RCLCPP_ERROR(logger_, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
     return;
   }
 
-  pub_point_cloud_.publish (cloud_msg);
+  pub_point_cloud_->publish(cloud_msg);
 }
 
 template<typename T>
-void PointCloudXyzrgbNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
-                                      const sensor_msgs::ImageConstPtr& rgb_msg,
-                                      const PointCloud::Ptr& cloud_msg,
+void PointCloudXyzrgbNode::convert(const sensor_msgs::msg::Image::ConstSharedPtr& depth_msg,
+                                      const sensor_msgs::msg::Image::ConstSharedPtr& rgb_msg,
+                                      const PointCloud::SharedPtr& cloud_msg,
                                       int red_offset, int green_offset, int blue_offset, int color_step)
 {
   // Use correct principal point from calibration
@@ -340,6 +343,7 @@ void PointCloudXyzrgbNodelet::convert(const sensor_msgs::ImageConstPtr& depth_ms
 
 } // namespace depth_image_proc
 
-// Register as nodelet
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(depth_image_proc::PointCloudXyzrgbNodelet,nodelet::Nodelet);
+#include "class_loader/register_macro.hpp"
+
+// Register the component with class_loader.
+CLASS_LOADER_REGISTER_CLASS(depth_image_proc::PointCloudXyzrgbNode, rclcpp::Node)
