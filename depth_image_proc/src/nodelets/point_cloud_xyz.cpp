@@ -31,77 +31,88 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include <ros/ros.h>
-#include <nodelet/nodelet.h>
+#include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
-#include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/image_encodings.hpp>
 #include <image_geometry/pinhole_camera_model.h>
-#include <boost/thread.hpp>
 #include <depth_image_proc/depth_conversions.h>
+#include <depth_image_proc/visibility.h>
 
-#include <sensor_msgs/point_cloud2_iterator.h>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 
 namespace depth_image_proc {
 
 namespace enc = sensor_msgs::image_encodings;
 
-class PointCloudXyzNodelet : public nodelet::Nodelet
+class PointCloudXyzNode : public rclcpp::Node
 {
+public:
+  DEPTH_IMAGE_PROC_PUBLIC PointCloudXyzNode();
+
+private:
   // Subscriptions
-  boost::shared_ptr<image_transport::ImageTransport> it_;
+  std::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::CameraSubscriber sub_depth_;
   int queue_size_;
 
   // Publications
-  boost::mutex connect_mutex_;
-  typedef sensor_msgs::PointCloud2 PointCloud;
-  ros::Publisher pub_point_cloud_;
+  std::mutex connect_mutex_;
+  using PointCloud = sensor_msgs::msg::PointCloud2;
+  rclcpp::Publisher<PointCloud>::SharedPtr pub_point_cloud_;
 
   image_geometry::PinholeCameraModel model_;
 
-  virtual void onInit();
+  void connectCb(rclcpp::Node::SharedPtr node);
 
-  void connectCb();
+  void depthCb(const sensor_msgs::msg::Image::ConstSharedPtr& depth_msg,
+               const sensor_msgs::msg::CameraInfo::ConstSharedPtr& info_msg);
 
-  void depthCb(const sensor_msgs::ImageConstPtr& depth_msg,
-               const sensor_msgs::CameraInfoConstPtr& info_msg);
+  rclcpp::Logger logger_ = rclcpp::get_logger("PointCloudXyzNode");
 };
 
-void PointCloudXyzNodelet::onInit()
+PointCloudXyzNode::PointCloudXyzNode()
+: Node("PointCloudXyzNode")
 {
-  ros::NodeHandle& nh         = getNodeHandle();
-  ros::NodeHandle& private_nh = getPrivateNodeHandle();
-  it_.reset(new image_transport::ImageTransport(nh));
+  rclcpp::Node::SharedPtr node = std::shared_ptr<rclcpp::Node>(this);
+  it_.reset(new image_transport::ImageTransport(node));
 
   // Read parameters
-  private_nh.param("queue_size", queue_size_, 5);
+  this->get_parameter_or("queue_size", queue_size_, 5);
 
   // Monitor whether anyone is subscribed to the output
-  ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudXyzNodelet::connectCb, this);
+  // TODO(ros2) Implement when SubscriberStatusCallback is available
+  //ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudXyzNode::connectCb, this);
+  connectCb(node);
+
   // Make sure we don't enter connectCb() between advertising and assigning to pub_point_cloud_
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  pub_point_cloud_ = nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
+  std::lock_guard<std::mutex> lock(connect_mutex_);
+  // TODO(ros2) Implement when SubscriberStatusCallback is available
+  //pub_point_cloud_ = nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
+  pub_point_cloud_ = create_publisher<sensor_msgs::msg::PointCloud2>("points");
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void PointCloudXyzNodelet::connectCb()
+void PointCloudXyzNode::connectCb(rclcpp::Node::SharedPtr node)
 {
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  if (pub_point_cloud_.getNumSubscribers() == 0)
+  std::lock_guard<std::mutex> lock(connect_mutex_);
+  // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
+  //if (pub_point_cloud_->getNumSubscribers() == 0)
+  if (0)
   {
     sub_depth_.shutdown();
   }
   else if (!sub_depth_)
   {
-    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-    sub_depth_ = it_->subscribeCamera("image_rect", queue_size_, &PointCloudXyzNodelet::depthCb, this, hints);
+    image_transport::TransportHints hints(node, "raw");
+    sub_depth_ =
+      it_->subscribeCamera("image_rect", queue_size_, &PointCloudXyzNode::depthCb, this, &hints);
   }
 }
 
-void PointCloudXyzNodelet::depthCb(const sensor_msgs::ImageConstPtr& depth_msg,
-                                   const sensor_msgs::CameraInfoConstPtr& info_msg)
+void PointCloudXyzNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr& depth_msg,
+                                const sensor_msgs::msg::CameraInfo::ConstSharedPtr& info_msg)
 {
-  PointCloud::Ptr cloud_msg(new PointCloud);
+  PointCloud::SharedPtr cloud_msg(new PointCloud);
   cloud_msg->header = depth_msg->header;
   cloud_msg->height = depth_msg->height;
   cloud_msg->width  = depth_msg->width;
@@ -124,15 +135,16 @@ void PointCloudXyzNodelet::depthCb(const sensor_msgs::ImageConstPtr& depth_msg,
   }
   else
   {
-    NODELET_ERROR_THROTTLE(5, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
+    RCLCPP_ERROR(logger_, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
     return;
   }
 
-  pub_point_cloud_.publish (cloud_msg);
+  pub_point_cloud_->publish(cloud_msg);
 }
 
 } // namespace depth_image_proc
 
-// Register as nodelet
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(depth_image_proc::PointCloudXyzNodelet,nodelet::Nodelet);
+#include "class_loader/register_macro.hpp"
+
+// Register the component with class_loader.
+CLASS_LOADER_REGISTER_CLASS(depth_image_proc::PointCloudXyzNode, rclcpp::Node)

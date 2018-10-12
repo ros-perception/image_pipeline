@@ -36,6 +36,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <cmath>
 
 namespace depth_image_proc {
 

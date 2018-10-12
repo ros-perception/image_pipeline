@@ -31,123 +31,121 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include <boost/version.hpp>
-#if ((BOOST_VERSION / 100) % 1000) >= 53
-#include <boost/thread/lock_guard.hpp>
-#endif
-
-#include <ros/ros.h>
-#include <nodelet/nodelet.h>
+#include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
-#include <sensor_msgs/image_encodings.h>
-#include <sensor_msgs/point_cloud2_iterator.h>
-#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/image_encodings.hpp>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <image_geometry/pinhole_camera_model.h>
 #include <depth_image_proc/depth_traits.h>
+#include <depth_image_proc/visibility.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
 
 namespace depth_image_proc {
 
 using namespace message_filters::sync_policies;
+using namespace std::placeholders;
 namespace enc = sensor_msgs::image_encodings;
 
-class PointCloudXyziNodelet : public nodelet::Nodelet
+class PointCloudXyziNode : public rclcpp::Node
 {
-  ros::NodeHandlePtr intensity_nh_;
-  boost::shared_ptr<image_transport::ImageTransport> intensity_it_, depth_it_;
-  
+public:
+  DEPTH_IMAGE_PROC_PUBLIC PointCloudXyziNode();
+
+private:
   // Subscriptions
   image_transport::SubscriberFilter sub_depth_, sub_intensity_;
-  message_filters::Subscriber<sensor_msgs::CameraInfo> sub_info_;
-  typedef ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> SyncPolicy;
-  typedef message_filters::Synchronizer<SyncPolicy> Synchronizer;
-  boost::shared_ptr<Synchronizer> sync_;
+  message_filters::Subscriber<sensor_msgs::msg::CameraInfo> sub_info_;
+  using SyncPolicy =
+    message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image, sensor_msgs::msg::CameraInfo>;
+  using Synchronizer = message_filters::Synchronizer<SyncPolicy>;
+  std::shared_ptr<Synchronizer> sync_;
 
   // Publications
-  boost::mutex connect_mutex_;
-  typedef sensor_msgs::PointCloud2 PointCloud;
-  ros::Publisher pub_point_cloud_;
+  std::mutex connect_mutex_;
+  using PointCloud = sensor_msgs::msg::PointCloud2;
+  rclcpp::Publisher<PointCloud>::SharedPtr pub_point_cloud_;
 
   image_geometry::PinholeCameraModel model_;
 
-  virtual void onInit();
+  void connectCb(rclcpp::Node::SharedPtr node);
 
-  void connectCb();
-
-  void imageCb(const sensor_msgs::ImageConstPtr& depth_msg,
-               const sensor_msgs::ImageConstPtr& intensity_msg,
-               const sensor_msgs::CameraInfoConstPtr& info_msg);
+  void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& depth_msg,
+               const sensor_msgs::msg::Image::ConstSharedPtr& intensity_msg,
+               const sensor_msgs::msg::CameraInfo::ConstSharedPtr& info_msg);
 
   template<typename T, typename T2>
-  void convert(const sensor_msgs::ImageConstPtr& depth_msg,
-               const sensor_msgs::ImageConstPtr& intensity_msg,
-               const PointCloud::Ptr& cloud_msg);
+  void convert(const sensor_msgs::msg::Image::ConstSharedPtr& depth_msg,
+               const sensor_msgs::msg::Image::ConstSharedPtr& intensity_msg,
+               const PointCloud::SharedPtr& cloud_msg);
+  rclcpp::Logger logger_ = rclcpp::get_logger("PointCloudXyziNode");
 };
 
-void PointCloudXyziNodelet::onInit()
+PointCloudXyziNode::PointCloudXyziNode()
+: Node("PointCloudXyziNode")
 {
-  ros::NodeHandle& nh         = getNodeHandle();
-  ros::NodeHandle& private_nh = getPrivateNodeHandle();
-  intensity_nh_.reset( new ros::NodeHandle(nh, "intensity") );
-  ros::NodeHandle depth_nh(nh, "depth");
-  intensity_it_  .reset( new image_transport::ImageTransport(*intensity_nh_) );
-  depth_it_.reset( new image_transport::ImageTransport(depth_nh) );
+  rclcpp::Node::SharedPtr node = std::shared_ptr<rclcpp::Node>(this);
 
   // Read parameters
   int queue_size;
-  private_nh.param("queue_size", queue_size, 5);
+  this->get_parameter_or("queue_size", queue_size, 5);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   sync_.reset( new Synchronizer(SyncPolicy(queue_size), sub_depth_, sub_intensity_, sub_info_) );
-  sync_->registerCallback(boost::bind(&PointCloudXyziNodelet::imageCb, this, _1, _2, _3));
-  
+  sync_->registerCallback(std::bind(&PointCloudXyziNode::imageCb, this, _1, _2, _3));
+
   // Monitor whether anyone is subscribed to the output
-  ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudXyziNodelet::connectCb, this);
+  // TODO(ros2) Implement when SubscriberStatusCallback is available
+  //ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudXyziNode::connectCb, this);
+  connectCb(node);
   // Make sure we don't enter connectCb() between advertising and assigning to pub_point_cloud_
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  pub_point_cloud_ = depth_nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
+  std::lock_guard<std::mutex> lock(connect_mutex_);
+  // TODO(ros2) Implement when SubscriberStatusCallback is available
+  //pub_point_cloud_ = depth_nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
+  pub_point_cloud_ = create_publisher<PointCloud>("points");
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void PointCloudXyziNodelet::connectCb()
+void PointCloudXyziNode::connectCb(rclcpp::Node::SharedPtr node)
 {
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  if (pub_point_cloud_.getNumSubscribers() == 0)
+  std::lock_guard<std::mutex> lock(connect_mutex_);
+  // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
+  //if (pub_point_cloud_->getNumSubscribers() == 0)
+  if (0)
   {
     sub_depth_.unsubscribe();
-    sub_intensity_  .unsubscribe();
-    sub_info_ .unsubscribe();
+    sub_intensity_.unsubscribe();
+    sub_info_.unsubscribe();
   }
   else if (!sub_depth_.getSubscriber())
   {
-    ros::NodeHandle& private_nh = getPrivateNodeHandle();
     // parameter for depth_image_transport hint
     std::string depth_image_transport_param = "depth_image_transport";
 
     // depth image can use different transport.(e.g. compressedDepth)
-    image_transport::TransportHints depth_hints("raw",ros::TransportHints(), private_nh, depth_image_transport_param);
-    sub_depth_.subscribe(*depth_it_, "image_rect",       1, depth_hints);
+    image_transport::TransportHints depth_hints(node, "raw", depth_image_transport_param);
+    sub_depth_.subscribe(node, "depth/image_rect", depth_hints.getTransport());
 
     // intensity uses normal ros transport hints.
-    image_transport::TransportHints hints("raw", ros::TransportHints(), private_nh);
-    sub_intensity_.subscribe(*intensity_it_,   "image_rect", 1, hints);
-    sub_info_.subscribe(*intensity_nh_,   "camera_info",      1);
+    image_transport::TransportHints hints(node, "raw");
+    sub_intensity_.subscribe(node,   "intensity/image_rect", hints.getTransport());
+    sub_info_.subscribe(node,   "intensity/camera_info");
   }
 }
 
-void PointCloudXyziNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_msg,
-                                      const sensor_msgs::ImageConstPtr& intensity_msg_in,
-                                      const sensor_msgs::CameraInfoConstPtr& info_msg)
+void PointCloudXyziNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& depth_msg,
+                                      const sensor_msgs::msg::Image::ConstSharedPtr& intensity_msg_in,
+                                      const sensor_msgs::msg::CameraInfo::ConstSharedPtr& info_msg)
 {
   // Check for bad inputs
   if (depth_msg->header.frame_id != intensity_msg_in->header.frame_id)
   {
-    NODELET_ERROR_THROTTLE(5, "Depth image frame id [%s] doesn't match image frame id [%s]",
+    RCLCPP_ERROR(logger_, "Depth image frame id [%s] doesn't match image frame id [%s]",
                            depth_msg->header.frame_id.c_str(), intensity_msg_in->header.frame_id.c_str());
     return;
   }
@@ -156,21 +154,21 @@ void PointCloudXyziNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_msg,
   model_.fromCameraInfo(info_msg);
 
   // Check if the input image has to be resized
-  sensor_msgs::ImageConstPtr intensity_msg = intensity_msg_in;
+  sensor_msgs::msg::Image::ConstSharedPtr intensity_msg = intensity_msg_in;
   if (depth_msg->width != intensity_msg->width || depth_msg->height != intensity_msg->height)
   {
-    sensor_msgs::CameraInfo info_msg_tmp = *info_msg;
+    sensor_msgs::msg::CameraInfo info_msg_tmp = *info_msg;
     info_msg_tmp.width = depth_msg->width;
     info_msg_tmp.height = depth_msg->height;
     float ratio = float(depth_msg->width)/float(intensity_msg->width);
-    info_msg_tmp.K[0] *= ratio;
-    info_msg_tmp.K[2] *= ratio;
-    info_msg_tmp.K[4] *= ratio;
-    info_msg_tmp.K[5] *= ratio;
-    info_msg_tmp.P[0] *= ratio;
-    info_msg_tmp.P[2] *= ratio;
-    info_msg_tmp.P[5] *= ratio;
-    info_msg_tmp.P[6] *= ratio;
+    info_msg_tmp.k[0] *= ratio;
+    info_msg_tmp.k[2] *= ratio;
+    info_msg_tmp.k[4] *= ratio;
+    info_msg_tmp.k[5] *= ratio;
+    info_msg_tmp.p[0] *= ratio;
+    info_msg_tmp.p[2] *= ratio;
+    info_msg_tmp.p[5] *= ratio;
+    info_msg_tmp.p[6] *= ratio;
     model_.fromCameraInfo(info_msg_tmp);
 
     cv_bridge::CvImageConstPtr cv_ptr;
@@ -180,7 +178,7 @@ void PointCloudXyziNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_msg,
     }
     catch (cv_bridge::Exception& e)
     {
-      ROS_ERROR("cv_bridge exception: %s", e.what());
+      RCLCPP_ERROR(logger_, "cv_bridge exception: %s", e.what());
       return;
     }
     cv_bridge::CvImage cv_rsz;
@@ -207,13 +205,13 @@ void PointCloudXyziNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_msg,
     }
     catch (cv_bridge::Exception& e)
     {
-      NODELET_ERROR_THROTTLE(5, "Unsupported encoding [%s]: %s", intensity_msg->encoding.c_str(), e.what());
+      RCLCPP_ERROR(logger_, "Unsupported encoding [%s]: %s", intensity_msg->encoding.c_str(), e.what());
       return;
     }
   }
 
   // Allocate new point cloud message
-  PointCloud::Ptr cloud_msg (new PointCloud);
+  PointCloud::SharedPtr cloud_msg (new PointCloud);
   cloud_msg->header = depth_msg->header; // Use depth image time stamp
   cloud_msg->height = depth_msg->height;
   cloud_msg->width  = depth_msg->width;
@@ -223,10 +221,10 @@ void PointCloudXyziNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_msg,
   sensor_msgs::PointCloud2Modifier pcd_modifier(*cloud_msg);
 //  pcd_modifier.setPointCloud2FieldsByString(2, "xyz", "i");
   pcd_modifier.setPointCloud2Fields(4,
-   "x", 1, sensor_msgs::PointField::FLOAT32,
-   "y", 1, sensor_msgs::PointField::FLOAT32,
-   "z", 1, sensor_msgs::PointField::FLOAT32,
-   "intensity", 1, sensor_msgs::PointField::FLOAT32);
+   "x", 1, sensor_msgs::msg::PointField::FLOAT32,
+   "y", 1, sensor_msgs::msg::PointField::FLOAT32,
+   "z", 1, sensor_msgs::msg::PointField::FLOAT32,
+   "intensity", 1, sensor_msgs::msg::PointField::FLOAT32);
 
 
   if (depth_msg->encoding == enc::TYPE_16UC1 && 
@@ -251,17 +249,17 @@ void PointCloudXyziNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_msg,
   }
   else
   {
-    NODELET_ERROR_THROTTLE(5, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
+    RCLCPP_ERROR(logger_, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
     return;
   }
 
-  pub_point_cloud_.publish (cloud_msg);
+  pub_point_cloud_->publish(cloud_msg);
 }
 
 template<typename T, typename T2>
-void PointCloudXyziNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
-                                      const sensor_msgs::ImageConstPtr& intensity_msg,
-                                      const PointCloud::Ptr& cloud_msg)
+void PointCloudXyziNode::convert(const sensor_msgs::msg::Image::ConstSharedPtr& depth_msg,
+                                 const sensor_msgs::msg::Image::ConstSharedPtr& intensity_msg,
+                                 const PointCloud::SharedPtr& cloud_msg)
 {
   // Use correct principal point from calibration
   float center_x = model_.cx();
@@ -272,7 +270,7 @@ void PointCloudXyziNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
   float constant_x = unit_scaling / model_.fx();
   float constant_y = unit_scaling / model_.fy();
   float bad_point = std::numeric_limits<float>::quiet_NaN ();
-  
+
   const T* depth_row = reinterpret_cast<const T*>(&depth_msg->data[0]);
   int row_step = depth_msg->step / sizeof(T);
 
@@ -311,6 +309,7 @@ void PointCloudXyziNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
 
 } // namespace depth_image_proc
 
-// Register as nodelet
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(depth_image_proc::PointCloudXyziNodelet,nodelet::Nodelet);
+#include "class_loader/register_macro.hpp"
+
+// Register the component with class_loader.
+CLASS_LOADER_REGISTER_CLASS(depth_image_proc::PointCloudXyziNode, rclcpp::Node)
