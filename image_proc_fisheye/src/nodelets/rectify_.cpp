@@ -21,7 +21,7 @@ namespace image_proc_fisheye {
     cv_bridge::CvImageConstPtr image = cv_bridge::toCvShare(frame);
     cv::Mat image_gpu(image->image);
     cv::Mat image_gpu_rect(cv::Size(image->image.rows, image->image.cols), image->image.type());
-    cv::remap(image_gpu, image_gpu_rect, mapx_, mapy_, cv::INTER_LINEAR, cv::BORDER_CONSTANT);
+    cv::remap(image_gpu, image_gpu_rect, mapx_, mapy_, cv::INTER_LANCZOS4, cv::BORDER_CONSTANT);
     cv::Mat image_rect = cv::Mat(image_gpu_rect);
 	
     cv_bridge::CvImage out_msg;

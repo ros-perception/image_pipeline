@@ -1,7 +1,8 @@
 <library path="libimage_proc_tegra">
-  <class name="image_proc_tegra/RectifyNodelet"
-	 type="image_proc_tegra::RectifyNodelet"
-	 base_class_type="nodelet::Nodelet">
+  
+   <class name="image_proc_tegra/RectifyNodelet"
+	  type="image_proc_tegra::RectifyNodelet"
+	  base_class_type="nodelet::Nodelet">
     <description>
       Nodelet to rectify an unrectified camera image stream using gpu
     </description>

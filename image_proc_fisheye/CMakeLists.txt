@@ -22,7 +22,7 @@ catkin_package(
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 include_directories(include)
 
-add_library(${PROJECT_NAME}     src/nodelets/rectify.cpp )
+add_library(${PROJECT_NAME}     src/nodelets/rectify_.cpp )
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(image_proc_fisheye_exe src/image_proc_fisheye.cpp)
