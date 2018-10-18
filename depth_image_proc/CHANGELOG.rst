@@ -1,3 +1,44 @@
+2.0.0 (2018-12-09)
+------------------
+* enable rclcpp_register_node_plugins (`#368 <https://github.com/ros-perception/image_pipeline/issues/368>`_)
+  this may be remarked while code debugging, should be enabled to build node plugin file
+  and added points remap in point_cloud_xyzrgb.launch.py
+* Port depth image proc on ROS2 (`#362 <https://github.com/ros-perception/image_pipeline/issues/362>`_)
+  * Port depth_image_proc on ROS2
+  * Port depth_image_proc of image_pipeline on ROS2
+  * rename Nodelets as Node
+  * add launch examples, such as "ros2 launch depth_image_proc point_cloud_xyzi.launch.py"
+  * verified point_cloud_xyzrgb, point_cloud_xyz, convert_metric based on Realsense camera(https://github.com/intel/ros2_intel_realsense).
+  Signed-off-by: Chris Ye <chris.ye@intel.com>
+  * add ament_lint_auto test and adjust code style
+  Signed-off-by: Chris Ye <chris.ye@intel.com>
+  * update test example for depth_image_proc
+  - rename raw topic as image_transport fixed the issue (https://github.com/ros-perception/image_common/issues/96)
+  - update test example of point_cloud_xyzrgb.launch
+  Signed-off-by: Chris Ye <chris.ye@intel.com>
+  * remove unused dependence in cmakelist
+  * remove boost which is unused on ROS2
+  * remove cv_bridge version check logic as setted in find_package
+  * update maintainer in package.xml
+  Signed-off-by: Chris Ye <chris.ye@intel.com>
+  * added all example launchers for demo test
+  pass test:
+  ros2 launch depth_image_proc point_cloud_xyzrgb.launch.py
+  ros2 launch depth_image_proc point_cloud_xyz.launch.py
+  ros2 launch depth_image_proc convert_metric.launch.py
+  ros2 launch depth_image_proc crop_foremost.launch.py
+  ros2 launch depth_image_proc point_cloud_xyz_radial.launch.py
+  ros2 launch depth_image_proc disparity.launch.py
+  ros2 launch depth_image_proc register.launch.py
+  ros2 launch depth_image_proc point_cloud_xyzi.launch.py
+  ros2 launch depth_image_proc point_cloud_xyzi_radial.launch.py
+  Signed-off-by: Chris Ye <chris.ye@intel.com>
+  * @wip update to use raw pointers.
+  * continue to update to use raw pointer
+  Signed-off-by: Chris Ye <chris.ye@intel.com>
+* Initial ROS2 commit.
+* Contributors: Chris Ye, Michael Carroll
+
 1.12.23 (2018-05-10)
 --------------------
 

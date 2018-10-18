@@ -60,7 +60,7 @@ install(TARGETS image_proc_exe
 
 # install the launch file
 install(DIRECTORY launch
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/
+        DESTINATION bin
 )
 
 if(CATKIN_ENABLE_TESTING)

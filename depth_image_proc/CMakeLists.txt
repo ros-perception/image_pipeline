@@ -1,44 +1,87 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 project(depth_image_proc)
 
-find_package(catkin REQUIRED cmake_modules cv_bridge eigen_conversions image_geometry image_transport message_filters nodelet sensor_msgs stereo_msgs tf2 tf2_ros)
-
-if(cv_bridge_VERSION VERSION_GREATER "1.12.0")
-  add_compile_options(-std=c++11)
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
 endif()
 
-catkin_package(
-    INCLUDE_DIRS include
-    LIBRARIES ${PROJECT_NAME})
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
-find_package(Boost REQUIRED)
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(tf2_eigen REQUIRED)
+find_package(image_geometry REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(message_filters REQUIRED)
+find_package(class_loader REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(stereo_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+
 find_package(Eigen3 QUIET)
 if(NOT EIGEN3_FOUND)
   find_package(Eigen REQUIRED)
   set(EIGEN3_INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS})
 endif()
 find_package(OpenCV REQUIRED)
-include_directories(include ${BOOST_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS})
+include_directories(include ${BOOST_INCLUDE_DIRS} ${rclcpp_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS})
 
-add_library(${PROJECT_NAME} src/nodelets/convert_metric.cpp
-                             src/nodelets/crop_foremost.cpp
-                             src/nodelets/disparity.cpp
-                             src/nodelets/point_cloud_xyz.cpp
-                             src/nodelets/point_cloud_xyzrgb.cpp
-                             src/nodelets/point_cloud_xyzi.cpp
-                             src/nodelets/point_cloud_xyz_radial.cpp
-                             src/nodelets/point_cloud_xyzi_radial.cpp
-                             src/nodelets/register.cpp
+add_library(${PROJECT_NAME} SHARED
+  src/nodelets/convert_metric.cpp
+  src/nodelets/crop_foremost.cpp
+  src/nodelets/disparity.cpp
+  src/nodelets/point_cloud_xyz.cpp
+  src/nodelets/point_cloud_xyzrgb.cpp
+  src/nodelets/point_cloud_xyzi.cpp
+  src/nodelets/point_cloud_xyz_radial.cpp
+  src/nodelets/point_cloud_xyzi_radial.cpp
+  src/nodelets/register.cpp
 )
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+ament_target_dependencies(${PROJECT_NAME}
+  "image_transport"
+  "image_geometry"
+  "cv_bridge"
+  "class_loader"
+  "message_filters"
+  "rclcpp"
+  "tf2_ros"
+  "tf2"
+  "tf2_eigen"
+  "stereo_msgs"
+  "sensor_msgs"
+)
+
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::ConvertMetricNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::CropForemostNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::DisparityNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyzNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyzRadialNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyziNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyziRadialNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyzrgbNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::RegisterNode")
+
+target_link_libraries(${PROJECT_NAME} ${ament_LIBRARIES} ${OpenCV_LIBRARIES})
 
 install(DIRECTORY include/${PROJECT_NAME}/
-    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+    DESTINATION include/${PROJECT_NAME}
     FILES_MATCHING PATTERN "*.h")
 
 install(TARGETS ${PROJECT_NAME}
-        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        DESTINATION lib
 )
-install(FILES nodelet_plugins.xml
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+install(DIRECTORY examples/launch
+  DESTINATION share/${PROJECT_NAME}/
 )
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_package()

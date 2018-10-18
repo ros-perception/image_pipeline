@@ -2,6 +2,18 @@
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.0.0 (2018-12-09)
+------------------
+* port image_publisher on ROS2 (`#366 <https://github.com/ros-perception/image_pipeline/issues/366>`_)
+  * port image_publisher on ROS2
+  * switch to use cmake 3.5
+  * change nodelet to classloader
+  * change ros::param to ros2 parameter APIs
+  * use ros2 code style
+  * enable ros2 camera_info_manager
+* Initial ROS2 commit.
+* Contributors: Chris Ye, Michael Carroll
+
 1.12.23 (2018-05-10)
 --------------------
 * fix 'VideoCapture' undefined symbol error (`#318 <https://github.com/ros-perception/image_pipeline/issues/318>`_)
