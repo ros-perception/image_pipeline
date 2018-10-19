@@ -29,55 +29,46 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifndef DEPTH_IMAGE_PROC__VISIBILITY_H_
-#define DEPTH_IMAGE_PROC__VISIBILITY_H_
+#ifndef DEPTH_IMAGE_PROC__DEPTH_TRAITS_HPP_
+#define DEPTH_IMAGE_PROC__DEPTH_TRAITS_HPP_
 
-#ifdef __cplusplus
-extern "C"
+#include <algorithm>
+#include <limits>
+#include <cmath>
+#include <vector>
+
+namespace depth_image_proc
 {
-#endif
 
-// This logic was borrowed (then namespaced) from the examples on the gcc wiki:
-//     https://gcc.gnu.org/wiki/Visibility
+// Encapsulate differences between processing float and uint16_t depths
+template<typename T>
+struct DepthTraits {};
 
-#if defined _WIN32 || defined __CYGWIN__
+template<>
+struct DepthTraits<uint16_t>
+{
+  static inline bool valid(uint16_t depth) {return depth != 0;}
+  static inline float toMeters(uint16_t depth) {return depth * 0.001f;}   // originally mm
+  static inline uint16_t fromMeters(float depth) {return (depth * 1000.0f) + 0.5f;}
+  // Do nothing - already zero-filled
+  static inline void initializeBuffer(std::vector<uint8_t> & buffer) {}
+};
 
-  #ifdef __GNUC__
-    #define DEPTH_IMAGE_PROC_EXPORT __attribute__ ((dllexport))
-    #define DEPTH_IMAGE_PROC_IMPORT __attribute__ ((dllimport))
-  #else
-    #define DEPTH_IMAGE_PROC_EXPORT __declspec(dllexport)
-    #define DEPTH_IMAGE_PROC_IMPORT __declspec(dllimport)
-  #endif
+template<>
+struct DepthTraits<float>
+{
+  static inline bool valid(float depth) {return std::isfinite(depth);}
+  static inline float toMeters(float depth) {return depth;}
+  static inline float fromMeters(float depth) {return depth;}
 
-  #ifdef DEPTH_IMAGE_PROC_DLL
-    #define DEPTH_IMAGE_PROC_PUBLIC DEPTH_IMAGE_PROC_EXPORT
-  #else
-    #define DEPTH_IMAGE_PROC_PUBLIC DEPTH_IMAGE_PROC_IMPORT
-  #endif
+  static inline void initializeBuffer(std::vector<uint8_t> & buffer)
+  {
+    float * start = reinterpret_cast<float *>(&buffer[0]);
+    float * end = reinterpret_cast<float *>(&buffer[0] + buffer.size());
+    std::fill(start, end, std::numeric_limits<float>::quiet_NaN());
+  }
+};
 
-  #define DEPTH_IMAGE_PROC_PUBLIC_TYPE DEPTH_IMAGE_PROC_PUBLIC
+}  // namespace depth_image_proc
 
-  #define DEPTH_IMAGE_PROC_LOCAL
-
-#else
-
-  #define DEPTH_IMAGE_PROC_EXPORT __attribute__ ((visibility("default")))
-  #define DEPTH_IMAGE_PROC_IMPORT
-
-  #if __GNUC__ >= 4
-    #define DEPTH_IMAGE_PROC_PUBLIC __attribute__ ((visibility("default")))
-    #define DEPTH_IMAGE_PROC_LOCAL  __attribute__ ((visibility("hidden")))
-  #else
-    #define DEPTH_IMAGE_PROC_PUBLIC
-    #define DEPTH_IMAGE_PROC_LOCAL
-  #endif
-
-  #define DEPTH_IMAGE_PROC_PUBLIC_TYPE
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif  // DEPTH_IMAGE_PROC__VISIBILITY_H_
+#endif  // DEPTH_IMAGE_PROC__DEPTH_TRAITS_HPP_
