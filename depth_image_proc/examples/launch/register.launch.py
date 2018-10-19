@@ -1,9 +1,7 @@
-#!/usr/bin/env python
-#
-# Software License Agreement (BSD License)
-#
 # Copyright (c) 2008, Willow Garage, Inc.
 # All rights reserved.
+#
+# Software License Agreement (BSD License 2.0)
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -45,7 +43,8 @@ def generate_launch_description():
             remappings=[('depth/image_rect/raw', '/camera/depth/image_rect_raw/raw'),
                         ('depth/camera_info', '/camera/depth/camera_info'),
                         ('rgb/camera_info', '/camera/color/camera_info'),
-                        ('depth_registered/image_rect/raw', '/camera/depth_registered/image_rect/raw'),
+                        ('depth_registered/image_rect/raw',
+                         '/camera/depth_registered/image_rect/raw'),
                         ('depth_registered/camera_info', '/camera/depth_registered/camera_info')]),
         launch_ros.actions.Node(
             package='composition', node_executable='api_composition_cli', output='screen',

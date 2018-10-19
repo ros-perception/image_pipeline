@@ -1,9 +1,7 @@
-#!/usr/bin/env python
-#
-# Software License Agreement (BSD License)
-#
 # Copyright (c) 2008, Willow Garage, Inc.
 # All rights reserved.
+#
+# Software License Agreement (BSD License 2.0)
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -44,7 +42,8 @@ def generate_launch_description():
             package='composition', node_executable='api_composition', output='screen',
             remappings=[('rgb/camera_info', '/camera/color/camera_info'),
                         ('rgb/image_rect_color/raw', '/camera/color/image_raw/raw'),
-                        ('depth_registered/image_rect/raw', '/camera/aligned_depth_to_color/image_raw/raw')]),
+                        ('depth_registered/image_rect/raw',
+                         '/camera/aligned_depth_to_color/image_raw/raw')]),
         launch_ros.actions.Node(
             package='composition', node_executable='api_composition_cli', output='screen',
             arguments=['depth_image_proc', 'depth_image_proc::PointCloudXyzrgbNode']),

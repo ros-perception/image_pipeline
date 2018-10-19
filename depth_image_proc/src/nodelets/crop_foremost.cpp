@@ -1,43 +1,43 @@
-/*********************************************************************
-* Software License Agreement (BSD License)
-* 
-*  Copyright (c) 2008, Willow Garage, Inc.
-*  All rights reserved.
-* 
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions
-*  are met:
-* 
-*   * Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   * Redistributions in binary form must reproduce the above
-*     copyright notice, this list of conditions and the following
-*     disclaimer in the documentation and/or other materials provided
-*     with the distribution.
-*   * Neither the name of the Willow Garage nor the names of its
-*     contributors may be used to endorse or promote products derived
-*     from this software without specific prior written permission.
-* 
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-*********************************************************************/
+// Copyright (c) 2008, Willow Garage, Inc.
+// All rights reserved.
+//
+// Software License Agreement (BSD License 2.0)
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+//
+//  * Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+//  * Redistributions in binary form must reproduce the above
+//    copyright notice, this list of conditions and the following
+//    disclaimer in the documentation and/or other materials provided
+//    with the distribution.
+//  * Neither the name of the Willow Garage nor the names of its
+//    contributors may be used to endorse or promote products derived
+//    from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+// COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+// ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <depth_image_proc/visibility.h>
+#include <memory>
 
-namespace depth_image_proc {
+namespace depth_image_proc
+{
 
 namespace enc = sensor_msgs::image_encodings;
 
@@ -57,7 +57,7 @@ private:
 
   void connectCb(rclcpp::Node::SharedPtr node);
 
-  void depthCb(const sensor_msgs::msg::Image::ConstSharedPtr& raw_msg);
+  void depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg);
 
   double distance_;
 
@@ -73,12 +73,13 @@ CropForemostNode::CropForemostNode()
 
   // Monitor whether anyone is subscribed to the output
   // TODO(ros2) Implement when SubscriberStatusCallback is available
-  //image_transport::SubscriberStatusCallback connect_cb = std::bind(&CropForemostNode::connectCb, this);
+  // image_transport::SubscriberStatusCallback connect_cb =
+  //   std::bind(&CropForemostNode::connectCb, this);
   connectCb(node);
   // Make sure we don't enter connectCb() between advertising and assigning to pub_depth_
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement when SubscriberStatusCallback is available
-  //pub_depth_ = it_->advertise("image", 1, connect_cb, connect_cb);
+  // pub_depth_ = it_->advertise("image", 1, connect_cb, connect_cb);
   pub_depth_ = it_->advertise("image", 1);
 }
 
@@ -87,34 +88,29 @@ void CropForemostNode::connectCb(rclcpp::Node::SharedPtr node)
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
-  //if (pub_depth_.getNumSubscribers() == 0)
-  if (0)
-  {
+  // if (pub_depth_.getNumSubscribers() == 0)
+  if (0) {
     sub_raw_.shutdown();
-  }
-  else if (!sub_raw_)
-  {
+  } else if (!sub_raw_) {
     image_transport::TransportHints hints(node, "raw");
     sub_raw_ = it_->subscribe("image_raw", 1, &CropForemostNode::depthCb, this, &hints);
   }
 }
 
-void CropForemostNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr& raw_msg)
+void CropForemostNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)
 {
   cv_bridge::CvImagePtr cv_ptr;
-  try
-  {
+  try {
     cv_ptr = cv_bridge::toCvCopy(raw_msg);
-  }
-  catch (cv_bridge::Exception& e)
-  {
+  } catch (cv_bridge::Exception & e) {
     RCLCPP_ERROR(logger_, "cv_bridge exception: %s", e.what());
     return;
   }
 
   // Check the number of channels
-  if(sensor_msgs::image_encodings::numChannels(raw_msg->encoding) != 1){
-    RCLCPP_ERROR(logger_, "Only grayscale image is acceptable, got [%s]", raw_msg->encoding.c_str());
+  if (sensor_msgs::image_encodings::numChannels(raw_msg->encoding) != 1) {
+    RCLCPP_ERROR(logger_, "Only grayscale image is acceptable, got [%s]",
+      raw_msg->encoding.c_str());
     return;
   }
 
@@ -123,7 +119,7 @@ void CropForemostNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr& ra
   cv::minMaxIdx(cv_ptr->image, &minVal, 0, 0, 0, cv_ptr->image != 0);
 
   int imtype = cv_bridge::getCvType(raw_msg->encoding);
-  switch (imtype){
+  switch (imtype) {
     case CV_8UC1:
     case CV_8SC1:
     case CV_32F:
@@ -144,7 +140,7 @@ void CropForemostNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr& ra
   pub_depth_.publish(cv_ptr->toImageMsg());
 }
 
-} // namespace depth_image_proc
+}  // namespace depth_image_proc
 
 #include "class_loader/register_macro.hpp"
 
