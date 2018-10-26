@@ -39,7 +39,7 @@ objp[0,:,:2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 
-origin_dir = 'calibrationdata/'
+origin_dir = 'calibrationdata_fullres/'
 
 images = os.listdir(origin_dir)
 

@@ -47,7 +47,17 @@ namespace image_proc_tegra_fisheye
             ros::Publisher pub_;
             cv::cuda::GpuMat mapx_;
             cv::cuda::GpuMat mapy_;
+            
+            cv::Mat mx;
+            cv::Mat my;
+            
             bool camera_set_;
+            
+            bool img_downsample = false;
+            int img_downsample_width = 800;
+            int img_downsample_height = 503;
+            
+            
     };
 
 }
