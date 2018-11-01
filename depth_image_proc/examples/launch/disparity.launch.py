@@ -40,7 +40,7 @@ def generate_launch_description():
     return LaunchDescription([
         launch_ros.actions.Node(
             package='composition', node_executable='api_composition', output='screen',
-            remappings=[('left/image_rect/raw', '/camera/depth/image_rect_raw/raw'),
+            remappings=[('left/image_rect', '/camera/depth/image_rect_raw'),
                         ('right/camera_info', '/camera/depth/camera_info'),
                         ('left/disparity', '/camera/left/disparity')]),
         launch_ros.actions.Node(

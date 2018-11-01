@@ -40,9 +40,9 @@ def generate_launch_description():
     return LaunchDescription([
         launch_ros.actions.Node(
             package='composition', node_executable='api_composition', output='screen',
-            remappings=[('image_raw/raw', '/camera/depth/image_rect_raw/raw'),
+            remappings=[('image_raw', '/camera/depth/image_rect_raw'),
                         ('camera_info', '/camera/depth/camera_info'),
-                        ('image/raw', '/camera/depth/image/raw')]),
+                        ('image', '/camera/depth/image')]),
         launch_ros.actions.Node(
             package='composition', node_executable='api_composition_cli', output='screen',
             arguments=['depth_image_proc', 'depth_image_proc::CropForemostNode']),
