@@ -30,7 +30,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""Launch a talker and a listener."""
 import os
 
 from ament_index_python.packages import get_package_share_directory
@@ -48,7 +47,7 @@ def generate_launch_description():
             package='realsense_ros2_camera', node_executable='realsense_ros2_camera',
             output='screen'),
 
-        # composition api_composition
+        # composition api_composition, remap the topic
         launch_ros.actions.Node(
             package='composition', node_executable='api_composition', output='screen',
             remappings=[('rgb/camera_info', '/camera/color/camera_info'),

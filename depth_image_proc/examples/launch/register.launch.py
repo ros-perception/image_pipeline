@@ -30,14 +30,24 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""Launch a talker and a listener."""
+import os
 
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
+
 import launch_ros.actions
 
 
 def generate_launch_description():
+    default_rviz = os.path.join(get_package_share_directory('depth_image_proc'),
+                                'launch', 'rviz/register.rviz')
     return LaunchDescription([
+        # install realsense from https://github.com/intel/ros2_intel_realsense
+        launch_ros.actions.Node(
+            package='realsense_ros2_camera', node_executable='realsense_ros2_camera',
+            output='screen'),
+
+        # composition api_composition, remap the topic
         launch_ros.actions.Node(
             package='composition', node_executable='api_composition', output='screen',
             remappings=[('depth/image_rect', '/camera/depth/image_rect_raw'),
@@ -46,7 +56,14 @@ def generate_launch_description():
                         ('depth_registered/image_rect',
                          '/camera/depth_registered/image_rect'),
                         ('depth_registered/camera_info', '/camera/depth_registered/camera_info')]),
+
+        # depth_image_proc::RegisterNode
         launch_ros.actions.Node(
             package='composition', node_executable='api_composition_cli', output='screen',
             arguments=['depth_image_proc', 'depth_image_proc::RegisterNode']),
+
+        # rviz
+        launch_ros.actions.Node(
+            package='rviz2', node_executable='rviz2', output='screen',
+            arguments=['--display-config', default_rviz]),
     ])
