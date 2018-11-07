@@ -11,6 +11,7 @@
   </description>
   <author>Patrick Mihelich</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
+  <maintainer email="chris.ye@intel.com">Chris Ye</maintainer>
   <license>BSD</license>
   <url>http://ros.org/wiki/depth_image_proc</url>
 

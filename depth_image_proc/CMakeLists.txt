@@ -23,12 +23,6 @@ find_package(stereo_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 
-
-if(cv_bridge_VERSION VERSION_GREATER "1.12.0")
-  add_compile_options(-std=c++11)
-endif()
-
-find_package(Boost REQUIRED)
 find_package(Eigen3 QUIET)
 if(NOT EIGEN3_FOUND)
   find_package(Eigen REQUIRED)
