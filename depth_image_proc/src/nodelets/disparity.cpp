@@ -66,7 +66,7 @@ private:
   double max_range_;
   double delta_d_;
 
-  void connectCb(rclcpp::Node::SharedPtr node);
+  void connectCb();
 
   void depthCb(
     const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
@@ -83,7 +83,6 @@ private:
 DisparityNode::DisparityNode()
 : Node("DisparityNode")
 {
-  rclcpp::Node::SharedPtr node = std::shared_ptr<rclcpp::Node>(this);
   // Read parameters
   int queue_size;
   this->get_parameter_or("queue_size", queue_size, 5);
@@ -92,13 +91,13 @@ DisparityNode::DisparityNode()
   this->get_parameter_or("delta_d", delta_d_, 0.125);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
-  sync_.reset(new Sync(sub_depth_image_, sub_info_, queue_size) );
+  sync_ = std::make_shared<Sync>(sub_depth_image_, sub_info_, queue_size);
   sync_->registerCallback(std::bind(&DisparityNode::depthCb, this, _1, _2));
 
   // Monitor whether anyone is subscribed to the output
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // ros::SubscriberStatusCallback connect_cb = std::bind(&DisparityNode::connectCb, this);
-  connectCb(node);
+  connectCb();
 
   // Make sure we don't enter connectCb() between advertising and assigning to pub_disparity_
   std::lock_guard<std::mutex> lock(connect_mutex_);
@@ -109,7 +108,7 @@ DisparityNode::DisparityNode()
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void DisparityNode::connectCb(rclcpp::Node::SharedPtr node)
+void DisparityNode::connectCb()
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
@@ -118,9 +117,9 @@ void DisparityNode::connectCb(rclcpp::Node::SharedPtr node)
     sub_depth_image_.unsubscribe();
     sub_info_.unsubscribe();
   } else if (!sub_depth_image_.getSubscriber()) {
-    image_transport::TransportHints hints(node, "raw");
-    sub_depth_image_.subscribe(node, "left/image_rect", hints.getTransport());
-    sub_info_.subscribe(node, "right/camera_info");
+    image_transport::TransportHints hints(this, "raw");
+    sub_depth_image_.subscribe(this, "left/image_rect", hints.getTransport());
+    sub_info_.subscribe(this, "right/camera_info");
   }
 }
 
@@ -128,8 +127,7 @@ void DisparityNode::depthCb(
   const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
   const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
 {
-  // Allocate new DisparityImage message
-  stereo_msgs::msg::DisparityImage::SharedPtr disp_msg(new stereo_msgs::msg::DisparityImage);
+  auto disp_msg = std::make_shared<DisparityImage>();
   disp_msg->header = depth_msg->header;
   disp_msg->image.header = disp_msg->header;
   disp_msg->image.encoding = enc::TYPE_32FC1;

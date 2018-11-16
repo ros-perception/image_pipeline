@@ -61,15 +61,17 @@ public:
   DEPTH_IMAGE_PROC_PUBLIC PointCloudXyzrgbNode();
 
 private:
+  using PointCloud2 = sensor_msgs::msg::PointCloud2;
+  using Image = sensor_msgs::msg::Image;
+  using CameraInfo = sensor_msgs::msg::CameraInfo;
+
   // Subscriptions
   image_transport::SubscriberFilter sub_depth_, sub_rgb_;
-  message_filters::Subscriber<sensor_msgs::msg::CameraInfo> sub_info_;
+  message_filters::Subscriber<CameraInfo> sub_info_;
   using SyncPolicy =
-    message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image,
-      sensor_msgs::msg::Image, sensor_msgs::msg::CameraInfo>;
+    message_filters::sync_policies::ApproximateTime<Image, Image, CameraInfo>;
   using ExactSyncPolicy =
-    message_filters::sync_policies::ExactTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image,
-      sensor_msgs::msg::CameraInfo>;
+    message_filters::sync_policies::ExactTime<Image, Image, CameraInfo>;
   using Synchronizer = message_filters::Synchronizer<SyncPolicy>;
   using ExactSynchronizer = message_filters::Synchronizer<ExactSyncPolicy>;
   std::shared_ptr<Synchronizer> sync_;
@@ -77,23 +79,22 @@ private:
 
   // Publications
   std::mutex connect_mutex_;
-  using PointCloud = sensor_msgs::msg::PointCloud2;
-  rclcpp::Publisher<PointCloud>::SharedPtr pub_point_cloud_;
+  rclcpp::Publisher<PointCloud2>::SharedPtr pub_point_cloud_;
 
   image_geometry::PinholeCameraModel model_;
 
-  void connectCb(rclcpp::Node::SharedPtr node);
+  void connectCb();
 
   void imageCb(
-    const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-    const sensor_msgs::msg::Image::ConstSharedPtr & rgb_msg,
-    const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg);
+    const Image::ConstSharedPtr & depth_msg,
+    const Image::ConstSharedPtr & rgb_msg,
+    const CameraInfo::ConstSharedPtr & info_msg);
 
   template<typename T>
   void convert(
-    const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-    const sensor_msgs::msg::Image::ConstSharedPtr & rgb_msg,
-    const PointCloud::SharedPtr & cloud_msg,
+    const Image::ConstSharedPtr & depth_msg,
+    const Image::ConstSharedPtr & rgb_msg,
+    const PointCloud2::SharedPtr & cloud_msg,
     int red_offset, int green_offset, int blue_offset, int color_step);
 
   rclcpp::Logger logger_ = rclcpp::get_logger("PointCloudXyzrgbNode");
@@ -102,8 +103,6 @@ private:
 PointCloudXyzrgbNode::PointCloudXyzrgbNode()
 : Node("PointCloudXyzrgbNode")
 {
-  rclcpp::Node::SharedPtr node = std::shared_ptr<rclcpp::Node>(this);
-
   // Read parameters
   int queue_size;
   this->get_parameter_or("queue_size", queue_size, 5);
@@ -123,18 +122,18 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode()
   // Monitor whether anyone is subscribed to the output
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudXyzrgbNode::connectCb, this);
-  connectCb(node);
+  connectCb();
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // Make sure we don't enter connectCb() between advertising and assigning to pub_point_cloud_
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement connect_cb when SubscriberStatusCallback is available
   // pub_point_cloud_ = depth_nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
-  pub_point_cloud_ = create_publisher<sensor_msgs::msg::PointCloud2>("points");
+  pub_point_cloud_ = create_publisher<PointCloud2>("points");
   // TODO(ros2) Implement connect_cb when SubscriberStatusCallback is available
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void PointCloudXyzrgbNode::connectCb(rclcpp::Node::SharedPtr node)
+void PointCloudXyzrgbNode::connectCb()
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
@@ -147,22 +146,22 @@ void PointCloudXyzrgbNode::connectCb(rclcpp::Node::SharedPtr node)
   } else if (!sub_depth_.getSubscriber()) {
     // parameter for depth_image_transport hint
     std::string depth_image_transport_param = "depth_image_transport";
+    image_transport::TransportHints depth_hints(this, "raw", depth_image_transport_param);
 
     // depth image can use different transport.(e.g. compressedDepth)
-    image_transport::TransportHints depth_hints(node, "raw", depth_image_transport_param);
-    sub_depth_.subscribe(node, "depth_registered/image_rect", depth_hints.getTransport());
+    sub_depth_.subscribe(this, "depth_registered/image_rect", depth_hints.getTransport());
 
     // rgb uses normal ros transport hints.
-    image_transport::TransportHints hints(node);
-    sub_rgb_.subscribe(node, "rgb/image_rect_color", hints.getTransport());
-    sub_info_.subscribe(node, "rgb/camera_info");
+    image_transport::TransportHints hints(this, "raw");
+    sub_rgb_.subscribe(this, "rgb/image_rect_color", hints.getTransport());
+    sub_info_.subscribe(this, "rgb/camera_info");
   }
 }
 
 void PointCloudXyzrgbNode::imageCb(
-  const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-  const sensor_msgs::msg::Image::ConstSharedPtr & rgb_msg_in,
-  const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
+  const Image::ConstSharedPtr & depth_msg,
+  const Image::ConstSharedPtr & rgb_msg_in,
+  const CameraInfo::ConstSharedPtr & info_msg)
 {
   // Check for bad inputs
   if (depth_msg->header.frame_id != rgb_msg_in->header.frame_id) {
@@ -175,9 +174,9 @@ void PointCloudXyzrgbNode::imageCb(
   model_.fromCameraInfo(info_msg);
 
   // Check if the input image has to be resized
-  sensor_msgs::msg::Image::ConstSharedPtr rgb_msg = rgb_msg_in;
+  Image::ConstSharedPtr rgb_msg = rgb_msg_in;
   if (depth_msg->width != rgb_msg->width || depth_msg->height != rgb_msg->height) {
-    sensor_msgs::msg::CameraInfo info_msg_tmp = *info_msg;
+    CameraInfo info_msg_tmp = *info_msg;
     info_msg_tmp.width = depth_msg->width;
     info_msg_tmp.height = depth_msg->height;
     float ratio = static_cast<float>(depth_msg->width) / static_cast<float>(rgb_msg->width);
@@ -248,8 +247,7 @@ void PointCloudXyzrgbNode::imageCb(
     color_step = 3;
   }
 
-  // Allocate new point cloud message
-  PointCloud::SharedPtr cloud_msg(new PointCloud);
+  auto cloud_msg = std::make_shared<PointCloud2>();
   cloud_msg->header = depth_msg->header;  // Use depth image time stamp
   cloud_msg->height = depth_msg->height;
   cloud_msg->width = depth_msg->width;
@@ -275,9 +273,9 @@ void PointCloudXyzrgbNode::imageCb(
 
 template<typename T>
 void PointCloudXyzrgbNode::convert(
-  const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-  const sensor_msgs::msg::Image::ConstSharedPtr & rgb_msg,
-  const PointCloud::SharedPtr & cloud_msg,
+  const Image::ConstSharedPtr & depth_msg,
+  const Image::ConstSharedPtr & rgb_msg,
+  const PointCloud2::SharedPtr & cloud_msg,
   int red_offset, int green_offset, int blue_offset, int color_step)
 {
   // Use correct principal point from calibration

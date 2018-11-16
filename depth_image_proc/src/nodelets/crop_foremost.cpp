@@ -48,14 +48,13 @@ public:
 
 private:
   // Subscriptions
-  std::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::Subscriber sub_raw_;
 
   // Publications
   std::mutex connect_mutex_;
   image_transport::Publisher pub_depth_;
 
-  void connectCb(rclcpp::Node::SharedPtr node);
+  void connectCb();
 
   void depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg);
 
@@ -67,24 +66,22 @@ private:
 CropForemostNode::CropForemostNode()
 : Node("CropForemostNode")
 {
-  rclcpp::Node::SharedPtr node = std::shared_ptr<rclcpp::Node>(this);
   this->get_parameter("distance", distance_);
-  it_.reset(new image_transport::ImageTransport(node));
 
   // Monitor whether anyone is subscribed to the output
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // image_transport::SubscriberStatusCallback connect_cb =
   //   std::bind(&CropForemostNode::connectCb, this);
-  connectCb(node);
+  connectCb();
   // Make sure we don't enter connectCb() between advertising and assigning to pub_depth_
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // pub_depth_ = it_->advertise("image", 1, connect_cb, connect_cb);
-  pub_depth_ = it_->advertise("image", 1);
+  pub_depth_ = image_transport::create_publisher(this, "image");
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void CropForemostNode::connectCb(rclcpp::Node::SharedPtr node)
+void CropForemostNode::connectCb()
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
@@ -92,8 +89,10 @@ void CropForemostNode::connectCb(rclcpp::Node::SharedPtr node)
   if (0) {
     sub_raw_.shutdown();
   } else if (!sub_raw_) {
-    image_transport::TransportHints hints(node, "raw");
-    sub_raw_ = it_->subscribe("image_raw", 1, &CropForemostNode::depthCb, this, &hints);
+    image_transport::TransportHints hints(this, "raw");
+    sub_raw_ = image_transport::create_subscription(this, "image_raw",
+        std::bind(&CropForemostNode::depthCb, this, std::placeholders::_1),
+        hints.getTransport());
   }
 }
 

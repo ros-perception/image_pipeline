@@ -62,8 +62,11 @@ public:
   DEPTH_IMAGE_PROC_PUBLIC PointCloudXyziRadialNode();
 
 private:
+  using PointCloud = sensor_msgs::msg::PointCloud2;
+  using Image = sensor_msgs::msg::Image;
+  using CameraInfo = sensor_msgs::msg::CameraInfo;
+
   // Subscriptions
-  std::shared_ptr<image_transport::ImageTransport> intensity_it_, depth_it_;
   image_transport::SubscriberFilter sub_depth_, sub_intensity_;
   message_filters::Subscriber<sensor_msgs::msg::CameraInfo> sub_info_;
 
@@ -71,7 +74,6 @@ private:
 
   // Publications
   std::mutex connect_mutex_;
-  using PointCloud = sensor_msgs::msg::PointCloud2;
   rclcpp::Publisher<PointCloud>::SharedPtr pub_point_cloud_;
 
   using Synchronizer = message_filters::Synchronizer<SyncPolicy>;
@@ -88,19 +90,19 @@ private:
   void connectCb(rclcpp::Node::SharedPtr node);
 
   void imageCb(
-    const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-    const sensor_msgs::msg::Image::ConstSharedPtr & intensity_msg_in,
-    const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg);
+    const Image::ConstSharedPtr & depth_msg,
+    const Image::ConstSharedPtr & intensity_msg_in,
+    const CameraInfo::ConstSharedPtr & info_msg);
 
   // Handles float or uint16 depths
   template<typename T>
   void convert_depth(
-    const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
+    const Image::ConstSharedPtr & depth_msg,
     PointCloud::SharedPtr & cloud_msg);
 
   template<typename T>
   void convert_intensity(
-    const sensor_msgs::msg::Image::ConstSharedPtr & inten_msg,
+    const Image::ConstSharedPtr & inten_msg,
     PointCloud::SharedPtr & cloud_msg);
 
   cv::Mat initMatrix(cv::Mat cameraMatrix, cv::Mat distCoeffs, int width, int height, bool radial);
@@ -151,23 +153,22 @@ cv::Mat PointCloudXyziRadialNode::initMatrix(
 PointCloudXyziRadialNode::PointCloudXyziRadialNode()
 : Node("PointCloudXyziRadialNode")
 {
-  rclcpp::Node::SharedPtr node = std::shared_ptr<rclcpp::Node>(this);
-
-  intensity_it_.reset(new image_transport::ImageTransport(node) );
-  depth_it_.reset(new image_transport::ImageTransport(node) );
-
   // Read parameters
   this->get_parameter_or("queue_size", queue_size_, 5);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
-  sync_.reset(new Synchronizer(SyncPolicy(queue_size_), sub_depth_, sub_intensity_, sub_info_) );
+  sync_ = std::make_shared<Synchronizer>(
+      SyncPolicy(queue_size),
+      sub_depth_,
+      sub_intensity_,
+      sub_info_);
   sync_->registerCallback(std::bind(&PointCloudXyziRadialNode::imageCb, this, _1, _2, _3));
 
   // Monitor whether anyone is subscribed to the output
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // ros::SubscriberStatusCallback connect_cb =
   //   boost::bind(&PointCloudXyziRadialNode::connectCb, this);
-  connectCb(node);
+  connectCb();
 
   // Make sure we don't enter connectCb() between advertising and assigning to pub_point_cloud_
   std::lock_guard<std::mutex> lock(connect_mutex_);
@@ -177,7 +178,7 @@ PointCloudXyziRadialNode::PointCloudXyziRadialNode()
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void PointCloudXyziRadialNode::connectCb(rclcpp::Node::SharedPtr node)
+void PointCloudXyziRadialNode::connectCb()
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
 
@@ -192,22 +193,22 @@ void PointCloudXyziRadialNode::connectCb(rclcpp::Node::SharedPtr node)
     std::string depth_image_transport_param = "depth_image_transport";
 
     // depth image can use different transport.(e.g. compressedDepth)
-    image_transport::TransportHints depth_hints(node, "raw", depth_image_transport_param);
-    sub_depth_.subscribe(node, "depth/image_raw", depth_hints.getTransport());
+    image_transport::TransportHints depth_hints(this, "raw", depth_image_transport_param);
+    sub_depth_.subscribe(this, "depth/image_raw", depth_hints.getTransport());
 
     // intensity uses normal ros transport hints.
-    image_transport::TransportHints hints(node, "raw");
-    sub_intensity_.subscribe(node, "intensity/image_raw", hints.getTransport());
-    sub_info_.subscribe(node, "intensity/camera_info");
+    image_transport::TransportHints hints(this, "raw");
+    sub_intensity_.subscribe(this, "intensity/image_raw", hints.getTransport());
+    sub_info_.subscribe(this, "intensity/camera_info");
   }
 }
 
 void PointCloudXyziRadialNode::imageCb(
-  const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-  const sensor_msgs::msg::Image::ConstSharedPtr & intensity_msg,
-  const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
+  const Image::ConstSharedPtr & depth_msg,
+  const Image::ConstSharedPtr & intensity_msg,
+  const CameraInfo::ConstSharedPtr & info_msg)
 {
-  PointCloud::SharedPtr cloud_msg(new PointCloud);
+  auto cloud_msg = std::make_shared<PointCloud>();
   cloud_msg->header = depth_msg->header;
   cloud_msg->height = depth_msg->height;
   cloud_msg->width = depth_msg->width;
@@ -257,7 +258,7 @@ void PointCloudXyziRadialNode::imageCb(
 
 template<typename T>
 void PointCloudXyziRadialNode::convert_depth(
-  const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
+  const Image::ConstSharedPtr & depth_msg,
   PointCloud::SharedPtr & cloud_msg)
 {
   // Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
@@ -289,7 +290,7 @@ void PointCloudXyziRadialNode::convert_depth(
 
 template<typename T>
 void PointCloudXyziRadialNode::convert_intensity(
-  const sensor_msgs::msg::Image::ConstSharedPtr & intensity_msg,
+  const Image::ConstSharedPtr & intensity_msg,
   PointCloud::SharedPtr & cloud_msg)
 {
   sensor_msgs::PointCloud2Iterator<float> iter_i(*cloud_msg, "intensity");

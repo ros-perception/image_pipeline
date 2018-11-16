@@ -53,7 +53,6 @@ public:
 
 private:
   // Subscriptions
-  std::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::CameraSubscriber sub_depth_;
   int queue_size_;
 
@@ -70,7 +69,7 @@ private:
 
   cv::Mat binned;
 
-  void connectCb(rclcpp::Node::SharedPtr node);
+  void connectCb();
 
   void depthCb(
     const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
@@ -126,9 +125,6 @@ cv::Mat initMatrix(cv::Mat cameraMatrix, cv::Mat distCoeffs, int width, int heig
 PointCloudXyzRadialNode::PointCloudXyzRadialNode()
 : Node("PointCloudXyzRadialNode")
 {
-  rclcpp::Node::SharedPtr node = std::shared_ptr<rclcpp::Node>(this);
-  it_.reset(new image_transport::ImageTransport(node));
-
   // Read parameters
   this->get_parameter_or("queue_size", queue_size_, 5);
 
@@ -136,7 +132,7 @@ PointCloudXyzRadialNode::PointCloudXyzRadialNode()
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // ros::SubscriberStatusCallback connect_cb =
   //   boost::bind(&PointCloudXyzRadialNode::connectCb, this);
-  connectCb(node);
+  connectCb();
   // Make sure we don't enter connectCb() between advertising and assigning to pub_point_cloud_
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement when SubscriberStatusCallback is available
@@ -145,7 +141,7 @@ PointCloudXyzRadialNode::PointCloudXyzRadialNode()
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void PointCloudXyzRadialNode::connectCb(rclcpp::Node::SharedPtr node)
+void PointCloudXyzRadialNode::connectCb()
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
@@ -153,11 +149,15 @@ void PointCloudXyzRadialNode::connectCb(rclcpp::Node::SharedPtr node)
   if (0) {
     sub_depth_.shutdown();
   } else if (!sub_depth_) {
-    image_transport::TransportHints hints(node, "raw");
-    sub_depth_ = it_->subscribeCamera("image_raw",
-        queue_size_,
-        &PointCloudXyzRadialNode::depthCb,
-        this, &hints);
+    auto custom_qos = rmw_qos_profile_system_default;
+    custom_qos.depth = queue_size_;
+
+    sub_depth_ = image_transport::create_camera_subscription(
+        this,
+        "image_raw",
+        std::bind(&PointCloudXyzRadialNode::depthCb, this, std::placeholders::_1, std::placeholders::_2),
+        "raw",
+        custom_qos);
   }
 }
 
@@ -165,7 +165,7 @@ void PointCloudXyzRadialNode::depthCb(
   const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
   const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
 {
-  PointCloud::SharedPtr cloud_msg(new PointCloud);
+  auto cloud_msg = std::make_shared<PointCloud>();
   cloud_msg->header = depth_msg->header;
   cloud_msg->height = depth_msg->height;
   cloud_msg->width = depth_msg->width;

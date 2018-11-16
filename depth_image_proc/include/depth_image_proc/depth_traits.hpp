@@ -51,7 +51,7 @@ struct DepthTraits<uint16_t>
   static inline float toMeters(uint16_t depth) {return depth * 0.001f;}   // originally mm
   static inline uint16_t fromMeters(float depth) {return (depth * 1000.0f) + 0.5f;}
   // Do nothing - already zero-filled
-  static inline void initializeBuffer(std::vector<uint8_t> & buffer) {}
+  static inline void initializeBuffer(std::vector<uint8_t> & buffer) { (void) buffer; }
 };
 
 template<>
