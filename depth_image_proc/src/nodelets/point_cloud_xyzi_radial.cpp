@@ -87,7 +87,7 @@ private:
 
   cv::Mat transform_;
 
-  void connectCb(rclcpp::Node::SharedPtr node);
+  void connectCb();
 
   void imageCb(
     const Image::ConstSharedPtr & depth_msg,
@@ -158,10 +158,10 @@ PointCloudXyziRadialNode::PointCloudXyziRadialNode()
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   sync_ = std::make_shared<Synchronizer>(
-      SyncPolicy(queue_size),
-      sub_depth_,
-      sub_intensity_,
-      sub_info_);
+    SyncPolicy(queue_size_),
+    sub_depth_,
+    sub_intensity_,
+    sub_info_);
   sync_->registerCallback(std::bind(&PointCloudXyziRadialNode::imageCb, this, _1, _2, _3));
 
   // Monitor whether anyone is subscribed to the output

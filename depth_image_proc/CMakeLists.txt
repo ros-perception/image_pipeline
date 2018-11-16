@@ -39,8 +39,8 @@ add_library(${PROJECT_NAME} SHARED
   src/nodelets/point_cloud_xyzrgb.cpp
   src/nodelets/point_cloud_xyzi.cpp
   src/nodelets/point_cloud_xyz_radial.cpp
-  #src/nodelets/point_cloud_xyzi_radial.cpp
-  #src/nodelets/register.cpp
+  src/nodelets/point_cloud_xyzi_radial.cpp
+  src/nodelets/register.cpp
 )
 ament_target_dependencies(${PROJECT_NAME}
   "image_transport"

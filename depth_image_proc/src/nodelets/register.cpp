@@ -57,16 +57,17 @@ public:
   DEPTH_IMAGE_PROC_PUBLIC RegisterNode();
 
 private:
-  std::shared_ptr<image_transport::ImageTransport> it_depth_;
+  using Image = sensor_msgs::msg::Image;
+  using CameraInfo = sensor_msgs::msg::CameraInfo;
 
   // Subscriptions
   image_transport::SubscriberFilter sub_depth_image_;
-  message_filters::Subscriber<sensor_msgs::msg::CameraInfo> sub_depth_info_, sub_rgb_info_;
+  message_filters::Subscriber<CameraInfo> sub_depth_info_, sub_rgb_info_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_;
   using SyncPolicy = message_filters::sync_policies::ApproximateTime<
-    sensor_msgs::msg::Image, sensor_msgs::msg::CameraInfo,
-    sensor_msgs::msg::CameraInfo>;
+    Image, CameraInfo,
+    CameraInfo>;
   using Synchronizer = message_filters::Synchronizer<SyncPolicy>;
   std::shared_ptr<Synchronizer> sync_;
 
@@ -76,17 +77,17 @@ private:
 
   image_geometry::PinholeCameraModel depth_model_, rgb_model_;
 
-  void connectCb(rclcpp::Node::SharedPtr node);
+  void connectCb();
 
   void imageCb(
-    const sensor_msgs::msg::Image::ConstSharedPtr & depth_image_msg,
-    const sensor_msgs::msg::CameraInfo::ConstSharedPtr & depth_info_msg,
-    const sensor_msgs::msg::CameraInfo::ConstSharedPtr & rgb_info_msg);
+    const Image::ConstSharedPtr & depth_image_msg,
+    const CameraInfo::ConstSharedPtr & depth_info_msg,
+    const CameraInfo::ConstSharedPtr & rgb_info_msg);
 
   template<typename T>
   void convert(
-    const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-    const sensor_msgs::msg::Image::SharedPtr & registered_msg,
+    const Image::ConstSharedPtr & depth_msg,
+    const Image::SharedPtr & registered_msg,
     const Eigen::Affine3d & depth_to_rgb);
 
   rclcpp::Logger logger_ = rclcpp::get_logger("RegisterNode");
@@ -95,37 +96,38 @@ private:
 RegisterNode::RegisterNode()
 : Node("RegisterNode")
 {
-  rclcpp::Node::SharedPtr node = std::shared_ptr<rclcpp::Node>(this);
-  rclcpp::Clock::SharedPtr clock = node->get_clock();
-  tf_buffer_.reset(new tf2_ros::Buffer(clock));
-  tf_.reset(new tf2_ros::TransformListener(*tf_buffer_) );
+  rclcpp::Clock::SharedPtr clock = this->get_clock();
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(clock);
+  tf_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   // Read parameters
   int queue_size;
   this->get_parameter_or("queue_size", queue_size, 5);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
-  sync_.reset(new Synchronizer(SyncPolicy(queue_size), sub_depth_image_, sub_depth_info_,
-    sub_rgb_info_) );
+  sync_ = std::make_shared<Synchronizer>(
+    SyncPolicy(queue_size),
+    sub_depth_image_,
+    sub_depth_info_,
+    sub_rgb_info_);
   sync_->registerCallback(std::bind(&RegisterNode::imageCb, this, _1, _2, _3));
 
   // Monitor whether anyone is subscribed to the output
-  image_transport::ImageTransport it_depth_reg(node);
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // image_transport::SubscriberStatusCallback image_connect_cb
   //   boost::bind(&RegisterNode::connectCb, this);
   // ros::SubscriberStatusCallback info_connect_cb = boost::bind(&RegisterNode::connectCb, this);
-  connectCb(node);
+  connectCb();
   // Make sure we don't enter connectCb() between advertising and assigning to pub_registered_
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // pub_registered_ = it_depth_reg.advertiseCamera("image_rect", 1,
   //                                               image_connect_cb, image_connect_cb,
   //                                               info_connect_cb, info_connect_cb);
-  pub_registered_ = it_depth_reg.advertiseCamera("depth_registered/image_rect", 1);
+  pub_registered_ = image_transport::create_camera_publisher(this, "depth_registered/image_rect");
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void RegisterNode::connectCb(rclcpp::Node::SharedPtr node)
+void RegisterNode::connectCb()
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
@@ -135,17 +137,17 @@ void RegisterNode::connectCb(rclcpp::Node::SharedPtr node)
     sub_depth_info_.unsubscribe();
     sub_rgb_info_.unsubscribe();
   } else if (!sub_depth_image_.getSubscriber()) {
-    image_transport::TransportHints hints(node, "raw");
-    sub_depth_image_.subscribe(node, "depth/image_rect", hints.getTransport());
-    sub_depth_info_.subscribe(node, "depth/camera_info");
-    sub_rgb_info_.subscribe(node, "rgb/camera_info");
+    image_transport::TransportHints hints(this, "raw");
+    sub_depth_image_.subscribe(this, "depth/image_rect", hints.getTransport());
+    sub_depth_info_.subscribe(this, "depth/camera_info");
+    sub_rgb_info_.subscribe(this, "rgb/camera_info");
   }
 }
 
 void RegisterNode::imageCb(
-  const sensor_msgs::msg::Image::ConstSharedPtr & depth_image_msg,
-  const sensor_msgs::msg::CameraInfo::ConstSharedPtr & depth_info_msg,
-  const sensor_msgs::msg::CameraInfo::ConstSharedPtr & rgb_info_msg)
+  const Image::ConstSharedPtr & depth_image_msg,
+  const CameraInfo::ConstSharedPtr & depth_info_msg,
+  const CameraInfo::ConstSharedPtr & rgb_info_msg)
 {
   // Update camera models - these take binning & ROI into account
   depth_model_.fromCameraInfo(depth_info_msg);
@@ -169,8 +171,7 @@ void RegisterNode::imageCb(
     /// don't call publish() in this cb. What's going on roscpp?
   }
 
-  // Allocate registered depth image
-  sensor_msgs::msg::Image::SharedPtr registered_msg(new sensor_msgs::msg::Image);
+  auto registered_msg = std::make_shared<Image>();
   registered_msg->header.stamp = depth_image_msg->header.stamp;
   registered_msg->header.frame_id = rgb_info_msg->header.frame_id;
   registered_msg->encoding = depth_image_msg->encoding;
@@ -191,8 +192,7 @@ void RegisterNode::imageCb(
   }
 
   // Registered camera info is the same as the RGB info, but uses the depth timestamp
-  sensor_msgs::msg::CameraInfo::SharedPtr registered_info_msg(new sensor_msgs::msg::CameraInfo(
-      *rgb_info_msg) );
+  auto registered_info_msg = std::make_shared<CameraInfo>(*rgb_info_msg);
   registered_info_msg->header.stamp = registered_msg->header.stamp;
 
   pub_registered_.publish(registered_msg, registered_info_msg);
@@ -200,8 +200,8 @@ void RegisterNode::imageCb(
 
 template<typename T>
 void RegisterNode::convert(
-  const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-  const sensor_msgs::msg::Image::SharedPtr & registered_msg,
+  const Image::ConstSharedPtr & depth_msg,
+  const Image::SharedPtr & registered_msg,
   const Eigen::Affine3d & depth_to_rgb)
 {
   // Allocate memory for registered depth image

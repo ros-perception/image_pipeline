@@ -102,10 +102,10 @@ PointCloudXyziNode::PointCloudXyziNode()
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   sync_ = std::make_shared<Synchronizer>(
-      SyncPolicy(queue_size),
-      sub_depth_,
-      sub_intensity_,
-      sub_info_);
+    SyncPolicy(queue_size),
+    sub_depth_,
+    sub_intensity_,
+    sub_info_);
   sync_->registerCallback(std::bind(&PointCloudXyziNode::imageCb, this, _1, _2, _3));
 
   // Monitor whether anyone is subscribed to the output

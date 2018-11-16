@@ -111,11 +111,14 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode()
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   if (use_exact_sync) {
-    exact_sync_.reset(new ExactSynchronizer(ExactSyncPolicy(queue_size), sub_depth_, sub_rgb_,
-      sub_info_) );
+    exact_sync_ = std::make_shared<ExactSynchronizer>(
+      ExactSyncPolicy(queue_size),
+      sub_depth_,
+      sub_rgb_,
+      sub_info_);
     exact_sync_->registerCallback(std::bind(&PointCloudXyzrgbNode::imageCb, this, _1, _2, _3));
   } else {
-    sync_.reset(new Synchronizer(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_) );
+    sync_ = std::make_shared<Synchronizer>(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_);
     sync_->registerCallback(std::bind(&PointCloudXyzrgbNode::imageCb, this, _1, _2, _3));
   }
 
