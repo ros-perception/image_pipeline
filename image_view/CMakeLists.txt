@@ -1,90 +1,148 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
+
 project(image_view)
 
-find_package(catkin REQUIRED COMPONENTS camera_calibration_parsers cv_bridge dynamic_reconfigure image_transport message_filters message_generation nodelet rosconsole roscpp std_srvs stereo_msgs)
-generate_dynamic_reconfigure_options(cfg/ImageView.cfg)
 
-catkin_package(CATKIN_DEPENDS dynamic_reconfigure)
-find_package(Boost REQUIRED COMPONENTS signals thread)
-find_package(OpenCV REQUIRED)
-
-include_directories(${Boost_INCLUDE_DIRS}
-                    ${catkin_INCLUDE_DIRS}
-                    ${OpenCV_INCLUDE_DIRS}
-)
-
-# Extra tools
-add_executable(extract_images src/nodes/extract_images.cpp)
-target_link_libraries(extract_images ${catkin_LIBRARIES}
-                                     ${OpenCV_LIBRARIES}
-)
-
-add_executable(image_saver src/nodes/image_saver.cpp)
-target_link_libraries(image_saver ${catkin_LIBRARIES}
-                                  ${OpenCV_LIBRARIES}
-)
-
-add_executable(video_recorder src/nodes/video_recorder.cpp)
-target_link_libraries(video_recorder ${catkin_LIBRARIES}
-                                     ${OpenCV_LIBRARIES}
-)
-
-install(TARGETS extract_images image_saver video_recorder
-        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-# Deal with the GUI's
-if(ANDROID)
-  return()
+# ROS2 Flags
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
 endif()
 
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(builtin_interfaces REQUIRED)
+find_package(rmw_implementation REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(tf2_eigen REQUIRED)
+find_package(image_geometry REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(stereo_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED COMPONENTS signals system filesystem)
 find_package(GTK2)
+find_package(std_srvs REQUIRED)
 add_definitions(-DHAVE_GTK)
 include_directories(${GTK2_INCLUDE_DIRS})
 
-# Nodelet library
-add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
-target_link_libraries(image_view ${catkin_LIBRARIES}
-                                 ${GTK_LIBRARIES}
-                                 ${GTK2_LIBRARIES}
-                                 ${OpenCV_LIBRARIES}
-                                 ${Boost_LIBRARIES}
+if(cv_bridge_VERSION VERSION_GREATER "1.12.0")
+  add_compile_options(-std=c++11)
+endif()
+
+add_library(${PROJECT_NAME} SHARED
+            src/nodelets/disparity_node.cpp
+            src/nodelets/window_thread.cpp)
+
+ament_target_dependencies(${PROJECT_NAME}
+  image_transport
+  image_geometry
+  cv_bridge
+  std_srvs
+  rclcpp
+  sensor_msgs
+  stereo_msgs
+  rmw_implementation
+  cv_bridge
+  OpenCV
+  Boost
 )
-install(TARGETS image_view
-        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::DisparityNode")
+
+install(TARGETS ${PROJECT_NAME}
+        DESTINATION lib
 )
 
-# Image viewers
-add_executable(image_view_exe src/nodes/image_view.cpp)
-add_dependencies(image_view_exe ${PROJECT_NAME}_gencfg)
-SET_TARGET_PROPERTIES(image_view_exe PROPERTIES OUTPUT_NAME image_view)
-target_link_libraries(image_view_exe ${catkin_LIBRARIES}
-                                     ${OpenCV_LIBRARIES}
-                                     ${Boost_LIBRARIES}
-)
-
-add_executable(disparity_view src/nodes/disparity_view.cpp)
-target_link_libraries(disparity_view ${catkin_LIBRARIES}
-                                     ${OpenCV_LIBRARIES}
+add_executable(image_view_exe 
+               src/nodes/image_view.cpp)
+ament_target_dependencies(image_view_exe
+  image_transport
+  image_geometry
+  cv_bridge
+  message_filters
+  rclcpp
+  stereo_msgs
+  sensor_msgs
+  rmw_implementation
+  cv_bridge
+  OpenCV
+  Boost
 )
 
 add_executable(stereo_view src/nodes/stereo_view.cpp)
-target_link_libraries(stereo_view ${Boost_LIBRARIES}
-                                  ${catkin_LIBRARIES}
-                                  ${GTK_LIBRARIES}
-                                  ${GTK2_LIBRARIES}
-                                  ${OpenCV_LIBRARIES}
+ament_target_dependencies(stereo_view
+  image_transport
+  image_geometry
+  cv_bridge
+  message_filters
+  rclcpp
+  stereo_msgs
+  sensor_msgs
+  rmw_implementation
+  cv_bridge
+  OpenCV
+  Boost
 )
 
-install(TARGETS disparity_view image_view_exe stereo_view
-        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-install(FILES nodelet_plugins.xml
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+add_executable(extract_images src/nodes/extract_images.cpp)
+ament_target_dependencies(extract_images
+  image_transport
+  image_geometry
+  cv_bridge
+  message_filters
+  rclcpp
+  stereo_msgs
+  sensor_msgs
+  rmw_implementation
+  cv_bridge
+  OpenCV
+  Boost
 )
 
-# Python programs
-catkin_install_python(
-  PROGRAMS scripts/extract_images_sync
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+add_executable(image_saver src/nodes/image_saver.cpp)
+ament_target_dependencies(image_saver
+  image_transport
+  image_geometry
+  cv_bridge
+  std_srvs
+  message_filters
+  rclcpp
+  stereo_msgs
+  sensor_msgs
+  rmw_implementation
+  cv_bridge
+  OpenCV
+  Boost
 )
+
+add_executable(video_recorder src/nodes/video_recorder.cpp)
+ament_target_dependencies(video_recorder
+  image_transport
+  image_geometry
+  cv_bridge
+  std_srvs
+  rclcpp
+  sensor_msgs
+  rmw_implementation
+  cv_bridge
+  OpenCV
+  Boost
+)
+
+install(TARGETS 
+        image_view_exe
+        stereo_view
+        extract_images
+        image_saver
+        video_recorder
+        DESTINATION lib/${PROJECT_NAME})
+install(DIRECTORY examples/launch
+  DESTINATION share/${PROJECT_NAME}/
+)
+ament_package()

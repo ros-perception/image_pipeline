@@ -1,46 +1,37 @@
-<package>
+<package format="2">
   <name>image_view</name>
   <version>1.12.23</version>
   <description>
-  A simple viewer for ROS image topics. Includes a specialized viewer
-  for stereo + disparity images.
+
+     Contains nodelets for processing depth images such as those
+     produced by OpenNI camera. Functions include creating disparity
+     images and point clouds, as well as registering (reprojecting)
+     a depth image into another camera frame.
+
   </description>
   <author>Patrick Mihelich</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
   <license>BSD</license>
-  <url>http://www.ros.org/wiki/image_view</url>
+  <url>http://ros.org/wiki/depth_image_proc</url>
 
-  <export>
-    <rosdoc config="rosdoc.yaml" />
-    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
-  </export>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
 
-  <test_depend>rostest</test_depend>
-
-  <build_depend>camera_calibration_parsers</build_depend>
-  <build_depend version_gte="1.11.13">cv_bridge</build_depend>
-  <build_depend>dynamic_reconfigure</build_depend>
-  <build_depend>gtk2</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>image_geometry</build_depend>
   <build_depend>image_transport</build_depend>
   <build_depend>message_filters</build_depend>
-  <build_depend>message_generation</build_depend>
-  <build_depend>nodelet</build_depend>
-  <build_depend>rosconsole</build_depend>
-  <build_depend>roscpp</build_depend>
   <build_depend>sensor_msgs</build_depend>
-  <build_depend>std_srvs</build_depend>
   <build_depend>stereo_msgs</build_depend>
 
-  <run_depend>camera_calibration_parsers</run_depend>
-  <run_depend version_gte="1.11.13">cv_bridge</run_depend>
-  <run_depend>dynamic_reconfigure</run_depend>
-  <run_depend>gtk2</run_depend>
-  <run_depend>image_transport</run_depend>
-  <run_depend>message_filters</run_depend>
-  <run_depend>nodelet</run_depend>
-  <run_depend>rosconsole</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>std_srvs</run_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>image_geometry</exec_depend>
+  <exec_depend>image_transport</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>
