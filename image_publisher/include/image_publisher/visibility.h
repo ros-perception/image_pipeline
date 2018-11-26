@@ -29,27 +29,55 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#ifndef IMAGE_PUBLISHER__VISIBILITY_H_
+#define IMAGE_PUBLISHER__VISIBILITY_H_
 
-#include "image_publisher/image_publisher_nodelet.hpp"
-#include <memory>
-
-int main(int argc, char ** argv)
+#ifdef __cplusplus
+extern "C"
 {
-  // Force flush of the stdout buffer.
-  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
+#endif
 
-  rclcpp::init(argc, argv);
+// This logic was borrowed (then namespaced) from the examples on the gcc wiki:
+//     https://gcc.gnu.org/wiki/Visibility
 
-  if (argc <= 1) {
-    RCUTILS_LOG_ERROR("image_publisher requires filename. Typical command-line usage:\n"
-      "\t$ ros2 run image_publisher image_publisher <filename>");
-    return 1;
-  }
+#if defined _WIN32 || defined __CYGWIN__
 
-  auto publisher = std::make_shared<image_publisher::ImagePublisherNode>();
-  publisher->set_parameter_if_not_set("filename", argv[1]);
+  #ifdef __GNUC__
+    #define IMAGE_PUBLISHER_EXPORT __attribute__ ((dllexport))
+    #define IMAGE_PUBLISHER_IMPORT __attribute__ ((dllimport))
+  #else
+    #define IMAGE_PUBLISHER_EXPORT __declspec(dllexport)
+    #define IMAGE_PUBLISHER_IMPORT __declspec(dllimport)
+  #endif
 
-  rclcpp::spin(publisher);
-  rclcpp::shutdown();
-  return 0;
+  #ifdef IMAGE_PUBLISHER_DLL
+    #define IMAGE_PUBLISHER_PUBLIC IMAGE_PUBLISHER_EXPORT
+  #else
+    #define IMAGE_PUBLISHER_PUBLIC IMAGE_PUBLISHER_IMPORT
+  #endif
+
+  #define IMAGE_PUBLISHER_PUBLIC_TYPE IMAGE_PUBLISHER_PUBLIC
+
+  #define IMAGE_PUBLISHER_LOCAL
+
+#else
+
+  #define IMAGE_PUBLISHER_EXPORT __attribute__ ((visibility("default")))
+  #define IMAGE_PUBLISHER_IMPORT
+
+  #if __GNUC__ >= 4
+    #define IMAGE_PUBLISHER_PUBLIC __attribute__ ((visibility("default")))
+    #define IMAGE_PUBLISHER_LOCAL  __attribute__ ((visibility("hidden")))
+  #else
+    #define IMAGE_PUBLISHER_PUBLIC
+    #define IMAGE_PUBLISHER_LOCAL
+  #endif
+
+  #define IMAGE_PUBLISHER_PUBLIC_TYPE
+#endif
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif  // IMAGE_PUBLISHER__VISIBILITY_H_

@@ -1,39 +1,71 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 project(image_publisher)
 
-find_package(catkin REQUIRED COMPONENTS cv_bridge dynamic_reconfigure camera_info_manager sensor_msgs image_transport nodelet roscpp)
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(cv_bridge REQUIRED)
+# TODO: To enable when camera_info_manager is available
+# find_package(camera_info_manager REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(class_loader REQUIRED)
+find_package(rclcpp REQUIRED)
 
 set(opencv_2_components core highgui)
 set(opencv_3_components core imgcodecs videoio)
 find_package(OpenCV REQUIRED COMPONENTS core)
 message(STATUS "opencv version ${OpenCV_VERSION}")
 if(OpenCV_VERSION VERSION_LESS "3.0.0")
-  find_package(OpenCV 2 REQUIRED COMPONENTS ${opencv_2_components})  
+  find_package(OpenCV 2 REQUIRED COMPONENTS ${opencv_2_components})
 else()
-  find_package(OpenCV 3 REQUIRED COMPONENTS ${opencv_3_components})  
+  find_package(OpenCV 3 REQUIRED COMPONENTS ${opencv_3_components})
 endif()
 
-# generate the dynamic_reconfigure config file
-generate_dynamic_reconfigure_options(cfg/ImagePublisher.cfg)
+include_directories(include)
 
-catkin_package()
+add_library(image_publisher_node SHARED src/nodelet/image_publisher_nodelet.cpp)
+target_link_libraries(image_publisher_node ${ament_LIBRARIES} ${OpenCV_LIBRARIES})
+ament_target_dependencies(image_publisher_node
+  "image_transport"
+  "image_geometry"
+  "cv_bridge"
+  "class_loader"
+  "rclcpp"
+)
 
-include_directories(${catkin_INCLUDE_DIRS})
+rclcpp_register_node_plugins(image_publisher_node "${PROJECT_NAME}::ImagePublisherNode")
+set(node_plugins "${node_plugins}${PROJECT_NAME}::ImagePublisherNode;$<TARGET_FILE:ImagePublisherNode>\n")
 
-add_library(${PROJECT_NAME} SHARED src/nodelet/image_publisher_nodelet.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
+install(DIRECTORY include/${PROJECT_NAME}/
+    DESTINATION include/${PROJECT_NAME}
+    FILES_MATCHING PATTERN "*.h")
+
+install(TARGETS image_publisher_node
+        DESTINATION lib
+)
+
+add_executable(image_publisher src/node/image_publisher.cpp)
+target_link_libraries(image_publisher ${ament_LIBRARIES} image_publisher_node)
+ament_target_dependencies(image_publisher
+  "rclcpp")
+
 install(TARGETS image_publisher
-        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        DESTINATION lib/${PROJECT_NAME}
+)
+install(TARGETS image_publisher
+        DESTINATION bin
 )
 
-add_executable(image_publisher_exe src/node/image_publisher.cpp)
-SET_TARGET_PROPERTIES(image_publisher_exe PROPERTIES OUTPUT_NAME image_publisher)
-target_link_libraries(image_publisher_exe ${catkin_LIBRARIES})
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
-install(TARGETS image_publisher_exe
-        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-install(FILES nodelet_plugins.xml
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+ament_package()
