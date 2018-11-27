@@ -51,6 +51,7 @@ namespace image_proc_tegra_fisheye
             cv::Mat mx;
             cv::Mat my;
             
+     
             bool camera_set_;
             
             bool img_downsample = false;
