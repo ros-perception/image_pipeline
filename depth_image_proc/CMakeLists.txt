@@ -56,15 +56,15 @@ ament_target_dependencies(${PROJECT_NAME}
   "sensor_msgs"
 )
 
-#rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::ConvertMetricNode")
-#rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::CropForemostNode")
-#rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::DisparityNode")
-#rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyzNode")
-#rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyzRadialNode")
-#rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyziNode")
-#rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyziRadialNode")
-#rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyzrgbNode")
-#rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::RegisterNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::ConvertMetricNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::CropForemostNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::DisparityNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyzNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyzRadialNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyziNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyziRadialNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::PointCloudXyzrgbNode")
+rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::RegisterNode")
 
 target_link_libraries(${PROJECT_NAME} ${ament_LIBRARIES} ${OpenCV_LIBRARIES})
 
