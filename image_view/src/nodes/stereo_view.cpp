@@ -48,7 +48,6 @@
 #include <thread>
 #include <memory>
 #include <vector>
-#include <boost/format.hpp>
 
 #ifdef HAVE_GTK
 #include <gtk/gtk.h>
@@ -355,7 +354,9 @@ private:
   cv::Mat_<cv::Vec3b> disparity_color_;
   std::mutex image_mutex_;
   
-  boost::format filename_format_;
+  char buf[1024];
+  std::string format_string;
+  std::string filename;
   int save_count_;
 
 //   rclcpp::WallTimer check_synced_timer_;
@@ -366,7 +367,7 @@ public:
              const std::string& left_topic, 
              const std::string& right_topic,
              const std::string& disparity_topic)
-    : filename_format_(""), save_count_(0),
+    : filename(""), save_count_(0),
       left_received_(0), right_received_(0), disp_received_(0), all_received_(0)
   {
     // Read local parameters
@@ -374,9 +375,8 @@ public:
 
     bool autosize;
     node->get_parameter_or("autosize", autosize, true);
-    std::string format_string;
     node->get_parameter_or("filename_format", format_string, std::string("%s%04i.jpg"));
-    filename_format_.parse(format_string);
+    
 
     // Do GUI window setup
     int flags = autosize ? cv::WND_PROP_AUTOSIZE : 0;
@@ -403,10 +403,9 @@ public:
              disparity_topic.c_str());
 
     // Subscribe to three input topics.
-    image_transport::TransportHints hints(node, transport);
-    left_sub_.subscribe(node, left_topic, hints.getTransport());
-    right_sub_.subscribe(node, right_topic, hints.getTransport());
-    disparity_sub_.subscribe(node, disparity_topic);
+    left_sub_.subscribe(node.get(), left_topic, transport);
+    right_sub_.subscribe(node.get(), right_topic, transport);
+    disparity_sub_.subscribe(node.get(), disparity_topic);
 
     // Complain every 30s if the topics appear unsynchronized
     left_sub_.registerCallback(std::bind(increment, &left_received_));
@@ -507,7 +506,8 @@ public:
   void saveImage(const char* prefix, const cv::Mat& image)
   {
     if (!image.empty()) {
-      std::string filename = (filename_format_ % prefix % save_count_).str();
+      sprintf(buf, format_string.c_str(), prefix, save_count_);
+      filename = buf;
       cv::imwrite(filename, image);
       RCLCPP_INFO(node->get_logger(), "Saved image %s", filename.c_str());
     } else {

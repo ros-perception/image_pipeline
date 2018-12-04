@@ -1,18 +1,14 @@
-<package format="2">
+<package>
   <name>image_view</name>
   <version>1.12.23</version>
   <description>
-
-     Contains nodelets for processing depth images such as those
-     produced by OpenNI camera. Functions include creating disparity
-     images and point clouds, as well as registering (reprojecting)
-     a depth image into another camera frame.
-
+  A simple viewer for ROS2 image topics. Includes a specialized viewer
+  for stereo + disparity images.
   </description>
   <author>Patrick Mihelich</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
   <license>BSD</license>
-  <url>http://ros.org/wiki/depth_image_proc</url>
+  <url>http://www.ros.org/wiki/image_view</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

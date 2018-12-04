@@ -44,25 +44,24 @@
 #include <exception> 
 #include <memory>
 #include <string>
-#include <boost/format.hpp>
-// #include <boost/thread.hpp>
-#include <boost/filesystem.hpp>
-
+#include <iostream>
+#include <experimental/filesystem>
+		
 rclcpp::Node::SharedPtr node;
 int g_count;
 cv::Mat g_last_image;
-boost::format g_filename_format;
 std::mutex g_image_mutex;
 std::string g_window_name;
 std::string transport;
 std::string topic;
+char buf[1024];
 bool g_gui;
 image_transport::Publisher g_pub;
 bool g_do_dynamic_scaling;
 int g_colormap;
 double g_min_image_value;
 double g_max_image_value;
-
+std::string format_string;
 void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   std::unique_lock<std::mutex> lock(g_image_mutex);
@@ -120,13 +119,14 @@ static void mouseCb(int event, int x, int y, int flags, void* param)
     RCLCPP_WARN(node->get_logger(), "Couldn't save image, no data!");
     return;
   }
-
-  std::string filename = (g_filename_format % g_count).str();
+  sprintf(buf, format_string.c_str(), g_count);
+  std::string filename = buf;
   if (cv::imwrite(filename, image)) {
     RCLCPP_INFO(node->get_logger(), "Saved image %s", filename.c_str());
     g_count++;
   } else {
-    boost::filesystem::path full_path = boost::filesystem::complete(filename);
+    std::experimental::filesystem::path full_path = 
+      std::experimental::filesystem::system_complete(filename);
     RCLCPP_ERROR(node->get_logger(), "Failed to save image. Have permission to write there?: %s", full_path.c_str());
   }
 }
@@ -148,9 +148,8 @@ int main(int argc, char **argv)
   node->get_parameter_or("colormap", g_colormap, 11);
   node->get_parameter_or("do_dynamic_scaling", g_do_dynamic_scaling, false);
   if (g_gui) {
-    std::string format_string;
     node->get_parameter_or("filename_format", format_string, std::string("frame%04i.jpg"));
-    g_filename_format.parse(format_string);
+    
 
     // Handle window size
     bool autosize;
@@ -180,12 +179,10 @@ int main(int argc, char **argv)
   node->get_parameter_or("image_transport", transport, std::string("raw"));
   RCLCPP_INFO(node->get_logger(), "Using transport \"%s\"", transport.c_str());
   RCLCPP_INFO(node->get_logger(), "Image topic \"%s\"", topic.c_str());
-  std::shared_ptr<image_transport::ImageTransport> it;
-  it.reset(new image_transport::ImageTransport(node));
-  image_transport::TransportHints hints(node, transport);
   image_transport::Subscriber sub;
-  sub = it->subscribe(topic, 1, &imageCb, node, &hints);
-  g_pub = it->advertise("output", 1);
+  sub = image_transport::create_subscription(node.get(), 
+    topic, &imageCb, transport);
+  g_pub = image_transport::create_publisher(node.get(), "output");
   rclcpp::spin(node);
 
   rclcpp::shutdown();

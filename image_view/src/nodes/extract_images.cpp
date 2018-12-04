@@ -42,7 +42,6 @@
 #include <thread>
 #include <memory>
 #include <string>
-#include <boost/format.hpp>
 
 using std::placeholders::_1;
 class ExtractImages
@@ -53,8 +52,9 @@ private:
   sensor_msgs::msg::Image::ConstSharedPtr last_msg_;
   std::mutex image_mutex_;
   
+  char buf[1024];
+  std::string format_string;
   std::string window_name_;
-  boost::format filename_format_;
   int count_;
   rclcpp::Time _time;
   rclcpp::Time sec_per_frame_;
@@ -66,20 +66,17 @@ private:
 public:
   ExtractImages(const std::string& topic,
                 const std::string& transport)
-    : filename_format_(""), count_(0), _time(rclcpp::Clock().now())
+    : format_string(""), count_(0), _time(rclcpp::Clock().now())
   {
     // auto clock_ = rclcpp::Clock();
     node = rclcpp::Node::make_shared("extract_images");
     std::string format_string;
     node->get_parameter_or("filename_format", format_string, std::string("frame%04i.jpg"));
-    filename_format_.parse(format_string);
     double sec_per_frame;
     node->get_parameter_or("sec_per_frame", sec_per_frame, 0.1);
     sec_per_frame_ = rclcpp::Time(sec_per_frame);
-    std::shared_ptr<image_transport::ImageTransport> it;
-    it.reset(new image_transport::ImageTransport(node));
-    image_transport::TransportHints hints(node, transport);
-    sub_ = it->subscribe(topic, 1, std::bind(&ExtractImages::image_cb, this, _1), node, &hints);
+    sub_ = image_transport::create_subscription(
+      node.get(), topic, std::bind(&ExtractImages::image_cb, this, _1), transport);
 
 #if defined(_VIDEO)
     video_writer = 0;
@@ -120,7 +117,8 @@ public:
       _time = rclcpp::Clock().now();
 
       if (!image.empty()) {
-        std::string filename = (filename_format_ % count_).str();
+        sprintf(buf, format_string.c_str(), count_);
+        std::string filename =buf;
 
 #if !defined(_VIDEO)
         cv::imwrite(filename, image);

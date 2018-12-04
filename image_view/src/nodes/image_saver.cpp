@@ -37,7 +37,6 @@
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 // #include <camera_calibration_parsers/parse.h>
-#include <boost/format.hpp>
 
 #include <memory>
 #include <string>
@@ -46,11 +45,13 @@
 #include <std_srvs/srv/empty.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <rcutils/cmdline_parser.h>
-boost::format g_format;
+
 bool save_all_image, save_image_service;
 std::string encoding;
 bool request_start_end;
 rclcpp::Node::SharedPtr node;
+std::string format_string;
+char buf[1024];
 
 bool service(const std::shared_ptr<std_srvs::srv::Empty::Request> req, std::shared_ptr<std_srvs::srv::Empty::Response> res) {
   save_image_service = true;
@@ -163,14 +164,16 @@ private:
 
     if (!image.empty()) {
       try {
-        filename = (g_format).str();
-      } catch (...) { g_format.clear(); }
+        filename = format_string;
+      } catch (...) { format_string.clear(); }
       try {
-        filename = (g_format % count_).str();
-      } catch (...) { g_format.clear(); }
+        sprintf(buf, format_string.c_str(), count_);
+        filename = buf;
+      } catch (...) { format_string.clear(); }
       try { 
-        filename = (g_format % count_ % "jpg").str();
-      } catch (...) { g_format.clear(); }
+        sprintf(buf, format_string.c_str(), count_, "jpg");
+        filename = buf; 
+      } catch (...) { format_string.clear(); }
       if ( save_all_image || save_image_service ) {
         cv::imwrite(filename, image);
         RCLCPP_INFO(node->get_logger(), "Saved image %s", filename.c_str());
@@ -226,20 +229,19 @@ int main(int argc, char** argv)
 
   node = rclcpp::Node::make_shared("image_saver");
 
-  std::shared_ptr<image_transport::ImageTransport> it;
-  it.reset(new image_transport::ImageTransport(node));
-  image_transport::TransportHints hints(node);
   Callbacks callbacks;
   // Useful when CameraInfo is being published
 
-  image_transport::CameraSubscriber sub_image_and_camera = it->subscribeCamera(topic, 1,
-                                                                              &Callbacks::callbackWithCameraInfo,
-                                                                              &callbacks);
-  // Useful when CameraInfo is not being published
-  image_transport::Subscriber sub_image = it->subscribe(
-      topic, 1, std::bind(&Callbacks::callbackWithoutCameraInfo, &callbacks, std::placeholders:: _1));
+  image_transport::CameraSubscriber sub_image_and_camera = 
+    image_transport::create_camera_subscription(node.get(), topic,
+        std::bind(&Callbacks::callbackWithCameraInfo, 
+          callbacks, std::placeholders::_1, std::placeholders::_2),
+        "raw");  // Useful when CameraInfo is not being published
+  image_transport::Subscriber sub_image = 
+    image_transport::create_subscription(
+      node.get(), topic, std::bind(&Callbacks::callbackWithoutCameraInfo, 
+        &callbacks, std::placeholders:: _1), "raw");
 
-  g_format.parse(format_string);
   auto save = node->create_service<std_srvs::srv::Empty>("save", &service);
   if (request_start_end && !save_all_image)
     RCLCPP_WARN(node->get_logger(), "'request_start_end' is true, so overwriting 'save_all_image' as true");

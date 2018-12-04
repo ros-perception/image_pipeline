@@ -136,9 +136,8 @@ int main(int argc, char** argv)
         exit(-1);
     }
 
-    std::shared_ptr<image_transport::ImageTransport> it;
-    it.reset(new image_transport::ImageTransport(node));
-    image_transport::Subscriber sub_image = it->subscribe(topic, 1, callback);
+    image_transport::Subscriber sub_image = 
+        image_transport::create_subscription(node.get(), topic, callback, "raw");
 
     RCLCPP_INFO(node->get_logger(), "Waiting for topic %s ...", topic.c_str());
     rclcpp::spin(node);
