@@ -31,19 +31,43 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#ifndef IMAGE_PROC_EDGE_AWARE
-#define IMAGE_PROC_EDGE_AWARE
+#include <thread>
+#include <memory>
+#include <vector>
+#include <string>
 
-#include <opencv2/core/core.hpp>
-
-// Edge-aware debayering algorithms, intended for eventual inclusion in OpenCV.
-
+#include <rclcpp/rclcpp.hpp>
+#include <image_transport/image_transport.h>
+#include <image_geometry/pinhole_camera_model.h>
+#include <cv_bridge/cv_bridge.h>
+#include "../src/visibility.h"
 namespace image_proc {
 
-void debayerEdgeAware(const cv::Mat& bayer, cv::Mat& color);
+class RectifyNode : public rclcpp::Node
+{
+  public:
+   IMAGE_PROC_PUBLIC RectifyNode();
+  private:
+  // ROS communication
+    image_transport::CameraSubscriber sub_camera_;
+    int queue_size_;
+    int interpolation;
+    std::string camera_namespace_;
+    std::string image_rect;
+    std::string image_topic;
+    std::mutex connect_mutex_;
+    image_transport::Publisher pub_rect_;
 
-void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color);
+    // Dynamic reconfigure
 
+    // Processing state (note: only safe because we're using single-threaded NodeHandle!)
+    image_geometry::PinholeCameraModel model_;
+
+
+    void connectCb();
+
+    void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
+                const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg);
+
+};
 } // namespace image_proc
-
-#endif

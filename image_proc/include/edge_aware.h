@@ -31,31 +31,18 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#ifndef IMAGE_PROC_ADVERTISEMENT_CHECKER_H
-#define IMAGE_PROC_ADVERTISEMENT_CHECKER_H
+#ifndef IMAGE_PROC_EDGE_AWARE
+#define IMAGE_PROC_EDGE_AWARE
 
-#include <ros/ros.h>
+#include <opencv2/core/core.hpp>
 
-namespace image_proc {
+// Edge-aware debayering algorithms, intended for eventual inclusion in OpenCV.
 
-class AdvertisementChecker
-{
-  ros::NodeHandle nh_;
-  std::string name_;
-  ros::WallTimer timer_;
-  ros::V_string topics_;
+namespace image_proc{
 
-  void timerCb();
+void debayerEdgeAware(const cv::Mat& bayer, cv::Mat& color);
 
-public:
-  AdvertisementChecker(const ros::NodeHandle& nh = ros::NodeHandle(),
-                       const std::string& name = std::string());
-  
-  void start(const ros::V_string& topics, double duration);
+void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color);
 
-  void stop();
-};
-
-} // namespace image_proc
-
+}
 #endif
