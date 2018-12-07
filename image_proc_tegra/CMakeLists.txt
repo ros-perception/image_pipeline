@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(image_proc_tegra)
 set (CMAKE_CXX_STANDARD 11)
 
+find_package(CUDA REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
@@ -19,11 +20,19 @@ catkin_package(
   LIBRARIES ${PROJECT_NAME}
 )
 
-include_directories(SYSTEM ${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
+include_directories(SYSTEM 
+${catkin_INCLUDE_DIRS} 
+${OpenCV_INCLUDE_DIRS}
+${CUDA_INCLUDE_DIRS}
+)
 include_directories(include)
 
 add_library(${PROJECT_NAME}     src/nodelets/rectify.cpp )
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}
+${catkin_LIBRARIES}
+${OpenCV_LIBRARIES}
+${CUDA_LIBRARIES}
+)
 
 add_executable(image_proc_tegra_exe src/image_proc_tegra.cpp)
 

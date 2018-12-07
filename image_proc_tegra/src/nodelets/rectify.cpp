@@ -1,6 +1,9 @@
 #include "ros/ros.h"
 #include "rectify.h"
 
+#include <cuda_runtime_api.h>
+#include <cuda.h>
+
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(image_proc_tegra::RectifyNodelet, nodelet::Nodelet)
 PLUGINLIB_EXPORT_CLASS(image_proc_tegra_fisheye::RectifyNodelet, nodelet::Nodelet)
@@ -30,7 +33,7 @@ namespace image_proc_tegra {
     out_msg.encoding = frame->encoding;
     out_msg.image  = image_rect;
     pub_.publish(out_msg.toImageMsg());
-  }
+  } 
 
   void RectifyNodelet::camera_info(const sensor_msgs::CameraInfoConstPtr& info_msg){
     image_geometry::PinholeCameraModel camera;
@@ -44,8 +47,6 @@ namespace image_proc_tegra {
     camera_set_ = true;
   }
 } // namespace
-
-
 
 namespace image_proc_tegra_fisheye {
   void RectifyNodelet::onInit(){
@@ -93,6 +94,10 @@ namespace image_proc_tegra_fisheye {
     out_msg.encoding = frame->encoding;
     out_msg.image  = image_rect;
     pub_.publish(out_msg.toImageMsg());
+	
+	// Deallocate GPU memory:
+	//cudaFree(image_gpu.data);
+	//cudaFree(image_gpu_rect.data);
   }
 
   void RectifyNodelet::camera_info(const sensor_msgs::CameraInfoConstPtr& info_msg){

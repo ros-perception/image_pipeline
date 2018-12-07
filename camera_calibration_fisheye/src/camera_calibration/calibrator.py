@@ -615,8 +615,8 @@ class MonoCalibrator(Calibrator):
         self.intrinsics[0,0] = 1.0
         self.intrinsics[1,1] = 1.0
         
-        calibration_flags = cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC+cv2.fisheye.CALIB_CHECK_COND+cv2.fisheye.CALIB_FIX_SKEW
-        
+        calibration_flags = cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC +cv2.fisheye.CALIB_FIX_SKEW
+        # +cv2.fisheye.CALIB_CHECK_COND
         rvecs = [numpy.zeros((1, 1, 3), dtype=numpy.float64) for i in range(len(opts))]
         tvecs = [numpy.zeros((1, 1, 3), dtype=numpy.float64) for i in range(len(opts))]
 
@@ -641,7 +641,8 @@ class MonoCalibrator(Calibrator):
         ncm = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(self.intrinsics, self.distortion, self.size, numpy.eye(3), balance=a)
         for j in range(3):
             for i in range(3):
-                self.P[j,i] = ncm[j, i]
+                #self.P[j,i] = ncm[j, i]
+                self.P[j,i] = self.intrinsics[j, i]
         
         #self.P = self.intrinsics
         ##self.mapx, self.mapy = cv2.fisheye.initUndistortRectifyMap(self.intrinsics, self.distortion, self.R, ncm, self.size, cv2.CV_32FC1) # Use this to perform cropping 
@@ -956,8 +957,13 @@ class StereoCalibrator(Calibrator):
                          self.size,
                          a,
                          1.0 )
-        
-        cv2.fisheye.initUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.l.R, self.l.intrinsics, self.size, cv2.CV_32FC1,
+        # Put the P values of fx,fy,cx and cy to be K's: we keep the Camera matrix, as any rotation will be done by R and the translation (to the new camera frame) will be keept by the last column of P
+        for j in range(3):
+            for i in range(3):
+                self.l.P[j,i] = self.l.intrinsics[j, i]
+                self.r.P[j,i] = self.r.intrinsics[j, i]
+				
+		cv2.fisheye.initUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.l.R, self.l.intrinsics, self.size, cv2.CV_32FC1,
                                    self.l.mapx, self.l.mapy)
         cv2.fisheye.initUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.r.R, self.r.intrinsics, self.size, cv2.CV_32FC1,
                                    self.r.mapx, self.r.mapy)
