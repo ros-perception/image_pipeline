@@ -12,8 +12,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(cv_bridge REQUIRED)
-# TODO: To enable when camera_info_manager is available
-# find_package(camera_info_manager REQUIRED)
+find_package(camera_info_manager REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(class_loader REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -37,6 +36,7 @@ ament_target_dependencies(image_publisher_node
   "image_geometry"
   "cv_bridge"
   "class_loader"
+  "camera_info_manager"
   "rclcpp"
 )
 

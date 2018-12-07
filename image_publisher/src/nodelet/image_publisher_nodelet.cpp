@@ -31,13 +31,14 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// #include <camera_info_manager/camera_info_manager.h>
+#include <camera_info_manager/camera_info_manager.h>
 
-#include "image_publisher/image_publisher_nodelet.hpp"
 #include <chrono>
 #include <memory>
 #include <vector>
 #include <string>
+
+#include "image_publisher/image_publisher_nodelet.hpp"
 
 namespace image_publisher
 {
@@ -101,19 +102,20 @@ void ImagePublisherNode::reconfigureCallback()
     std::chrono::milliseconds(static_cast<int>(1000 / publish_rate_)),
     std::bind(&ImagePublisherNode::doWork, this));
 
-  // TODO(yechun1): implement after camera_info_manager from image_common been ported on ROS2.
-  // camera_info_manager::CameraInfoManager c(nh_);
-  // if ( !new_config.camera_info_url.empty() ) {
-  //   try {
-  //     c.validateURL(new_config.camera_info_url);
-  //     c.loadCameraInfo(new_config.camera_info_url);
-  //     camera_info_ = c.getCameraInfo();
-  //   } catch(cv::Exception &e) {
-  //     NODELET_ERROR("camera calibration failed to load: %s %s %s %i",
-  //       e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
-  //   }
-  // }
-  // TODO(yechun1): implement after camera_info_manager from image_common been ported on ROS2.
+  camera_info_manager::CameraInfoManager c(this);
+  if (!camera_info_url_.empty()) {
+    RCLCPP_INFO(get_logger(), "camera_info_url exist");
+    try {
+      c.validateURL(camera_info_url_);
+      c.loadCameraInfo(camera_info_url_);
+      camera_info_ = c.getCameraInfo();
+    } catch (cv::Exception & e) {
+      RCLCPP_ERROR(logger_, "camera calibration failed to load: %s %s %s %i",
+        e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
+    }
+  } else {
+    RCLCPP_INFO(get_logger(), "no camera_info_url exist");
+  }
 }
 
 void ImagePublisherNode::doWork()

@@ -20,13 +20,13 @@
   <test_depend>ament_lint_common</test_depend>
 
   <build_depend>cv_bridge</build_depend>
-  <!--build_depend>camera_info_manager</build_depend-->
+  <build_depend>camera_info_manager</build_depend>
   <build_depend>image_transport</build_depend>
   <build_depend>class_loader</build_depend>
   <build_depend>rclcpp</build_depend>
 
   <exec_depend>cv_bridge</exec_depend>
-  <!--exec_depend>camera_info_manager</exec_depend-->
+  <exec_depend>camera_info_manager</exec_depend>
   <exec_depend>image_transport</exec_depend>
   <exec_depend>class_loader</exec_depend>
   <exec_depend>rclcpp</exec_depend>
