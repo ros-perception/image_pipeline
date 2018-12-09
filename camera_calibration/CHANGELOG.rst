@@ -1,3 +1,8 @@
+Forthcoming
+-----------
+* Initial ROS2 commit.
+* Contributors: Michael Carroll
+
 1.12.23 (2018-05-10)
 --------------------
 * camera_checker: Ensure cols + rows are in correct order (`#319 <https://github.com/ros-perception/image_pipeline/issues/319>`_)

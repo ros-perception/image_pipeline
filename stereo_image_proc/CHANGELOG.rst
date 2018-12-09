@@ -1,3 +1,8 @@
+Forthcoming
+-----------
+* Initial ROS2 commit.
+* Contributors: Michael Carroll
+
 1.12.23 (2018-05-10)
 --------------------
 * Removed unused mutable scratch buffers (`#315 <https://github.com/ros-perception/image_pipeline/issues/315>`_)
