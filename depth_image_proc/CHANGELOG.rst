@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.0.0 (2018-12-09)
+------------------
 * enable rclcpp_register_node_plugins (`#368 <https://github.com/ros-perception/image_pipeline/issues/368>`_)
   this may be remarked while code debugging, should be enabled to build node plugin file
   and added points remap in point_cloud_xyzrgb.launch.py
