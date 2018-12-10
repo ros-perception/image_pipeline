@@ -24,6 +24,7 @@ if(cv_bridge_VERSION VERSION_GREATER "1.12.0")
   add_compile_options(-std=c++11)
 endif()
 
+include_directories(include)
 add_executable(image_proc
                src/image_proc.cpp
                src/debayer.cpp

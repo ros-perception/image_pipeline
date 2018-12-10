@@ -21,9 +21,6 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>image_geometry</build_depend>
   
-  <exec_depend>cv_bridge</exec_depend>
-  <exec_depend>image_transport</exec_depend>
-
   <export>
     <build_type>ament_cmake</build_type>
   </export>

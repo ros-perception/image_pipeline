@@ -31,7 +31,7 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include "../include/edge_aware.h"
+#include "edge_aware.h"
 
 #define AVG(a,b) (((int)(a) + (int)(b)) >> 1)
 #define AVG3(a,b,c) (((int)(a) + (int)(b) + (int)(c)) / 3)
@@ -801,4 +801,4 @@ void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
 
 }
 
-} // namespace test_image_proc
+} // namespace image_proc

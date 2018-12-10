@@ -47,8 +47,8 @@ namespace fs = std::experimental::filesystem;
 #include "class_loader/class_loader.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <rcutils/cmdline_parser.h>
-#include "../include/debayer.hpp"
-#include "../include/rectify.hpp"
+#include "debayer.hpp"
+#include "rectify.hpp"
 std::vector<std::string> split(
   const std::string & s, char delim, bool skip_empty = false)
 {

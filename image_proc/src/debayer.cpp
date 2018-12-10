@@ -41,7 +41,7 @@
 
 #include <rcutils/cmdline_parser.h>
 #include <cv_bridge/cv_bridge.h>
-#include "../include/debayer.hpp"
+#include "debayer.hpp"
 namespace image_proc
 {
 namespace enc = sensor_msgs::image_encodings;
@@ -89,7 +89,6 @@ void DebayerNode::connectCb()
     sub_raw_ = image_transport::create_subscription(this, topic,
                   std::bind(&DebayerNode::imageCb, this, std::placeholders:: _1),
                   "raw");
-    // sub_raw_ = it_->subscribe("/camera/color/image_raw", 1, &DebayerNode::imageCb, this, &hints);
   }
 }
 

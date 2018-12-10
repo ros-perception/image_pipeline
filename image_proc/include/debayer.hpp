@@ -11,7 +11,7 @@
 #include <ament_index_cpp/get_resource.hpp>
 #include "edge_aware.h"
 #include "rclcpp/rclcpp.hpp"
-#include "../src/visibility.h"
+#include "visibility.h"
 #ifndef IMAGE_PROC_DEBAYER_HPP
 #define IMAGE_PROC_DEBAYER_HPP
 
