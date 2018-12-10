@@ -31,12 +31,11 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-// #include <image_view/ImageViewConfig.h>
 
 #include "rclcpp/rclcpp.hpp"
-// #include <rclcpp/timer.hpp>
+
 #include "image_transport/image_transport.h"
-// #include <image_view/visibility.h>
+
 #include "cv_bridge/cv_bridge.h"
 #include <opencv2/highgui/highgui.hpp>
 
@@ -45,7 +44,11 @@
 #include <memory>
 #include <string>
 #include <iostream>
-#include <experimental/filesystem>
+
+// TODO: filesystem is not a part of the libc++ in macOS yet, 
+// so as long as it move to macOS, we will enable this function ASAP.
+// see: https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dynamic_or_shared.html#manual.intro.using.linkage.experimental
+// #include <experimental/filesystem>
 		
 rclcpp::Node::SharedPtr node;
 int g_count;
@@ -125,9 +128,10 @@ static void mouseCb(int event, int x, int y, int flags, void* param)
     RCLCPP_INFO(node->get_logger(), "Saved image %s", filename.c_str());
     g_count++;
   } else {
-    std::experimental::filesystem::path full_path = 
-      std::experimental::filesystem::system_complete(filename);
-    RCLCPP_ERROR(node->get_logger(), "Failed to save image. Have permission to write there?: %s", full_path.c_str());
+    // std::experimental::filesystem::path full_path = 
+    //   std::experimental::filesystem::system_complete(filename);
+    // TODO: filesystem is not a part of the libc++ in macOS yet, so as long as it move to macOS, we will enable this function ASAP.
+    RCLCPP_ERROR(node->get_logger(), "Failed to save image. Have permission to write there?: %s", filename.c_str());
   }
 }
 
