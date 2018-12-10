@@ -45,9 +45,13 @@
 #include <string>
 #include <iostream>
 
+<<<<<<< HEAD
 // TODO: filesystem is not a part of the libc++ in macOS yet, 
 // so as long as it move to macOS, we will enable this function ASAP.
 // see: https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dynamic_or_shared.html#manual.intro.using.linkage.experimental
+=======
+// TODO: filesystem is not a part of the libc++ in macOS yet, so as long as it move to macOS, we will enable this function ASAP.
+>>>>>>> d00bb89... modified as the suggestion
 // #include <experimental/filesystem>
 		
 rclcpp::Node::SharedPtr node;
