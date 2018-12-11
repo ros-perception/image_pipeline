@@ -18,11 +18,12 @@
 *****************************************************************************/
 
 #include <opencv2/highgui/highgui.hpp>
-#include <ros/ros.h>
-#include <sensor_msgs/image_encodings.h>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/image_encodings.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
-#include <camera_calibration_parsers/parse.h>
+#include <rcutils/cmdline_parser.h>
+// #include <camera_calibration_parsers/parse.h>
 #if CV_MAJOR_VERSION == 3
 #include <opencv2/videoio.hpp>
 #endif
@@ -30,18 +31,19 @@
 cv::VideoWriter outputVideo;
 
 int g_count = 0;
-ros::Time g_last_wrote_time = ros::Time(0);
+rclcpp::Time g_last_wrote_time = rclcpp::Time(0);
 std::string encoding;
 std::string codec;
 int fps;
+std::string topic;
 std::string filename;
 double min_depth_range;
 double max_depth_range;
 bool use_dynamic_range;
 int colormap;
+rclcpp::Node::SharedPtr node;
 
-
-void callback(const sensor_msgs::ImageConstPtr& image_msg)
+void callback(const sensor_msgs::msg::Image::ConstSharedPtr& image_msg)
 {
     if (!outputVideo.isOpened()) {
 
@@ -62,15 +64,16 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
 
         if (!outputVideo.isOpened())
         {
-            ROS_ERROR("Could not create the output video! Check filename and/or support for codec.");
+            RCLCPP_ERROR(node->get_logger(), "Could not create the output video! Check filename and/or support for codec.");
             exit(-1);
         }
-
-        ROS_INFO_STREAM("Starting to record " << codec << " video at " << size << "@" << fps << "fps. Press Ctrl+C to stop recording." );
+        std::stringstream ss;
+        ss << "Starting to record " << codec << " video at " << size << "@" << fps << "fps. Press Ctrl+C to stop recording.";
+        RCLCPP_INFO(node->get_logger(), ss.str().c_str());
 
     }
 
-    if ((image_msg->header.stamp - g_last_wrote_time) < ros::Duration(1 / fps))
+    if ((image_msg->header.stamp.sec - g_last_wrote_time.seconds()) < rclcpp::Duration(1 / fps).seconds())
     {
       // Skip to get video with correct fps
       return;
@@ -86,56 +89,62 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
       const cv::Mat image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image;
       if (!image.empty()) {
         outputVideo << image;
-        ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[1F");
+        RCLCPP_INFO(node->get_logger(), "Recording frame %d \x1b[1F", g_count);
         g_count++;
         g_last_wrote_time = image_msg->header.stamp;
       } else {
-          ROS_WARN("Frame skipped, no data!");
+          RCLCPP_WARN(node->get_logger(), "Frame skipped, no data!");
       }
     } catch(cv_bridge::Exception)
     {
-        ROS_ERROR("Unable to convert %s image to %s", image_msg->encoding.c_str(), encoding.c_str());
+        RCLCPP_ERROR(node->get_logger(), "Unable to convert %s image to %s", image_msg->encoding.c_str(), encoding.c_str());
         return;
     }
 }
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "video_recorder", ros::init_options::AnonymousName);
-    ros::NodeHandle nh;
-    ros::NodeHandle local_nh("~");
-    local_nh.param("filename", filename, std::string("output.avi"));
+    rclcpp::init(argc, argv);
+    std::string topic, filename;
+    filename = "output.avi";
+    if (rcutils_cli_option_exist(argv, argv + argc, "--topic")){
+      topic = std::string(rcutils_cli_get_option(argv, argv + argc, "--topic"));
+    }
+    if (rcutils_cli_option_exist(argv, argv + argc, "--filename")){
+      filename = std::string(rcutils_cli_get_option(argv, argv + argc, "--filename"));
+    }
+    node = rclcpp::Node::make_shared("video_recoder");
     bool stamped_filename;
-    local_nh.param("stamped_filename", stamped_filename, false);
-    local_nh.param("fps", fps, 15);
-    local_nh.param("codec", codec, std::string("MJPG"));
-    local_nh.param("encoding", encoding, std::string("bgr8"));
+    node->get_parameter_or("stamped_filename", stamped_filename, false);
+    node->get_parameter_or("fps", fps, 15);
+    node->get_parameter_or("codec", codec, std::string("MJPG"));
+    node->get_parameter_or("encoding", encoding, std::string("bgr8"));
     // cv_bridge::CvtColorForDisplayOptions
-    local_nh.param("min_depth_range", min_depth_range, 0.0);
-    local_nh.param("max_depth_range", max_depth_range, 0.0);
-    local_nh.param("use_dynamic_depth_range", use_dynamic_range, false);
-    local_nh.param("colormap", colormap, -1);
+    node->get_parameter_or("min_depth_range", min_depth_range, 0.0);
+    node->get_parameter_or("max_depth_range", max_depth_range, 0.0);
+    node->get_parameter_or("use_dynamic_depth_range", use_dynamic_range, false);
+    node->get_parameter_or("colormap", colormap, -1);
 
     if (stamped_filename) {
       std::size_t found = filename.find_last_of("/\\");
       std::string path = filename.substr(0, found + 1);
       std::string basename = filename.substr(found + 1);
       std::stringstream ss;
-      ss << ros::Time::now().toNSec() << basename;
+      ss << rclcpp::Clock().now().seconds() << basename;
       filename = path + ss.str();
-      ROS_INFO("Video recording to %s", filename.c_str());
+      RCLCPP_INFO(node->get_logger(), "Video recording to %s", filename.c_str());
     }
 
     if (codec.size() != 4) {
-        ROS_ERROR("The video codec must be a FOURCC identifier (4 chars)");
+        RCLCPP_ERROR(node->get_logger(), "The video codec must be a FOURCC identifier (4 chars)");
         exit(-1);
     }
 
-    image_transport::ImageTransport it(nh);
-    std::string topic = nh.resolveName("image");
-    image_transport::Subscriber sub_image = it.subscribe(topic, 1, callback);
+    image_transport::Subscriber sub_image = 
+        image_transport::create_subscription(node.get(), topic, callback, "raw");
 
-    ROS_INFO_STREAM("Waiting for topic " << topic << "...");
-    ros::spin();
+    RCLCPP_INFO(node->get_logger(), "Waiting for topic %s ...", topic.c_str());
+    rclcpp::spin(node);
     std::cout << "\nVideo saved as " << filename << std::endl;
+    rclcpp::shutdown();
 }

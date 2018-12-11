@@ -33,22 +33,28 @@
 *********************************************************************/
 #include <opencv2/highgui/highgui.hpp>
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
-#include <camera_calibration_parsers/parse.h>
-#include <boost/format.hpp>
+#include "rcutils/cmdline_parser.h"
+// #include <camera_calibration_parsers/parse.h>
 
-#include <std_srvs/Empty.h>
-#include <std_srvs/Trigger.h>
+#include <memory>
+#include <string>
+#include <vector>
 
-boost::format g_format;
+#include <std_srvs/srv/empty.hpp>
+#include <std_srvs/srv/trigger.hpp>
+#include <rcutils/cmdline_parser.h>
+
 bool save_all_image, save_image_service;
 std::string encoding;
 bool request_start_end;
+rclcpp::Node::SharedPtr node;
+std::string format_string;
+char buf[1024];
 
-
-bool service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
+bool service(const std::shared_ptr<std_srvs::srv::Empty::Request> req, std::shared_ptr<std_srvs::srv::Empty::Response> res) {
   save_image_service = true;
   return true;
 }
@@ -60,34 +66,34 @@ public:
   Callbacks() : is_first_image_(true), has_camera_info_(false), count_(0) {
   }
 
-  bool callbackStartSave(std_srvs::Trigger::Request &req,
-                         std_srvs::Trigger::Response &res)
+  bool callbackStartSave(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+                         const std::shared_ptr<std_srvs::srv::Trigger::Response> res)
   {
-    ROS_INFO("Received start saving request");
-    start_time_ = ros::Time::now();
-    end_time_ = ros::Time(0);
+    RCLCPP_INFO(node->get_logger(), "Received start saving request");
+    start_time_ = rclcpp::Clock().now();
+    end_time_ = rclcpp::Time(0);
 
-    res.success = true;
+    res->success = true;
     return true;
   }
 
-  bool callbackEndSave(std_srvs::Trigger::Request &req,
-                       std_srvs::Trigger::Response &res)
+  bool callbackEndSave(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+                       const std::shared_ptr<std_srvs::srv::Trigger::Response> res)
   {
-    ROS_INFO("Received end saving request");
-    end_time_ = ros::Time::now();
+    RCLCPP_INFO(node->get_logger(), "Received end saving request");
+    end_time_ = rclcpp::Clock().now();
 
-    res.success = true;
+    res->success = true;
     return true;
   }
 
-  void callbackWithoutCameraInfo(const sensor_msgs::ImageConstPtr& image_msg)
+  void callbackWithoutCameraInfo(const sensor_msgs::msg::Image::ConstSharedPtr& image_msg)
   {
     if (is_first_image_) {
       is_first_image_ = false;
 
       // Wait a tiny bit to see whether callbackWithCameraInfo is called
-      ros::Duration(0.001).sleep();
+      rclcpp::sleep_for(std::chrono::nanoseconds(1));
     }
 
     if (has_camera_info_)
@@ -98,11 +104,11 @@ public:
     //  2. request by topic about start and end.
     //  3. flag 'save_all_image'.
     if (!save_image_service && request_start_end) {
-      if (start_time_ == ros::Time(0))
+      if (start_time_ == rclcpp::Time(0))
         return;
       else if (start_time_ > image_msg->header.stamp)
         return;  // wait for message which comes after start_time
-      else if ((end_time_ != ros::Time(0)) && (end_time_ < image_msg->header.stamp))
+      else if ((end_time_ != rclcpp::Time(0)) && (end_time_ < image_msg->header.stamp))
         return;  // skip message which comes after end_time
     }
 
@@ -114,16 +120,17 @@ public:
     count_++;
   }
 
-  void callbackWithCameraInfo(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr& info)
+  void callbackWithCameraInfo(const sensor_msgs::msg::Image::ConstSharedPtr& image_msg, 
+                              const sensor_msgs::msg::CameraInfo::ConstSharedPtr& info)
   {
     has_camera_info_ = true;
 
     if (!save_image_service && request_start_end) {
-      if (start_time_ == ros::Time(0))
+      if (start_time_ == rclcpp::Time(0))
         return;
       else if (start_time_ > image_msg->header.stamp)
         return;  // wait for message which comes after start_time
-      else if ((end_time_ != ros::Time(0)) && (end_time_ < image_msg->header.stamp))
+      else if ((end_time_ != rclcpp::Time(0)) && (end_time_ < image_msg->header.stamp))
         return;  // skip message which comes after end_time
     }
 
@@ -133,46 +140,50 @@ public:
       return;
 
     // save the CameraInfo
-    if (info) {
-      filename = filename.replace(filename.rfind("."), filename.length(), ".ini");
-      camera_calibration_parsers::writeCalibration(filename, "camera", *info);
-    }
+    // if (info) {
+    //   filename = filename.replace(filename.rfind("."), filename.length(), ".ini");
+    //   camera_calibration_parsers::writeCalibration(filename, "camera", *info);
+    // }
 
     count_++;
   }
 private:
-  bool saveImage(const sensor_msgs::ImageConstPtr& image_msg, std::string &filename) {
+  bool saveImage(const sensor_msgs::msg::Image::ConstSharedPtr& image_msg,
+                 std::string & filename) 
+  {
+    // printf("start saving! \n");
     cv::Mat image;
     try
     {
       image = cv_bridge::toCvShare(image_msg, encoding)->image;
-    } catch(cv_bridge::Exception)
+    } 
+    catch(cv_bridge::Exception)
     {
-      ROS_ERROR("Unable to convert %s image to %s", image_msg->encoding.c_str(), encoding.c_str());
+      RCLCPP_ERROR(node->get_logger(), "Unable to convert %s image to %s", image_msg->encoding.c_str(), encoding.c_str());
       return false;
     }
 
     if (!image.empty()) {
       try {
-        filename = (g_format).str();
-      } catch (...) { g_format.clear(); }
+        filename = format_string;
+      } catch (...) { format_string.clear(); }
       try {
-        filename = (g_format % count_).str();
-      } catch (...) { g_format.clear(); }
+        sprintf(buf, format_string.c_str(), count_);
+        filename = buf;
+      } catch (...) { format_string.clear(); }
       try { 
-        filename = (g_format % count_ % "jpg").str();
-      } catch (...) { g_format.clear(); }
-
+        sprintf(buf, format_string.c_str(), count_, "jpg");
+        filename = buf; 
+      } catch (...) { format_string.clear(); }
       if ( save_all_image || save_image_service ) {
         cv::imwrite(filename, image);
-        ROS_INFO("Saved image %s", filename.c_str());
-
+        RCLCPP_INFO(node->get_logger(), "Saved image %s", filename.c_str());
         save_image_service = false;
       } else {
         return false;
       }
     } else {
-      ROS_WARN("Couldn't save image, no data!");
+      RCLCPP_WARN(node->get_logger(), "Couldn't save image, no data!");
       return false;
     }
     return true;
@@ -182,45 +193,68 @@ private:
   bool is_first_image_;
   bool has_camera_info_;
   size_t count_;
-  ros::Time start_time_;
-  ros::Time end_time_;
+  rclcpp::Time start_time_;
+  rclcpp::Time end_time_;
 };
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "image_saver", ros::init_options::AnonymousName);
-  ros::NodeHandle nh;
-  image_transport::ImageTransport it(nh);
-  std::string topic = nh.resolveName("image");
+  // ros::init(argc, argv, "image_saver", ros::init_options::AnonymousName);  
+  std::string topic = "image";
+  std::string format_string = std::string("left%04i.%s");
+  std::string encoding = "bgr8";
+  bool request_start_end = false;
+  save_all_image = true;
+  if (rcutils_cli_option_exist(argv, argv + argc, "--topic"))
+  {
+    topic = std::string(rcutils_cli_get_option(argv, argv + argc, "--topic"));
+  }
+  if (rcutils_cli_option_exist(argv, argv + argc, "--format_string"))
+  {
+    format_string = std::string(rcutils_cli_get_option(argv, argv + argc, "--format_string"));
+  }
+  if (rcutils_cli_option_exist(argv, argv + argc, "--encoding"))
+  {
+    encoding = std::string(rcutils_cli_get_option(argv, argv + argc, "--encoding"));
+  }
+  if (rcutils_cli_option_exist(argv, argv + argc, "--save_all_image"))
+  {
+    std::string save_all_image_ = rcutils_cli_get_option(argv, argv + argc, "--save_all_image");
+    std::istringstream(save_all_image_) >> std::boolalpha >> save_all_image;  
+  }
+  if (rcutils_cli_option_exist(argv, argv + argc, "--request_start_end"))
+  {
+    request_start_end = rcutils_cli_get_option(argv, argv + argc, "--request_start_end");
+  }
+  rclcpp::init(argc, argv);
+
+  node = rclcpp::Node::make_shared("image_saver");
 
   Callbacks callbacks;
   // Useful when CameraInfo is being published
-  image_transport::CameraSubscriber sub_image_and_camera = it.subscribeCamera(topic, 1,
-                                                                              &Callbacks::callbackWithCameraInfo,
-                                                                              &callbacks);
-  // Useful when CameraInfo is not being published
-  image_transport::Subscriber sub_image = it.subscribe(
-      topic, 1, boost::bind(&Callbacks::callbackWithoutCameraInfo, &callbacks, _1));
 
-  ros::NodeHandle local_nh("~");
-  std::string format_string;
-  local_nh.param("filename_format", format_string, std::string("left%04i.%s"));
-  local_nh.param("encoding", encoding, std::string("bgr8"));
-  local_nh.param("save_all_image", save_all_image, true);
-  local_nh.param("request_start_end", request_start_end, false);
-  g_format.parse(format_string);
-  ros::ServiceServer save = local_nh.advertiseService ("save", service);
+  image_transport::CameraSubscriber sub_image_and_camera = 
+    image_transport::create_camera_subscription(node.get(), topic,
+        std::bind(&Callbacks::callbackWithCameraInfo, 
+          callbacks, std::placeholders::_1, std::placeholders::_2),
+        "raw");  // Useful when CameraInfo is not being published
+  image_transport::Subscriber sub_image = 
+    image_transport::create_subscription(
+      node.get(), topic, std::bind(&Callbacks::callbackWithoutCameraInfo, 
+        &callbacks, std::placeholders:: _1), "raw");
 
+  auto save = node->create_service<std_srvs::srv::Empty>("save", &service);
   if (request_start_end && !save_all_image)
-    ROS_WARN("'request_start_end' is true, so overwriting 'save_all_image' as true");
-
+    RCLCPP_WARN(node->get_logger(), "'request_start_end' is true, so overwriting 'save_all_image' as true");
+    RCLCPP_INFO(node->get_logger(), "Save image from topic: %s", topic.c_str());
   // FIXME(unkown): This does not make services appear
   // if (request_start_end) {
-    ros::ServiceServer srv_start = local_nh.advertiseService(
-      "start", &Callbacks::callbackStartSave, &callbacks);
-    ros::ServiceServer srv_end = local_nh.advertiseService(
-      "end", &Callbacks::callbackEndSave, &callbacks);
+    auto srv_start = node->create_service<std_srvs::srv::Trigger>(
+      "start", std::bind(&Callbacks::callbackStartSave, &callbacks, std::placeholders::_1, std::placeholders::_2));
+    auto srv_end = node->create_service<std_srvs::srv::Trigger>(
+      "end", std::bind(&Callbacks::callbackStartSave, &callbacks, std::placeholders::_1, std::placeholders::_2));
   // }
 
-  ros::spin();
+  rclcpp::spin(node);
+  rclcpp::shutdown();
 }

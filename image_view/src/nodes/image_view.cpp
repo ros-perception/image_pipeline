@@ -31,43 +31,43 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include <image_view/ImageViewConfig.h>
 
-#include <ros/ros.h>
-#include <image_transport/image_transport.h>
-#include <dynamic_reconfigure/server.h>
+#include "rclcpp/rclcpp.hpp"
 
-#include <cv_bridge/cv_bridge.h>
+#include "image_transport/image_transport.h"
+#include "rcutils/cmdline_parser.h"
+#include "cv_bridge/cv_bridge.h"
 #include <opencv2/highgui/highgui.hpp>
 
-#include <boost/format.hpp>
-#include <boost/thread.hpp>
-#include <boost/filesystem.hpp>
+#include <thread>
+#include <exception> 
+#include <memory>
+#include <string>
+#include <iostream>
 
+// TODO: filesystem is not a part of the libc++ in macOS yet, 
+// so as long as it move to macOS, we will enable this function ASAP.
+// see: https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dynamic_or_shared.html#manual.intro.using.linkage.experimental
+// #include <experimental/filesystem>
+
+rclcpp::Node::SharedPtr node;
 int g_count;
 cv::Mat g_last_image;
-boost::format g_filename_format;
-boost::mutex g_image_mutex;
+std::mutex g_image_mutex;
 std::string g_window_name;
+std::string transport;
+std::string topic;
+char buf[1024];
 bool g_gui;
-ros::Publisher g_pub;
+image_transport::Publisher g_pub;
 bool g_do_dynamic_scaling;
 int g_colormap;
 double g_min_image_value;
 double g_max_image_value;
-
-void reconfigureCb(image_view::ImageViewConfig &config, uint32_t level)
+std::string format_string;
+void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
-  boost::mutex::scoped_lock lock(g_image_mutex);
-  g_do_dynamic_scaling = config.do_dynamic_scaling;
-  g_colormap = config.colormap;
-  g_min_image_value = config.min_image_value;
-  g_max_image_value = config.max_image_value;
-}
-
-void imageCb(const sensor_msgs::ImageConstPtr& msg)
-{
-  boost::mutex::scoped_lock lock(g_image_mutex);
+  std::unique_lock<std::mutex> lock(g_image_mutex);
 
   // Convert to OpenCV native BGR color
   cv_bridge::CvImageConstPtr cv_ptr;
@@ -93,83 +93,84 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
     cv_ptr = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options);
     g_last_image = cv_ptr->image;
   } catch (cv_bridge::Exception& e) {
-    ROS_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
+    RCLCPP_ERROR(node->get_logger(), "Unable to convert '%s' image for display: '%s'",
                        msg->encoding.c_str(), e.what());
   }
   if (g_gui && !g_last_image.empty()) {
     const cv::Mat &image = g_last_image;
     cv::imshow(g_window_name, image);
-    cv::waitKey(3);
   }
   if (g_pub.getNumSubscribers() > 0) {
-    g_pub.publish(cv_ptr);
+    g_pub.publish(cv_ptr->toImageMsg());
   }
 }
 
 static void mouseCb(int event, int x, int y, int flags, void* param)
 {
   if (event == cv::EVENT_LBUTTONDOWN) {
-    ROS_WARN_ONCE("Left-clicking no longer saves images. Right-click instead.");
+    RCLCPP_WARN_ONCE(node->get_logger(), "Left-clicking no longer saves images. Right-click instead.");
     return;
   } else if (event != cv::EVENT_RBUTTONDOWN) {
     return;
   }
 
-  boost::mutex::scoped_lock lock(g_image_mutex);
+  std::unique_lock<std::mutex> lock(g_image_mutex);
 
   const cv::Mat &image = g_last_image;
 
   if (image.empty()) {
-    ROS_WARN("Couldn't save image, no data!");
+    RCLCPP_WARN(node->get_logger(), "Couldn't save image, no data!");
     return;
   }
-
-  std::string filename = (g_filename_format % g_count).str();
+  sprintf(buf, format_string.c_str(), g_count);
+  std::string filename = buf;
   if (cv::imwrite(filename, image)) {
-    ROS_INFO("Saved image %s", filename.c_str());
+    RCLCPP_INFO(node->get_logger(), "Saved image %s", filename.c_str());
     g_count++;
   } else {
-    boost::filesystem::path full_path = boost::filesystem::complete(filename);
-    ROS_ERROR_STREAM("Failed to save image. Have permission to write there?: " << full_path);
+    // std::experimental::filesystem::path full_path = 
+    //   std::experimental::filesystem::system_complete(filename);
+    // TODO: filesystem is not a part of the libc++ in macOS yet, so as long as it move to macOS, we will enable this function ASAP.
+    RCLCPP_ERROR(node->get_logger(), "Failed to save image. Have permission to write there?: %s", filename.c_str());
   }
 }
 
-
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "image_view", ros::init_options::AnonymousName);
-  if (ros::names::remap("image") == "image") {
-    ROS_WARN("Topic 'image' has not been remapped! Typical command-line usage:\n"
-             "\t$ rosrun image_view image_view image:=<image topic> [transport]");
+  rclcpp::init(argc, argv);
+  transport = "raw";
+  if (rcutils_cli_option_exist(argv, argv + argc, "--topic")){
+    topic = std::string(rcutils_cli_get_option(argv, argv + argc, "--topic"));
   }
-
-  ros::NodeHandle nh;
-  ros::NodeHandle local_nh("~");
-
+  if (rcutils_cli_option_exist(argv, argv + argc, "--transport")){
+    transport = std::string(rcutils_cli_get_option(argv, argv + argc, "--transport"));
+  }
+  // auto topic = std::string("/camera/color/image_raw");
+  node = rclcpp::Node::make_shared("image_view");
   // Default window name is the resolved topic name
-  std::string topic = nh.resolveName("image");
-  local_nh.param("window_name", g_window_name, topic);
-  local_nh.param("gui", g_gui, true);  // gui/no_gui mode
-
+  node->get_parameter_or("window_name", g_window_name, topic);
+  node->get_parameter_or("gui", g_gui, true);  // gui/no_gui mode
+  node->get_parameter_or("max_image_value", g_max_image_value, 0.0);
+  node->get_parameter_or("min_image_value", g_min_image_value, 0.0);  
+  node->get_parameter_or("colormap", g_colormap, 11);
+  node->get_parameter_or("do_dynamic_scaling", g_do_dynamic_scaling, false);
   if (g_gui) {
-    std::string format_string;
-    local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
-    g_filename_format.parse(format_string);
+    node->get_parameter_or("filename_format", format_string, std::string("frame%04i.jpg"));
+    
 
     // Handle window size
     bool autosize;
-    local_nh.param("autosize", autosize, false);
+    node->get_parameter_or("autosize", autosize, false);
     cv::namedWindow(g_window_name, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
     cv::setMouseCallback(g_window_name, &mouseCb);
-
     if(autosize == false)
     {
-      if(local_nh.hasParam("width") && local_nh.hasParam("height"))
+      int width;
+      int height;
+      if(node->get_parameter("width", width) && node->get_parameter("height", height))
       {
-        int width;
-        local_nh.getParam("width", width);
-        int height;
-        local_nh.getParam("height", height);
+        width = node->get_parameter("width").as_int();
+        height = node->get_parameter("height").as_int();
         cv::resizeWindow(g_window_name, width, height);
       }
     }
@@ -182,29 +183,15 @@ int main(int argc, char **argv)
   // priority:
   //    1. command line argument
   //    2. rosparam '~image_transport'
-  std::string transport;
-  local_nh.param("image_transport", transport, std::string("raw"));
-  ros::V_string myargv;
-  ros::removeROSArgs(argc, argv, myargv);
-  for (size_t i = 1; i < myargv.size(); ++i) {
-    if (myargv[i][0] != '-') {
-      transport = myargv[i];
-      break;
-    }
-  }
-  ROS_INFO_STREAM("Using transport \"" << transport << "\"");
-  image_transport::ImageTransport it(nh);
-  image_transport::TransportHints hints(transport, ros::TransportHints(), local_nh);
-  image_transport::Subscriber sub = it.subscribe(topic, 1, imageCb, hints);
-  g_pub = local_nh.advertise<sensor_msgs::Image>("output", 1);
+  RCLCPP_INFO(node->get_logger(), "Using transport \"%s\"", transport.c_str());
+  RCLCPP_INFO(node->get_logger(), "Image topic \"%s\"", topic.c_str());
+  image_transport::Subscriber sub;
+  sub = image_transport::create_subscription(node.get(), 
+    topic, &imageCb, transport);
+  g_pub = image_transport::create_publisher(node.get(), "output");
+  rclcpp::spin(node);
 
-  dynamic_reconfigure::Server<image_view::ImageViewConfig> srv;
-  dynamic_reconfigure::Server<image_view::ImageViewConfig>::CallbackType f =
-    boost::bind(&reconfigureCb, _1, _2);
-  srv.setCallback(f);
-
-  ros::spin();
-
+  rclcpp::shutdown();
   if (g_gui) {
     cv::destroyWindow(g_window_name);
   }
