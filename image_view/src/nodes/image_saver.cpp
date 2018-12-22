@@ -52,10 +52,11 @@ public:
             const std::string& topic,
             const std::string& filename_format,
             const std::string& encoding,
-            const bool save_all_image)
+            const bool save_all_image,
+            const bool wait_for_save)
       : it_(nh), topic_(topic), encoding_(encoding),
         count_(0), start_time_(0),
-        subscribing_(false), should_unsubscribe_(false)
+        subscribing_(false), should_unsubscribe_(false), wait_for_save_(wait_for_save)
   {
     format_.parse(filename_format);
     if (save_all_image)
@@ -115,6 +116,16 @@ public:
     }
     should_unsubscribe_ = true;
     subscribe();
+
+    if (wait_for_save_)
+    {
+      ros::Rate r(10);
+      while (ros::ok() && subscribing_) {
+        ros::spinOnce();
+        r.sleep();
+      }
+    }
+
     return true;
   }
 
@@ -249,6 +260,7 @@ private:
   bool has_camera_info_;
   bool subscribing_;
   bool should_unsubscribe_;
+  bool wait_for_save_;
 };
 
 int main(int argc, char** argv)
@@ -268,7 +280,10 @@ int main(int argc, char** argv)
   bool save_all_image;
   local_nh.param("save_all_image", save_all_image, true);
 
-  Callbacks callbacks(local_nh, topic, format_string, encoding, save_all_image);
+  bool wait_for_save;
+  local_nh.param("wait_for_save", wait_for_save, false);
+
+  Callbacks callbacks(local_nh, topic, format_string, encoding, save_all_image, wait_for_save);
 
   ros::spin();
 
