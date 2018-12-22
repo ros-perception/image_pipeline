@@ -38,35 +38,91 @@
 #include <image_transport/image_transport.h>
 #include <camera_calibration_parsers/parse.h>
 #include <boost/format.hpp>
+#include <boost/thread.hpp>
 
 #include <std_srvs/Empty.h>
 #include <std_srvs/Trigger.h>
 
-boost::format g_format;
-bool save_all_image, save_image_service;
-std::string encoding;
-bool request_start_end;
-
-
-bool service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
-  save_image_service = true;
-  return true;
-}
 
 /** Class to deal with which callback to call whether we have CameraInfo or not
  */
 class Callbacks {
 public:
-  Callbacks() : is_first_image_(true), has_camera_info_(false), count_(0) {
+  Callbacks(ros::NodeHandle& nh,
+            const std::string& topic,
+            const std::string& filename_format,
+            const std::string& encoding,
+            const bool save_all_image)
+      : it_(nh), topic_(topic), encoding_(encoding),
+        count_(0), start_time_(0),
+        subscribing_(false), should_unsubscribe_(false)
+  {
+    format_.parse(filename_format);
+    if (save_all_image)
+    {
+      subscribe();
+    } else {
+      srv_save_ = nh.advertiseService("save", &Callbacks::callbackSave, this);
+      srv_start_ = nh.advertiseService("start", &Callbacks::callbackStartSave, this);
+      srv_end_ = nh.advertiseService("end", &Callbacks::callbackEndSave, this);
+    }
+  }
+
+  void subscribe()
+  {
+    boost::mutex::scoped_lock lock(mutex_);
+
+    if (subscribing_) return;
+    subscribing_ = true;
+
+    ROS_DEBUG("subscribe");
+
+    is_first_image_ = true;
+    has_camera_info_ = false;
+
+    start_time_ = ros::Time::now();
+    end_time_ = ros::Time(0);
+
+    // Useful when CameraInfo is being published
+    sub_camera_ = it_.subscribeCamera(topic_, 1, &Callbacks::callbackWithCameraInfo, this);
+    // Useful when CameraInfo is not being published
+    sub_image_ = it_.subscribe(topic_, 1, &Callbacks::callbackWithoutCameraInfo, this);
+  }
+
+  void unsubscribe()
+  {
+    boost::mutex::scoped_lock lock(mutex_);
+
+    if (!subscribing_) return;
+    subscribing_ = false;
+
+    ROS_DEBUG("unsubcribe");
+
+    start_time_ = ros::Time(0);
+    end_time_ = ros::Time::now();
+    should_unsubscribe_ = false;
+
+    sub_camera_.shutdown();
+    sub_image_.shutdown();
+  }
+
+  bool callbackSave(std_srvs::Empty::Request &req,
+                    std_srvs::Empty::Response &res)
+  {
+    if (start_time_ != ros::Time(0)) {
+      ROS_ERROR("The service '~start' was called. Try calling '~end' first to use '~save' service.");
+      return false;
+    }
+    should_unsubscribe_ = true;
+    subscribe();
+    return true;
   }
 
   bool callbackStartSave(std_srvs::Trigger::Request &req,
                          std_srvs::Trigger::Response &res)
   {
     ROS_INFO("Received start saving request");
-    start_time_ = ros::Time::now();
-    end_time_ = ros::Time(0);
-
+    subscribe();
     res.success = true;
     return true;
   }
@@ -75,8 +131,7 @@ public:
                        std_srvs::Trigger::Response &res)
   {
     ROS_INFO("Received end saving request");
-    end_time_ = ros::Time::now();
-
+    unsubscribe();
     res.success = true;
     return true;
   }
@@ -90,137 +145,132 @@ public:
       ros::Duration(0.001).sleep();
     }
 
-    if (has_camera_info_)
+    if (has_camera_info_) // Images are saved in callbackWithCameraInfo instead
       return;
 
     // saving flag priority:
     //  1. request by service.
     //  2. request by topic about start and end.
-    //  3. flag 'save_all_image'.
-    if (!save_image_service && request_start_end) {
-      if (start_time_ == ros::Time(0))
-        return;
-      else if (start_time_ > image_msg->header.stamp)
-        return;  // wait for message which comes after start_time
-      else if ((end_time_ != ros::Time(0)) && (end_time_ < image_msg->header.stamp))
-        return;  // skip message which comes after end_time
+    //  3. flag 'g_save_all_image'.
+    const ros::Time image_stamp = image_msg->header.stamp;
+    if (start_time_ <= image_stamp &&
+        (end_time_ == ros::Time(0) || image_stamp < end_time_))
+    {
+      // save the image
+      std::string filename;
+      if (saveImage(image_msg, filename))
+      {
+        count_++;
+      }
     }
 
-    // save the image
-    std::string filename;
-    if (!saveImage(image_msg, filename))
-      return;
-
-    count_++;
+    if (should_unsubscribe_)
+    {
+      unsubscribe();
+    }
   }
 
   void callbackWithCameraInfo(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr& info)
   {
     has_camera_info_ = true;
 
-    if (!save_image_service && request_start_end) {
-      if (start_time_ == ros::Time(0))
-        return;
-      else if (start_time_ > image_msg->header.stamp)
-        return;  // wait for message which comes after start_time
-      else if ((end_time_ != ros::Time(0)) && (end_time_ < image_msg->header.stamp))
-        return;  // skip message which comes after end_time
+    // saving flag priority:
+    //  1. request by service.
+    //  2. request by topic about start and end.
+    //  3. flag 'g_save_all_image'.
+    const ros::Time image_stamp = image_msg->header.stamp;
+    if (start_time_ <= image_stamp &&
+        (end_time_ == ros::Time(0) || image_stamp < end_time_))
+    {
+      // save the image
+      std::string filename;
+      if (saveImage(image_msg, filename))
+      {
+        count_++;
+        // save the CameraInfo
+        if (info) {
+          filename = filename.replace(filename.rfind("."), filename.length(), ".ini");
+          camera_calibration_parsers::writeCalibration(filename, "camera", *info);
+        }
+      }
     }
 
-    // save the image
-    std::string filename;
-    if (!saveImage(image_msg, filename))
-      return;
-
-    // save the CameraInfo
-    if (info) {
-      filename = filename.replace(filename.rfind("."), filename.length(), ".ini");
-      camera_calibration_parsers::writeCalibration(filename, "camera", *info);
+    if (should_unsubscribe_)
+    {
+      unsubscribe();
     }
-
-    count_++;
   }
 private:
   bool saveImage(const sensor_msgs::ImageConstPtr& image_msg, std::string &filename) {
     cv::Mat image;
     try
     {
-      image = cv_bridge::toCvShare(image_msg, encoding)->image;
+      image = cv_bridge::toCvShare(image_msg, encoding_)->image;
     } catch(cv_bridge::Exception)
     {
-      ROS_ERROR("Unable to convert %s image to %s", image_msg->encoding.c_str(), encoding.c_str());
+      ROS_ERROR("Unable to convert %s image to %s", image_msg->encoding.c_str(), encoding_.c_str());
       return false;
     }
 
-    if (!image.empty()) {
-      try {
-        filename = (g_format).str();
-      } catch (...) { g_format.clear(); }
-      try {
-        filename = (g_format % count_).str();
-      } catch (...) { g_format.clear(); }
-      try { 
-        filename = (g_format % count_ % "jpg").str();
-      } catch (...) { g_format.clear(); }
-
-      if ( save_all_image || save_image_service ) {
-        cv::imwrite(filename, image);
-        ROS_INFO("Saved image %s", filename.c_str());
-
-        save_image_service = false;
-      } else {
-        return false;
-      }
-    } else {
+    if (image.empty()) {
       ROS_WARN("Couldn't save image, no data!");
       return false;
     }
+
+    try {
+      filename = (format_).str();
+    } catch (...) { format_.clear(); }
+    try {
+      filename = (format_ % count_).str();
+    } catch (...) { format_.clear(); }
+    try {
+      filename = (format_ % count_ % "jpg").str();
+    } catch (...) { format_.clear(); }
+
+    cv::imwrite(filename, image);
+    ROS_INFO("Saved image %s", filename.c_str());
+
     return true;
   }
 
 private:
-  bool is_first_image_;
-  bool has_camera_info_;
+  boost::format format_;
+  boost::mutex mutex_;
+  ros::ServiceServer srv_save_, srv_start_, srv_end_;
+  image_transport::ImageTransport it_;
+  image_transport::CameraSubscriber sub_camera_;
+  image_transport::Subscriber sub_image_;
+  std::string topic_;
+  std::string encoding_;
   size_t count_;
   ros::Time start_time_;
   ros::Time end_time_;
+  bool is_first_image_;
+  bool has_camera_info_;
+  bool subscribing_;
+  bool should_unsubscribe_;
 };
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "image_saver", ros::init_options::AnonymousName);
   ros::NodeHandle nh;
-  image_transport::ImageTransport it(nh);
   std::string topic = nh.resolveName("image");
 
-  Callbacks callbacks;
-  // Useful when CameraInfo is being published
-  image_transport::CameraSubscriber sub_image_and_camera = it.subscribeCamera(topic, 1,
-                                                                              &Callbacks::callbackWithCameraInfo,
-                                                                              &callbacks);
-  // Useful when CameraInfo is not being published
-  image_transport::Subscriber sub_image = it.subscribe(
-      topic, 1, boost::bind(&Callbacks::callbackWithoutCameraInfo, &callbacks, _1));
-
   ros::NodeHandle local_nh("~");
+
   std::string format_string;
   local_nh.param("filename_format", format_string, std::string("left%04i.%s"));
+
+  std::string encoding;
   local_nh.param("encoding", encoding, std::string("bgr8"));
+
+  bool save_all_image;
   local_nh.param("save_all_image", save_all_image, true);
-  local_nh.param("request_start_end", request_start_end, false);
-  g_format.parse(format_string);
-  ros::ServiceServer save = local_nh.advertiseService ("save", service);
 
-  if (request_start_end && !save_all_image)
-    ROS_WARN("'request_start_end' is true, so overwriting 'save_all_image' as true");
-
-  // FIXME(unkown): This does not make services appear
-  // if (request_start_end) {
-    ros::ServiceServer srv_start = local_nh.advertiseService(
-      "start", &Callbacks::callbackStartSave, &callbacks);
-    ros::ServiceServer srv_end = local_nh.advertiseService(
-      "end", &Callbacks::callbackEndSave, &callbacks);
-  // }
+  Callbacks callbacks(local_nh, topic, format_string, encoding, save_all_image);
 
   ros::spin();
+
+  return 0;
 }
