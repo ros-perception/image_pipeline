@@ -53,19 +53,21 @@ public:
             const std::string& filename_format,
             const std::string& encoding,
             const bool save_all_image,
-            const bool wait_for_save)
-      : it_(nh), topic_(topic), encoding_(encoding),
+            const bool wait_for_save,
+            const double save_timeout)
+      : nh_(nh), it_(nh_), topic_(topic), encoding_(encoding),
         count_(0), start_time_(0),
-        subscribing_(false), should_unsubscribe_(false), wait_for_save_(wait_for_save)
+        subscribing_(false), should_unsubscribe_(false),
+        wait_for_save_(wait_for_save), save_timeout_(save_timeout)
   {
     format_.parse(filename_format);
     if (save_all_image)
     {
       subscribe();
     } else {
-      srv_save_ = nh.advertiseService("save", &Callbacks::callbackSave, this);
-      srv_start_ = nh.advertiseService("start", &Callbacks::callbackStartSave, this);
-      srv_end_ = nh.advertiseService("end", &Callbacks::callbackEndSave, this);
+      srv_save_ = nh_.advertiseService("save", &Callbacks::callbackSave, this);
+      srv_start_ = nh_.advertiseService("start", &Callbacks::callbackStartSave, this);
+      srv_end_ = nh_.advertiseService("end", &Callbacks::callbackEndSave, this);
     }
   }
 
@@ -107,22 +109,45 @@ public:
     sub_image_.shutdown();
   }
 
+  void callbackTimeoutTimer(const ros::TimerEvent&)
+  {
+    ROS_DEBUG("callback timeout timer");
+    unsubscribe();
+  }
+
   bool callbackSave(std_srvs::Empty::Request &req,
                     std_srvs::Empty::Response &res)
   {
-    if (start_time_ != ros::Time(0)) {
-      ROS_ERROR("The service '~start' was called. Try calling '~end' first to use '~save' service.");
+    if (subscribing_)
+    {
+      ROS_ERROR("Images are already being saved.");
       return false;
     }
+
+    const size_t count = count_;
     should_unsubscribe_ = true;
     subscribe();
+
+    if (save_timeout_ > 0.0)
+    {
+      save_timeout_timer_ = nh_.createTimer(
+          ros::Duration(save_timeout_), &Callbacks::callbackTimeoutTimer, this,
+          /* oneshot= */true);
+    }
 
     if (wait_for_save_)
     {
       ros::Rate r(10);
-      while (ros::ok() && subscribing_) {
+      while (ros::ok() && subscribing_)
+      {
         ros::spinOnce();
         r.sleep();
+      }
+
+      if (count != count_)
+      {
+        ROS_ERROR("Timed out without saving image");
+        return false;
       }
     }
 
@@ -247,7 +272,9 @@ private:
 private:
   boost::format format_;
   boost::mutex mutex_;
+  ros::NodeHandle nh_;
   ros::ServiceServer srv_save_, srv_start_, srv_end_;
+  ros::Timer save_timeout_timer_;
   image_transport::ImageTransport it_;
   image_transport::CameraSubscriber sub_camera_;
   image_transport::Subscriber sub_image_;
@@ -261,6 +288,7 @@ private:
   bool subscribing_;
   bool should_unsubscribe_;
   bool wait_for_save_;
+  double save_timeout_;
 };
 
 int main(int argc, char** argv)
@@ -283,7 +311,11 @@ int main(int argc, char** argv)
   bool wait_for_save;
   local_nh.param("wait_for_save", wait_for_save, false);
 
-  Callbacks callbacks(local_nh, topic, format_string, encoding, save_all_image, wait_for_save);
+  double save_timeout;
+  local_nh.param("save_timeout", save_timeout, 0.0);
+
+  Callbacks callbacks(local_nh, topic, format_string, encoding,
+                      save_all_image, wait_for_save, save_timeout);
 
   ros::spin();
 
