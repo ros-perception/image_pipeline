@@ -1,4 +1,6 @@
-<package>
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
   <name>camera_calibration</name>
   <version>1.12.23</version>
   <description>
@@ -8,23 +10,21 @@
   <author>James Bowman</author>
   <author>Patrick Mihelich</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
-
-  <buildtool_depend version_gte="0.5.68">catkin</buildtool_depend>
-
-  <test_depend>rostest</test_depend>
-
-  <run_depend>cv_bridge</run_depend>
-  <run_depend>image_geometry</run_depend>
-  <run_depend>message_filters</run_depend>
-  <run_depend>rospy</run_depend>
-  <run_depend>std_srvs</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-
   <license>BSD</license>
   <url>http://www.ros.org/wiki/camera_calibration</url>
 
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>image_geometry</exec_depend>
+  <exec_depend>message_filters</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+
+  <test_depend>rostest</test_depend>
+
   <export>
     <rosdoc config="rosdoc.yaml" />
+    <build_type>ament_python</build_type>
     <architecture_independent/>
   </export>
 </package>

@@ -58,7 +58,7 @@ class CalibrationException(Exception):
     pass
 
 # TODO: Make pattern per-board?
-class ChessboardInfo(object):
+class ChessboardInfo():
     def __init__(self, n_cols = 0, n_rows = 0, dim = 0.0):
         self.n_cols = n_cols
         self.n_rows = n_rows
@@ -214,7 +214,7 @@ def _get_circles(img, board, pattern):
 
 
 # TODO self.size needs to come from CameraInfo, full resolution
-class Calibrator(object):
+class Calibrator():
     """
     Base class for calibration system
     """
@@ -522,11 +522,11 @@ def image_from_archive(archive, name):
     Used for tarfile loading and unit test.
     """
     member = archive.getmember(name)
-    imagefiledata = numpy.fromstring(archive.extractfile(member).read(), numpy.uint8)
+    imagefiledata = numpy.frombuffer(archive.extractfile(member).read(), numpy.uint8)
     imagefiledata.resize((1, imagefiledata.size))
     return cv2.imdecode(imagefiledata, cv2.IMREAD_COLOR)
 
-class ImageDrawable(object):
+class ImageDrawable():
     """
     Passed to CalibrationNode after image handled. Allows plotting of images
     with detected corner points
@@ -798,7 +798,7 @@ class MonoCalibrator(Calibrator):
         """ Write images and calibration solution to a tarfile object """
 
         def taradd(name, buf):
-            if isinstance(buf, basestring):
+            if isinstance(buf, str):
                 s = StringIO(buf)
             else:
                 s = BytesIO(buf)

@@ -32,16 +32,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import roslib
-import rosunit
-import rospy
 import cv2
 
 import collections
 import copy
 import numpy
 import os
-import sys
+import requests
 import tarfile
 import unittest
 
@@ -55,7 +52,14 @@ board.dim = 0.108
 
 class TestDirected(unittest.TestCase):
     def setUp(self):
-        tar_path = roslib.packages.find_resource('camera_calibration', 'camera_calibration.tar.gz')[0]
+
+        if not os.path.isfile('camera_calibration.tar.gz'):
+            url = 'http://download.ros.org/data/camera_calibration/camera_calibration.tar.gz'
+            r = requests.get(url, allow_redirects=True)
+            with open('camera_calibration.tar.gz', 'wb') as cf:
+                cf.write(r.content)
+
+        tar_path = 'camera_calibration.tar.gz'
         self.tar = tarfile.open(tar_path, 'r')
         self.limages = [image_from_archive(self.tar, "wide/left%04d.pgm" % i) for i in range(3, 15)]
         self.rimages = [image_from_archive(self.tar, "wide/right%04d.pgm" % i) for i in range(3, 15)]
@@ -70,10 +74,10 @@ class TestDirected(unittest.TestCase):
                 rri = cv2.resize(ri, (dim[0], dim[1]))
                 self.l[dim].append(rli)
                 self.r[dim].append(rri)
-                
+
     def assert_good_mono(self, c, dim, max_err):
         #c.report()
-        self.assert_(len(c.ost()) > 0)
+        self.assertTrue(len(c.ost()) > 0)
         lin_err = 0
         n = 0
         for img in self.l[dim]:
@@ -83,8 +87,8 @@ class TestDirected(unittest.TestCase):
                 n += 1
         if n > 0:
             lin_err /= n
-        self.assert_(0.0 < lin_err, 'lin_err is %f' % lin_err)
-        self.assert_(lin_err < max_err, 'lin_err is %f' % lin_err)
+        self.assertTrue(0.0 < lin_err, 'lin_err is %f' % lin_err)
+        self.assertTrue(lin_err < max_err, 'lin_err {} should be less than max_err {}'.format(lin_err, max_err))
 
         flat = c.remap(img)
         self.assertEqual(img.shape, flat.shape)
@@ -124,7 +128,7 @@ class TestDirected(unittest.TestCase):
                     epierror += epierror_local
                     n += 1
             epierror /= n
-            self.assert_(epierror < epierrors[i],
+            self.assertTrue(epierror < epierrors[i],
                          'Epipolar error is %f for resolution i = %d' % (epierror, i))
 
             self.assertAlmostEqual(sc.chessboard_size_from_images(self.l[dim][0], self.r[dim][0]), .108, 2)
@@ -141,7 +145,7 @@ class TestDirected(unittest.TestCase):
             sc2.from_message(sc.as_message())
             # sc2.set_alpha(1.0)
             #sc2.report()
-            self.assert_(len(sc2.ost()) > 0)
+            self.assertTrue(len(sc2.ost()) > 0)
 
     def test_nochecker(self):
         # Run with same images, but looking for an incorrect chessboard size (8, 7).
@@ -200,7 +204,7 @@ class TestArtificial(unittest.TestCase):
                 pattern.fill(255)
                 for j in range(1, setup.rows+1):
                     for i in range(0, setup.cols):
-                        cv2.circle(pattern, (x*(1 + 2*i + (j%2)) + x/2, x*j + x/2), x/3, (0,0,0), -1)
+                        cv2.circle(pattern, (int(x*(1 + 2*i + (j%2)) + x/2), int(x*j + x/2)), int(x/3), (0,0,0), -1)
 
             rows, cols, _ = pattern.shape
             object_points_2d = numpy.array([[0, 0], [0, cols-1], [rows-1, cols-1], [rows-1, 0]], numpy.float32)
@@ -215,7 +219,7 @@ class TestArtificial(unittest.TestCase):
             for i in range(len(rvec)):
                 R = numpy.array(rvec[i], numpy.float32)
                 T = numpy.array(tvec[i], numpy.float32)
-            
+
                 image_points, _ = cv2.projectPoints(object_points_3d, R, T, self.K, self.D)
 
                 # deduce the perspective transform
@@ -227,7 +231,7 @@ class TestArtificial(unittest.TestCase):
 
     def assert_good_mono(self, c, images, max_err):
         #c.report()
-        self.assert_(len(c.ost()) > 0)
+        self.assertTrue(len(c.ost()) > 0)
         lin_err = 0
         n = 0
         for img in images:
@@ -238,8 +242,8 @@ class TestArtificial(unittest.TestCase):
         if n > 0:
             lin_err /= n
         print("linear error is %f" % lin_err)
-        self.assert_(0.0 < lin_err, 'lin_err is %f' % lin_err)
-        self.assert_(lin_err < max_err, 'lin_err is %f' % lin_err)
+        self.assertTrue(0.0 < lin_err, 'lin_err is %f' % lin_err)
+        self.assertTrue(lin_err < max_err, 'lin_err {} should be less than max_err {}'.format(lin_err, max_err))
 
         flat = c.remap(img)
         self.assertEqual(img.shape, flat.shape)
@@ -265,10 +269,15 @@ class TestArtificial(unittest.TestCase):
 
             # Make sure the intrinsics are similar
             err_intrinsics = numpy.linalg.norm(mc.intrinsics - self.K, ord=numpy.inf)
-            self.assert_(err_intrinsics < setup.K_err,
+            self.assertTrue(err_intrinsics < setup.K_err,
                          'intrinsics error is %f for resolution i = %d' % (err_intrinsics, i))
             print('intrinsics error is %f' % numpy.linalg.norm(mc.intrinsics - self.K, ord=numpy.inf))
 
 if __name__ == '__main__':
+    suite = unittest.TestSuite()
+    suite.addTest(TestDirected('directed'))
+    #suite.addTest(TestArtificial('artificial'))
+
+    unittest.TextTestRunner(verbosity=2).run(suite)
     #rosunit.unitrun('camera_calibration', 'directed', TestDirected)
-    rosunit.unitrun('camera_calibration', 'artificial', TestArtificial)
+    #rosunit.unitrun('camera_calibration', 'artificial', TestArtificial)
