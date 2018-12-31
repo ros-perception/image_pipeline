@@ -435,10 +435,11 @@ class Calibrator():
             msg.distortion_model = "rational_polynomial"
         else:
             msg.distortion_model = "plumb_bob"
-        msg.D = numpy.ravel(d).copy().tolist()
-        msg.K = numpy.ravel(k).copy().tolist()
-        msg.R = numpy.ravel(r).copy().tolist()
-        msg.P = numpy.ravel(p).copy().tolist()
+
+        msg.d = numpy.ravel(d).copy().tolist()
+        msg.k = numpy.ravel(k).copy().tolist()
+        msg.r = numpy.ravel(r).copy().tolist()
+        msg.p = numpy.ravel(p).copy().tolist()
         return msg
 
     def lrreport(self, d, k, r, p):
@@ -799,7 +800,7 @@ class MonoCalibrator(Calibrator):
 
         def taradd(name, buf):
             if isinstance(buf, str):
-                s = StringIO(buf)
+                s = BytesIO(buf.encode('utf-8'))
             else:
                 s = BytesIO(buf)
             ti = tarfile.TarInfo(name)
