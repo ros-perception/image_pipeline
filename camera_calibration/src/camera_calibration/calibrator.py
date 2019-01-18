@@ -1114,11 +1114,12 @@ class StereoCalibrator(Calibrator):
             # Add sample to database only if it's sufficiently different from any previous sample
             if lcorners is not None and rcorners is not None and len(lcorners) == len(rcorners):
                 params = self.get_parameters(lcorners, lboard, (lgray.shape[1], lgray.shape[0]))
-                if self.is_good_sample(params):
+                if self.is_good_sample(params, lcorners, self.last_frame_corners):
                     self.db.append( (params, lgray, rgray) )
                     self.good_corners.append( (lcorners, rcorners, lboard) )
                     print(("*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)))
-
+        
+        self.last_frame_corners = lcorners
         rv = StereoDrawable()
         rv.lscrib = lscrib
         rv.rscrib = rscrib
