@@ -133,7 +133,7 @@ static void mouseCb(int event, int x, int y, int flags, void* param)
   }
 }
 
-static void guiCb(const ros::SteadyTimerEvent&)
+static void guiCb(const ros::WallTimerEvent&)
 {
     // Process pending GUI events and return immediately
     cv::waitKey(1);
@@ -183,7 +183,7 @@ int main(int argc, char **argv)
     // if OpenCV is compiled against GTK, we call cv::waitKey() from
     // the ROS event loop periodically, instead.
     /*cv::startWindowThread();*/
-    gui_timer = local_nh.createSteadyTimer(ros::WallDuration(0.1), guiCb);
+    gui_timer = local_nh.createWallTimer(ros::WallDuration(0.1), guiCb);
   }
 
   // Handle transport
