@@ -149,7 +149,7 @@ int main(int argc, char **argv)
 
   ros::NodeHandle nh;
   ros::NodeHandle local_nh("~");
-  ros::Timer gui_timer;
+  ros::WallTimer gui_timer;
 
   // Default window name is the resolved topic name
   std::string topic = nh.resolveName("image");
