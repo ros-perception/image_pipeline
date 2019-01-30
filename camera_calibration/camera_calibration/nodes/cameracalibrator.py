@@ -35,11 +35,21 @@
 import cv2
 import functools
 import message_filters
-import os
 import rclpy
 from camera_calibration.camera_calibrator import OpenCVCalibrationNode, SpinThread
 from camera_calibration.calibrator import ChessboardInfo, Patterns
 from message_filters import ApproximateTimeSynchronizer
+
+
+def arg_helper(args):
+    temp_args = []
+    for arg in args:
+        arg_parts = arg.split(":=")
+        if arg_parts[0] in ["camera", "right_camera", "left_camera"]:
+            temp_args.append(arg_parts[0] + "/set_camera_info:=" + arg_parts[1] + "/set_camera_info")
+        else:
+            temp_args.append(arg)
+    return temp_args
 
 
 def main():
@@ -47,8 +57,8 @@ def main():
     parser = OptionParser("%prog --size SIZE1 --square SQUARE1 [ --size SIZE2 --square SQUARE2 ]",
                           description=None)
     parser.add_option("-c", "--camera_name",
-                     type="string", default='narrow_stereo',
-                     help="name of the camera to appear in the calibration file")
+                      type="string", default='narrow_stereo',
+                      help="name of the camera to appear in the calibration file")
     group = OptionGroup(parser, "Chessboard Options",
                         "You must specify one or more chessboards as pairs of --size and --square options.")
     group.add_option("-p", "--pattern",
@@ -141,16 +151,20 @@ def main():
     else:
         checkerboard_flags = cv2.CALIB_CB_FAST_CHECK
 
+    args = arg_helper(args)
     rclpy.init(args=args)
 
-    node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
+    node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern,
+                                 options.camera_name,
                                  checkerboard_flags=checkerboard_flags)
 
     node.spin()
+
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
         import traceback
+
         traceback.print_exc()

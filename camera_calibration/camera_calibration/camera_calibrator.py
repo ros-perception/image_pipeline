@@ -45,50 +45,9 @@ import time
 from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, ChessboardInfo, Patterns
 from collections import deque
 
-from queue import Queue
-
 from message_filters import ApproximateTimeSynchronizer
 from std_msgs.msg import String
 from std_srvs.srv import Empty
-
-
-class DisplayThread(threading.Thread):
-    """
-    Thread that displays the current images
-    It is its own thread so that all display can be done
-    in one thread to overcome imshow limitations and
-    https://github.com/ros-perception/image_pipeline/issues/85
-    """
-
-    def __init__(self, queue, opencv_calibration_node, init=None):
-        threading.Thread.__init__(self)
-        self.queue = queue
-        self.opencv_calibration_node = opencv_calibration_node
-        # init()
-
-    def run(self):
-        # cv2.namedWindow("display", cv2.WINDOW_NORMAL)
-        # cv2.setMouseCallback("display", self.opencv_calibration_node.on_mouse)
-        # cv2.createTrackbar("scale", "display", 0, 100, self.opencv_calibration_node.on_scale)
-        while True:
-            print("display thread", flush=True)
-            # wait for an image (could happen at the very beginning when the queue is still empty)
-            # while len(self.queue) == 0:
-            #    print("len of queue is 0", flush=True)
-            #    time.sleep(0.1)
-            # im = self.queue[0]
-            im = self.queue.get()
-
-            print("queue:", self.queue)
-            print(im, flush=True)
-            print("Show image", flush=True)
-
-            cv2.imshow("display", im)
-            # k = cv2.waitKey(1) & 0xFF
-            # if k in [27, ord('q')]:
-            #    rclpy.shutdown()
-            # elif k == ord('s'):
-            #    self.opencv_calibration_node.screendump(im)
 
 
 class SpinThread(threading.Thread):
@@ -114,7 +73,7 @@ class ConsumerThread(threading.Thread):
         while True:
             # wait for an image (could happen at the very beginning when the queue is still empty)
             while len(self.queue) == 0:
-               time.sleep(0.1)
+                time.sleep(0.1)
             self.function(self.queue[0])
 
 
@@ -123,19 +82,29 @@ class CalibrationNode(Node):
                  pattern=Patterns.Chessboard, camera_name='', checkerboard_flags=0):
         super().__init__(name)
 
-        # if service_check:
-        # assume any non-default service names have been set.  Wait for the service to become ready
-        # for svcname in ["camera", "left_camera", "right_camera"]:
-        #    remapped = rclpy.remap_name(svcname)
-        #    if remapped != svcname:
-        #        fullservicename = "%s/set_camera_info" % remapped
-        #        print("Waiting for service", fullservicename, "...")
-        #        try:
-        #            rclpy.wait_for_service(fullservicename, 5)
-        #            print("OK")
-        #        except rclpy.ROSException:
-        #            print("Service not found")
-        #            rclpy.shutdown()
+        self.set_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
+                                                          "camera/set_camera_info")
+
+        self.set_left_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
+                                                               "left_camera/set_camera_info")
+
+        self.set_right_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
+                                                                "right_camera/set_camera_info")
+
+        if service_check:
+            # assume any non-default service names have been set.  Wait for the service to become ready
+            for cli in [self.set_camera_info_service, self.set_left_camera_info_service, self.set_right_camera_info_service]:
+                #remapped = rclpy.remap_name(svcname)
+                #if remapped != svcname:
+                #fullservicename = "%s/set_camera_info" % remapped
+                print("Waiting for service", cli.srv_name, "...")
+                # check all services so they are ready.
+                try:
+                    cli.wait_for_service(timeout_sec=5)
+                    print("OK")
+                except Exception as e:
+                    print("Service not found: %s".format(e))
+                    rclpy.shutdown()
 
         self._boards = boards
         self._calib_flags = flags
@@ -148,21 +117,8 @@ class CalibrationNode(Node):
         ts = synchronizer([lsub, rsub], 4)
         ts.registerCallback(self.queue_stereo)
 
-        msub = message_filters.Subscriber(self, sensor_msgs.msg.Image, 'image')
+        msub = message_filters.Subscriber(self, sensor_msgs.msg.Image, 'image_raw')
         msub.registerCallback(self.queue_monocular)
-
-        # service clients needs to be called here
-        self.set_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
-                                                          "%s/set_camera_info" % "camera")
-        # self.set_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo, "%s/set_camera_info" % rclpy.remap_name("camera"))
-
-        self.set_left_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
-                                                               "%s/set_camera_info" % "left_camera")
-        # self.set_left_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo, "%s/set_camera_info" % rclpy.remap_name("left_camera"))
-
-        self.set_right_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
-                                                                "%s/set_camera_info" % "right_camera")
-        # self.set_right_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo, "%s/set_camera_info" % rclpy.remap_name("right_camera"))
 
         self.q_mono = deque([], 1)
         self.q_stereo = deque([], 1)
@@ -261,11 +217,6 @@ class OpenCVCalibrationNode(CalibrationNode):
         CalibrationNode.__init__(self, *args, **kwargs)
 
         self.queue_display = deque([], 1)
-
-        # self.display_thread = DisplayThread(self.q_mono, self)
-        # self.display_thread.setDaemon(True)
-        # self.display_thread.start()
-
         self.initWindow()
 
     def spin(self):
