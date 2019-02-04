@@ -2,6 +2,7 @@
 * Software License Agreement (BSD License)
 * 
 *  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2018, The MITRE Corporation
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -40,6 +41,13 @@
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 
+#ifdef VISIONWORKS_ACCELERATION
+namespace stereo_visionworks
+{
+  class VisionWorksInterface;
+}
+#endif
+
 namespace stereo_image_proc {
 
 struct StereoImageSet
@@ -55,17 +63,7 @@ class StereoProcessor
 {
 public:
   
-  StereoProcessor()
-#if CV_MAJOR_VERSION == 3
-  {
-    block_matcher_ = cv::StereoBM::create();
-    sg_block_matcher_ = cv::StereoSGBM::create(1, 1, 10);
-#else
-    : block_matcher_(cv::StereoBM::BASIC_PRESET),
-      sg_block_matcher_()
-  {
-#endif
-  }
+  StereoProcessor();
 
   enum StereoType
   {
@@ -145,6 +143,12 @@ public:
   int getDisp12MaxDiff() const;
   void setDisp12MaxDiff(int disp12MaxDiff);
 
+  bool getUseVisionworks() const;
+  void setUseVisionworks(bool _useVisionworks);
+
+  bool getPrintStereoPerf() const;
+  void setPrintStereoPerf(bool _stereoPerf);
+  
   // Do all the work!
   bool process(const sensor_msgs::ImageConstPtr& left_raw,
                const sensor_msgs::ImageConstPtr& right_raw,
@@ -167,7 +171,7 @@ public:
 private:
   image_proc::Processor mono_processor_;
   
-  mutable cv::Mat_<int16_t> disparity16_; // scratch buffer for 16-bit signed disparity image
+  mutable cv::Mat_<int16_t> disparity16_;      // scratch buffer for 16-bit signed disparity image
 #if CV_MAJOR_VERSION == 3
   mutable cv::Ptr<cv::StereoBM> block_matcher_; // contains scratch buffers for block matching
   mutable cv::Ptr<cv::StereoSGBM> sg_block_matcher_;
@@ -178,6 +182,12 @@ private:
   StereoType current_stereo_algorithm_;
   // scratch buffer for dense point cloud
   mutable cv::Mat_<cv::Vec3f> dense_points_;
+
+#ifdef VISIONWORKS_ACCELERATION
+  stereo_visionworks::VisionWorksInterface* visionWorksInterface_; ///< Interface class to visionworks functionality
+#endif
+  bool useVisionworks_;                                            ///< If we should attempt to use VisionWorks API for CUDA acceleration
+  bool printStereoPerf_;                                           ///< If we should print pipeline performance statistics
 };
 
 
@@ -189,6 +199,26 @@ inline int StereoProcessor::getInterpolation() const
 inline void StereoProcessor::setInterpolation(int interp)
 {
   mono_processor_.interpolation_ = interp;
+}
+
+inline bool StereoProcessor::getUseVisionworks() const
+{
+  return useVisionworks_;
+}
+
+inline void StereoProcessor::setUseVisionworks(bool _useVisionworks)
+{
+  useVisionworks_ = _useVisionworks;
+}
+
+inline bool StereoProcessor::getPrintStereoPerf() const
+{
+  return printStereoPerf_;
+}
+
+inline void StereoProcessor::setPrintStereoPerf(bool _printStereoPerf)
+{
+  printStereoPerf_ = _printStereoPerf;
 }
 
 // For once, a macro is used just to avoid errors
