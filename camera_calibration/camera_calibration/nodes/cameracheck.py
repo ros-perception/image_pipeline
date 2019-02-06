@@ -35,6 +35,24 @@
 import rclpy
 from camera_calibration.camera_checker import CameraCheckerNode
 
+def arg_helper(args):
+    temp_args = []
+    for arg in args:
+        arg_parts = arg.split(":=")
+
+        if arg_parts[0] in ["monocular"]:
+            temp_args.append(arg_parts[0] + "/image_rect:=" + arg_parts[1] + "/image_rect")
+            temp_args.append(arg_parts[0] + "/camera_info:=" + arg_parts[1] + "/camera_info")
+
+        if arg_parts[0] in ["stereo"]:
+            temp_args.append(arg_parts[0] + "/left/image_rect:=" + arg_parts[1] + "/left/image_rect")
+            temp_args.append(arg_parts[0] + "/left/camera_info:=" + arg_parts[1] + "/left/camera_info")
+            temp_args.append(arg_parts[0] + "/right/image_rect:=" + arg_parts[1] + "/right/image_rect")
+            temp_args.append(arg_parts[0] + "/right/camera_info:=" + arg_parts[1] + "/right/camera_info")
+        else:
+            temp_args.append(arg)
+    return temp_args
+
 
 def main():
     from optparse import OptionParser
@@ -50,6 +68,7 @@ def main():
     dim = float(options.square)
     approximate = float(options.approximate)
 
+    args = arg_helper(args)
     rclpy.init(args=args)
     node = CameraCheckerNode("cameracheck", size, dim, approximate)
     rclpy.spin(node)

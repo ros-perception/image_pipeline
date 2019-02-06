@@ -95,10 +95,7 @@ class CameraCheckerNode(Node):
             self.board.n_cols, self.board.n_rows = self.board.n_rows, self.board.n_cols
 
         image_topic = "monocular/image_rect"
-        # image_topic = rclpy.resolve_name("monocular") + "/image_rect"
-
         camera_topic = "monocular/camera_info"
-        # camera_topic = rclpy.resolve_name("monocular") + "/camera_info"
 
         tosync_mono = [
             (image_topic, sensor_msgs.msg.Image),
@@ -117,11 +114,6 @@ class CameraCheckerNode(Node):
         left_camera_topic = "stereo/left/camera_info"
         right_topic = "stereo/right/image_rect"
         right_camera_topic = "stereo/right/camera_info"
-
-        # left_topic = rclpy.resolve_name("stereo") + "/left/image_rect"
-        # left_camera_topic = rclpy.resolve_name("stereo") + "/left/camera_info"
-        # right_topic = rclpy.resolve_name("stereo") + "/right/image_rect"
-        # right_camera_topic = rclpy.resolve_name("stereo") + "/right/camera_info"
 
         tosync_stereo = [
             (left_topic, sensor_msgs.msg.Image),
