@@ -265,7 +265,7 @@ public:
     it_ = boost::shared_ptr<image_transport::ImageTransport>(new image_transport::ImageTransport(nh_));
     subscriber_count_ = 0;
     angle_ = 0;
-    prev_stamp_ = ros::Time(0, 0);
+    prev_stamp_ = ros::Time::now();
     tf_sub_.reset(new tf2_ros::TransformListener(tf_buffer_));
     image_transport::SubscriberStatusCallback connect_cb    = boost::bind(&ImageRotateNodelet::connectCb, this, _1);
     image_transport::SubscriberStatusCallback disconnect_cb = boost::bind(&ImageRotateNodelet::disconnectCb, this, _1);
