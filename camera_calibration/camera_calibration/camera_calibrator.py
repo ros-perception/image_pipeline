@@ -176,18 +176,18 @@ class CalibrationNode(Node):
         self.redraw_stereo(drawable)
 
     def check_set_camera_info(self, response):
-        if response.success:
+        if response.result().success:
             return True
 
         for i in range(10):
             print("!" * 80)
         print()
-        print("Attempt to set camera info failed: " + response.status_message)
+        print("Attempt to set camera info failed: " + response.result().status_message)
         print()
         for i in range(10):
             print("!" * 80)
         print()
-        rclpy.logerr('Unable to set camera info for calibration. Failure message: %s' % response.status_message)
+        rclpy.logerr('Unable to set camera info for calibration. Failure message: %s' % response.result().status_message)
         return False
 
     def do_upload(self):
@@ -195,14 +195,18 @@ class CalibrationNode(Node):
         print(self.c.ost())
         info = self.c.as_message()
 
+        req = sensor_msgs.srv.SetCameraInfo.Request()
         rv = True
         if self.c.is_mono:
-            response = self.set_camera_info_service.call(info)
+            req.camera_info = info
+            response = self.set_camera_info_service.call_async(req)
             rv = self.check_set_camera_info(response)
         else:
-            response = self.set_left_camera_info_service.call(info[0])
+            req.camera_info = info[0]
+            response = self.set_left_camera_info_service.call_async(req)
             rv = rv and self.check_set_camera_info(response)
-            response = self.set_right_camera_info_service.call(info[1])
+            req.camera_info = info[1]
+            response = self.set_right_camera_info_service.call_async(req)
             rv = rv and self.check_set_camera_info(response)
         return rv
 

@@ -669,10 +669,10 @@ class MonoCalibrator(Calibrator):
         """ Initialize the camera calibration from a CameraInfo message """
 
         self.size = (msg.width, msg.height)
-        self.intrinsics = numpy.array(msg.K, dtype=numpy.float64, copy=True).reshape((3, 3))
-        self.distortion = numpy.array(msg.D, dtype=numpy.float64, copy=True).reshape((len(msg.D), 1))
-        self.R = numpy.array(msg.R, dtype=numpy.float64, copy=True).reshape((3, 3))
-        self.P = numpy.array(msg.P, dtype=numpy.float64, copy=True).reshape((3, 4))
+        self.intrinsics = numpy.array(msg.k, dtype=numpy.float64, copy=True).reshape((3, 3))
+        self.distortion = numpy.array(msg.d, dtype=numpy.float64, copy=True).reshape((len(msg.d), 1))
+        self.R = numpy.array(msg.r, dtype=numpy.float64, copy=True).reshape((3, 3))
+        self.P = numpy.array(msg.p, dtype=numpy.float64, copy=True).reshape((3, 4))
 
         self.set_alpha(0.0)
 
@@ -1122,8 +1122,9 @@ class StereoCalibrator(Calibrator):
                [("right-%04d.png" % i, im) for i,(_, _, im) in enumerate(self.db)])
 
         def taradd(name, buf):
-            if isinstance(buf, basestring):
-                s = StringIO(buf)
+            if isinstance(buf, str):
+                buf = bytes(buf, encoding="utf-8")
+                s = BytesIO(buf)
             else:
                 s = BytesIO(buf)
             ti = tarfile.TarInfo(name)
