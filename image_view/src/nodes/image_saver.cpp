@@ -144,7 +144,7 @@ public:
         r.sleep();
       }
 
-      if (count != count_)
+      if (count == count_)
       {
         ROS_ERROR("Timed out without saving image");
         return false;
