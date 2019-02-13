@@ -1,42 +1,37 @@
 /*********************************************************************
-* Software License Agreement (BSD License)
-*
-*  Copyright (c) 2017, Kentaro Wada.
-*  All rights reserved.
-*
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions
-*  are met:
-*
-*   * Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   * Redistributions in binary form must reproduce the above
-*     copyright notice, this list of conditions and the following
-*     disclaimer in the documentation and/or other materials provided
-*     with the distribution.
-*   * Neither the name of the Kentaro Wada nor the names of its
-*     contributors may be used to endorse or promote products derived
-*     from this software without specific prior written permission.
-*
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-*********************************************************************/
-#include <boost/make_shared.hpp>
-#include <boost/version.hpp>
-#if ((BOOST_VERSION / 100) % 1000) >= 53
-#include <boost/thread/lock_guard.hpp>
-#endif
-
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2017, Kentaro Wada.
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of the Kentaro Wada nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *********************************************************************/
+#include <mutex>
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
 #include <nodelet/nodelet.h>
@@ -49,7 +44,6 @@
 
 namespace image_proc
 {
-
 class ResizeNodelet : public nodelet::Nodelet
 {
 protected:
@@ -58,51 +52,51 @@ protected:
   image_transport::CameraSubscriber sub_image_;
   int queue_size_;
 
-  boost::shared_ptr<image_transport::ImageTransport> it_, private_it_;
-  boost::mutex connect_mutex_;
+  std::shared_ptr<image_transport::ImageTransport> it_, private_it_;
+  std::mutex connect_mutex_;
 
   // Dynamic reconfigure
-  boost::recursive_mutex config_mutex_;
+  std::mutex config_mutex_;
   typedef image_proc::ResizeConfig Config;
   typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
-  boost::shared_ptr<ReconfigureServer> reconfigure_server_;
+  std::shared_ptr<ReconfigureServer> reconfigure_server_;
   Config config_;
 
   virtual void onInit();
 
   void connectCb();
 
-  void imageCb(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr &info_msg);
+  void imageCb(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr& info_msg);
   void infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg);
 
-  void configCb(Config &config, uint32_t level);
+  void configCb(Config& config, uint32_t level);
 };
 
 void ResizeNodelet::onInit()
 {
-  ros::NodeHandle &nh         = getNodeHandle();
-  ros::NodeHandle &private_nh = getPrivateNodeHandle();
+  ros::NodeHandle& nh = getNodeHandle();
+  ros::NodeHandle& private_nh = getPrivateNodeHandle();
   it_.reset(new image_transport::ImageTransport(nh));
   private_it_.reset(new image_transport::ImageTransport(private_nh));
 
   // Set up dynamic reconfigure
-  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
-  ReconfigureServer::CallbackType f = boost::bind(&ResizeNodelet::configCb, this, _1, _2);
+  reconfigure_server_.reset(new ReconfigureServer(private_nh));
+  ReconfigureServer::CallbackType f =
+      std::bind(&ResizeNodelet::configCb, this, std::placeholders::_1, std::placeholders::_2);
   reconfigure_server_->setCallback(f);
 
   // Monitor whether anyone is subscribed to the output
   typedef image_transport::SubscriberStatusCallback ConnectCB;
-  ConnectCB connect_cb = boost::bind(&ResizeNodelet::connectCb, this);
+  ConnectCB connect_cb = std::bind(&ResizeNodelet::connectCb, this);
   // Make sure we don't enter connectCb() between advertising and assigning to pub_XXX
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-
+  std::lock_guard<std::mutex> lock(connect_mutex_);
   pub_image_ = private_it_->advertiseCamera("image", 1, connect_cb, connect_cb);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
 void ResizeNodelet::connectCb()
 {
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
+  std::lock_guard<std::mutex> lock(connect_mutex_);
   if (pub_image_.getNumSubscribers() == 0)
   {
     sub_image_.shutdown();
@@ -114,8 +108,9 @@ void ResizeNodelet::connectCb()
   }
 }
 
-void ResizeNodelet::configCb(Config &config, uint32_t level)
+void ResizeNodelet::configCb(Config& config, uint32_t level)
 {
+  std::lock_guard<std::mutex> lock(config_mutex_);
   config_ = config;
 }
 
@@ -124,7 +119,7 @@ void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
 {
   Config config;
   {
-    boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);
+    std::lock_guard<std::mutex> lock(config_mutex_);
     config = config_;
   }
   // image
@@ -141,8 +136,8 @@ void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
 
   if (config.use_scale)
   {
-    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(0, 0),
-               config.scale_width, config.scale_height, config.interpolation);
+    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(0, 0), config.scale_width, config.scale_height,
+               config.interpolation);
   }
   else
   {
