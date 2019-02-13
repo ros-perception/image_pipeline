@@ -31,27 +31,35 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+#include <boost/make_shared.hpp>
+#include <boost/version.hpp>
+#if ((BOOST_VERSION / 100) % 1000) >= 53
+#include <boost/thread/lock_guard.hpp>
+#endif
+
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
 #include <nodelet/nodelet.h>
-#include <nodelet_topic_tools/nodelet_lazy.h>
 #include <ros/ros.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
+#include <image_transport/image_transport.h>
 
 #include "image_proc/ResizeConfig.h"
 
 namespace image_proc
 {
 
-class ResizeNodelet : public nodelet_topic_tools::NodeletLazy
+class ResizeNodelet : public nodelet::Nodelet
 {
 protected:
   // ROS communication
-  ros::Publisher pub_image_;
-  ros::Publisher pub_info_;
-  ros::Subscriber sub_info_;
-  ros::Subscriber sub_image_;
+  image_transport::CameraPublisher pub_image_;
+  image_transport::CameraSubscriber sub_image_;
+  int queue_size_;
+
+  boost::shared_ptr<image_transport::ImageTransport> it_, private_it_;
+  boost::mutex connect_mutex_;
 
   // Dynamic reconfigure
   boost::recursive_mutex config_mutex_;
@@ -61,10 +69,10 @@ protected:
   Config config_;
 
   virtual void onInit();
-  virtual void subscribe();
-  virtual void unsubscribe();
 
-  void imageCb(const sensor_msgs::ImageConstPtr& image_msg);
+  void connectCb();
+
+  void imageCb(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr &info_msg);
   void infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg);
 
   void configCb(Config &config, uint32_t level);
@@ -72,17 +80,38 @@ protected:
 
 void ResizeNodelet::onInit()
 {
-  nodelet_topic_tools::NodeletLazy::onInit();
+  ros::NodeHandle &nh         = getNodeHandle();
+  ros::NodeHandle &private_nh = getPrivateNodeHandle();
+  it_.reset(new image_transport::ImageTransport(nh));
+  private_it_.reset(new image_transport::ImageTransport(private_nh));
 
   // Set up dynamic reconfigure
-  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, *pnh_));
+  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
   ReconfigureServer::CallbackType f = boost::bind(&ResizeNodelet::configCb, this, _1, _2);
   reconfigure_server_->setCallback(f);
 
-  pub_info_ = advertise<sensor_msgs::CameraInfo>(*pnh_, "camera_info", 1);
-  pub_image_ = advertise<sensor_msgs::Image>(*pnh_, "image", 1);
+  // Monitor whether anyone is subscribed to the output
+  typedef image_transport::SubscriberStatusCallback ConnectCB;
+  ConnectCB connect_cb = boost::bind(&ResizeNodelet::connectCb, this);
+  // Make sure we don't enter connectCb() between advertising and assigning to pub_XXX
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
 
-  onInitPostProcess();
+  pub_image_ = private_it_->advertiseCamera("image", 1, connect_cb, connect_cb);
+}
+
+// Handles (un)subscribing when clients (un)subscribe
+void ResizeNodelet::connectCb()
+{
+  boost::lock_guard<boost::mutex> lock(connect_mutex_);
+  if (pub_image_.getNumSubscribers() == 0)
+  {
+    sub_image_.shutdown();
+  }
+  else if (!sub_image_)
+  {
+    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
+    sub_image_ = it_->subscribeCamera("image", queue_size_, &ResizeNodelet::imageCb, this, hints);
+  }
 }
 
 void ResizeNodelet::configCb(Config &config, uint32_t level)
@@ -90,68 +119,25 @@ void ResizeNodelet::configCb(Config &config, uint32_t level)
   config_ = config;
 }
 
-void ResizeNodelet::subscribe()
-{
-  sub_info_ = nh_->subscribe("camera_info", 1, &ResizeNodelet::infoCb, this);
-  sub_image_ = nh_->subscribe("image", 1, &ResizeNodelet::imageCb, this);
-}
-
-void ResizeNodelet::unsubscribe()
-{
-  sub_info_.shutdown();
-  sub_image_.shutdown();
-}
-
-void ResizeNodelet::infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg)
+void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
+                            const sensor_msgs::CameraInfoConstPtr& info_msg)
 {
   Config config;
   {
     boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);
     config = config_;
   }
-
-  sensor_msgs::CameraInfo dst_info_msg = *info_msg;
-
-  double scale_y;
-  double scale_x;
-  if (config.use_scale)
+  // image
+  cv_bridge::CvImagePtr cv_ptr;
+  try
   {
-    scale_y = config.scale_height;
-    scale_x = config.scale_width;
-    dst_info_msg.height = static_cast<int>(info_msg->height * config.scale_height);
-    dst_info_msg.width = static_cast<int>(info_msg->width * config.scale_width);
+    cv_ptr = cv_bridge::toCvCopy(image_msg);
   }
-  else
+  catch (cv_bridge::Exception& e)
   {
-    scale_y = static_cast<double>(config.height) / info_msg->height;
-    scale_x = static_cast<double>(config.width) / info_msg->width;
-    dst_info_msg.height = config.height;
-    dst_info_msg.width = config.width;
+    ROS_ERROR("cv_bridge exception: %s", e.what());
+    return;
   }
-
-  dst_info_msg.K[0] = dst_info_msg.K[0] * scale_x;  // fx
-  dst_info_msg.K[2] = dst_info_msg.K[2] * scale_x;  // cx
-  dst_info_msg.K[4] = dst_info_msg.K[4] * scale_y;  // fy
-  dst_info_msg.K[5] = dst_info_msg.K[5] * scale_y;  // cy
-
-  dst_info_msg.P[0] = dst_info_msg.P[0] * scale_x;  // fx
-  dst_info_msg.P[2] = dst_info_msg.P[2] * scale_x;  // cx
-  dst_info_msg.P[3] = dst_info_msg.P[3] * scale_x;  // T
-  dst_info_msg.P[5] = dst_info_msg.P[5] * scale_y;  // fy
-  dst_info_msg.P[6] = dst_info_msg.P[6] * scale_y;  // cy
-
-  pub_info_.publish(dst_info_msg);
-}
-
-void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg)
-{
-  Config config;
-  {
-    boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);
-    config = config_;
-  }
-
-  cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_msg);
 
   if (config.use_scale)
   {
@@ -165,7 +151,38 @@ void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg)
     cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(width, height), 0, 0, config.interpolation);
   }
 
-  pub_image_.publish(cv_ptr->toImageMsg());
+  // camera_info
+  sensor_msgs::CameraInfoPtr dst_info_msg(new sensor_msgs::CameraInfo(*info_msg));
+
+  double scale_y;
+  double scale_x;
+  if (config.use_scale)
+  {
+    scale_y = config.scale_height;
+    scale_x = config.scale_width;
+    dst_info_msg->height = static_cast<int>(info_msg->height * config.scale_height);
+    dst_info_msg->width = static_cast<int>(info_msg->width * config.scale_width);
+  }
+  else
+  {
+    scale_y = static_cast<double>(config.height) / info_msg->height;
+    scale_x = static_cast<double>(config.width) / info_msg->width;
+    dst_info_msg->height = config.height;
+    dst_info_msg->width = config.width;
+  }
+
+  dst_info_msg->K[0] = dst_info_msg->K[0] * scale_x;  // fx
+  dst_info_msg->K[2] = dst_info_msg->K[2] * scale_x;  // cx
+  dst_info_msg->K[4] = dst_info_msg->K[4] * scale_y;  // fy
+  dst_info_msg->K[5] = dst_info_msg->K[5] * scale_y;  // cy
+
+  dst_info_msg->P[0] = dst_info_msg->P[0] * scale_x;  // fx
+  dst_info_msg->P[2] = dst_info_msg->P[2] * scale_x;  // cx
+  dst_info_msg->P[3] = dst_info_msg->P[3] * scale_x;  // T
+  dst_info_msg->P[5] = dst_info_msg->P[5] * scale_y;  // fy
+  dst_info_msg->P[6] = dst_info_msg->P[6] * scale_y;  // cy
+
+  pub_image_.publish(cv_ptr->toImageMsg(), dst_info_msg);
 }
 
 }  // namespace image_proc
