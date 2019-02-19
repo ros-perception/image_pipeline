@@ -31,24 +31,24 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include <ros/ros.h>
-#include <nodelet/loader.h>
+#include "image_rotate/image_rotate_nodelet.hpp"
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
-  ros::init(argc, argv, "image_rotate", ros::init_options::AnonymousName);
-  if (ros::names::remap("image") == "image") {
-    ROS_WARN("Topic 'image' has not been remapped! Typical command-line usage:\n"
-             "\t$ rosrun image_rotate image_rotate image:=<image topic> [transport]");
+  // Force flush of the stdout buffer.
+  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
+
+  if (argc <= 1) {
+    RCUTILS_LOG_WARN("Topic 'image' has not been remapped! Typical command-line usage:\n"
+      "\t$ ros2 run image_rotate image_rotate image:=<image topic>");
+    return 1;
   }
 
-  nodelet::Loader manager(false);
-  nodelet::M_string remappings;
-  nodelet::V_string my_argv(argv + 1, argv + argc);
-  my_argv.push_back("--shutdown-on-close"); // Internal
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<image_rotate::ImageRotateNode>();
 
-  manager.load(ros::this_node::getName(), "image_rotate/image_rotate", remappings, my_argv);
+  rclcpp::spin(node);
+  rclcpp::shutdown();
 
-  ros::spin();
   return 0;
 }
