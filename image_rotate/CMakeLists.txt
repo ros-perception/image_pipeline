@@ -41,7 +41,7 @@ install(TARGETS image_rotate
 )
 
 add_executable(image_rotate_exe src/node/image_rotate.cpp)
-SET_TARGET_PROPERTIES(image_rotate_exe PROPERTIES OUTPUT_NAME image_rotate)
+set_target_properties(image_rotate_exe PROPERTIES OUTPUT_NAME image_rotate)
 target_link_libraries(image_rotate_exe ${ament_LIBRARIES} ${OpenCV_LIBRARIES} image_rotate)
 ament_target_dependencies(image_rotate_exe
   "rclcpp")
