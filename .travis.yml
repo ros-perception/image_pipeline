@@ -26,7 +26,7 @@ before_install:
   - source /opt/ros/$ROS_DISTRO/setup.bash
   # Setup for rosdep
   - sudo rosdep init
-  - rosdep update
+  - rosdep update --include-eol-distros
 
 # Create a catkin workspace with the package under test.
 install:
