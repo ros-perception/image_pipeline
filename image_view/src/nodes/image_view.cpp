@@ -99,6 +99,7 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   if (g_gui && !g_last_image.empty()) {
     const cv::Mat &image = g_last_image;
     cv::imshow(g_window_name, image);
+    cv::waitKey(1);
   }
   if (g_pub.getNumSubscribers() > 0) {
     g_pub.publish(cv_ptr);
