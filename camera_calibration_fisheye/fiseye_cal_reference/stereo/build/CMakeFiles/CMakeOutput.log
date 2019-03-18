@@ -28,28 +28,28 @@ The CXX compiler identification is GNU, found in "/home/nvidia/catkin_ws/src/ima
 Determining if the C compiler works passed with the following output:
 Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_c3e2e/fast"
-/usr/bin/make -f CMakeFiles/cmTC_c3e2e.dir/build.make CMakeFiles/cmTC_c3e2e.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_2bd50/fast"
+/usr/bin/make -f CMakeFiles/cmTC_2bd50.dir/build.make CMakeFiles/cmTC_2bd50.dir/build
 make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_c3e2e.dir/testCCompiler.c.o
-/usr/bin/cc     -o CMakeFiles/cmTC_c3e2e.dir/testCCompiler.c.o   -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp/testCCompiler.c
-Linking C executable cmTC_c3e2e
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c3e2e.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_c3e2e.dir/testCCompiler.c.o  -o cmTC_c3e2e -rdynamic 
+Building C object CMakeFiles/cmTC_2bd50.dir/testCCompiler.c.o
+/usr/bin/cc     -o CMakeFiles/cmTC_2bd50.dir/testCCompiler.c.o   -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp/testCCompiler.c
+Linking C executable cmTC_2bd50
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_2bd50.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_2bd50.dir/testCCompiler.c.o  -o cmTC_2bd50 -rdynamic 
 make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
 
 
 Detecting C compiler ABI info compiled with the following output:
 Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_af869/fast"
-/usr/bin/make -f CMakeFiles/cmTC_af869.dir/build.make CMakeFiles/cmTC_af869.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_721b1/fast"
+/usr/bin/make -f CMakeFiles/cmTC_721b1.dir/build.make CMakeFiles/cmTC_721b1.dir/build
 make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_af869.dir/CMakeCCompilerABI.c.o
-/usr/bin/cc     -o CMakeFiles/cmTC_af869.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-3.5/Modules/CMakeCCompilerABI.c
-Linking C executable cmTC_af869
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_af869.dir/link.txt --verbose=1
-/usr/bin/cc      -v CMakeFiles/cmTC_af869.dir/CMakeCCompilerABI.c.o  -o cmTC_af869 -rdynamic  
+Building C object CMakeFiles/cmTC_721b1.dir/CMakeCCompilerABI.c.o
+/usr/bin/cc     -o CMakeFiles/cmTC_721b1.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-3.5/Modules/CMakeCCompilerABI.c
+Linking C executable cmTC_721b1
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_721b1.dir/link.txt --verbose=1
+/usr/bin/cc      -v CMakeFiles/cmTC_721b1.dir/CMakeCCompilerABI.c.o  -o cmTC_721b1 -rdynamic  
 Using built-in specs.
 COLLECT_GCC=/usr/bin/cc
 COLLECT_LTO_WRAPPER=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper
@@ -59,8 +59,8 @@ Thread model: posix
 gcc version 5.4.0 20160609 (Ubuntu/Linaro 5.4.0-6ubuntu1~16.04.10) 
 COMPILER_PATH=/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/:/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/
 LIBRARY_PATH=/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/:/usr/lib/gcc/aarch64-linux-gnu/5/../../../../lib/:/lib/aarch64-linux-gnu/:/lib/../lib/:/usr/lib/aarch64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/aarch64-linux-gnu/5/../../../:/lib/:/usr/lib/
-COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_af869' '-rdynamic' '-mlittle-endian' '-mabi=lp64'
- /usr/lib/gcc/aarch64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/aarch64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/ccWwyjda.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/ --build-id --eh-frame-hdr --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux --fix-cortex-a53-843419 -z relro -o cmTC_af869 /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crt1.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crti.o /usr/lib/gcc/aarch64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/aarch64-linux-gnu/5 -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../../lib -L/lib/aarch64-linux-gnu -L/lib/../lib -L/usr/lib/aarch64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/aarch64-linux-gnu/5/../../.. CMakeFiles/cmTC_af869.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/aarch64-linux-gnu/5/crtend.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crtn.o
+COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_721b1' '-rdynamic' '-mlittle-endian' '-mabi=lp64'
+ /usr/lib/gcc/aarch64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/aarch64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/ccqYqm4M.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/ --build-id --eh-frame-hdr --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux --fix-cortex-a53-843419 -z relro -o cmTC_721b1 /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crt1.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crti.o /usr/lib/gcc/aarch64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/aarch64-linux-gnu/5 -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../../lib -L/lib/aarch64-linux-gnu -L/lib/../lib -L/usr/lib/aarch64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/aarch64-linux-gnu/5/../../.. CMakeFiles/cmTC_721b1.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/aarch64-linux-gnu/5/crtend.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crtn.o
 make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
 
 
@@ -68,14 +68,14 @@ Parsed C implicit link information from above output:
   link line regex: [^( *|.*[/\])(ld|([^/\]+-)?ld|collect2)[^/\]*( |$)]
   ignore line: [Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp]
   ignore line: []
-  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_af869/fast"]
-  ignore line: [/usr/bin/make -f CMakeFiles/cmTC_af869.dir/build.make CMakeFiles/cmTC_af869.dir/build]
+  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_721b1/fast"]
+  ignore line: [/usr/bin/make -f CMakeFiles/cmTC_721b1.dir/build.make CMakeFiles/cmTC_721b1.dir/build]
   ignore line: [make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp']
-  ignore line: [Building C object CMakeFiles/cmTC_af869.dir/CMakeCCompilerABI.c.o]
-  ignore line: [/usr/bin/cc     -o CMakeFiles/cmTC_af869.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-3.5/Modules/CMakeCCompilerABI.c]
-  ignore line: [Linking C executable cmTC_af869]
-  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_af869.dir/link.txt --verbose=1]
-  ignore line: [/usr/bin/cc      -v CMakeFiles/cmTC_af869.dir/CMakeCCompilerABI.c.o  -o cmTC_af869 -rdynamic  ]
+  ignore line: [Building C object CMakeFiles/cmTC_721b1.dir/CMakeCCompilerABI.c.o]
+  ignore line: [/usr/bin/cc     -o CMakeFiles/cmTC_721b1.dir/CMakeCCompilerABI.c.o   -c /usr/share/cmake-3.5/Modules/CMakeCCompilerABI.c]
+  ignore line: [Linking C executable cmTC_721b1]
+  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_721b1.dir/link.txt --verbose=1]
+  ignore line: [/usr/bin/cc      -v CMakeFiles/cmTC_721b1.dir/CMakeCCompilerABI.c.o  -o cmTC_721b1 -rdynamic  ]
   ignore line: [Using built-in specs.]
   ignore line: [COLLECT_GCC=/usr/bin/cc]
   ignore line: [COLLECT_LTO_WRAPPER=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper]
@@ -85,13 +85,13 @@ Parsed C implicit link information from above output:
   ignore line: [gcc version 5.4.0 20160609 (Ubuntu/Linaro 5.4.0-6ubuntu1~16.04.10) ]
   ignore line: [COMPILER_PATH=/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/:/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/]
   ignore line: [LIBRARY_PATH=/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/:/usr/lib/gcc/aarch64-linux-gnu/5/../../../../lib/:/lib/aarch64-linux-gnu/:/lib/../lib/:/usr/lib/aarch64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/aarch64-linux-gnu/5/../../../:/lib/:/usr/lib/]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_af869' '-rdynamic' '-mlittle-endian' '-mabi=lp64']
-  link line: [ /usr/lib/gcc/aarch64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/aarch64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/ccWwyjda.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/ --build-id --eh-frame-hdr --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux --fix-cortex-a53-843419 -z relro -o cmTC_af869 /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crt1.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crti.o /usr/lib/gcc/aarch64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/aarch64-linux-gnu/5 -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../../lib -L/lib/aarch64-linux-gnu -L/lib/../lib -L/usr/lib/aarch64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/aarch64-linux-gnu/5/../../.. CMakeFiles/cmTC_af869.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/aarch64-linux-gnu/5/crtend.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crtn.o]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_721b1' '-rdynamic' '-mlittle-endian' '-mabi=lp64']
+  link line: [ /usr/lib/gcc/aarch64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/aarch64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/ccqYqm4M.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/ --build-id --eh-frame-hdr --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux --fix-cortex-a53-843419 -z relro -o cmTC_721b1 /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crt1.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crti.o /usr/lib/gcc/aarch64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/aarch64-linux-gnu/5 -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../../lib -L/lib/aarch64-linux-gnu -L/lib/../lib -L/usr/lib/aarch64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/aarch64-linux-gnu/5/../../.. CMakeFiles/cmTC_721b1.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/aarch64-linux-gnu/5/crtend.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crtn.o]
     arg [/usr/lib/gcc/aarch64-linux-gnu/5/collect2] ==> ignore
     arg [-plugin] ==> ignore
     arg [/usr/lib/gcc/aarch64-linux-gnu/5/liblto_plugin.so] ==> ignore
     arg [-plugin-opt=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper] ==> ignore
-    arg [-plugin-opt=-fresolution=/tmp/ccWwyjda.res] ==> ignore
+    arg [-plugin-opt=-fresolution=/tmp/ccqYqm4M.res] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
     arg [-plugin-opt=-pass-through=-lc] ==> ignore
@@ -111,7 +111,7 @@ Parsed C implicit link information from above output:
     arg [--fix-cortex-a53-843419] ==> ignore
     arg [-zrelro] ==> ignore
     arg [-o] ==> ignore
-    arg [cmTC_af869] ==> ignore
+    arg [cmTC_721b1] ==> ignore
     arg [/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crt1.o] ==> ignore
     arg [/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crti.o] ==> ignore
     arg [/usr/lib/gcc/aarch64-linux-gnu/5/crtbegin.o] ==> ignore
@@ -123,7 +123,7 @@ Parsed C implicit link information from above output:
     arg [-L/usr/lib/aarch64-linux-gnu] ==> dir [/usr/lib/aarch64-linux-gnu]
     arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
     arg [-L/usr/lib/gcc/aarch64-linux-gnu/5/../../..] ==> dir [/usr/lib/gcc/aarch64-linux-gnu/5/../../..]
-    arg [CMakeFiles/cmTC_af869.dir/CMakeCCompilerABI.c.o] ==> ignore
+    arg [CMakeFiles/cmTC_721b1.dir/CMakeCCompilerABI.c.o] ==> ignore
     arg [-lgcc] ==> lib [gcc]
     arg [--as-needed] ==> ignore
     arg [-lgcc_s] ==> lib [gcc_s]
@@ -157,14 +157,14 @@ Parsed C implicit link information from above output:
 Detecting C [-std=c11] compiler features compiled with the following output:
 Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_23442/fast"
-/usr/bin/make -f CMakeFiles/cmTC_23442.dir/build.make CMakeFiles/cmTC_23442.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_59314/fast"
+/usr/bin/make -f CMakeFiles/cmTC_59314.dir/build.make CMakeFiles/cmTC_59314.dir/build
 make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_23442.dir/feature_tests.c.o
-/usr/bin/cc    -std=c11 -o CMakeFiles/cmTC_23442.dir/feature_tests.c.o   -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/feature_tests.c
-Linking C executable cmTC_23442
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_23442.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_23442.dir/feature_tests.c.o  -o cmTC_23442 -rdynamic 
+Building C object CMakeFiles/cmTC_59314.dir/feature_tests.c.o
+/usr/bin/cc    -std=c11 -o CMakeFiles/cmTC_59314.dir/feature_tests.c.o   -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/feature_tests.c
+Linking C executable cmTC_59314
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_59314.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_59314.dir/feature_tests.c.o  -o cmTC_59314 -rdynamic 
 make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
 
 
@@ -177,14 +177,14 @@ make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_cal
 Detecting C [-std=c99] compiler features compiled with the following output:
 Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_e4f6c/fast"
-/usr/bin/make -f CMakeFiles/cmTC_e4f6c.dir/build.make CMakeFiles/cmTC_e4f6c.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_31c2b/fast"
+/usr/bin/make -f CMakeFiles/cmTC_31c2b.dir/build.make CMakeFiles/cmTC_31c2b.dir/build
 make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_e4f6c.dir/feature_tests.c.o
-/usr/bin/cc    -std=c99 -o CMakeFiles/cmTC_e4f6c.dir/feature_tests.c.o   -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/feature_tests.c
-Linking C executable cmTC_e4f6c
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e4f6c.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_e4f6c.dir/feature_tests.c.o  -o cmTC_e4f6c -rdynamic 
+Building C object CMakeFiles/cmTC_31c2b.dir/feature_tests.c.o
+/usr/bin/cc    -std=c99 -o CMakeFiles/cmTC_31c2b.dir/feature_tests.c.o   -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/feature_tests.c
+Linking C executable cmTC_31c2b
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_31c2b.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_31c2b.dir/feature_tests.c.o  -o cmTC_31c2b -rdynamic 
 make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
 
 
@@ -197,14 +197,14 @@ make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_cal
 Detecting C [-std=c90] compiler features compiled with the following output:
 Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_0adbd/fast"
-/usr/bin/make -f CMakeFiles/cmTC_0adbd.dir/build.make CMakeFiles/cmTC_0adbd.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_0a383/fast"
+/usr/bin/make -f CMakeFiles/cmTC_0a383.dir/build.make CMakeFiles/cmTC_0a383.dir/build
 make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_0adbd.dir/feature_tests.c.o
-/usr/bin/cc    -std=c90 -o CMakeFiles/cmTC_0adbd.dir/feature_tests.c.o   -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/feature_tests.c
-Linking C executable cmTC_0adbd
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0adbd.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_0adbd.dir/feature_tests.c.o  -o cmTC_0adbd -rdynamic 
+Building C object CMakeFiles/cmTC_0a383.dir/feature_tests.c.o
+/usr/bin/cc    -std=c90 -o CMakeFiles/cmTC_0a383.dir/feature_tests.c.o   -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/feature_tests.c
+Linking C executable cmTC_0a383
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0a383.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_0a383.dir/feature_tests.c.o  -o cmTC_0a383 -rdynamic 
 make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
 
 
@@ -215,28 +215,28 @@ make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_cal
 Determining if the CXX compiler works passed with the following output:
 Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_d7245/fast"
-/usr/bin/make -f CMakeFiles/cmTC_d7245.dir/build.make CMakeFiles/cmTC_d7245.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_6c12e/fast"
+/usr/bin/make -f CMakeFiles/cmTC_6c12e.dir/build.make CMakeFiles/cmTC_6c12e.dir/build
 make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_d7245.dir/testCXXCompiler.cxx.o
-/usr/bin/c++      -o CMakeFiles/cmTC_d7245.dir/testCXXCompiler.cxx.o -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
-Linking CXX executable cmTC_d7245
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d7245.dir/link.txt --verbose=1
-/usr/bin/c++        CMakeFiles/cmTC_d7245.dir/testCXXCompiler.cxx.o  -o cmTC_d7245 -rdynamic 
+Building CXX object CMakeFiles/cmTC_6c12e.dir/testCXXCompiler.cxx.o
+/usr/bin/c++      -o CMakeFiles/cmTC_6c12e.dir/testCXXCompiler.cxx.o -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
+Linking CXX executable cmTC_6c12e
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6c12e.dir/link.txt --verbose=1
+/usr/bin/c++        CMakeFiles/cmTC_6c12e.dir/testCXXCompiler.cxx.o  -o cmTC_6c12e -rdynamic 
 make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
 
 
 Detecting CXX compiler ABI info compiled with the following output:
 Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_8256e/fast"
-/usr/bin/make -f CMakeFiles/cmTC_8256e.dir/build.make CMakeFiles/cmTC_8256e.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_c1e0c/fast"
+/usr/bin/make -f CMakeFiles/cmTC_c1e0c.dir/build.make CMakeFiles/cmTC_c1e0c.dir/build
 make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_8256e.dir/CMakeCXXCompilerABI.cpp.o
-/usr/bin/c++      -o CMakeFiles/cmTC_8256e.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.5/Modules/CMakeCXXCompilerABI.cpp
-Linking CXX executable cmTC_8256e
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_8256e.dir/link.txt --verbose=1
-/usr/bin/c++       -v CMakeFiles/cmTC_8256e.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_8256e -rdynamic  
+Building CXX object CMakeFiles/cmTC_c1e0c.dir/CMakeCXXCompilerABI.cpp.o
+/usr/bin/c++      -o CMakeFiles/cmTC_c1e0c.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.5/Modules/CMakeCXXCompilerABI.cpp
+Linking CXX executable cmTC_c1e0c
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c1e0c.dir/link.txt --verbose=1
+/usr/bin/c++       -v CMakeFiles/cmTC_c1e0c.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_c1e0c -rdynamic  
 Using built-in specs.
 COLLECT_GCC=/usr/bin/c++
 COLLECT_LTO_WRAPPER=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper
@@ -246,8 +246,8 @@ Thread model: posix
 gcc version 5.4.0 20160609 (Ubuntu/Linaro 5.4.0-6ubuntu1~16.04.10) 
 COMPILER_PATH=/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/:/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/
 LIBRARY_PATH=/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/:/usr/lib/gcc/aarch64-linux-gnu/5/../../../../lib/:/lib/aarch64-linux-gnu/:/lib/../lib/:/usr/lib/aarch64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/aarch64-linux-gnu/5/../../../:/lib/:/usr/lib/
-COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_8256e' '-rdynamic' '-shared-libgcc' '-mlittle-endian' '-mabi=lp64'
- /usr/lib/gcc/aarch64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/aarch64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/ccAxKEyo.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/ --build-id --eh-frame-hdr --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux --fix-cortex-a53-843419 -z relro -o cmTC_8256e /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crt1.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crti.o /usr/lib/gcc/aarch64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/aarch64-linux-gnu/5 -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../../lib -L/lib/aarch64-linux-gnu -L/lib/../lib -L/usr/lib/aarch64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/aarch64-linux-gnu/5/../../.. CMakeFiles/cmTC_8256e.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/aarch64-linux-gnu/5/crtend.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crtn.o
+COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_c1e0c' '-rdynamic' '-shared-libgcc' '-mlittle-endian' '-mabi=lp64'
+ /usr/lib/gcc/aarch64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/aarch64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/cc6NmY2z.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/ --build-id --eh-frame-hdr --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux --fix-cortex-a53-843419 -z relro -o cmTC_c1e0c /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crt1.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crti.o /usr/lib/gcc/aarch64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/aarch64-linux-gnu/5 -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../../lib -L/lib/aarch64-linux-gnu -L/lib/../lib -L/usr/lib/aarch64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/aarch64-linux-gnu/5/../../.. CMakeFiles/cmTC_c1e0c.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/aarch64-linux-gnu/5/crtend.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crtn.o
 make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
 
 
@@ -255,14 +255,14 @@ Parsed CXX implicit link information from above output:
   link line regex: [^( *|.*[/\])(ld|([^/\]+-)?ld|collect2)[^/\]*( |$)]
   ignore line: [Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp]
   ignore line: []
-  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_8256e/fast"]
-  ignore line: [/usr/bin/make -f CMakeFiles/cmTC_8256e.dir/build.make CMakeFiles/cmTC_8256e.dir/build]
+  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_c1e0c/fast"]
+  ignore line: [/usr/bin/make -f CMakeFiles/cmTC_c1e0c.dir/build.make CMakeFiles/cmTC_c1e0c.dir/build]
   ignore line: [make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp']
-  ignore line: [Building CXX object CMakeFiles/cmTC_8256e.dir/CMakeCXXCompilerABI.cpp.o]
-  ignore line: [/usr/bin/c++      -o CMakeFiles/cmTC_8256e.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.5/Modules/CMakeCXXCompilerABI.cpp]
-  ignore line: [Linking CXX executable cmTC_8256e]
-  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_8256e.dir/link.txt --verbose=1]
-  ignore line: [/usr/bin/c++       -v CMakeFiles/cmTC_8256e.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_8256e -rdynamic  ]
+  ignore line: [Building CXX object CMakeFiles/cmTC_c1e0c.dir/CMakeCXXCompilerABI.cpp.o]
+  ignore line: [/usr/bin/c++      -o CMakeFiles/cmTC_c1e0c.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.5/Modules/CMakeCXXCompilerABI.cpp]
+  ignore line: [Linking CXX executable cmTC_c1e0c]
+  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c1e0c.dir/link.txt --verbose=1]
+  ignore line: [/usr/bin/c++       -v CMakeFiles/cmTC_c1e0c.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_c1e0c -rdynamic  ]
   ignore line: [Using built-in specs.]
   ignore line: [COLLECT_GCC=/usr/bin/c++]
   ignore line: [COLLECT_LTO_WRAPPER=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper]
@@ -272,13 +272,13 @@ Parsed CXX implicit link information from above output:
   ignore line: [gcc version 5.4.0 20160609 (Ubuntu/Linaro 5.4.0-6ubuntu1~16.04.10) ]
   ignore line: [COMPILER_PATH=/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/:/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/]
   ignore line: [LIBRARY_PATH=/usr/lib/gcc/aarch64-linux-gnu/5/:/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/:/usr/lib/gcc/aarch64-linux-gnu/5/../../../../lib/:/lib/aarch64-linux-gnu/:/lib/../lib/:/usr/lib/aarch64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/aarch64-linux-gnu/5/../../../:/lib/:/usr/lib/]
-  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_8256e' '-rdynamic' '-shared-libgcc' '-mlittle-endian' '-mabi=lp64']
-  link line: [ /usr/lib/gcc/aarch64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/aarch64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/ccAxKEyo.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/ --build-id --eh-frame-hdr --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux --fix-cortex-a53-843419 -z relro -o cmTC_8256e /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crt1.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crti.o /usr/lib/gcc/aarch64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/aarch64-linux-gnu/5 -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../../lib -L/lib/aarch64-linux-gnu -L/lib/../lib -L/usr/lib/aarch64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/aarch64-linux-gnu/5/../../.. CMakeFiles/cmTC_8256e.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/aarch64-linux-gnu/5/crtend.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crtn.o]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_c1e0c' '-rdynamic' '-shared-libgcc' '-mlittle-endian' '-mabi=lp64']
+  link line: [ /usr/lib/gcc/aarch64-linux-gnu/5/collect2 -plugin /usr/lib/gcc/aarch64-linux-gnu/5/liblto_plugin.so -plugin-opt=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper -plugin-opt=-fresolution=/tmp/cc6NmY2z.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/ --build-id --eh-frame-hdr --hash-style=gnu --as-needed -export-dynamic -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux --fix-cortex-a53-843419 -z relro -o cmTC_c1e0c /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crt1.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crti.o /usr/lib/gcc/aarch64-linux-gnu/5/crtbegin.o -L/usr/lib/gcc/aarch64-linux-gnu/5 -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu -L/usr/lib/gcc/aarch64-linux-gnu/5/../../../../lib -L/lib/aarch64-linux-gnu -L/lib/../lib -L/usr/lib/aarch64-linux-gnu -L/usr/lib/../lib -L/usr/lib/gcc/aarch64-linux-gnu/5/../../.. CMakeFiles/cmTC_c1e0c.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/aarch64-linux-gnu/5/crtend.o /usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crtn.o]
     arg [/usr/lib/gcc/aarch64-linux-gnu/5/collect2] ==> ignore
     arg [-plugin] ==> ignore
     arg [/usr/lib/gcc/aarch64-linux-gnu/5/liblto_plugin.so] ==> ignore
     arg [-plugin-opt=/usr/lib/gcc/aarch64-linux-gnu/5/lto-wrapper] ==> ignore
-    arg [-plugin-opt=-fresolution=/tmp/ccAxKEyo.res] ==> ignore
+    arg [-plugin-opt=-fresolution=/tmp/cc6NmY2z.res] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
     arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
     arg [-plugin-opt=-pass-through=-lc] ==> ignore
@@ -298,7 +298,7 @@ Parsed CXX implicit link information from above output:
     arg [--fix-cortex-a53-843419] ==> ignore
     arg [-zrelro] ==> ignore
     arg [-o] ==> ignore
-    arg [cmTC_8256e] ==> ignore
+    arg [cmTC_c1e0c] ==> ignore
     arg [/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crt1.o] ==> ignore
     arg [/usr/lib/gcc/aarch64-linux-gnu/5/../../../aarch64-linux-gnu/crti.o] ==> ignore
     arg [/usr/lib/gcc/aarch64-linux-gnu/5/crtbegin.o] ==> ignore
@@ -310,7 +310,7 @@ Parsed CXX implicit link information from above output:
     arg [-L/usr/lib/aarch64-linux-gnu] ==> dir [/usr/lib/aarch64-linux-gnu]
     arg [-L/usr/lib/../lib] ==> dir [/usr/lib/../lib]
     arg [-L/usr/lib/gcc/aarch64-linux-gnu/5/../../..] ==> dir [/usr/lib/gcc/aarch64-linux-gnu/5/../../..]
-    arg [CMakeFiles/cmTC_8256e.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+    arg [CMakeFiles/cmTC_c1e0c.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
     arg [-lstdc++] ==> lib [stdc++]
     arg [-lm] ==> lib [m]
     arg [-lgcc_s] ==> lib [gcc_s]
@@ -342,14 +342,14 @@ Parsed CXX implicit link information from above output:
 Detecting CXX [-std=c++14] compiler features compiled with the following output:
 Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_c767e/fast"
-/usr/bin/make -f CMakeFiles/cmTC_c767e.dir/build.make CMakeFiles/cmTC_c767e.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_23d97/fast"
+/usr/bin/make -f CMakeFiles/cmTC_23d97.dir/build.make CMakeFiles/cmTC_23d97.dir/build
 make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_c767e.dir/feature_tests.cxx.o
-/usr/bin/c++     -std=c++14 -o CMakeFiles/cmTC_c767e.dir/feature_tests.cxx.o -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/feature_tests.cxx
-Linking CXX executable cmTC_c767e
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c767e.dir/link.txt --verbose=1
-/usr/bin/c++        CMakeFiles/cmTC_c767e.dir/feature_tests.cxx.o  -o cmTC_c767e -rdynamic 
+Building CXX object CMakeFiles/cmTC_23d97.dir/feature_tests.cxx.o
+/usr/bin/c++     -std=c++14 -o CMakeFiles/cmTC_23d97.dir/feature_tests.cxx.o -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_23d97
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_23d97.dir/link.txt --verbose=1
+/usr/bin/c++        CMakeFiles/cmTC_23d97.dir/feature_tests.cxx.o  -o cmTC_23d97 -rdynamic 
 make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
 
 
@@ -415,14 +415,14 @@ make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_cal
 Detecting CXX [-std=c++11] compiler features compiled with the following output:
 Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_a2539/fast"
-/usr/bin/make -f CMakeFiles/cmTC_a2539.dir/build.make CMakeFiles/cmTC_a2539.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_cf83a/fast"
+/usr/bin/make -f CMakeFiles/cmTC_cf83a.dir/build.make CMakeFiles/cmTC_cf83a.dir/build
 make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_a2539.dir/feature_tests.cxx.o
-/usr/bin/c++     -std=c++11 -o CMakeFiles/cmTC_a2539.dir/feature_tests.cxx.o -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/feature_tests.cxx
-Linking CXX executable cmTC_a2539
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a2539.dir/link.txt --verbose=1
-/usr/bin/c++        CMakeFiles/cmTC_a2539.dir/feature_tests.cxx.o  -o cmTC_a2539 -rdynamic 
+Building CXX object CMakeFiles/cmTC_cf83a.dir/feature_tests.cxx.o
+/usr/bin/c++     -std=c++11 -o CMakeFiles/cmTC_cf83a.dir/feature_tests.cxx.o -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_cf83a
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_cf83a.dir/link.txt --verbose=1
+/usr/bin/c++        CMakeFiles/cmTC_cf83a.dir/feature_tests.cxx.o  -o cmTC_cf83a -rdynamic 
 make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
 
 
@@ -488,14 +488,14 @@ make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_cal
 Detecting CXX [-std=c++98] compiler features compiled with the following output:
 Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_972e8/fast"
-/usr/bin/make -f CMakeFiles/cmTC_972e8.dir/build.make CMakeFiles/cmTC_972e8.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_2f43a/fast"
+/usr/bin/make -f CMakeFiles/cmTC_2f43a.dir/build.make CMakeFiles/cmTC_2f43a.dir/build
 make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_972e8.dir/feature_tests.cxx.o
-/usr/bin/c++     -std=c++98 -o CMakeFiles/cmTC_972e8.dir/feature_tests.cxx.o -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/feature_tests.cxx
-Linking CXX executable cmTC_972e8
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_972e8.dir/link.txt --verbose=1
-/usr/bin/c++        CMakeFiles/cmTC_972e8.dir/feature_tests.cxx.o  -o cmTC_972e8 -rdynamic 
+Building CXX object CMakeFiles/cmTC_2f43a.dir/feature_tests.cxx.o
+/usr/bin/c++     -std=c++98 -o CMakeFiles/cmTC_2f43a.dir/feature_tests.cxx.o -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_2f43a
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_2f43a.dir/link.txt --verbose=1
+/usr/bin/c++        CMakeFiles/cmTC_2f43a.dir/feature_tests.cxx.o  -o cmTC_2f43a -rdynamic 
 make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
 
 
@@ -559,28 +559,28 @@ make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_cal
 Determining if the include file pthread.h exists passed with the following output:
 Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_45530/fast"
-/usr/bin/make -f CMakeFiles/cmTC_45530.dir/build.make CMakeFiles/cmTC_45530.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_1e5b1/fast"
+/usr/bin/make -f CMakeFiles/cmTC_1e5b1.dir/build.make CMakeFiles/cmTC_1e5b1.dir/build
 make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_45530.dir/CheckIncludeFile.c.o
-/usr/bin/cc    -fPIC    -o CMakeFiles/cmTC_45530.dir/CheckIncludeFile.c.o   -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp/CheckIncludeFile.c
-Linking C executable cmTC_45530
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_45530.dir/link.txt --verbose=1
-/usr/bin/cc  -fPIC     CMakeFiles/cmTC_45530.dir/CheckIncludeFile.c.o  -o cmTC_45530 -rdynamic 
+Building C object CMakeFiles/cmTC_1e5b1.dir/CheckIncludeFile.c.o
+/usr/bin/cc    -fPIC    -o CMakeFiles/cmTC_1e5b1.dir/CheckIncludeFile.c.o   -c /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTC_1e5b1
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_1e5b1.dir/link.txt --verbose=1
+/usr/bin/cc  -fPIC     CMakeFiles/cmTC_1e5b1.dir/CheckIncludeFile.c.o  -o cmTC_1e5b1 -rdynamic 
 make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
 
 
 Determining if the function pthread_create exists in the pthread passed with the following output:
 Change Dir: /home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_4d7ab/fast"
-/usr/bin/make -f CMakeFiles/cmTC_4d7ab.dir/build.make CMakeFiles/cmTC_4d7ab.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_40076/fast"
+/usr/bin/make -f CMakeFiles/cmTC_40076.dir/build.make CMakeFiles/cmTC_40076.dir/build
 make[1]: Entering directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_4d7ab.dir/CheckFunctionExists.c.o
-/usr/bin/cc    -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_4d7ab.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.5/Modules/CheckFunctionExists.c
-Linking C executable cmTC_4d7ab
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4d7ab.dir/link.txt --verbose=1
-/usr/bin/cc  -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_4d7ab.dir/CheckFunctionExists.c.o  -o cmTC_4d7ab -rdynamic -lpthread 
+Building C object CMakeFiles/cmTC_40076.dir/CheckFunctionExists.c.o
+/usr/bin/cc    -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_40076.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.5/Modules/CheckFunctionExists.c
+Linking C executable cmTC_40076
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_40076.dir/link.txt --verbose=1
+/usr/bin/cc  -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_40076.dir/CheckFunctionExists.c.o  -o cmTC_40076 -rdynamic -lpthread 
 make[1]: Leaving directory '/home/nvidia/catkin_ws/src/image_pipeline/camera_calibration_fisheye/fiseye_cal_reference/stereo/build/CMakeFiles/CMakeTmp'
 
 

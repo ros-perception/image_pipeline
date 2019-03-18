@@ -169,16 +169,6 @@ arm_neon.h
 -
 altivec.h
 -
-emmintrin.h
--
-Intrin.h
--
-arm_neon.h
--
-arm_neon.h
--
-altivec.h
--
 
 /usr/local/include/opencv2/core/cv_cpu_helper.h
 
