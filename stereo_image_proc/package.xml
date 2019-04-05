@@ -6,6 +6,7 @@
   <author>Kurt Konolige</author>
   <author>Jeremy Leibs</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
+  <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
   <license>BSD</license>
   <url>http://www.ros.org/wiki/stereo_image_proc</url>
 

@@ -5,6 +5,7 @@
   <author>Patrick Mihelich</author>
   <author>James Bowman</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
+  <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
   <license>BSD</license>
   
   <url type="website">http://www.ros.org/wiki/image_pipeline</url>
