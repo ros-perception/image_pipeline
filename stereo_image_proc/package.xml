@@ -7,6 +7,7 @@
   <author>Jeremy Leibs</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
+  <maintainer email="software@autonomoustuff.com">Autonomoustuff team</maintainer>
   <license>BSD</license>
   <url>http://www.ros.org/wiki/stereo_image_proc</url>
 
