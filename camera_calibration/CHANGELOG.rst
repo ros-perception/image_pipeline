@@ -1,3 +1,17 @@
+1.12.23 (2018-05-10)
+--------------------
+* camera_checker: Ensure cols + rows are in correct order (`#319 <https://github.com/ros-perception/image_pipeline/issues/319>`_)
+  Without this commit, specifying a smaller column than row size lead to
+  huge reported errors:
+  ```
+  $ rosrun camera_calibration cameracheck.py --size 6x7 --square 0.0495
+  Linearity RMS Error: 13.545 Pixels      Reprojection RMS Error: 22.766 Pixels
+  $ rosrun camera_calibration cameracheck.py --size 7x6 --square 0.0495
+  Linearity RMS Error: 0.092 Pixels      Reprojection RMS Error: 0.083 Pixels
+  ```
+  This commit switches columns and rows around if necessary.
+* Contributors: Martin Günther
+
 1.12.22 (2017-12-08)
 --------------------
 * Changed flags CV_LOAD_IMAGE_COLOR by IMREAD_COLOR to adapt to Opencv3. (`#252 <https://github.com/ros-perception/image_pipeline/issues/252>`_)

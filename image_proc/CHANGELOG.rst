@@ -1,3 +1,6 @@
+1.12.23 (2018-05-10)
+--------------------
+
 1.12.22 (2017-12-08)
 --------------------
 * Merge pull request `#311 <https://github.com/ros-perception/image_pipeline/issues/311>`_ from knorth55/revert-299

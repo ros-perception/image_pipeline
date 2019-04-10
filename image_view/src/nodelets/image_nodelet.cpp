@@ -43,27 +43,6 @@
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 
-#ifdef HAVE_GTK
-#include <gtk/gtk.h>
-
-// Platform-specific workaround for #3026: image_view doesn't close when
-// closing image window. On platforms using GTK+ we connect this to the
-// window's "destroy" event so that image_view exits.
-static void destroyNode(GtkWidget *widget, gpointer data)
-{
-  /// @todo On ros::shutdown(), the node hangs. Why?
-  //ros::shutdown();
-  exit(0); // brute force solution
-}
-
-static void destroyNodelet(GtkWidget *widget, gpointer data)
-{
-  // We can't actually unload the nodelet from here, but we can at least
-  // unsubscribe from the image topic.
-  reinterpret_cast<image_transport::Subscriber*>(data)->shutdown();
-}
-#endif
-
 
 namespace image_view {
 
@@ -121,12 +100,15 @@ class ImageNodelet : public nodelet::Nodelet
   bool autosize_;
   boost::format filename_format_;
   int count_;
+  
+  ros::WallTimer gui_timer_;
 
   virtual void onInit();
   
   void imageCb(const sensor_msgs::ImageConstPtr& msg);
 
   static void mouseCb(int event, int x, int y, int flags, void* param);
+  static void guiCb(const ros::WallTimerEvent&);
 
   void windowThread();  
 
@@ -183,17 +165,11 @@ void ImageNodelet::onInit()
   local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
   filename_format_.parse(format_string);
 
-#ifdef HAVE_GTK
-  // Register appropriate handler for when user closes the display window
-  GtkWidget *widget = GTK_WIDGET( cvGetWindowHandle(window_name_.c_str()) );
-  if (shutdown_on_close)
-    g_signal_connect(widget, "destroy", G_CALLBACK(destroyNode), NULL);
-  else
-    g_signal_connect(widget, "destroy", G_CALLBACK(destroyNodelet), &sub_);
-#endif
-
-  // Start the OpenCV window thread so we don't have to waitKey() somewhere
-  startWindowThread();
+  // Since cv::startWindowThread() triggers a crash in cv::waitKey()
+  // if OpenCV is compiled against GTK, we call cv::waitKey() from
+  // the ROS event loop periodically, instead.
+  /*cv::startWindowThread();*/
+  gui_timer_ = local_nh.createWallTimer(ros::WallDuration(0.1), ImageNodelet::guiCb);
 
   window_thread_ = boost::thread(&ImageNodelet::windowThread, this);
 
@@ -217,6 +193,12 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
     NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
                              msg->encoding.c_str(), e.what());
   }
+}
+
+void ImageNodelet::guiCb(const ros::WallTimerEvent&)
+{
+  // Process pending GUI events and return immediately
+  cv::waitKey(1);
 }
 
 void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)

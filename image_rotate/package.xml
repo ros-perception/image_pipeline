@@ -1,6 +1,6 @@
 <package>
   <name>image_rotate</name>
-  <version>1.12.22</version>
+  <version>1.12.23</version>
   <description>
     <p>
       Contains a node that rotates an image stream in a way that minimizes
@@ -23,6 +23,8 @@
   </description>
   <author>Blaise Gassend</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
+  <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
+  <maintainer email="software@autonomoustuff.com">Autonomoustuff team</maintainer>
   <license>BSD</license>
   <url>http://ros.org/wiki/image_rotate</url>
 

@@ -1,11 +1,13 @@
 <package>
   <name>stereo_image_proc</name>
-  <version>1.12.22</version>
+  <version>1.12.23</version>
   <description>Stereo and single image rectification and disparity processing.</description>
   <author>Patrick Mihelich</author>
   <author>Kurt Konolige</author>
   <author>Jeremy Leibs</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
+  <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
+  <maintainer email="software@autonomoustuff.com">Autonomoustuff team</maintainer>
   <license>BSD</license>
   <url>http://www.ros.org/wiki/stereo_image_proc</url>
 
