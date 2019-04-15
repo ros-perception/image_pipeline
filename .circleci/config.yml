@@ -1,0 +1,66 @@
+version: 2
+jobs:
+  kinetic:
+    docker:
+      - image: ros:kinetic-perception
+    steps:
+      - checkout
+      - run:
+          name: Set Up Container
+          command: |
+            apt-get update -qq && apt-get install -y python-catkin-tools
+            source `find /opt/ros -name setup.bash | sort | head -1`
+            rosdep update
+            rosdep install --from-paths . --ignore-src
+            cd ..
+            catkin init
+            catkin config --extend /opt/ros/$ROS_DISTRO
+      - run:
+          name: Build
+          command: |
+            cd ..
+            catkin build --no-status -j4
+      - run:
+          name: Run Tests
+          command: |
+            source `find /opt/ros -name setup.bash | sort | head -1`
+            cd ..
+            catkin run_tests -j4
+            catkin_test_results
+    working_directory: ~/src
+
+  melodic:
+    docker:
+      - image: ros:melodic-perception
+    steps:
+      - checkout
+      - run:
+          name: Set Up Container
+          command: |
+            apt update -qq && apt install -y python-catkin-tools
+            source `find /opt/ros -name setup.bash | sort | head -1`
+            rosdep update
+            rosdep install --from-paths . --ignore-src
+            cd ..
+            catkin init
+            catkin config --extend /opt/ros/$ROS_DISTRO
+      - run:
+          name: Build
+          command: |
+            cd ..
+            catkin build --no-status -j4
+      - run:
+          name: Run Tests
+          command: |
+            source `find /opt/ros -name setup.bash | sort | head -1`
+            cd ..
+            catkin run_tests -j4
+            catkin_test_results
+    working_directory: ~/src
+
+workflows:
+  version: 2
+  ros_build:
+    jobs:
+      - kinetic
+      - melodic
