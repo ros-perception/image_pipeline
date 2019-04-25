@@ -323,7 +323,7 @@ class Calibrator():
             if not self.is_slow_moving(corners, last_frame_corners):
                 return False
 
-        # All tests passed
+        # All tests passed, image should be good for calibration
         return True
 
     _param_names = ["X", "Y", "Size", "Skew"]
