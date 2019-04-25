@@ -2,6 +2,7 @@
 * Software License Agreement (BSD License)
 * 
 *  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2018, The MITRE Corporation
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -51,6 +52,7 @@
 
 #include <sensor_msgs/image_encodings.h>
 #include <stereo_msgs/DisparityImage.h>
+#include <std_msgs/Float32.h>
 
 #include <stereo_image_proc/DisparityConfig.h>
 #include <dynamic_reconfigure/server.h>
@@ -79,6 +81,7 @@ class DisparityNodelet : public nodelet::Nodelet
   // Publications
   boost::mutex connect_mutex_;
   ros::Publisher pub_disparity_;
+  ros::Publisher pub_timing_;
 
   // Dynamic reconfigure
   boost::recursive_mutex config_mutex_;
@@ -141,6 +144,7 @@ void DisparityNodelet::onInit()
   // Make sure we don't enter connectCb() between advertising and assigning to pub_disparity_
   boost::lock_guard<boost::mutex> lock(connect_mutex_);
   pub_disparity_ = nh.advertise<DisparityImage>("disparity", 1, connect_cb, connect_cb);
+  pub_timing_ = nh.advertise<std_msgs::Float32>("timings/disparity", 1);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -197,8 +201,13 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   const cv::Mat_<uint8_t> r_image = cv_bridge::toCvShare(r_image_msg, sensor_msgs::image_encodings::MONO8)->image;
 
   // Perform block matching to find the disparities
+  timespec ts1, ts2;
+  clock_gettime(CLOCK_MONOTONIC, &ts1);
   block_matcher_.processDisparity(l_image, r_image, model_, *disp_msg);
-
+  clock_gettime(CLOCK_MONOTONIC, &ts2);
+  std_msgs::Float32::Ptr disparity_timing_msg = boost::make_shared<std_msgs::Float32>();
+  disparity_timing_msg->data = ((ts2.tv_sec + (ts2.tv_nsec / 1e9)) - (ts1.tv_sec + (ts1.tv_nsec / 1e9)) * 1000);
+  
   // Adjust for any x-offset between the principal points: d' = d - (cx_l - cx_r)
   double cx_l = model_.left().cx();
   double cx_r = model_.right().cx();
@@ -210,6 +219,7 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   }
 
   pub_disparity_.publish(disp_msg);
+  pub_timing_.publish(disparity_timing_msg);
 }
 
 void DisparityNodelet::configCb(Config &config, uint32_t level)
@@ -229,6 +239,8 @@ void DisparityNodelet::configCb(Config &config, uint32_t level)
   block_matcher_.setUniquenessRatio(config.uniqueness_ratio);
   block_matcher_.setSpeckleSize(config.speckle_size);
   block_matcher_.setSpeckleRange(config.speckle_range);
+  block_matcher_.setUseVisionworks(config.use_visionworks);
+  block_matcher_.setPrintStereoPerf(config.print_stereo_perf);
   if (config.stereo_algorithm == stereo_image_proc::Disparity_StereoBM) { // StereoBM
     block_matcher_.setStereoType(StereoProcessor::BM);
     block_matcher_.setPreFilterSize(config.prefilter_size);

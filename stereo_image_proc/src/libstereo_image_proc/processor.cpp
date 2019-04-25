@@ -2,6 +2,7 @@
 * Software License Agreement (BSD License)
 * 
 *  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2018, The MITRE Corporation
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -31,13 +32,43 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+
 #include <ros/assert.h>
 #include "stereo_image_proc/processor.h"
 #include <sensor_msgs/image_encodings.h>
 #include <cmath>
 #include <limits>
 
+#ifdef VISIONWORKS_ACCELERATION
+#include "visionworks_image_proc/visionworks_interface.h"
+#endif
+
 namespace stereo_image_proc {
+
+StereoProcessor::StereoProcessor()
+#if CV_MAJOR_VERSION == 3
+{
+  block_matcher_ = cv::StereoBM::create();
+  sg_block_matcher_ = cv::StereoSGBM::create(1, 1, 10);
+#ifdef VISIONWORKS_ACCELERATION
+  visionWorksInterface_ = NULL;
+#endif
+  useVisionworks_ = false;
+  printStereoPerf_ = false;
+#else
+  : block_matcher_(cv::StereoBM::BASIC_PRESET),
+    sg_block_matcher_(),
+#ifdef VISIONWORKS_ACCELERATION
+    visionWorksInterface_(NULL),
+#endif
+    useVisionworks_(false),
+    printStereoPerf_(false),
+{
+#endif
+#ifdef VISIONWORKS_ACCELERATION
+  visionWorksInterface_ = new stereo_visionworks::VisionWorksInterface();
+#endif
+} 
 
 bool StereoProcessor::process(const sensor_msgs::ImageConstPtr& left_raw,
                               const sensor_msgs::ImageConstPtr& right_raw,
@@ -88,18 +119,80 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
   static const int DPP = 16; // disparities per pixel
   static const double inv_dpp = 1.0 / DPP;
 
-  // Block matcher produces 16-bit signed (fixed point) disparity image
-  if (current_stereo_algorithm_ == BM)
-#if CV_MAJOR_VERSION == 3
-    block_matcher_->compute(left_rect, right_rect, disparity16_);
-  else
-    sg_block_matcher_->compute(left_rect, right_rect, disparity16_);
+  if( useVisionworks_ )
+  {
+
+#ifdef VISIONWORKS_ACCELERATION
+    //In OpenCV, the cv::Mat is allocated on the stereo function call.
+    //But for VisionWorks, we'll do the allocation here.
+    disparity16_ = cv::Mat(left_rect.size(), CV_16S);
+    stereo_visionworks::StereoType algorithmType;
+    switch(current_stereo_algorithm_)
+    {
+      case BM:
+      {
+        algorithmType = stereo_visionworks::STEREO_TYPE_BM;
+        break;
+      }
+      case SGBM:
+      {
+        algorithmType = stereo_visionworks::STEREO_TYPE_SGBM;
+        break;
+      }
+      default:
+      {
+        ROS_ERROR("Trying to run VisionWorks Stereo, but algorithm type not recognized!");
+        return;
+      }
+    } //end: switch(current_stereo_algorithm)
+    stereo_visionworks::StereoParams stereoParams;
+    stereoParams.speckleSize_ = getSpeckleSize();
+    stereoParams.speckleRange_ = getSpeckleRange();
+    stereoParams.sadWindowSize_ = getCorrelationWindowSize();
+    stereoParams.minDisparity_ = getMinDisparity();
+    stereoParams.maxDisparity_ = getDisparityRange() - stereoParams.minDisparity_;
+    stereoParams.uniquenessRatio_ = getUniquenessRatio();
+    stereoParams.p1_ = getP1();
+    stereoParams.p2_ = getP2();
+    visionWorksInterface_->SetParams(stereoParams);
+    visionWorksInterface_->RunStereo(disparity16_, algorithmType,
+                                     left_rect, right_rect, printStereoPerf_);
 #else
-    block_matcher_(left_rect, right_rect, disparity16_);
-  else
-    sg_block_matcher_(left_rect, right_rect, disparity16_);
+    ROS_ERROR("VisionWorks not compiled into stereo_image_proc disparity nodelet!");
 #endif
 
+  } //end: if( useVisionworks_ )
+  else
+  {
+    struct timespec startTs;
+    clock_gettime(CLOCK_MONOTONIC, &startTs);
+    // Block matcher produces 16-bit signed (fixed point) disparity image
+    if (current_stereo_algorithm_ == BM)
+#if CV_MAJOR_VERSION == 3
+      block_matcher_->compute(left_rect, right_rect, disparity16_);
+    else
+      sg_block_matcher_->compute(left_rect, right_rect, disparity16_);
+#else
+      block_matcher_(left_rect, right_rect, disparity16_);
+    else
+     sg_block_matcher_(left_rect, right_rect, disparity16_);
+#endif
+    struct timespec endTs;
+    clock_gettime(CLOCK_MONOTONIC, &endTs);
+    double loopTime = (endTs.tv_sec + (endTs.tv_nsec / 1e9)) - (startTs.tv_sec + (startTs.tv_nsec / 1e9));
+    if( printStereoPerf_ )
+    {
+      struct timespec ts;
+      clock_gettime(CLOCK_MONOTONIC, &ts);
+      double monotime = ts.tv_sec + (ts.tv_nsec / 1e9);
+      clock_gettime(CLOCK_REALTIME, &ts);
+      double realtime = ts.tv_sec + (ts.tv_nsec / 1e9);
+      printf("RT: %f, MT: %f\n", realtime, monotime);
+      printf("Stereo Loop Time (ms): %f\n", (loopTime * 1000));
+      fflush(stdout);
+    }
+  } //end: else
+  
   // Fill in DisparityImage image data, converting to 32-bit float
   sensor_msgs::Image& dimage = disparity.image;
   dimage.height = disparity16_.rows;
@@ -122,10 +215,10 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
 
   // Disparity search range
   disparity.min_disparity = getMinDisparity();
-  disparity.max_disparity = getMinDisparity() + getDisparityRange() - 1;
+  disparity.max_disparity = getMinDisparity() + getDisparityRange();
   disparity.delta_d = inv_dpp;
 }
-
+  
 inline bool isValidPoint(const cv::Vec3f& pt)
 {
   // Check both for disparities explicitly marked as invalid (where OpenCV maps pt.z to MISSING_Z)
