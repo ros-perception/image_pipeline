@@ -10,7 +10,7 @@ jobs:
           command: |
             apt update -qq && apt install -y python-catkin-tools
             source `find /opt/ros -maxdepth 2 -name local_setup.bash | sort | head -1`
-            mkdir image_pipeline && mv `find -maxdepth 1 -not -name . -not -name image_pipeline` image_pipeline/
+            mkdir -p src/image_pipeline && mv `find -maxdepth 1 -not -name . -not -name src` src/image_pipeline/
             rosdep update
             rosdep install -y --from-paths . --ignore-src
       - run:
