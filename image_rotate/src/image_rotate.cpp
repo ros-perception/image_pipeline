@@ -30,7 +30,7 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "image_rotate/image_rotate_nodelet.hpp"
+#include "image_rotate/image_rotate_node.hpp"
 #include <memory>
 
 int main(int argc, char ** argv)

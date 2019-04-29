@@ -23,7 +23,7 @@ find_package(OpenCV REQUIRED core imgproc)
 # add the executable
 include_directories(include)
 
-add_library(${PROJECT_NAME} SHARED src/nodelet/image_rotate_nodelet.cpp)
+add_library(${PROJECT_NAME} SHARED src/image_rotate_node.cpp)
 target_link_libraries(${PROJECT_NAME} ${ament_LIBRARIES} ${OpenCV_LIBRARIES})
 ament_target_dependencies(${PROJECT_NAME}
   "image_transport"
@@ -40,7 +40,7 @@ install(TARGETS ${PROJECT_NAME}
         DESTINATION lib
 )
 
-add_executable(image_rotate_bin src/node/image_rotate.cpp)
+add_executable(image_rotate_bin src/image_rotate.cpp)
 set_target_properties(image_rotate_bin PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 target_link_libraries(image_rotate_bin ${ament_LIBRARIES} ${OpenCV_LIBRARIES} ${PROJECT_NAME})
 ament_target_dependencies(image_rotate_bin

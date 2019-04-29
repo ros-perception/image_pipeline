@@ -1,7 +1,0 @@
-<library path="lib/libimage_rotate">
-
-  <class name="image_rotate/image_rotate" type="image_rotate::ImageRotateNodelet" base_class_type="nodelet::Nodelet">
-    <description>Nodelet to rotate sensor_msgs/Image</description>
-  </class>
-
-</library>

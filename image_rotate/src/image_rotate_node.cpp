@@ -32,14 +32,14 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 /********************************************************************
-* image_rotate_nodelet.cpp
+* image_rotate_node.cpp
 * this is a forked version of image_rotate.
-* this image_rotate_nodelet supports:
-*  1) nodelet
+* this image_rotate_node supports:
+*  1) node
 *  2) tf and tf2
 *********************************************************************/
 
-#include "image_rotate/image_rotate_nodelet.hpp"
+#include "image_rotate/image_rotate_node.hpp"
 
 #include <vector>
 #include <string>
@@ -323,11 +323,11 @@ void ImageRotateNode::onInit()
   tf_sub_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   // TODO(yechun1): Implement when SubscriberStatusCallback is available
   // image_transport::SubscriberStatusCallback connect_cb =
-  //   boost::bind(&ImageRotateNodelet::connectCb, this, _1);
+  //   boost::bind(&ImageRotateNode::connectCb, this, _1);
   // image_transport::SubscriberStatusCallback connect_cb =
   //   std::bind(&CropForemostNode::connectCb, this);
   // image_transport::SubscriberStatusCallback disconnect_cb =
-  //   boost::bind(&ImageRotateNodelet::disconnectCb, this, _1);
+  //   boost::bind(&ImageRotateNode::disconnectCb, this, _1);
   // img_pub_ = image_transport::ImageTransport(ros::NodeHandle(nh_, "rotated")).advertise(
   //  "image", 1, connect_cb, disconnect_cb);
   connectCb();
