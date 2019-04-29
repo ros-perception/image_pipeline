@@ -36,20 +36,17 @@ ament_target_dependencies(${PROJECT_NAME}
 rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::ImageRotateNode")
 set(node_plugins "${node_plugins}${PROJECT_NAME}::ImageRotateNode;$<TARGET_FILE:ImageRotateNode>\n")
 
-install(TARGETS image_rotate
+install(TARGETS ${PROJECT_NAME}
         DESTINATION lib
 )
 
-add_executable(image_rotate_exe src/node/image_rotate.cpp)
-set_target_properties(image_rotate_exe PROPERTIES OUTPUT_NAME image_rotate)
-target_link_libraries(image_rotate_exe ${ament_LIBRARIES} ${OpenCV_LIBRARIES} image_rotate)
-ament_target_dependencies(image_rotate_exe
+add_executable(image_rotate_bin src/node/image_rotate.cpp)
+set_target_properties(image_rotate_bin PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+target_link_libraries(image_rotate_bin ${ament_LIBRARIES} ${OpenCV_LIBRARIES} ${PROJECT_NAME})
+ament_target_dependencies(image_rotate_bin
   "rclcpp")
 
-install(TARGETS image_rotate_exe
-        DESTINATION bin
-)
-install(TARGETS image_rotate_exe
+install(TARGETS image_rotate_bin
         DESTINATION lib/${PROJECT_NAME}
 )
 install(DIRECTORY examples/launch
