@@ -70,7 +70,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
 
     }
 
-    if ((image_msg->header.stamp - g_last_wrote_time) < ros::Duration(1 / fps))
+    if ((image_msg->header.stamp - g_last_wrote_time) < ros::Duration(1.0 / fps))
     {
       // Skip to get video with correct fps
       return;

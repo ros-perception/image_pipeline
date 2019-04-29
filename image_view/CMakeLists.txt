@@ -5,7 +5,7 @@ find_package(catkin REQUIRED COMPONENTS camera_calibration_parsers cv_bridge dyn
 generate_dynamic_reconfigure_options(cfg/ImageView.cfg)
 
 catkin_package(CATKIN_DEPENDS dynamic_reconfigure)
-find_package(Boost REQUIRED COMPONENTS signals thread)
+find_package(Boost REQUIRED COMPONENTS thread)
 find_package(OpenCV REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS}
