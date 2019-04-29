@@ -42,7 +42,7 @@ double max_depth_range;
 bool use_dynamic_range;
 int colormap;
 bool stamped_filename;
-bool dashcam;
+bool rolling_buffer;
 ros::Duration video_length;
 int n_videos;
 ros::Time video_creation_stamp;
@@ -65,8 +65,8 @@ void generateStampedFilename(std::string &filename) {
   }
   filename = path + ss.str();
   ROS_INFO("Video recording to %s", filename.c_str());
-  // If dashcam mode, store filenames in a vector
-  if (dashcam) {
+  // If rolling_buffer mode, store filenames in a vector
+  if (rolling_buffer) {
     filenames.push_back(filename);
     // Delete oldest video
     if (filenames.size() > n_videos) {
@@ -80,8 +80,8 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
 {
     if (!outputVideo.isOpened()) {
 
-      // Generate stamped file name if required or in dashcam mode
-      if (stamped_filename or dashcam) {
+      // Generate stamped file name if required or in rolling_buffer mode
+      if (stamped_filename or rolling_buffer) {
         generateStampedFilename(filename);
       }
       else {
@@ -119,8 +119,8 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
       return;
     }
 
-    // Check if video has reached maximum lenght (only if dashcam mode enabled and video is opened)
-    if (dashcam && ros::Time::now() - video_creation_stamp >= video_length) {
+    // Check if video has reached maximum lenght (only if rolling_buffer mode enabled and video is opened)
+    if (rolling_buffer && ros::Time::now() - video_creation_stamp >= video_length) {
       outputVideo.release(); // Release video, so in next frame a new one will be created
       return;
     }
@@ -163,16 +163,16 @@ int main(int argc, char** argv)
     local_nh.param("max_depth_range", max_depth_range, 0.0);
     local_nh.param("use_dynamic_depth_range", use_dynamic_range, false);
     local_nh.param("colormap", colormap, -1);
-    local_nh.param("dashcam_mode", dashcam, false); // Dashcam mode enabled/disabled
+    local_nh.param("rolling_buffer_mode", rolling_buffer, false); // rolling_buffer mode enabled/disabled
     double v_duration;
     local_nh.param("video_length", v_duration, 5.0);
     video_length = ros::Duration(v_duration*60); // Video lenght in ros::Duration (seconds)
-    local_nh.param("n_videos", n_videos, 10); // Number of videos to store in dashcam mode
+    local_nh.param("n_videos", n_videos, 10); // Number of videos to store in rolling_buffer mode
     local_nh.param("video_topic", video_topic, std::string("image")); // Input video topic
     local_nh.param("use_posix_timestamp", use_posix, true); // Use human readable posix format in stamped filenames
 
-    // Generate stamped file name if required or in dashcam mode
-    if (stamped_filename or dashcam) {
+    // Generate stamped file name if required or in rolling_buffer mode
+    if (stamped_filename or rolling_buffer) {
       generateStampedFilename(filename);
     }
     else {
