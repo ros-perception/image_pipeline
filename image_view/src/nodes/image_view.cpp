@@ -165,7 +165,7 @@ int main(int argc, char **argv)
     // Handle window size
     bool autosize;
     local_nh.param("autosize", autosize, false);
-    cv::namedWindow(g_window_name, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
+    cv::namedWindow(g_window_name, autosize ? (cv::WINDOW_AUTOSIZE | cv::WINDOW_KEEPRATIO | cv::WINDOW_GUI_EXPANDED) : 0);
     cv::setMouseCallback(g_window_name, &mouseCb);
 
     if(autosize == false)
