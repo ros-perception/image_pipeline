@@ -66,7 +66,7 @@ protected:
 
   void connectCb();
 
-  void imageCb(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr& info_msg);
+  void cameraCb(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr& info_msg);
   void infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg);
 
   void configCb(Config& config, uint32_t level);
@@ -104,7 +104,7 @@ void ResizeNodelet::connectCb()
   else if (!sub_image_)
   {
     image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-    sub_image_ = it_->subscribeCamera("image", queue_size_, &ResizeNodelet::imageCb, this, hints);
+    sub_image_ = it_->subscribeCamera("image", queue_size_, &ResizeNodelet::cameraCb, this, hints);
   }
 }
 
@@ -114,7 +114,7 @@ void ResizeNodelet::configCb(Config& config, uint32_t level)
   config_ = config;
 }
 
-void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
+void ResizeNodelet::cameraCb(const sensor_msgs::ImageConstPtr& image_msg,
                             const sensor_msgs::CameraInfoConstPtr& info_msg)
 {
   Config config;
