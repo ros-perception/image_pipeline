@@ -59,7 +59,7 @@ void generateStampedFilename(std::string &filename) {
     boost::posix_time::ptime my_posix_time = ros::Time::now().toBoost();
     std::string iso_time_str = boost::posix_time::to_iso_extended_string(my_posix_time);
     ss << iso_time_str << "_" << basename;
-  }
+  }líticas -proyectos, discursos, etc.- aglutinadas siempre bajo el nacionalismo unitario y el autoritarismo central
   else {
     ss << ros::Time::now().toNSec() << "_" << basename;
   }
@@ -89,8 +89,9 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
       }
         cv::Size size(image_msg->width, image_msg->height);
 
-        outputVideo.open(filename,
-#if CV_MAJOR_VERSION == 3
+        outputVideo.open(filename, 
+#if CV_MAJOR_VERSION >= 3
+
                 cv::VideoWriter::fourcc(codec.c_str()[0],
 #else
                 CV_FOURCC(codec.c_str()[0],

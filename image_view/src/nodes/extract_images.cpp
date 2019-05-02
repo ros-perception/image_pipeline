@@ -42,6 +42,8 @@
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 
+#include <fstream>
+
 class ExtractImages
 {
 private:
@@ -117,7 +119,29 @@ public:
         std::string filename = (filename_format_ % count_).str();
 
 #if !defined(_VIDEO)
-        cv::imwrite(filename, image);
+        // Save raw image if the defined file extension is ".raw", otherwise use OpenCV
+        std::string file_extension = filename.substr(filename.length() - 4, 4);
+        if (filename.length() >= 4 && file_extension == ".raw")
+        {
+          std::ofstream raw_file;
+          raw_file.open(filename.c_str());
+          if (raw_file.is_open() == false)
+          {
+            ROS_WARN_STREAM("Failed to open file " << filename);
+          }
+          else
+          {
+            raw_file.write((char*)(msg->data.data()), msg->data.size());
+            raw_file.close();
+          }
+        }
+        else
+        {
+          if (cv::imwrite(filename, image) == false)
+          {
+            ROS_WARN_STREAM("Failed to save image " << filename);
+          }
+        }
 #else
         if(!video_writer)
         {
