@@ -65,10 +65,7 @@ protected:
   virtual void onInit();
 
   void connectCb();
-
   void cameraCb(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr& info_msg);
-  void infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg);
-
   void configCb(Config& config, uint32_t level);
 };
 
