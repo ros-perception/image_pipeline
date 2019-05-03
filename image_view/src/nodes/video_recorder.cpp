@@ -43,8 +43,8 @@ bool use_dynamic_range;
 int colormap;
 bool stamped_filename;
 bool rolling_buffer;
-ros::Duration video_length;
-int n_videos;
+ros::Duration rb_video_lenght;
+int rb_n_videos;
 ros::Time video_creation_stamp;
 std::vector<std::string> filenames;
 std::string video_topic;
@@ -69,7 +69,7 @@ void generateStampedFilename(std::string &filename) {
   if (rolling_buffer) {
     filenames.push_back(filename);
     // Delete oldest video
-    if (filenames.size() > n_videos) {
+    if (filenames.size() > rb_n_videos) {
       remove(filenames.front().c_str());
       filenames.erase(filenames.begin());
     }
@@ -121,7 +121,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
     }
 
     // Check if video has reached maximum lenght (only if rolling_buffer mode enabled and video is opened)
-    if (rolling_buffer && ros::Time::now() - video_creation_stamp >= video_length) {
+    if (rolling_buffer && ros::Time::now() - video_creation_stamp >= rb_video_lenght) {
       outputVideo.release(); // Release video, so in next frame a new one will be created
       return;
     }
@@ -165,10 +165,10 @@ int main(int argc, char** argv)
     local_nh.param("use_dynamic_depth_range", use_dynamic_range, false);
     local_nh.param("colormap", colormap, -1);
     local_nh.param("rolling_buffer_mode", rolling_buffer, false); // rolling_buffer mode enabled/disabled
-    double v_duration;
-    local_nh.param("video_length", v_duration, 5.0);
-    video_length = ros::Duration(v_duration*60); // Video lenght in ros::Duration (seconds)
-    local_nh.param("n_videos", n_videos, 10); // Number of videos to store in rolling_buffer mode
+    double rb_v_duration;
+    local_nh.param("rb_video_lenght", rb_v_duration, 5.0);
+    rb_video_lenght = ros::Duration(rb_v_duration*60); // Video lenght in ros::Duration (seconds)
+    local_nh.param("rb_n_videos", rb_n_videos, 10); // Number of videos to store in rolling_buffer mode
     local_nh.param("video_topic", video_topic, std::string("image")); // Input video topic
     local_nh.param("use_posix_timestamp", use_posix, true); // Use human readable posix format in stamped filenames
 
