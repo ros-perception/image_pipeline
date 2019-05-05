@@ -218,7 +218,8 @@ class Calibrator(object):
     """
     Base class for calibration system
     """
-    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard, name='', checkerboard_flags=cv2.CALIB_CB_FAST_CHECK):
+    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard, name='', 
+    checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, max_chessboard_speed = -1.0):
         # Ordering the dimensions for the different detectors is actually a minefield...
         if pattern == Patterns.Chessboard:
             # Make sure n_cols > n_rows to agree with OpenCV CB detector output
@@ -247,6 +248,8 @@ class Calibrator(object):
         self.goodenough = False
         self.param_ranges = [0.7, 0.7, 0.4, 0.5]
         self.name = name
+        self.last_frame_corners = None
+        self.max_chessboard_speed = max_chessboard_speed
 
     def mkgray(self, msg):
         """
@@ -289,7 +292,21 @@ class Calibrator(object):
         params = [p_x, p_y, p_size, skew]
         return params
 
-    def is_good_sample(self, params):
+    def is_slow_moving(self, corners, last_frame_corners):
+        """
+        Returns true if the motion of the checkerboard is sufficiently low between
+        this and the previous frame.
+        """
+        # If we don't have previous frame corners, we can't accept the sample
+        if last_frame_corners is None:
+            return False
+        num_corners = len(corners)
+        corner_deltas = (corners - last_frame_corners).reshape(num_corners, 2)
+        # Average distance travelled overall for all corners
+        average_motion = numpy.average(numpy.linalg.norm(corner_deltas, axis = 1))
+        return average_motion <= self.max_chessboard_speed
+
+    def is_good_sample(self, params, corners, last_frame_corners):
         """
         Returns true if the checkerboard detection described by params should be added to the database.
         """
@@ -303,7 +320,15 @@ class Calibrator(object):
         d = min([param_distance(params, p) for p in db_params])
         #print "d = %.3f" % d #DEBUG
         # TODO What's a good threshold here? Should it be configurable?
-        return d > 0.2
+        if d <= 0.2:
+            return False
+
+        if self.max_chessboard_speed > 0:
+            if not self.is_slow_moving(corners, last_frame_corners):
+                return False
+
+        # All tests passed
+        return True
 
     _param_names = ["X", "Y", "Size", "Skew"]
 
@@ -767,11 +792,12 @@ class MonoCalibrator(Calibrator):
 
                 # Add sample to database only if it's sufficiently different from any previous sample.
                 params = self.get_parameters(corners, board, (gray.shape[1], gray.shape[0]))
-                if self.is_good_sample(params):
+                if self.is_good_sample(params, corners, self.last_frame_corners):
                     self.db.append((params, gray))
                     self.good_corners.append((corners, board))
                     print(("*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)))
-
+        
+        self.last_frame_corners = corners
         rv = MonoDrawable()
         rv.scrib = scrib
         rv.params = self.compute_goodenough()
@@ -1088,11 +1114,12 @@ class StereoCalibrator(Calibrator):
             # Add sample to database only if it's sufficiently different from any previous sample
             if lcorners is not None and rcorners is not None and len(lcorners) == len(rcorners):
                 params = self.get_parameters(lcorners, lboard, (lgray.shape[1], lgray.shape[0]))
-                if self.is_good_sample(params):
+                if self.is_good_sample(params, lcorners, self.last_frame_corners):
                     self.db.append( (params, lgray, rgray) )
                     self.good_corners.append( (lcorners, rcorners, lboard) )
                     print(("*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)))
-
+        
+        self.last_frame_corners = lcorners
         rv = StereoDrawable()
         rv.lscrib = lscrib
         rv.rscrib = rscrib
