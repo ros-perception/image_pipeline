@@ -43,7 +43,7 @@ bool use_dynamic_range;
 int colormap;
 bool stamped_filename;
 bool rolling_buffer;
-ros::Duration rb_video_lenght;
+ros::Duration rb_video_length;
 int rb_n_videos;
 ros::Time video_creation_stamp;
 std::vector<std::string> filenames;
@@ -120,8 +120,8 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
       return;
     }
 
-    // Check if video has reached maximum lenght (only if rolling_buffer mode enabled and video is opened)
-    if (rolling_buffer && ros::Time::now() - video_creation_stamp >= rb_video_lenght) {
+    // Check if video has reached maximum length (only if rolling_buffer mode enabled and video is opened)
+    if (rolling_buffer && ros::Time::now() - video_creation_stamp >= rb_video_length) {
       outputVideo.release(); // Release video, so in next frame a new one will be created
       return;
     }
@@ -166,8 +166,8 @@ int main(int argc, char** argv)
     local_nh.param("colormap", colormap, -1);
     local_nh.param("rolling_buffer_mode", rolling_buffer, false); // rolling_buffer mode enabled/disabled
     double rb_v_duration;
-    local_nh.param("rb_video_lenght", rb_v_duration, 5.0);
-    rb_video_lenght = ros::Duration(rb_v_duration*60); // Video lenght in ros::Duration (seconds)
+    local_nh.param("rb_video_length", rb_v_duration, 5.0);
+    rb_video_length = ros::Duration(rb_v_duration*60); // Video length in ros::Duration (seconds)
     local_nh.param("rb_n_videos", rb_n_videos, 10); // Number of videos to store in rolling_buffer mode
     local_nh.param("video_topic", video_topic, std::string("image")); // Input video topic
     local_nh.param("use_posix_timestamp", use_posix, true); // Use human readable posix format in stamped filenames
