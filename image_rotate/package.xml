@@ -1,6 +1,6 @@
-<package>
+<package format="2">
   <name>image_rotate</name>
-  <version>1.12.23</version>
+  <version>2.0.0</version>
   <description>
     <p>
       Contains a node that rotates an image stream in a way that minimizes
@@ -28,30 +28,22 @@
   <license>BSD</license>
   <url>http://ros.org/wiki/image_rotate</url>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <test_depend>rostest</test_depend>
-  
-  <build_depend>cmake_modules</build_depend>
-  <build_depend>cv_bridge</build_depend>
-  <build_depend>dynamic_reconfigure</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>image_transport</build_depend>
-  <build_depend>nodelet</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>tf2</build_depend>
-  <build_depend>tf2_geometry_msgs</build_depend>
-  <build_depend>tf2_ros</build_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
 
-  <run_depend>cv_bridge</run_depend>
-  <run_depend>dynamic_reconfigure</run_depend>
-  <run_depend>image_transport</run_depend>
-  <run_depend>nodelet</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>tf2</run_depend>
-  <run_depend>tf2_geometry_msgs</run_depend>
-  <run_depend>tf2_ros</run_depend>
+  <build_depend>class_loader</build_depend>
+
+  <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
+  <depend>rclcpp</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+
   <export>
-    <nodelet plugin="${prefix}/nodelet_plugins.xml"/>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
