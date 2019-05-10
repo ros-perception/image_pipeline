@@ -63,6 +63,13 @@ target_link_libraries(image_view_exe ${catkin_LIBRARIES}
                                      ${Boost_LIBRARIES}
 )
 
+add_executable(compressed_image_view src/nodes/compressed_image_view.cpp)
+add_dependencies(compressed_image_view ${PROJECT_NAME}_gencfg)
+target_link_libraries(compressed_image_view ${catkin_LIBRARIES}
+                                            ${OpenCV_LIBRARIES}
+                                            ${Boost_LIBRARIES}
+)
+
 add_executable(disparity_view src/nodes/disparity_view.cpp)
 target_link_libraries(disparity_view ${catkin_LIBRARIES}
                                      ${OpenCV_LIBRARIES}
@@ -76,7 +83,7 @@ target_link_libraries(stereo_view ${Boost_LIBRARIES}
                                   ${OpenCV_LIBRARIES}
 )
 
-install(TARGETS disparity_view image_view_exe stereo_view
+install(TARGETS disparity_view image_view_exe compressed_image_view stereo_view
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 install(FILES nodelet_plugins.xml
