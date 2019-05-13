@@ -660,7 +660,10 @@ class MonoCalibrator(Calibrator):
         # NOTE: Prior to Electric, this code was broken such that we never actually saved the new
         # camera matrix. In effect, this enforced P = [K|0] for monocular cameras.
         # TODO: Verify that OpenCV #1199 gets applied (improved GetOptimalNewCameraMatrix)
-        ncm, _ = cv2.getOptimalNewCameraMatrix(self.intrinsics, self.distortion, self.size, a)
+        center_principle = (self.calib_flags & cv2.CALIB_FIX_PRINCIPAL_POINT) > 0
+        ncm, _ = cv2.getOptimalNewCameraMatrix(
+                self.intrinsics, self.distortion, self.size, a,
+                centerPrincipalPoint=center_principle)
         for j in range(3):
             for i in range(3):
                 self.P[j,i] = ncm[j, i]
