@@ -48,9 +48,12 @@ class ResizeNodelet : public nodelet::Nodelet
 {
 protected:
   // ROS communication
-  image_transport::CameraPublisher pub_image_;
-  image_transport::CameraSubscriber sub_image_;
-  int queue_size_;
+  std::shared_ptr<ros::NodeHandle> nh_;
+  std::shared_ptr<ros::NodeHandle> pnh_;
+  image_transport::Publisher pub_image_;
+  ros::Publisher pub_info_;
+  image_transport::Subscriber sub_image_;
+  ros::Subscriber sub_info_;
 
   std::shared_ptr<image_transport::ImageTransport> it_, private_it_;
   std::mutex connect_mutex_;
@@ -63,31 +66,34 @@ protected:
   Config config_;
 
   virtual void onInit();
-
   void connectCb();
-  void cameraCb(const sensor_msgs::ImageConstPtr& image_msg, const sensor_msgs::CameraInfoConstPtr& info_msg);
+
+  void imageCb(const sensor_msgs::ImageConstPtr& image_msg);
+  void infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg);
+
   void configCb(Config& config, uint32_t level);
 };
 
 void ResizeNodelet::onInit()
 {
-  ros::NodeHandle& nh = getNodeHandle();
-  ros::NodeHandle& private_nh = getPrivateNodeHandle();
-  it_.reset(new image_transport::ImageTransport(nh));
-  private_it_.reset(new image_transport::ImageTransport(private_nh));
+  nh_.reset(new ros::NodeHandle(getNodeHandle()));
+  pnh_.reset(new ros::NodeHandle(getPrivateNodeHandle()));
+  it_.reset(new image_transport::ImageTransport(*nh_));
+  private_it_.reset(new image_transport::ImageTransport(*pnh_));
 
   // Set up dynamic reconfigure
-  reconfigure_server_.reset(new ReconfigureServer(private_nh));
+  reconfigure_server_.reset(new ReconfigureServer(*pnh_));
   ReconfigureServer::CallbackType f =
       std::bind(&ResizeNodelet::configCb, this, std::placeholders::_1, std::placeholders::_2);
   reconfigure_server_->setCallback(f);
 
   // Monitor whether anyone is subscribed to the output
-  typedef image_transport::SubscriberStatusCallback ConnectCB;
-  ConnectCB connect_cb = std::bind(&ResizeNodelet::connectCb, this);
-  // Make sure we don't enter connectCb() between advertising and assigning to pub_XXX
+  auto connect_cb = std::bind(&ResizeNodelet::connectCb, this);
+  // Make sure we don't enter connectCb() between advertising and assigning to
+  // pub_XXX
   std::lock_guard<std::mutex> lock(connect_mutex_);
-  pub_image_ = private_it_->advertiseCamera("image", 1, connect_cb, connect_cb);
+  pub_image_ = private_it_->advertise("image", 1, connect_cb, connect_cb);
+  pub_info_ = pnh_->advertise<sensor_msgs::CameraInfo>("camera_info", 1, connect_cb, connect_cb);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -100,8 +106,15 @@ void ResizeNodelet::connectCb()
   }
   else if (!sub_image_)
   {
-    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-    sub_image_ = it_->subscribeCamera("image", queue_size_, &ResizeNodelet::cameraCb, this, hints);
+    sub_image_ = it_->subscribe("image", 1, &ResizeNodelet::imageCb, this);
+  }
+  if (pub_info_.getNumSubscribers() == 0)
+  {
+    sub_info_.shutdown();
+  }
+  else if (!sub_info_)
+  {
+    sub_info_ = nh_->subscribe<sensor_msgs::CameraInfo>("camera_info", 1, &ResizeNodelet::infoCb, this);
   }
 }
 
@@ -111,39 +124,14 @@ void ResizeNodelet::configCb(Config& config, uint32_t level)
   config_ = config;
 }
 
-void ResizeNodelet::cameraCb(const sensor_msgs::ImageConstPtr& image_msg,
-                            const sensor_msgs::CameraInfoConstPtr& info_msg)
+void ResizeNodelet::infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg)
 {
   Config config;
   {
     std::lock_guard<std::mutex> lock(config_mutex_);
     config = config_;
   }
-  // image
-  cv_bridge::CvImagePtr cv_ptr;
-  try
-  {
-    cv_ptr = cv_bridge::toCvCopy(image_msg);
-  }
-  catch (cv_bridge::Exception& e)
-  {
-    ROS_ERROR("cv_bridge exception: %s", e.what());
-    return;
-  }
 
-  if (config.use_scale)
-  {
-    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(0, 0), config.scale_width, config.scale_height,
-               config.interpolation);
-  }
-  else
-  {
-    int height = config.height == -1 ? image_msg->height : config.height;
-    int width = config.width == -1 ? image_msg->width : config.width;
-    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(width, height), 0, 0, config.interpolation);
-  }
-
-  // camera_info
   sensor_msgs::CameraInfoPtr dst_info_msg(new sensor_msgs::CameraInfo(*info_msg));
 
   double scale_y;
@@ -174,7 +162,41 @@ void ResizeNodelet::cameraCb(const sensor_msgs::ImageConstPtr& image_msg,
   dst_info_msg->P[5] = dst_info_msg->P[5] * scale_y;  // fy
   dst_info_msg->P[6] = dst_info_msg->P[6] * scale_y;  // cy
 
-  pub_image_.publish(cv_ptr->toImageMsg(), dst_info_msg);
+  pub_info_.publish(dst_info_msg);
+}
+
+void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg)
+{
+  Config config;
+  {
+    std::lock_guard<std::mutex> lock(config_mutex_);
+    config = config_;
+  }
+
+  cv_bridge::CvImagePtr cv_ptr;
+  try
+  {
+    cv_ptr = cv_bridge::toCvCopy(image_msg);
+  }
+  catch (cv_bridge::Exception& e)
+  {
+    ROS_ERROR("cv_bridge exception: %s", e.what());
+    return;
+  }
+
+  if (config.use_scale)
+  {
+    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(0, 0), config.scale_width, config.scale_height,
+               config.interpolation);
+  }
+  else
+  {
+    int height = config.height == -1 ? image_msg->height : config.height;
+    int width = config.width == -1 ? image_msg->width : config.width;
+    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(width, height), 0, 0, config.interpolation);
+  }
+
+  pub_image_.publish(cv_ptr->toImageMsg());
 }
 
 }  // namespace image_proc
