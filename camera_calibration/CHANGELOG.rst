@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.13.0 (2019-06-12)
+-------------------
 * Merge pull request `#356 <https://github.com/ros-perception/image_pipeline/issues/356>`_ from sevangelatos/feature/calibrator_rolling_shutter
 * Add max-chessboard-speed option to allow more accurate calibration of rolling shutter cameras.
 * Merge pull request `#334 <https://github.com/ros-perception/image_pipeline/issues/334>`_ from Fruchtzwerg94/patch-2

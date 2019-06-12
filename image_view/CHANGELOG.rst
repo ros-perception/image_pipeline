@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.13.0 (2019-06-12)
+-------------------
 * Implemented extracting raw image data (`#329 <https://github.com/ros-perception/image_pipeline/issues/329>`_)
   Implementation of the raw image extraction if the file extension is .raw. This file extension is not supported by cv::imwrite so there is be no conflict. The raw files only containing the pixel data without any meta data which allows usage in MATLAB or other tools.
 * Merge pull request `#375 <https://github.com/ros-perception/image_pipeline/issues/375>`_ from fizyr-forks/opencv4

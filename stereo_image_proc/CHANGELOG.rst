@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.13.0 (2019-06-12)
+-------------------
 * Merge pull request `#375 <https://github.com/ros-perception/image_pipeline/issues/375>`_ from fizyr-forks/opencv4
 * Fix OpenCV4 compatibility.
 * Merge pull request `#338 <https://github.com/ros-perception/image_pipeline/issues/338>`_ from k-okada/arg_sync
