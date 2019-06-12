@@ -2,6 +2,13 @@
 Changelog for package image_pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#395 <https://github.com/ros-perception/image_pipeline/issues/395>`_ from ros-perception/steve_maintain
+* adding autonomoustuff mainainer
+* adding stevemacenski as maintainer to get emails
+* Contributors: Joshua Whitley, Yoshito Okada, stevemacenski
+
 1.12.23 (2018-05-10)
 --------------------
 

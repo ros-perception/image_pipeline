@@ -1,3 +1,16 @@
+Forthcoming
+-----------
+* Merge pull request `#382 <https://github.com/ros-perception/image_pipeline/issues/382>`_ from garaemon/intiialzie-prev-stamp
+  Fix tf timeout of image_rotate
+* Initialize prev_stamp\_ as ros::Timw::now()
+  * If prev_stamp\_ is initialized as 0.0, tf may wait transformation for
+  long duration at the first time. In order to give up the wait in
+  reasonable duration, initialize prev_stamp\_ as current time.
+* Merge pull request `#395 <https://github.com/ros-perception/image_pipeline/issues/395>`_ from ros-perception/steve_maintain
+* adding autonomoustuff mainainer
+* adding stevemacenski as maintainer to get emails
+* Contributors: Joshua Whitley, Ryohei Ueda, Yoshito Okada, stevemacenski
+
 1.12.23 (2018-05-10)
 --------------------
 

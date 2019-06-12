@@ -1,3 +1,34 @@
+Forthcoming
+-----------
+* Implemented extracting raw image data (`#329 <https://github.com/ros-perception/image_pipeline/issues/329>`_)
+  Implementation of the raw image extraction if the file extension is .raw. This file extension is not supported by cv::imwrite so there is be no conflict. The raw files only containing the pixel data without any meta data which allows usage in MATLAB or other tools.
+* Merge pull request `#375 <https://github.com/ros-perception/image_pipeline/issues/375>`_ from fizyr-forks/opencv4
+* Fix OpenCV4 compatibility.
+* Merge pull request `#337 <https://github.com/ros-perception/image_pipeline/issues/337>`_ from yoshito-okada/fix_image_view_nodelet
+  Fix threading issue in image_view nodelet. Closes `#331 <https://github.com/ros-perception/image_pipeline/issues/331>`_.
+* Merge pull request `#394 <https://github.com/ros-perception/image_pipeline/issues/394>`_ from angeltop/indigo
+  image_view: video recorder fix for conversion of fps to ros::Duration
+* Merge pull request `#379 <https://github.com/ros-perception/image_pipeline/issues/379>`_ from fizyr-forks/boost-1.69
+  Fix boost 1.69 compatibility
+* Merge pull request `#395 <https://github.com/ros-perception/image_pipeline/issues/395>`_ from ros-perception/steve_maintain
+* adding stevemacenski as maintainer to get emails
+* adding autonomoustuff mainainer
+* Merge pull request `#343 <https://github.com/ros-perception/image_pipeline/issues/343>`_ from fkie-forks/work_around_opencv_highgui_bug
+  Work around OpenCV highgui bug
+  I had to remove the GTK workaround, since it creates symbol collisions between GTK2 and GTK3.
+* Refresh GUI on image update as well
+* Use WallTimer for backwards compatibility with ROS Indigo
+* Switch to SteadyTimer as suggested in review
+* Remove unused `signals` from find_package(Boost COMPONENTS ...)
+  The signals library was not used at all, and it has been removed from
+  boost 1.69. As a result, the package doesn't build anymore with boost
+  1.69 without this change.
+* While we're at it, work around the mutex assertion failure on exit
+* Work around an OpenCV bug with GTK and threading
+* add ThreadSageImage class to encapsilate mutex operation for image
+* handle window in single thread
+* Contributors: Hans Gaiser, Joshua Whitley, Maarten de Vries, Philipp, Timo Röhling, Yoshito Okada, angeltop, stevemacenski
+
 1.12.23 (2018-05-10)
 --------------------
 

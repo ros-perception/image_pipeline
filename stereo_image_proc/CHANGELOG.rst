@@ -1,3 +1,18 @@
+Forthcoming
+-----------
+* Merge pull request `#375 <https://github.com/ros-perception/image_pipeline/issues/375>`_ from fizyr-forks/opencv4
+* Fix OpenCV4 compatibility.
+* Merge pull request `#338 <https://github.com/ros-perception/image_pipeline/issues/338>`_ from k-okada/arg_sync
+* add approximate_sync args in stereo_image_proc.launch
+* Merge pull request `#395 <https://github.com/ros-perception/image_pipeline/issues/395>`_ from ros-perception/steve_maintain
+* adding autonomoustuff mainainer
+* adding stevemacenski as maintainer to get emails
+* Merge pull request `#392 <https://github.com/ros-perception/image_pipeline/issues/392>`_ from bknight-i3drobotics/patch-1
+* Fix typo
+  Typo in line: 14. Changed 'sterel algorithm' to 'stereo algorithm'
+* add approximate_sync args in stereo_image_proc.launch
+* Contributors: Hans Gaiser, Joshua Whitley, Kei Okada, Steven Macenski, Yoshito Okada, bknight-i3drobotics, stevemacenski
+
 1.12.23 (2018-05-10)
 --------------------
 * Removed unused mutable scratch buffers (`#315 <https://github.com/ros-perception/image_pipeline/issues/315>`_)
