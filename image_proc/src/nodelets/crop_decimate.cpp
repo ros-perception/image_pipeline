@@ -195,6 +195,8 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
     config.height &= ~0x1;    
   }
 
+  // TODO(lucasw) need to incorporate the x_offset and y_offset within info_msg
+
   // TODO(lucasw) should generate a black image where there isn't any source image,
   // could be a dynamic reconfigure option
   int max_width = image_msg->width - config.x_offset;
