@@ -1,4 +1,4 @@
-<library path="image_proc_fisheye">
+<library path="libimage_proc_fisheye">
   
 
    <class name="image_proc_fisheye/RectifyNodelet"
