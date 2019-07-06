@@ -13,6 +13,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(class_loader REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2 REQUIRED)
@@ -29,11 +30,12 @@ ament_target_dependencies(${PROJECT_NAME}
   "image_transport"
   "cv_bridge"
   "class_loader"
+  "rclcpp_components"
   "rclcpp"
   "tf2_ros"
   "tf2_geometry_msgs"
 )
-rclcpp_register_node_plugins(${PROJECT_NAME} "${PROJECT_NAME}::ImageRotateNode")
+rclcpp_components_register_nodes(${PROJECT_NAME} "${PROJECT_NAME}::ImageRotateNode")
 set(node_plugins "${node_plugins}${PROJECT_NAME}::ImageRotateNode;$<TARGET_FILE:ImageRotateNode>\n")
 
 install(TARGETS ${PROJECT_NAME}
