@@ -1,8 +1,8 @@
 version: 2
 jobs:
-  crystal:
+  dashing:
     docker:
-      - image: ros:crystal-ros-base
+      - image: ros:dashing-ros-base
     steps:
       - checkout
       - run:
@@ -29,4 +29,4 @@ workflows:
   version: 2
   ros_build:
     jobs:
-      - crystal
+      - dashing
