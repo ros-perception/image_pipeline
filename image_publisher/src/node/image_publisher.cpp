@@ -47,7 +47,7 @@ int main(int argc, char ** argv)
   }
 
   auto publisher = std::make_shared<image_publisher::ImagePublisherNode>();
-  publisher->set_parameter_if_not_set("filename", argv[1]);
+  publisher->declare_parameter("filename", argv[1]);
 
   rclcpp::spin(publisher);
   rclcpp::shutdown();
