@@ -185,7 +185,7 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& raw_msg
         {
           RCLCPP_WARN(this->get_logger(), "Edge aware algorithms currently only support GRBG8 Bayer. "
                                 "Falling back to bilinear interpolation.");
-          algorithm = 0;
+          algorithm = debayer_bilinear_;
         }
         else
         {
