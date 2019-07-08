@@ -1,7 +1,7 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2019, Andreas Klintberg.
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -81,13 +81,18 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions& options)
   queue_size_ = this->declare_parameter("queue_size", 5);
   interpolation = this->declare_parameter("interpolation", 0);
   this->set_on_parameters_set_callback(parameter_change_cb);
+
+  // Make sure we don't enter connectCb() between advertising and assigning to pub_rect_
+  std::lock_guard<std::mutex> lock(connect_mutex_);
+  connectCb();
+  pub_rect_ = image_transport::create_publisher(this, "image_rect");
 }
 
 // Handles (un)subscribing when clients (un)subscribe
 void RectifyNode::connectCb( )
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
-  if (0)
+  if (pub_rect_.getNumSubscribers() == 0)
     sub_camera_.shutdown();
   else if (!sub_camera_)
   {

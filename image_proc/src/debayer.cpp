@@ -1,7 +1,7 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2019, Andreas Klintberg.
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -31,17 +31,20 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+
 #include <thread>
 #include <memory>
-#include <rclcpp/rclcpp.hpp>
+
+#include "debayer.hpp"
 #include <sensor_msgs/image_encodings.hpp>
 #include "visibility.h"
+
 #include <opencv2/imgproc/imgproc.hpp>
 // Until merged into OpenCV
+#include "edge_aware.h"
 
-#include <rcutils/cmdline_parser.h>
 #include <cv_bridge/cv_bridge.h>
-#include "debayer.hpp"
+
 namespace image_proc
 {
 namespace enc = sensor_msgs::image_encodings;
@@ -61,6 +64,7 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions& options)
       std::string image_mono = camera_namespace_+"/image_mono";
       std::string image_color = camera_namespace_+"/image_color";
       connectCb();
+
       std::lock_guard<std::mutex> lock(connect_mutex_);
       RCLCPP_INFO(this->get_logger(), "mono: %s, color: %s", image_mono.c_str(), image_color.c_str());
       pub_mono_  = image_transport::create_publisher(this, image_mono);
@@ -69,9 +73,15 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions& options)
       return result;
   };
 
-
+  debayer_ = this->declare_parameter("debayer", 3);
   this->set_on_parameters_set_callback(parameter_change_cb);
+  
   // Make sure we don't enter connectCb() between advertising and assigning to pub_XXX
+  std::lock_guard<std::mutex> lock(connect_mutex_);
+  connectCb();
+
+  pub_mono_  = image_transport::create_publisher(this, "/image_mono");
+  pub_color_ = image_transport::create_publisher(this, "/image_color");
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -80,7 +90,7 @@ void DebayerNode::connectCb()
   std::lock_guard<std::mutex> lock(connect_mutex_);
   std::string topic = camera_namespace_ + "/image_raw";
   RCLCPP_INFO(this->get_logger(), "topic: %s", topic.c_str());
-  if (0)
+  if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0)
   {
     sub_raw_.shutdown();
   }
@@ -166,9 +176,9 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& raw_msg
 
       int algorithm;
         // std::loc_guard<std::recursive_mutex> loc(config_mutex_)
-      algorithm = 3;
-      if (algorithm == 1 ||
-          algorithm == 2)
+      algorithm = debayer_;
+      if (algorithm == debayer_edgeaware_ ||
+          algorithm == debayer_edgeaware_weighted_)
       {
         // These algorithms are not in OpenCV yet
         if (raw_msg->encoding != enc::BAYER_GRBG8)
@@ -179,14 +189,14 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& raw_msg
         }
         else
         {
-          if (algorithm ==1)
+          if (algorithm == debayer_edgeaware_)
             debayerEdgeAware(bayer, color);
           else
             debayerEdgeAwareWeighted(bayer, color);
         }
       }
-      if (algorithm == 0 ||
-          algorithm == 3)
+      if (algorithm == debayer_bilinear_ ||
+          algorithm == debayer_vng_)
       {
         int code = -1;
         if (raw_msg->encoding == enc::BAYER_RGGB8 ||
@@ -202,7 +212,7 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& raw_msg
                  raw_msg->encoding == enc::BAYER_GRBG16)
           code = cv::COLOR_BayerGB2BGR;
 
-        if (algorithm == 3)
+        if (algorithm == debayer_vng_)
           code += cv::COLOR_BayerBG2BGR_VNG - cv::COLOR_BayerBG2BGR;
 
         cv::cvtColor(bayer, color, code);

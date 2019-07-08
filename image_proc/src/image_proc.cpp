@@ -1,41 +1,36 @@
-// Copyright 2016 Open Source Robotics Foundation, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-#ifdef __clang__
-// TODO(dirk-thomas) custom implementation until we can use libc++ 3.9
-#include <string>
-namespace fs
-{
-class path
-{
-public:
-  explicit path(const std::string & p)
-  : path_(p)
-  {}
-  bool is_absolute()
-  {
-    return path_[0] == '/';
-  }
-
-private:
-  std::string path_;
-};
-}  // namespace fs
-#else
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#endif
+/*********************************************************************
+* Software License Agreement (BSD License)
+* 
+*  Copyright (c) 2019, Andreas Klintberg.
+*  All rights reserved.
+* 
+*  Redistribution and use in source and binary forms, with or without
+*  modification, are permitted provided that the following conditions
+*  are met:
+* 
+*   * Redistributions of source code must retain the above copyright
+*     notice, this list of conditions and the following disclaimer.
+*   * Redistributions in binary form must reproduce the above
+*     copyright notice, this list of conditions and the following
+*     disclaimer in the documentation and/or other materials provided
+*     with the distribution.
+*   * Neither the name of the Willow Garage nor the names of its
+*     contributors may be used to endorse or promote products derived
+*     from this software without specific prior written permission.
+* 
+*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*  POSSIBILITY OF SUCH DAMAGE.
+*********************************************************************/
 
 #include <cstring>
 #include <memory>
@@ -73,9 +68,13 @@ void print_usage()
 
 int main(int argc, char * argv[])
 {
-  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
+
   // Force flush of the stdout buffer.
+  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
+
+
   rclcpp::init(argc, argv);
+
   std::string camera_namespace;
   if (rcutils_cli_option_exist(argv, argv + argc, "--camera_namespace")) {
     camera_namespace = std::string(rcutils_cli_get_option(argv, argv + argc, "--camera_namespace"));
@@ -87,18 +86,28 @@ int main(int argc, char * argv[])
 
   rclcpp::executors::SingleThreadedExecutor exec;
   const rclcpp::NodeOptions options;
+
+  // Debayer nodelet, image_raw -> image_mono, image_color
   auto debayer_node = std::make_shared<image_proc::DebayerNode>(options);
   debayer_node->declare_parameter("camera_namespace", camera_namespace);
+  
+
+  // Rectify nodelet, image_mono -> image_rect
   auto rectify_mono_node = std::make_shared<image_proc::RectifyNode>(options);
   rectify_mono_node->declare_parameter("camera_namespace", camera_namespace);
   rectify_mono_node->declare_parameter("image_mono", "/image_mono");
+  
+
+  // Rectify nodelet, image_color -> image_rect_color
   auto rectify_color_node = std::make_shared<image_proc::RectifyNode>(options);
   rectify_color_node->declare_parameter("camera_namespace", camera_namespace);
   rectify_color_node->declare_parameter("image_color", "/image_color");
+  
   exec.add_node(debayer_node);
   exec.add_node(rectify_mono_node);
   exec.add_node(rectify_color_node);
   exec.spin();
+
   rclcpp::shutdown();
   return 0;
 }

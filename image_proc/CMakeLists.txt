@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 
 project(image_proc)
 
-
 # ROS2 Flags
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
@@ -47,5 +46,5 @@ ament_target_dependencies(image_proc
 
 install(TARGETS
         image_proc
-        DESTINATION bin/${PROJECT_NAME})
+        DESTINATION lib/${PROJECT_NAME})
 ament_package()

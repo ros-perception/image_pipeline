@@ -1,7 +1,7 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2019, Andreas Klintberg.
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,7 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+
 #ifndef IMAGE_PROC_EDGE_AWARE
 #define IMAGE_PROC_EDGE_AWARE
 
@@ -44,5 +45,5 @@ void debayerEdgeAware(const cv::Mat& bayer, cv::Mat& color);
 
 void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color);
 
-}
+} // namespace image_proc
 #endif

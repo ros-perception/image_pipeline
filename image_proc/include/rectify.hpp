@@ -1,7 +1,7 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2019, Andreas Klintberg.
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,7 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+
 #ifndef IMAGE_PROC_PROCESSOR_H
 #define IMAGE_PROC_PROCESSOR_H
 #include <thread>
@@ -48,15 +49,17 @@ namespace image_proc {
 class RectifyNode : public rclcpp::Node
 {
   public:
-   IMAGE_PROC_PUBLIC RectifyNode(const rclcpp::NodeOptions&);
+    RectifyNode(const rclcpp::NodeOptions&);
   private:
     // ROS communication
     image_transport::CameraSubscriber sub_camera_;
+
     int queue_size_;
     int interpolation;
     std::string camera_namespace_;
     std::string image_rect;
     std::string image_topic;
+
     std::mutex connect_mutex_;
     image_transport::Publisher pub_rect_;
 
