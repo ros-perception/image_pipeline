@@ -16,6 +16,7 @@ find_package(camera_info_manager REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(class_loader REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 
 set(opencv_2_components core highgui)
 set(opencv_3_components core imgcodecs videoio)
@@ -38,9 +39,10 @@ ament_target_dependencies(image_publisher_node
   "class_loader"
   "camera_info_manager"
   "rclcpp"
+  "rclcpp_components"
 )
 
-rclcpp_register_node_plugins(image_publisher_node "${PROJECT_NAME}::ImagePublisherNode")
+rclcpp_components_register_nodes(image_publisher_node "${PROJECT_NAME}::ImagePublisherNode")
 set(node_plugins "${node_plugins}${PROJECT_NAME}::ImagePublisherNode;$<TARGET_FILE:ImagePublisherNode>\n")
 
 install(DIRECTORY include/${PROJECT_NAME}/
