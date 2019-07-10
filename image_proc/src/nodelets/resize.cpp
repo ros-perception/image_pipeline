@@ -31,82 +31,104 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+#include <mutex>
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
 #include <nodelet/nodelet.h>
-#include <nodelet_topic_tools/nodelet_lazy.h>
 #include <ros/ros.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
+#include <image_transport/image_transport.h>
 
 #include "image_proc/ResizeConfig.h"
 
 namespace image_proc
 {
-
-class ResizeNodelet : public nodelet_topic_tools::NodeletLazy
+class ResizeNodelet : public nodelet::Nodelet
 {
 protected:
   // ROS communication
-  ros::Publisher pub_image_;
+  std::shared_ptr<ros::NodeHandle> nh_;
+  std::shared_ptr<ros::NodeHandle> pnh_;
+  image_transport::Publisher pub_image_;
   ros::Publisher pub_info_;
+  image_transport::Subscriber sub_image_;
   ros::Subscriber sub_info_;
-  ros::Subscriber sub_image_;
+
+  std::shared_ptr<image_transport::ImageTransport> it_, private_it_;
+  std::mutex connect_mutex_;
 
   // Dynamic reconfigure
-  boost::recursive_mutex config_mutex_;
+  std::mutex config_mutex_;
   typedef image_proc::ResizeConfig Config;
   typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
-  boost::shared_ptr<ReconfigureServer> reconfigure_server_;
+  std::shared_ptr<ReconfigureServer> reconfigure_server_;
   Config config_;
 
   virtual void onInit();
-  virtual void subscribe();
-  virtual void unsubscribe();
+  void connectCb();
 
   void imageCb(const sensor_msgs::ImageConstPtr& image_msg);
   void infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg);
 
-  void configCb(Config &config, uint32_t level);
+  void configCb(Config& config, uint32_t level);
 };
 
 void ResizeNodelet::onInit()
 {
-  nodelet_topic_tools::NodeletLazy::onInit();
+  nh_.reset(new ros::NodeHandle(getNodeHandle()));
+  pnh_.reset(new ros::NodeHandle(getPrivateNodeHandle()));
+  it_.reset(new image_transport::ImageTransport(*nh_));
+  private_it_.reset(new image_transport::ImageTransport(*pnh_));
 
   // Set up dynamic reconfigure
-  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, *pnh_));
-  ReconfigureServer::CallbackType f = boost::bind(&ResizeNodelet::configCb, this, _1, _2);
+  reconfigure_server_.reset(new ReconfigureServer(*pnh_));
+  ReconfigureServer::CallbackType f =
+      std::bind(&ResizeNodelet::configCb, this, std::placeholders::_1, std::placeholders::_2);
   reconfigure_server_->setCallback(f);
 
-  pub_info_ = advertise<sensor_msgs::CameraInfo>(*pnh_, "camera_info", 1);
-  pub_image_ = advertise<sensor_msgs::Image>(*pnh_, "image", 1);
-
-  onInitPostProcess();
+  // Monitor whether anyone is subscribed to the output
+  auto connect_cb = std::bind(&ResizeNodelet::connectCb, this);
+  // Make sure we don't enter connectCb() between advertising and assigning to
+  // pub_XXX
+  std::lock_guard<std::mutex> lock(connect_mutex_);
+  pub_image_ = private_it_->advertise("image", 1, connect_cb, connect_cb);
+  pub_info_ = pnh_->advertise<sensor_msgs::CameraInfo>("camera_info", 1, connect_cb, connect_cb);
 }
 
-void ResizeNodelet::configCb(Config &config, uint32_t level)
+// Handles (un)subscribing when clients (un)subscribe
+void ResizeNodelet::connectCb()
 {
+  std::lock_guard<std::mutex> lock(connect_mutex_);
+  if (pub_image_.getNumSubscribers() == 0)
+  {
+    sub_image_.shutdown();
+  }
+  else if (!sub_image_)
+  {
+    sub_image_ = it_->subscribe("image", 1, &ResizeNodelet::imageCb, this);
+  }
+  if (pub_info_.getNumSubscribers() == 0)
+  {
+    sub_info_.shutdown();
+  }
+  else if (!sub_info_)
+  {
+    sub_info_ = nh_->subscribe<sensor_msgs::CameraInfo>("camera_info", 1, &ResizeNodelet::infoCb, this);
+  }
+}
+
+void ResizeNodelet::configCb(Config& config, uint32_t level)
+{
+  std::lock_guard<std::mutex> lock(config_mutex_);
   config_ = config;
-}
-
-void ResizeNodelet::subscribe()
-{
-  sub_info_ = nh_->subscribe("camera_info", 1, &ResizeNodelet::infoCb, this);
-  sub_image_ = nh_->subscribe("image", 1, &ResizeNodelet::imageCb, this);
-}
-
-void ResizeNodelet::unsubscribe()
-{
-  sub_info_.shutdown();
-  sub_image_.shutdown();
 }
 
 void ResizeNodelet::infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg)
 {
   Config config;
   {
-    boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);
+    std::lock_guard<std::mutex> lock(config_mutex_);
     config = config_;
   }
 
@@ -147,16 +169,25 @@ void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg)
 {
   Config config;
   {
-    boost::lock_guard<boost::recursive_mutex> lock(config_mutex_);
+    std::lock_guard<std::mutex> lock(config_mutex_);
     config = config_;
   }
 
-  cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_msg);
+  cv_bridge::CvImagePtr cv_ptr;
+  try
+  {
+    cv_ptr = cv_bridge::toCvCopy(image_msg);
+  }
+  catch (cv_bridge::Exception& e)
+  {
+    ROS_ERROR("cv_bridge exception: %s", e.what());
+    return;
+  }
 
   if (config.use_scale)
   {
-    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(0, 0),
-               config.scale_width, config.scale_height, config.interpolation);
+    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(0, 0), config.scale_width, config.scale_height,
+               config.interpolation);
   }
   else
   {
