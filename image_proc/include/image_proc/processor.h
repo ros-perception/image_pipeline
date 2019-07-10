@@ -34,42 +34,45 @@
 
 #ifndef IMAGE_PROC_PROCESSOR_H
 #define IMAGE_PROC_PROCESSOR_H
-#include <thread>
-#include <memory>
-#include <vector>
-#include <string>
 
-#include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.h>
+#include <opencv2/core/core.hpp>
 #include <image_geometry/pinhole_camera_model.h>
-#include <cv_bridge/cv_bridge.h>
-#include "visibility.h"
+#include "sensor_msgs/msg/image.hpp"
+
 namespace image_proc {
 
-class RectifyNode : public rclcpp::Node
+struct ImageSet
 {
-  public:
-    RectifyNode(const rclcpp::NodeOptions&);
-  private:
-    // ROS communication
-    image_transport::CameraSubscriber sub_camera_;
-
-    int queue_size_;
-    int interpolation;
-    std::string camera_namespace_;
-    std::string image_rect;
-    std::string image_topic;
-
-    std::mutex connect_mutex_;
-    image_transport::Publisher pub_rect_;
-
-    // Processing state (note: only safe because we're using single-threaded NodeHandle!)
-    image_geometry::PinholeCameraModel model_;
-
-    void connectCb();
-    void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
-                const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg);
-
+  std::string color_encoding;
+  cv::Mat mono;
+  cv::Mat rect;
+  cv::Mat color;
+  cv::Mat rect_color;
 };
-} // namespace image_proc
+
+class Processor
+{
+public:
+  Processor()
+    : interpolation_(cv::INTER_LINEAR)
+  {
+  }
+  
+  int interpolation_;
+
+  enum {
+    MONO       = 1 << 0,
+    RECT       = 1 << 1,
+    COLOR      = 1 << 2,
+    RECT_COLOR = 1 << 3,
+    ALL = MONO | RECT | COLOR | RECT_COLOR
+  };
+  
+  bool process(const sensor_msgs::msg::Image::SharedConstPtr& raw_image,
+               const image_geometry::PinholeCameraModel& model,
+               ImageSet& output, int flags = ALL) const;
+};
+
+} //namespace image_proc
+
 #endif
