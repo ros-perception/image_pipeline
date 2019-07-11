@@ -37,7 +37,6 @@
 
 #include "debayer.hpp"
 #include <sensor_msgs/image_encodings.hpp>
-#include "visibility.h"
 
 #include <opencv2/imgproc/imgproc.hpp>
 // Until merged into OpenCV

@@ -43,7 +43,6 @@
 #include <image_transport/image_transport.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <cv_bridge/cv_bridge.h>
-#include "visibility.h"
 namespace image_proc {
 
 class RectifyNode : public rclcpp::Node
