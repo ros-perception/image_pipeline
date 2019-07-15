@@ -74,13 +74,6 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions& options)
 
   debayer_ = this->declare_parameter("debayer", 3);
   this->set_on_parameters_set_callback(parameter_change_cb);
-  
-  // Make sure we don't enter connectCb() between advertising and assigning to pub_XXX
-  std::lock_guard<std::mutex> lock(connect_mutex_);
-  connectCb();
-
-  pub_mono_  = image_transport::create_publisher(this, "/image_mono");
-  pub_color_ = image_transport::create_publisher(this, "/image_color");
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -250,3 +243,10 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& raw_msg
 }
 
 } // namespace test_image_proc	
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(image_proc::DebayerNode)

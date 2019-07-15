@@ -80,11 +80,6 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions& options)
   queue_size_ = this->declare_parameter("queue_size", 5);
   interpolation = this->declare_parameter("interpolation", 0);
   this->set_on_parameters_set_callback(parameter_change_cb);
-
-  // Make sure we don't enter connectCb() between advertising and assigning to pub_rect_
-  std::lock_guard<std::mutex> lock(connect_mutex_);
-  connectCb();
-  pub_rect_ = image_transport::create_publisher(this, "image_rect");
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -144,3 +139,10 @@ void RectifyNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & image_
   pub_rect_.publish(rect_msg);
 }
 } // namespace image_proc
+
+#include "rclcpp_components/register_node_macro.hpp"
+
+// Register the component with class_loader.
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(image_proc::RectifyNode)
