@@ -199,7 +199,7 @@ void PointCloudXyziNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_msg,
     intensity_msg = intensity_msg_in;
 
   // Supported color encodings: MONO8, MONO16
-  if (intensity_msg->encoding != enc::MONO8 || intensity_msg->encoding != enc::MONO16)
+  if (intensity_msg->encoding != enc::MONO8 && intensity_msg->encoding != enc::MONO16)
   {
     try
     {
