@@ -86,14 +86,18 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions& options)
 void RectifyNode::connectCb( )
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
-  if (pub_rect_.getNumSubscribers() == 0)
+
+  /* 
+  *  SubscriberStatusCallback not yet implemented
+  */
+  /*if (pub_rect_.getNumSubscribers() == 0)
     sub_camera_.shutdown();
   else if (!sub_camera_)
-  {
-    sub_camera_ = image_transport::create_camera_subscription(this, image_topic,
+  {*/
+  sub_camera_ = image_transport::create_camera_subscription(this, image_topic,
                       std::bind(&RectifyNode::imageCb, 
                                 this, std::placeholders::_1, std::placeholders::_2),"raw");
-  }
+  //}
 }
 
 void RectifyNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,

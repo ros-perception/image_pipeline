@@ -82,16 +82,19 @@ void DebayerNode::connectCb()
   std::lock_guard<std::mutex> lock(connect_mutex_);
   std::string topic = camera_namespace_ + "/image_raw";
   RCLCPP_INFO(this->get_logger(), "topic: %s", topic.c_str());
-  if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0)
+  /* 
+  *  SubscriberStatusCallback not yet implemented
+  */
+  /*if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0)
   {
     sub_raw_.shutdown();
   }
   else
-  {
-    sub_raw_ = image_transport::create_subscription(this, topic,
+  {*/
+  sub_raw_ = image_transport::create_subscription(this, topic,
                   std::bind(&DebayerNode::imageCb, this, std::placeholders:: _1),
                   "raw");
-  }
+  //}
 }
 
 void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& raw_msg)
