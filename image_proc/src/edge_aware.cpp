@@ -1,7 +1,7 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2008, 2019, Willow Garage, Inc., Andreas Klintberg.
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,7 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+
 #include "edge_aware.h"
 
 #define AVG(a,b) (((int)(a) + (int)(b)) >> 1)
@@ -39,8 +40,8 @@
 #define WAVG4(a,b,c,d,x,y)  ( ( ((int)(a) + (int)(b)) * (int)(x) + ((int)(c) + (int)(d)) * (int)(y) ) / ( 2 * ((int)(x) + (int(y))) ) )
 using namespace std;
 
-namespace image_proc {
-
+namespace image_proc
+{
 void debayerEdgeAware(const cv::Mat& bayer, cv::Mat& color)
 {
   unsigned width = bayer.cols;

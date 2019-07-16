@@ -1,7 +1,7 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2008, 2019, Willow Garage, Inc., Andreas Klintberg.
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -31,31 +31,44 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#ifndef IMAGE_PROC_ADVERTISEMENT_CHECKER_H
-#define IMAGE_PROC_ADVERTISEMENT_CHECKER_H
 
-#include <ros/ros.h>
+#ifndef IMAGE_PROC_PROCESSOR_H
+#define IMAGE_PROC_PROCESSOR_H
+#include <thread>
+#include <memory>
+#include <vector>
+#include <string>
 
+#include <rclcpp/rclcpp.hpp>
+#include <image_transport/image_transport.h>
+#include <image_geometry/pinhole_camera_model.h>
+#include <cv_bridge/cv_bridge.h>
 namespace image_proc {
 
-class AdvertisementChecker
+class RectifyNode : public rclcpp::Node
 {
-  ros::NodeHandle nh_;
-  std::string name_;
-  ros::WallTimer timer_;
-  ros::V_string topics_;
+  public:
+    RectifyNode(const rclcpp::NodeOptions&);
+  private:
+    // ROS communication
+    image_transport::CameraSubscriber sub_camera_;
 
-  void timerCb();
+    int queue_size_;
+    int interpolation;
+    std::string camera_namespace_;
+    std::string image_rect;
+    std::string image_topic;
 
-public:
-  AdvertisementChecker(const ros::NodeHandle& nh = ros::NodeHandle(),
-                       const std::string& name = std::string());
-  
-  void start(const ros::V_string& topics, double duration);
+    std::mutex connect_mutex_;
+    image_transport::Publisher pub_rect_;
 
-  void stop();
+    // Processing state (note: only safe because we're using single-threaded NodeHandle!)
+    image_geometry::PinholeCameraModel model_;
+
+    void connectCb();
+    void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
+                const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg);
+
 };
-
 } // namespace image_proc
-
 #endif

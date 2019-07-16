@@ -1,7 +1,7 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2008, 2019, Willow Garage, Inc., Andreas Klintberg.
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,13 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+
 #ifndef IMAGE_PROC_PROCESSOR_H
 #define IMAGE_PROC_PROCESSOR_H
 
 #include <opencv2/core/core.hpp>
 #include <image_geometry/pinhole_camera_model.h>
-#include <sensor_msgs/Image.h>
+#include "sensor_msgs/msg/image.hpp"
 
 namespace image_proc {
 
@@ -67,7 +68,7 @@ public:
     ALL = MONO | RECT | COLOR | RECT_COLOR
   };
   
-  bool process(const sensor_msgs::ImageConstPtr& raw_image,
+  bool process(const sensor_msgs::msg::Image::SharedConstPtr& raw_image,
                const image_geometry::PinholeCameraModel& model,
                ImageSet& output, int flags = ALL) const;
 };

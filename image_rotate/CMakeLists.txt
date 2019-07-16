@@ -16,6 +16,7 @@ find_package(class_loader REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
@@ -32,6 +33,7 @@ ament_target_dependencies(${PROJECT_NAME}
   "class_loader"
   "rclcpp_components"
   "rclcpp"
+  "rclcpp_components"
   "tf2_ros"
   "tf2_geometry_msgs"
 )

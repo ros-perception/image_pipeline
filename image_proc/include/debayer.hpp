@@ -1,7 +1,7 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, Willow Garage, Inc.
+*  Copyright (c) 2008, 2019, Willow Garage, Inc., Andreas Klintberg.
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -31,62 +31,47 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include "image_proc/advertisement_checker.h"
-#include <boost/foreach.hpp>
 
-namespace image_proc {
+#include <cstring>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <thread>
+#include <rclcpp/rclcpp.hpp>
+#include <image_transport/image_transport.h>
 
-AdvertisementChecker::AdvertisementChecker(const ros::NodeHandle& nh,
-                                           const std::string& name)
-  : nh_(nh),
-    name_(name)
+#include <ament_index_cpp/get_resource.hpp>
+#include "rclcpp/rclcpp.hpp"
+#ifndef IMAGE_PROC_DEBAYER_HPP
+#define IMAGE_PROC_DEBAYER_HPP
+
+
+namespace image_proc
 {
-}
-
-void AdvertisementChecker::timerCb()
+class DebayerNode : public rclcpp::Node
 {
-  ros::master::V_TopicInfo topic_info;
-  if (!ros::master::getTopics(topic_info)) return;
+  // ROS communication
+  public:
+    DebayerNode(const rclcpp::NodeOptions&);
+  private:
+    image_transport::Subscriber sub_raw_;
 
-  ros::V_string::iterator topic_it = topics_.begin();
-  while (topic_it != topics_.end())
-  {
-    // Should use std::find_if
-    bool found = false;
-    ros::master::V_TopicInfo::iterator info_it = topic_info.begin();
-    while (!found && info_it != topic_info.end())
-    {
-      found = (*topic_it == info_it->name);
-      ++info_it;
-    }
-    if (found)
-      topic_it = topics_.erase(topic_it);
-    else
-    {
-      ROS_WARN_NAMED(name_, "The input topic '%s' is not yet advertised", topic_it->c_str());
-      ++topic_it;
-    }
-  }
+    std::string camera_namespace_;
+    int debayer_;
 
-  if (topics_.empty())
-    stop();
-}
+    int debayer_bilinear_ = 0;
+    int debayer_edgeaware_ = 1;
+    int debayer_edgeaware_weighted_ = 2;
+    int debayer_vng_ = 3;
 
-void AdvertisementChecker::start(const ros::V_string& topics, double duration)
-{
-  topics_.clear();
-  BOOST_FOREACH(const std::string& topic, topics)
-    topics_.push_back(nh_.resolveName(topic));
+    std::mutex connect_mutex_;
 
-  ros::NodeHandle nh;
-  timer_ = nh.createWallTimer(ros::WallDuration(duration),
-                              boost::bind(&AdvertisementChecker::timerCb, this));
-  timerCb();
-}
+    image_transport::Publisher pub_mono_;
+    image_transport::Publisher pub_color_;
 
-void AdvertisementChecker::stop()
-{
-  timer_.stop();
-}
-
+    void connectCb();
+    void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg);
+};
 } // namespace image_proc
+#endif
