@@ -1,7 +1,7 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2019, Willow Garage, Inc., Andreas Klintberg.
+*  Copyright (c) 2008, 2019, Willow Garage, Inc., Andreas Klintberg.
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
