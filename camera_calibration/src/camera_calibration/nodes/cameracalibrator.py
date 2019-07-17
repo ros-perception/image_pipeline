@@ -67,6 +67,9 @@ def main():
     group.add_option("--no-service-check",
                      action="store_false", dest="service_check", default=True,
                      help="disable check for set_camera_info services at startup")
+    group.add_option("--queue-size",
+                     type="int", default=1,
+                     help="image queue size (default %default, set to 0 for unlimited)")
     parser.add_option_group(group)
     group = OptionGroup(parser, "Calibration Optimizer Options")
     group.add_option("--fix-principal-point",
@@ -145,7 +148,8 @@ def main():
 
     rclpy.init()
     node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
-                                 checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed)
+                                 checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed,
+                                 queue_size=options.queue_size)
     node.spin()
 
 if __name__ == "__main__":
