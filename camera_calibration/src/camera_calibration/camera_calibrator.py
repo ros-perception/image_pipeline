@@ -52,6 +52,9 @@ class BufferQueue(Queue):
     when adding an item and the queue is full.
     """
     def put(self, item, *args, **kwargs):
+        # The base implementation, for reference:
+        # https://github.com/python/cpython/blob/2.7/Lib/Queue.py#L107
+        # https://github.com/python/cpython/blob/3.8/Lib/queue.py#L121
         with self.mutex:
             if self.maxsize > 0 and self._qsize() == self.maxsize:
                 self._get()
