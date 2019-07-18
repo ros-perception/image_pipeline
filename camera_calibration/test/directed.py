@@ -284,6 +284,10 @@ class TestArtificial(unittest.TestCase):
                          'some distortion coefficients are zero: %s' % str(mc.distortion.flatten()))
             self.assertEqual(mc.as_message().distortion_model, 'rational_polynomial')
             self.assert_good_mono(mc, self.limages[i], setup.lin_err)
+        
+            yaml = mc.yaml()
+            # Issue #278
+            self.assertIn('cols: 8', yaml)
 
 
 if __name__ == '__main__':
