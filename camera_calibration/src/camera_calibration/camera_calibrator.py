@@ -40,12 +40,27 @@ import rospy
 import sensor_msgs.msg
 import sensor_msgs.srv
 import threading
-import time
-from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, ChessboardInfo, Patterns
-from collections import deque
-from message_filters import ApproximateTimeSynchronizer
-from std_msgs.msg import String
-from std_srvs.srv import Empty
+from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, Patterns
+try:
+    from queue import Queue
+except ImportError:
+    from Queue import Queue
+
+
+class BufferQueue(Queue):
+    """Slight modification of the standard Queue that discards the oldest item
+    when adding an item and the queue is full.
+    """
+    def put(self, item, *args, **kwargs):
+        # The base implementation, for reference:
+        # https://github.com/python/cpython/blob/2.7/Lib/Queue.py#L107
+        # https://github.com/python/cpython/blob/3.8/Lib/queue.py#L121
+        with self.mutex:
+            if self.maxsize > 0 and self._qsize() == self.maxsize:
+                self._get()
+            self._put(item)
+            self.unfinished_tasks += 1
+            self.not_empty.notify()
 
 
 class DisplayThread(threading.Thread):
@@ -65,10 +80,7 @@ class DisplayThread(threading.Thread):
         cv2.setMouseCallback("display", self.opencv_calibration_node.on_mouse)
         cv2.createTrackbar("scale", "display", 0, 100, self.opencv_calibration_node.on_scale)
         while True:
-            # wait for an image (could happen at the very beginning when the queue is still empty)
-            while len(self.queue) == 0:
-                time.sleep(0.1)
-            im = self.queue[0]
+            im = self.queue.get()
             cv2.imshow("display", im)
             k = cv2.waitKey(6) & 0xFF
             if k in [27, ord('q')]:
@@ -84,15 +96,14 @@ class ConsumerThread(threading.Thread):
 
     def run(self):
         while True:
-            # wait for an image (could happen at the very beginning when the queue is still empty)
-            while len(self.queue) == 0:
-                time.sleep(0.1)
-            self.function(self.queue[0])
+            m = self.queue.get()
+            self.function(m)
 
 
 class CalibrationNode:
     def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
-                 pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0, max_chessboard_speed = -1):
+                 pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0, max_chessboard_speed = -1,
+                 queue_size = 1):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -128,8 +139,8 @@ class CalibrationNode:
         self.set_right_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("right_camera"),
                                                                 sensor_msgs.srv.SetCameraInfo)
 
-        self.q_mono = deque([], 1)
-        self.q_stereo = deque([], 1)
+        self.q_mono = BufferQueue(queue_size)
+        self.q_stereo = BufferQueue(queue_size)
 
         self.c = None
 
@@ -147,10 +158,10 @@ class CalibrationNode:
         pass
 
     def queue_monocular(self, msg):
-        self.q_mono.append(msg)
+        self.q_mono.put(msg)
 
     def queue_stereo(self, lmsg, rmsg):
-        self.q_stereo.append((lmsg, rmsg))
+        self.q_stereo.put((lmsg, rmsg))
 
     def handle_monocular(self, msg):
         if self.c == None:
@@ -226,7 +237,7 @@ class OpenCVCalibrationNode(CalibrationNode):
 
         CalibrationNode.__init__(self, *args, **kwargs)
 
-        self.queue_display = deque([], 1)
+        self.queue_display = BufferQueue(maxsize=1)
         self.display_thread = DisplayThread(self.queue_display, self)
         self.display_thread.setDaemon(True)
         self.display_thread.start()
@@ -316,7 +327,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 #print "linear", linerror
             self.putText(display, msg, (width, self.y(1)))
 
-        self.queue_display.append(display)
+        self.queue_display.put(display)
 
     def redraw_stereo(self, drawable):
         height = drawable.lscrib.shape[0]
@@ -354,4 +365,4 @@ class OpenCVCalibrationNode(CalibrationNode):
                 self.putText(display, "dim", (2 * width, self.y(2)))
                 self.putText(display, "%.3f" % drawable.dim, (2 * width, self.y(3)))
 
-        self.queue_display.append(display)
+        self.queue_display.put(display)
