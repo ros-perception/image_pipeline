@@ -629,22 +629,17 @@ class MonoCalibrator(Calibrator):
         ipts = [ points for (points, _) in good ]
         opts = self.mk_object_points(boards)
 
-        self.intrinsics = numpy.zeros((3, 3), numpy.float64)
-        if self.calib_flags & cv2.CALIB_RATIONAL_MODEL:
-            self.distortion = numpy.zeros((8, 1), numpy.float64) # rational polynomial
-        else:
-            self.distortion = numpy.zeros((5, 1), numpy.float64) # plumb bob
         # If FIX_ASPECT_RATIO flag set, enforce focal lengths have 1/1 ratio
-        self.intrinsics[0,0] = 1.0
-        self.intrinsics[1,1] = 1.0
-        reproj_err, self.intrinsics, self.distortion, rvecs, tvecs = cv2.calibrateCamera(
+        intrinsics_in = numpy.eye(3, dtype=numpy.float64)
+        reproj_err, self.intrinsics, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(
                    opts, ipts,
-                   self.size, self.intrinsics,
-                   self.distortion,
+                   self.size,
+                   intrinsics_in,
+                   None,
                    flags = self.calib_flags)
-        # OpenCV returns > 8 coefficients (all zeros) when CALIB_RATIONAL_MODEL is set.
-        # These include, e.g. thin prism coefficients, which we are not interested in.
-        self.distortion = self.distortion[:8]
+        # OpenCV returns more than 8 coefficients (the additional ones all zeros) when CALIB_RATIONAL_MODEL is set.
+        # The extra ones include e.g. thin prism coefficients, which we are not interested in.
+        self.distortion = dist_coeffs.flat[:8].reshape(-1, 1)
 
         # R is identity matrix for monocular calibration
         self.R = numpy.eye(3, dtype=numpy.float64)
