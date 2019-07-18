@@ -637,11 +637,14 @@ class MonoCalibrator(Calibrator):
         # If FIX_ASPECT_RATIO flag set, enforce focal lengths have 1/1 ratio
         self.intrinsics[0,0] = 1.0
         self.intrinsics[1,1] = 1.0
-        cv2.calibrateCamera(
+        reproj_err, self.intrinsics, self.distortion, rvecs, tvecs = cv2.calibrateCamera(
                    opts, ipts,
                    self.size, self.intrinsics,
                    self.distortion,
                    flags = self.calib_flags)
+        # OpenCV returns > 8 coefficients (all zeros) when CALIB_RATIONAL_MODEL is set.
+        # These include, e.g. thin prism coefficients, which we are not interested in.
+        self.distortion = self.distortion[:8]
 
         # R is identity matrix for monocular calibration
         self.R = numpy.eye(3, dtype=numpy.float64)
