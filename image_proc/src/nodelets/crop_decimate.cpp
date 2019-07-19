@@ -198,15 +198,15 @@ void CropDecimateNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   int max_width = image_msg->width - config.x_offset;
   if (max_width <= 0)
   {
-    ROS_WARN_STREAM("x offset is outside the input image width: "
-        << image_msg->width << ", x offset: " << config.x_offset);
+    ROS_WARN_THROTTLE(30., "x offset is outside the input image width: "
+      "%i, x offset: %i.", image_msg->width, config.x_offset);
     return;
   }
   int max_height = image_msg->height - config.y_offset;
   if (max_height <= 0)
   {
-    ROS_WARN_STREAM("y offset is outside the input image height: "
-        << image_msg->height << ", y offset: " << config.y_offset);
+    ROS_WARN_THROTTLE(30., "y offset is outside the input image height: "
+      "%i, y offset: %i", image_msg->height, config.y_offset);
     return;
   }
   int width = config.width;
