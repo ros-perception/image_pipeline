@@ -132,7 +132,7 @@ void ResizeNodelet::infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg)
     config = config_;
   }
 
-  sensor_msgs::CameraInfo dst_info_msg = *info_msg;
+  sensor_msgs::CameraInfoPtr dst_info_msg(new sensor_msgs::CameraInfo(*info_msg));
 
   double scale_y;
   double scale_x;
@@ -140,27 +140,27 @@ void ResizeNodelet::infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg)
   {
     scale_y = config.scale_height;
     scale_x = config.scale_width;
-    dst_info_msg.height = static_cast<int>(info_msg->height * config.scale_height);
-    dst_info_msg.width = static_cast<int>(info_msg->width * config.scale_width);
+    dst_info_msg->height = static_cast<int>(info_msg->height * config.scale_height);
+    dst_info_msg->width = static_cast<int>(info_msg->width * config.scale_width);
   }
   else
   {
     scale_y = static_cast<double>(config.height) / info_msg->height;
     scale_x = static_cast<double>(config.width) / info_msg->width;
-    dst_info_msg.height = config.height;
-    dst_info_msg.width = config.width;
+    dst_info_msg->height = config.height;
+    dst_info_msg->width = config.width;
   }
 
-  dst_info_msg.K[0] = dst_info_msg.K[0] * scale_x;  // fx
-  dst_info_msg.K[2] = dst_info_msg.K[2] * scale_x;  // cx
-  dst_info_msg.K[4] = dst_info_msg.K[4] * scale_y;  // fy
-  dst_info_msg.K[5] = dst_info_msg.K[5] * scale_y;  // cy
+  dst_info_msg->K[0] = dst_info_msg->K[0] * scale_x;  // fx
+  dst_info_msg->K[2] = dst_info_msg->K[2] * scale_x;  // cx
+  dst_info_msg->K[4] = dst_info_msg->K[4] * scale_y;  // fy
+  dst_info_msg->K[5] = dst_info_msg->K[5] * scale_y;  // cy
 
-  dst_info_msg.P[0] = dst_info_msg.P[0] * scale_x;  // fx
-  dst_info_msg.P[2] = dst_info_msg.P[2] * scale_x;  // cx
-  dst_info_msg.P[3] = dst_info_msg.P[3] * scale_x;  // T
-  dst_info_msg.P[5] = dst_info_msg.P[5] * scale_y;  // fy
-  dst_info_msg.P[6] = dst_info_msg.P[6] * scale_y;  // cy
+  dst_info_msg->P[0] = dst_info_msg->P[0] * scale_x;  // fx
+  dst_info_msg->P[2] = dst_info_msg->P[2] * scale_x;  // cx
+  dst_info_msg->P[3] = dst_info_msg->P[3] * scale_x;  // T
+  dst_info_msg->P[5] = dst_info_msg->P[5] * scale_y;  // fy
+  dst_info_msg->P[6] = dst_info_msg->P[6] * scale_y;  // cy
 
   pub_info_.publish(dst_info_msg);
 }
