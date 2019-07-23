@@ -41,6 +41,7 @@ from rclpy.node import Node
 import sensor_msgs.msg
 import sensor_msgs.srv
 import threading
+import time
 from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, Patterns
 try:
     from queue import Queue
@@ -134,6 +135,8 @@ class CalibrationNode(Node):
         self.q_stereo = BufferQueue(queue_size)
 
         self.c = None
+        
+        self._last_display = None
 
         mth = ConsumerThread(self.q_mono, self.handle_monocular)
         mth.setDaemon(True)
@@ -243,13 +246,16 @@ class OpenCVCalibrationNode(CalibrationNode):
         sth.start()
 
         while True:
-            im = self.queue_display.get()
-            cv2.imshow("display", im)
+            if self.queue_display.qsize() > 0:
+                self.image = self.queue_display.get()
+                cv2.imshow("display", self.image)
+            else:
+                time.sleep(0.1)
             k = cv2.waitKey(6) & 0xFF
             if k in [27, ord('q')]:
                 rclpy.shutdown()
-            elif k == ord('s'):
-                self.screendump(im)
+            elif k == ord('s') and self.image is not None:
+                self.screendump(self.image)
 
     def initWindow(self):
         cv2.namedWindow("display", cv2.WINDOW_NORMAL)
@@ -268,7 +274,10 @@ class OpenCVCalibrationNode(CalibrationNode):
         if event == cv2.EVENT_LBUTTONDOWN and self.displaywidth < x:
             if self.c.goodenough:
                 if 180 <= y < 280:
+                    print("**** Calibrating ****")
                     self.c.do_calibration()
+                    self.buttons(self._last_display)
+                    self.queue_display.put(self._last_display)
             if self.c.calibrated:
                 if 280 <= y < 380:
                     self.c.do_save()
@@ -307,6 +316,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         while os.access("/tmp/dump%d.png" % i, os.R_OK):
             i += 1
         cv2.imwrite("/tmp/dump%d.png" % i, im)
+        print("Saved screen dump to /tmp/dump%d.png" % i)
 
     def redraw_monocular(self, drawable):
         height = drawable.scrib.shape[0]
@@ -315,7 +325,6 @@ class OpenCVCalibrationNode(CalibrationNode):
         display = numpy.zeros((max(480, height), width + 100, 3), dtype=numpy.uint8)
         display[0:height, 0:width,:] = drawable.scrib
         display[0:height, width:width+100,:].fill(255)
-
 
         self.buttons(display)
         if not self.c.calibrated:
@@ -341,6 +350,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 #print "linear", linerror
             self.putText(display, msg, (width, self.y(1)))
 
+        self._last_display = display
         self.queue_display.put(display)
 
     def redraw_stereo(self, drawable):
@@ -379,4 +389,5 @@ class OpenCVCalibrationNode(CalibrationNode):
                 self.putText(display, "dim", (2 * width, self.y(2)))
                 self.putText(display, "%.3f" % drawable.dim, (2 * width, self.y(3)))
 
+        self._last_display = display
         self.queue_display.put(display)
