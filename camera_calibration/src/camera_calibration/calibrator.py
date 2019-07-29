@@ -493,7 +493,7 @@ class Calibrator(object):
         + " ".join(["%8f" % k[2,i] for i in range(3)]) + "\n"
         + "\n"
         + "distortion\n"
-        + " ".join(["%8f" % d[i,0] for i in range(d.shape[0])]) + "\n"
+        + " ".join("%8f" % x for x in d.flat) + "\n"
         + "\n"
         + "rectification\n"
         + " ".join(["%8f" % r[0,i] for i in range(3)]) + "\n"
@@ -516,20 +516,20 @@ class Calibrator(object):
         + "camera_matrix:\n"
         + "  rows: 3\n"
         + "  cols: 3\n"
-        + "  data: [" + ", ".join(["%8f" % i for i in k.reshape(1,9)[0]]) + "]\n"
+        + "  data: [" + ", ".join("%8f" % x for x in k.flat) + "]\n"
         + "distortion_model: " + ("rational_polynomial" if d.size > 5 else "plumb_bob") + "\n"
         + "distortion_coefficients:\n"
         + "  rows: 1\n"
-        + "  cols: 5\n"
-        + "  data: [" + ", ".join(["%8f" % d[i,0] for i in range(d.shape[0])]) + "]\n"
+        + "  cols: %d\n" % d.size
+        + "  data: [" + ", ".join("%8f" % x for x in d.flat) + "]\n"
         + "rectification_matrix:\n"
         + "  rows: 3\n"
         + "  cols: 3\n"
-        + "  data: [" + ", ".join(["%8f" % i for i in r.reshape(1,9)[0]]) + "]\n"
+        + "  data: [" + ", ".join("%8f" % x for x in r.flat) + "]\n"
         + "projection_matrix:\n"
         + "  rows: 3\n"
         + "  cols: 4\n"
-        + "  data: [" + ", ".join(["%8f" % i for i in p.reshape(1,12)[0]]) + "]\n"
+        + "  data: [" + ", ".join("%8f" % x for x in p.flat) + "]\n"
         + "")
         return calmessage
 
@@ -629,19 +629,17 @@ class MonoCalibrator(Calibrator):
         ipts = [ points for (points, _) in good ]
         opts = self.mk_object_points(boards)
 
-        self.intrinsics = numpy.zeros((3, 3), numpy.float64)
-        if self.calib_flags & cv2.CALIB_RATIONAL_MODEL:
-            self.distortion = numpy.zeros((8, 1), numpy.float64) # rational polynomial
-        else:
-            self.distortion = numpy.zeros((5, 1), numpy.float64) # plumb bob
         # If FIX_ASPECT_RATIO flag set, enforce focal lengths have 1/1 ratio
-        self.intrinsics[0,0] = 1.0
-        self.intrinsics[1,1] = 1.0
-        cv2.calibrateCamera(
+        intrinsics_in = numpy.eye(3, dtype=numpy.float64)
+        reproj_err, self.intrinsics, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(
                    opts, ipts,
-                   self.size, self.intrinsics,
-                   self.distortion,
+                   self.size,
+                   intrinsics_in,
+                   None,
                    flags = self.calib_flags)
+        # OpenCV returns more than 8 coefficients (the additional ones all zeros) when CALIB_RATIONAL_MODEL is set.
+        # The extra ones include e.g. thin prism coefficients, which we are not interested in.
+        self.distortion = dist_coeffs.flat[:8].reshape(-1, 1)
 
         # R is identity matrix for monocular calibration
         self.R = numpy.eye(3, dtype=numpy.float64)
