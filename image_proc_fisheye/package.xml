@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<package>
+  <name>image_proc_fisheye</name>
+  <version>0.0.1</version>
+  <description>Uses OpenCV gpu functions for camera calibration</description>
+
+  <maintainer email="jak0@gmail.com">Jack</maintainer>
+  <license>BSD</license>
+
+  <url type="website">https://github.com/Jack000</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>OpenCV</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>image_geometry</build_depend>
+  <build_depend>nodelet</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>boost</build_depend>
+  
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>OpenCV</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>image_geometry</run_depend>
+  <run_depend>nodelet</run_depend>
+  <run_depend>roscpp</run_depend>
+
+  <export>
+    <nodelet plugin="${prefix}/nodelet_plugins_.xml" />
+  </export>
+</package>
