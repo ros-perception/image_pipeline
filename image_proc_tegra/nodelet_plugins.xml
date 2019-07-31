@@ -1,0 +1,20 @@
+<library path="libimage_proc_tegra">
+  
+   <class name="image_proc_tegra/RectifyNodelet"
+	  type="image_proc_tegra::RectifyNodelet"
+	  base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet to rectify an unrectified camera image stream using gpu
+    </description>
+  </class>
+  
+  <class name="image_proc_tegra_fisheye/RectifyNodelet"
+	 type="image_proc_tegra_fisheye::RectifyNodelet"
+	 base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet to rectify an unrectified fisheyecamera image stream using gpu
+    </description>
+  </class>
+  
+  
+</library>
