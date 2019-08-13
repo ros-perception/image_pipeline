@@ -123,7 +123,7 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
   // First publish to mono if needed
   if (pub_mono_.getNumSubscribers())
   {
-    if (enc::isMono(raw_msg->encoding))
+    if (enc::isMono(raw_msg->encoding) || raw_msg->encoding == enc::TYPE_32FC1)
       pub_mono_.publish(raw_msg);
     else
     {
@@ -156,7 +156,7 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
   if (!pub_color_.getNumSubscribers())
     return;
 
-  if (enc::isMono(raw_msg->encoding))
+  if (enc::isMono(raw_msg->encoding) || raw_msg->encoding == enc::TYPE_32FC1)
   {
     // For monochrome, no processing needed!
     pub_color_.publish(raw_msg);
