@@ -53,6 +53,12 @@ bool Processor::process(const sensor_msgs::ImageConstPtr& raw_image,
   if (raw_encoding == enc::BGR8 || raw_encoding == enc::RGB8) {
     raw_type = CV_8UC3;
     output.color_encoding = raw_encoding;
+  } else if (raw_encoding == enc::TYPE_32FC1) {
+    // Float depth
+    raw_type = CV_32FC1;
+  } else if (raw_encoding == enc::MONO16) {
+    // Uint16 depth
+    raw_type = CV_16UC1;
   }
   // Construct cv::Mat pointing to raw_image data
   const cv::Mat raw(raw_image->height, raw_image->width, raw_type,
@@ -98,6 +104,14 @@ bool Processor::process(const sensor_msgs::ImageConstPtr& raw_image,
     output.mono = raw;
     if (flags & COLOR_EITHER) {
       output.color_encoding = enc::MONO8;
+      output.color = raw;
+    }
+  }
+  // Depth
+  else if (raw_encoding == enc::TYPE_32FC1 || raw_encoding == enc::MONO16) {
+    output.mono = raw;
+    if (flags & COLOR_EITHER) {
+      output.color_encoding = raw_encoding
       output.color = raw;
     }
   }
