@@ -32,16 +32,14 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import print_function
 import roslib
 import rosunit
-import rospy
 import cv2
 
 import collections
 import copy
 import numpy
-import os
-import sys
 import tarfile
 import unittest
 
