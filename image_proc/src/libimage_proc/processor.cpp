@@ -111,7 +111,7 @@ bool Processor::process(const sensor_msgs::ImageConstPtr& raw_image,
   else if (raw_encoding == enc::TYPE_32FC1 || raw_encoding == enc::MONO16) {
     output.mono = raw;
     if (flags & COLOR_EITHER) {
-      output.color_encoding = raw_encoding
+      output.color_encoding = raw_encoding;
       output.color = raw;
     }
   }
