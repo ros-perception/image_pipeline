@@ -469,13 +469,16 @@ class Calibrator():
 
         return (scrib, corners, downsampled_corners, board, (x_scale, y_scale))
 
+
     @staticmethod
-    def lrmsg(d, k, r, p, size, camera_model):
+    def lrmsg(d, k, r, p, size):
         """ Used by :meth:`as_message`.  Return a CameraInfo message for the given calibration matrices """
         msg = sensor_msgs.msg.CameraInfo()
-        (msg.width, msg.height) = size
-        msg.distortion_model = _get_dist_model(d, camera_model)
-
+        msg.width, msg.height = size
+        if d.size > 5:
+            msg.distortion_model = "rational_polynomial"
+        else:
+            msg.distortion_model = "plumb_bob"
         msg.d = numpy.ravel(d).copy().tolist()
         msg.k = numpy.ravel(k).copy().tolist()
         msg.r = numpy.ravel(r).copy().tolist()
@@ -484,80 +487,86 @@ class Calibrator():
 
     @staticmethod
     def lrreport(d, k, r, p):
-        print("D = ", numpy.ravel(d).tolist())
-        print("K = ", numpy.ravel(k).tolist())
-        print("R = ", numpy.ravel(r).tolist())
-        print("P = ", numpy.ravel(p).tolist())
+        print("D =", numpy.ravel(d).tolist())
+        print("K =", numpy.ravel(k).tolist())
+        print("R =", numpy.ravel(r).tolist())
+        print("P =", numpy.ravel(p).tolist())
 
     @staticmethod
     def lrost(name, d, k, r, p, size):
         assert k.shape == (3, 3)
         assert r.shape == (3, 3)
         assert p.shape == (3, 4)
-        calmessage = (
-        "# oST version 5.0 parameters\n"
-        + "\n"
-        + "\n"
-        + "[image]\n"
-        + "\n"
-        + "width\n"
-        + str(size[0]) + "\n"
-        + "\n"
-        + "height\n"
-        + str(size[1]) + "\n"
-        + "\n"
-        + "[%s]" % name + "\n"
-        + "\n"
-        + "camera matrix\n"
-        + " ".join(["%8f" % k[0,i] for i in range(3)]) + "\n"
-        + " ".join(["%8f" % k[1,i] for i in range(3)]) + "\n"
-        + " ".join(["%8f" % k[2,i] for i in range(3)]) + "\n"
-        + "\n"
-        + "distortion\n"
-        + " ".join("%8f" % x for x in d.flat) + "\n"
-        + "\n"
-        + "rectification\n"
-        + " ".join(["%8f" % r[0,i] for i in range(3)]) + "\n"
-        + " ".join(["%8f" % r[1,i] for i in range(3)]) + "\n"
-        + " ".join(["%8f" % r[2,i] for i in range(3)]) + "\n"
-        + "\n"
-        + "projection\n"
-        + " ".join(["%8f" % p[0,i] for i in range(4)]) + "\n"
-        + " ".join(["%8f" % p[1,i] for i in range(4)]) + "\n"
-        + " ".join(["%8f" % p[2,i] for i in range(4)]) + "\n"
-        + "\n")
+        calmessage = "\n".join([
+            "# oST version 5.0 parameters",
+            "",
+            "",
+            "[image]",
+            "",
+            "width",
+            "%d" % size[0],
+            "",
+            "height",
+            "%d" % size[1],
+            "",
+            "[%s]" % name,
+            "",
+            "camera matrix",
+            " ".join("%8f" % k[0,i] for i in range(3)),
+            " ".join("%8f" % k[1,i] for i in range(3)),
+            " ".join("%8f" % k[2,i] for i in range(3)),
+            "",
+            "distortion",
+            " ".join("%8f" % x for x in d.flat),
+            "",
+            "rectification",
+            " ".join("%8f" % r[0,i] for i in range(3)),
+            " ".join("%8f" % r[1,i] for i in range(3)),
+            " ".join("%8f" % r[2,i] for i in range(3)),
+            "",
+            "projection",
+            " ".join("%8f" % p[0,i] for i in range(4)),
+            " ".join("%8f" % p[1,i] for i in range(4)),
+            " ".join("%8f" % p[2,i] for i in range(4)),
+            ""
+        ])
         assert len(calmessage) < 525, "Calibration info must be less than 525 bytes"
         return calmessage
 
     @staticmethod
-    def lryaml(name, d, k, r, p, size, cam_model):
-        dist_model = _get_dist_model(d, cam_model)
+    def lryaml(name, d, k, r, p, size):
+        def format_mat(x, precision):
+            return ("[%s]" % (
+                numpy.array2string(x, precision=precision, suppress_small=True, separator=", ")
+                    .replace("[", "").replace("]", "").replace("\n", "\n        ")
+            ))
 
         assert k.shape == (3, 3)
         assert r.shape == (3, 3)
         assert p.shape == (3, 4)
-        calmessage = (""
-        + "image_width: " + str(size[0]) + "\n"
-        + "image_height: " + str(size[1]) + "\n"
-        + "camera_name: " + name + "\n"
-        + "camera_matrix:\n"
-        + "  rows: 3\n"
-        + "  cols: 3\n"
-        + "  data: [" + ", ".join("%8f" % x for x in k.flat) + "]\n"
-        + "distortion_model: " + ("rational_polynomial" if d.size > 5 else "plumb_bob") + "\n"
-        + "distortion_coefficients:\n"
-        + "  rows: 1\n"
-        + "  cols: %d\n" % d.size
-        + "  data: [" + ", ".join("%8f" % x for x in d.flat) + "]\n"
-        + "rectification_matrix:\n"
-        + "  rows: 3\n"
-        + "  cols: 3\n"
-        + "  data: [" + ", ".join("%8f" % x for x in r.flat) + "]\n"
-        + "projection_matrix:\n"
-        + "  rows: 3\n"
-        + "  cols: 4\n"
-        + "  data: [" + ", ".join("%8f" % x for x in p.flat) + "]\n"
-        + "")
+        calmessage = "\n".join([
+            "image_width: %d" % size[0],
+            "image_height: %d" % size[1],
+            "camera_name: " + name,
+            "camera_matrix:",
+            "  rows: 3",
+            "  cols: 3",
+            "  data: " + format_mat(k, 5),
+            "distortion_model: " + ("rational_polynomial" if d.size > 5 else "plumb_bob"),
+            "distortion_coefficients:",
+            "  rows: 1",
+            "  cols: %d" % d.size,
+            "  data: [%s]" % ", ".join("%8f" % x for x in d.flat),
+            "rectification_matrix:",
+            "  rows: 3",
+            "  cols: 3",
+            "  data: " + format_mat(r, 8),
+            "projection_matrix:",
+            "  rows: 3",
+            "  cols: 4",
+            "  data: " + format_mat(p, 5),
+            ""
+        ])
         return calmessage
 
     def do_save(self):
