@@ -108,7 +108,8 @@ def main():
     group.add_option("--max-chessboard-speed", type="float", default=-1.0,
                      help="Do not use samples where the calibration pattern is moving faster \
                      than this speed in px/frame. Set to eg. 0.5 for rolling shutter cameras.")
-
+    group.add_option("--mono-before-stereo", action='store_true', default=False,
+                     help="Independently perform monocular calibration before stereo calibration")
     parser.add_option_group(group)
 
     options, args = parser.parse_args()
@@ -191,7 +192,7 @@ def main():
     rospy.init_node('cameracalibrator')
     node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, fisheye_calib_flags, pattern, options.camera_name,
                                  checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed,
-                                 queue_size=options.queue_size)
+                                 queue_size=options.queue_size, mono_before_stereo=options.mono_before_stereo)
     rospy.spin()
 
 if __name__ == "__main__":
