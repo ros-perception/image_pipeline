@@ -42,7 +42,7 @@ import tarfile
 
 from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo
 
-import rospy
+import rclpy
 import sensor_msgs.srv
 
 def display(win_name, img):
@@ -51,7 +51,7 @@ def display(win_name, img):
     k = cv2.waitKey(0)
     cv2.destroyWindow(win_name)
     if k in [27, ord('q')]:
-        rospy.signal_shutdown('Quit')
+        rclpy.shutdown()
 
 
 def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags = 0, visualize = False, alpha=1.0):
@@ -67,18 +67,18 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
     if upload: 
         info = calibrator.as_message()
         if mono:
-            set_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"), sensor_msgs.srv.SetCameraInfo)
+            set_camera_info_service = rclpy.ServiceProxy("%s/set_camera_info" % "camera", sensor_msgs.srv.SetCameraInfo)
 
-            response = set_camera_info_service(info)
+            response = set_camera_info_service.call(info)
             if not response.success:
                 raise RuntimeError("connected to set_camera_info service, but failed setting camera_info")
         else:
-            set_left_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("left_camera"), sensor_msgs.srv.SetCameraInfo)
-            set_right_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("right_camera"), sensor_msgs.srv.SetCameraInfo)
+            set_left_camera_info_service = rclpy.ServiceProxy("%s/set_camera_info" % "left_camera", sensor_msgs.srv.SetCameraInfo)
+            set_right_camera_info_service = rclpy.ServiceProxy("%s/set_camera_info" % "right_camera", sensor_msgs.srv.SetCameraInfo)
 
             response1 = set_left_camera_info_service(info[0])
             response2 = set_right_camera_info_service(info[1])
-            if not (response1.success and response2.success):
+            if not (response1.result().success and response2.result().success):
                 raise RuntimeError("connected to set_camera_info service, but failed setting camera_info")
 
     if visualize:
