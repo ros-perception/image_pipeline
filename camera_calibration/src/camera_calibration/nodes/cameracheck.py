@@ -38,7 +38,6 @@ from camera_calibration.camera_checker import CameraCheckerNode
 
 def main():
     from optparse import OptionParser
-    rclpy.init_node('cameracheck')
     parser = OptionParser()
     parser.add_option("-s", "--size", default="8x6", help="specify chessboard size as nxm [default: %default]")
     parser.add_option("-q", "--square", default=".108", help="specify chessboard square size in meters [default: %default]")

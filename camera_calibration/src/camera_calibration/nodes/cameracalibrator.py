@@ -143,7 +143,7 @@ def main():
     rclpy.init(args=args)
     node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
                                  checkerboard_flags=checkerboard_flags)
-    rclpy.spin(node)
+    node.spin()
 
 if __name__ == "__main__":
     try:

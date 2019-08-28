@@ -48,34 +48,18 @@ from message_filters import ApproximateTimeSynchronizer
 from std_msgs.msg import String
 from std_srvs.srv import Empty
 
+class SpinThread(threading.Thread):
+    """
+    Thread that spins the ros node, while imshow runs in the main thread
+    """
 
-class DisplayThread(threading.Thread):
-    """
-    Thread that displays the current images
-    It is its own thread so that all display can be done
-    in one thread to overcome imshow limitations and
-    https://github.com/ros-perception/image_pipeline/issues/85
-    """
-    def __init__(self, queue, opencv_calibration_node):
+    def __init__(self, node):
         threading.Thread.__init__(self)
-        self.queue = queue
-        self.opencv_calibration_node = opencv_calibration_node
+        self.node = node
 
     def run(self):
-        cv2.namedWindow("display", cv2.WINDOW_NORMAL)
-        cv2.setMouseCallback("display", self.opencv_calibration_node.on_mouse)
-        cv2.createTrackbar("scale", "display", 0, 100, self.opencv_calibration_node.on_scale)
-        while True:
-            # wait for an image (could happen at the very beginning when the queue is still empty)
-            while len(self.queue) == 0:
-                time.sleep(0.1)
-            im = self.queue[0]
-            cv2.imshow("display", im)
-            k = cv2.waitKey(6) & 0xFF
-            if k in [27, ord('q')]:
-                rclpy.shutdown()
-            elif k == ord('s'):
-                self.opencv_calibration_node.screendump(im)
+        rclpy.spin(self.node)
+        
 
 class ConsumerThread(threading.Thread):
     def __init__(self, queue, function):
@@ -226,9 +210,29 @@ class OpenCVCalibrationNode(CalibrationNode):
         CalibrationNode.__init__(self, *args, **kwargs)
 
         self.queue_display = deque([], 1)
-        self.display_thread = DisplayThread(self.queue_display, self)
-        self.display_thread.setDaemon(True)
-        self.display_thread.start()
+        self.initWindow()
+
+    def spin(self):
+        sth = SpinThread(self)
+        sth.setDaemon(True)
+        sth.start()
+
+        while True:
+            # wait for an image (could happen at the very beginning when the queue is still empty)
+            while len(self.queue_display) == 0:
+                time.sleep(0.1)
+            im = self.queue_display[0]
+            cv2.imshow("display", im)
+            k = cv2.waitKey(6) & 0xFF
+            if k in [27, ord('q')]:
+                rclpy.shutdown()
+            elif k == ord('s'):
+                self.screendump(im)
+
+    def initWindow(self):
+        cv2.namedWindow("display", cv2.WINDOW_NORMAL)
+        cv2.setMouseCallback("display", self.on_mouse)
+        cv2.createTrackbar("scale", "display", 0, 100, self.on_scale)
 
     @classmethod
     def putText(cls, img, text, org, color = (0,0,0)):

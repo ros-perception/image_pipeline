@@ -71,11 +71,10 @@ class ConsumerThread(threading.Thread):
 
     def run(self):
         while rclpy.ok():
-            while rclpy.ok():
-                m = self.queue.get()
-                if self.queue.empty():
-                    break
-            self.function(m)
+            m = self.queue.get()
+            if self.queue.empty():
+                break
+        self.function(m)
 
 class CameraCheckerNode(Node):
 
@@ -103,7 +102,7 @@ class CameraCheckerNode(Node):
         else:
             sync = functools.partial(ApproximateTimeSynchronizer, slop=approximate)
 
-        tsm = sync([message_filters.Subscriber(self, topic, type) for (topic, type) in tosync_mono], 10)
+        tsm = sync([message_filters.Subscriber(self, type, topic) for (topic, type) in tosync_mono], 10)
         tsm.registerCallback(self.queue_monocular)
 
         left_topic = "stereo/left/image_rect"
@@ -118,7 +117,7 @@ class CameraCheckerNode(Node):
             (right_camera_topic, sensor_msgs.msg.CameraInfo)
         ]
 
-        tss = sync([message_filters.Subscriber(self, topic, type) for (topic, type) in tosync_stereo], 10)
+        tss = sync([message_filters.Subscriber(self, type, topic) for (topic, type) in tosync_stereo], 10)
         tss.registerCallback(self.queue_stereo)
 
         self.br = cv_bridge.CvBridge()
