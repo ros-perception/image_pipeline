@@ -60,6 +60,19 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions& options)
           camera_namespace_ = parameter.as_string();
           RCLCPP_INFO(get_logger(), "reset camera_namespace to %s! ", camera_namespace_.c_str());
         }
+      DebayerNode::createPublisher();
+      }
+      return result;
+  };
+
+  debayer_ = this->declare_parameter("debayer", 3);
+  camera_namespace_ = this->declare_parameter("camera_namespace", "/image");  
+  DebayerNode::createPublisher();
+  this->set_on_parameters_set_callback(parameter_change_cb);
+}
+
+
+void DebayerNode::createPublisher() {
       std::string image_mono = camera_namespace_+"/image_mono";
       std::string image_color = camera_namespace_+"/image_color";
       connectCb();
@@ -68,12 +81,6 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions& options)
       RCLCPP_INFO(this->get_logger(), "mono: %s, color: %s", image_mono.c_str(), image_color.c_str());
       pub_mono_  = image_transport::create_publisher(this, image_mono);
       pub_color_ = image_transport::create_publisher(this, image_color);
-      }
-      return result;
-  };
-
-  debayer_ = this->declare_parameter("debayer", 3);
-  this->set_on_parameters_set_callback(parameter_change_cb);
 }
 
 // Handles (un)subscribing when clients (un)subscribe

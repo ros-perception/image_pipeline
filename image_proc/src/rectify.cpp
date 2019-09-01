@@ -56,37 +56,42 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions& options)
         }
       }
       for (auto parameter : parameters){
-        if (parameter.get_name() == "image_mono") {
-          image_topic = camera_namespace_ + parameter.as_string();
-          image_rect = camera_namespace_+"/image_rect";
-          RCLCPP_INFO(get_logger(), "image_topic: %s, image_rect: %s", image_topic.c_str(), image_rect.c_str());
-          connectCb();
-          std::lock_guard<std::mutex> lock(connect_mutex_);
-          pub_rect_ = image_transport::create_publisher(this, image_rect);
-          break;
-        }
-        if (parameter.get_name() == "image_color") {
-          image_topic = camera_namespace_ + parameter.as_string();
-          image_rect = camera_namespace_ + "/image_rect_color";
-          RCLCPP_INFO(get_logger(), "image_topic: %s, image_rect: %s", image_topic.c_str(), image_rect.c_str());
-          connectCb();
-          std::lock_guard<std::mutex> lock(connect_mutex_);
-          pub_rect_ = image_transport::create_publisher(this, image_rect);
+        if (parameter.get_name() == "image_topic") {
+          this->createPublisher(parameter.as_string());
           break;
         }
       }
       return result;
     };
+
   queue_size_ = this->declare_parameter("queue_size", 5);
   interpolation = this->declare_parameter("interpolation", 0);
+  
+  image_topic_ = this->declare_parameter("image_topic", "/image_color");
+
+  if (!this->has_parameter("camera_namespace")) {
+    camera_namespace_ = this->declare_parameter("camera_namespace", "/image");
+  }
+
+  this->createPublisher(image_topic_);
+ 
   this->set_on_parameters_set_callback(parameter_change_cb);
+}
+
+
+void RectifyNode::createPublisher(const std::string & parameter_name) {
+  ns_image_topic_ = camera_namespace_ + parameter_name;
+  image_rect = ns_image_topic_ + "_rect";
+  RCLCPP_INFO(this->get_logger(), "image_topic: %s, image_rect: %s", ns_image_topic_.c_str(), image_rect.c_str());
+  connectCb();
+  std::lock_guard<std::mutex> lock(connect_mutex_);
+  pub_rect_ = image_transport::create_publisher(this, image_rect);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
 void RectifyNode::connectCb( )
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
-
   /* 
   *  SubscriberStatusCallback not yet implemented
   */
@@ -94,9 +99,9 @@ void RectifyNode::connectCb( )
     sub_camera_.shutdown();
   else if (!sub_camera_)
   {*/
-  sub_camera_ = image_transport::create_camera_subscription(this, image_topic,
+  sub_camera_ = image_transport::create_camera_subscription(this, ns_image_topic_,
                       std::bind(&RectifyNode::imageCb, 
-                                this, std::placeholders::_1, std::placeholders::_2),"raw");
+                                this, std::placeholders::_1, std::placeholders::_2), "raw");
   //}
 }
 

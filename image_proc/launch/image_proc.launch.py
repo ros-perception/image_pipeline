@@ -52,7 +52,7 @@ def generate_launch_description():
                     node_name='rectify_mono_node',
                     parameters=[
                         {"camera_namespace": NAMESPACE}, 
-                        {"image_mono": "/image_mono"}
+                        {"image_topic": "/image_mono"}
                     ]),
             ComposableNode(
                     package='image_proc',
@@ -60,7 +60,7 @@ def generate_launch_description():
                     node_name='rectify_color_node',
                     parameters=[
                         {"camera_namespace": NAMESPACE},
-                        {"image_color": "/image_color"}
+                        {"image_topic": "/image_color"}
                     ])
                 ],
         output='screen'
@@ -84,7 +84,7 @@ def main(argv):
     print('')
 
     ls = LaunchService()
-    ls.include_launch_description(get_default_launch_description(prefix_output_with_name=False))
+    ls.include_launch_description(get_default_launch_description())
     ls.include_launch_description(ld)
 
     return ls.run()

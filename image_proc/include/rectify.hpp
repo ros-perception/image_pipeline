@@ -57,7 +57,9 @@ class RectifyNode : public rclcpp::Node
     int interpolation;
     std::string camera_namespace_;
     std::string image_rect;
-    std::string image_topic;
+    std::string ns_image_topic_;
+
+    std::string image_topic_;
 
     std::mutex connect_mutex_;
     image_transport::Publisher pub_rect_;
@@ -65,6 +67,7 @@ class RectifyNode : public rclcpp::Node
     // Processing state (note: only safe because we're using single-threaded NodeHandle!)
     image_geometry::PinholeCameraModel model_;
 
+    void createPublisher(const std::string & parameter_name);
     void connectCb();
     void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
                 const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg);
