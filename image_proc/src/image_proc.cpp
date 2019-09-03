@@ -44,6 +44,27 @@
 #include <rcutils/cmdline_parser.h>
 #include "debayer.hpp"
 #include "rectify.hpp"
+std::vector<std::string> split(
+  const std::string & s, char delim, bool skip_empty = false)
+{
+  std::vector<std::string> result;
+  std::stringstream ss;
+  ss.str(s);
+  std::string item;
+  while (std::getline(ss, item, delim)) {
+    if (skip_empty && item == "") {
+      continue;
+    }
+    result.push_back(item);
+  }
+  return result;
+}
+void print_usage()
+{
+  printf("Usage for image_proc:\n");
+  printf("options:\n");
+  printf("--camera_namespace : Specifies the camera.\n");
+}
 
 int main(int argc, char * argv[])
 {
@@ -54,21 +75,33 @@ int main(int argc, char * argv[])
 
   rclcpp::init(argc, argv);
 
-  std::string camera_namespace = "image";
+  std::string camera_namespace;
+  if (rcutils_cli_option_exist(argv, argv + argc, "--camera_namespace")) {
+    camera_namespace = std::string(rcutils_cli_get_option(argv, argv + argc, "--camera_namespace"));
+  }
+  else {
+    print_usage();
+    return 0;
+  }
 
   rclcpp::executors::SingleThreadedExecutor exec;
   const rclcpp::NodeOptions options;
 
   // Debayer nodelet, image_raw -> image_mono, image_color
   auto debayer_node = std::make_shared<image_proc::DebayerNode>(options);
+  debayer_node->declare_parameter("camera_namespace", camera_namespace);
+  
 
   // Rectify nodelet, image_mono -> image_rect
   auto rectify_mono_node = std::make_shared<image_proc::RectifyNode>(options);
-  rectify_mono_node->set_parameter(rclcpp::Parameter("image_topic", "/image_mono"));
+  rectify_mono_node->declare_parameter("camera_namespace", camera_namespace);
+  rectify_mono_node->declare_parameter("image_mono", "/image_mono");
+  
 
   // Rectify nodelet, image_color -> image_rect_color
   auto rectify_color_node = std::make_shared<image_proc::RectifyNode>(options);
-  rectify_color_node->set_parameter(rclcpp::Parameter("image_topic", "/image_color"));
+  rectify_color_node->declare_parameter("camera_namespace", camera_namespace);
+  rectify_color_node->declare_parameter("image_color", "/image_color");
   
   exec.add_node(debayer_node);
   exec.add_node(rectify_mono_node);

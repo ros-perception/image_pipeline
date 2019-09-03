@@ -70,7 +70,6 @@ class DebayerNode : public rclcpp::Node
     image_transport::Publisher pub_mono_;
     image_transport::Publisher pub_color_;
 
-    void createPublisher();
     void connectCb();
     void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg);
 };
