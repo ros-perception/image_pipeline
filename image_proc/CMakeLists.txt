@@ -83,9 +83,6 @@ ament_target_dependencies(image_proc
   "rcutils"
 )
 
-install(DIRECTORY launch/
-        DESTINATION share/${PROJECT_NAME}/launch)
-
 install(TARGETS
   debayer
   rectify
