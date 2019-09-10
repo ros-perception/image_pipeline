@@ -51,22 +51,22 @@ namespace image_rotate
 ImageRotateNode::ImageRotateNode()
 : Node("ImageRotateNode")
 {
-  this->get_parameter_or_set("target_frame_id", config_.target_frame_id, std::string(""));
-  this->get_parameter_or_set("target_x", config_.target_x, static_cast<double>(0));
-  this->get_parameter_or_set("target_y", config_.target_y, static_cast<double>(0));
-  this->get_parameter_or_set("target_z", config_.target_z, static_cast<double>(1));
+  config_.target_frame_id = this->declare_parameter("target_frame_id", std::string(""));
+  config_.target_x = this->declare_parameter("target_x", static_cast<double>(0));
+  config_.target_y = this->declare_parameter("target_y", static_cast<double>(0));
+  config_.target_z = this->declare_parameter("target_z", static_cast<double>(1));
 
-  this->get_parameter_or_set("source_frame_id", config_.source_frame_id, std::string(""));
-  this->get_parameter_or_set("source_x", config_.source_x, static_cast<double>(0));
-  this->get_parameter_or_set("source_y", config_.source_y, static_cast<double>(-1));
-  this->get_parameter_or_set("source_z", config_.source_z, static_cast<double>(0));
+  config_.source_frame_id = this->declare_parameter("source_frame_id", std::string(""));
+  config_.source_x = this->declare_parameter("source_x", static_cast<double>(0));
+  config_.source_y = this->declare_parameter("source_y", static_cast<double>(-1));
+  config_.source_z = this->declare_parameter("source_z", static_cast<double>(0));
 
-  this->get_parameter_or_set("output_frame_id", config_.output_frame_id, std::string(""));
-  this->get_parameter_or_set("input_frame_id", config_.input_frame_id, std::string(""));
-  this->get_parameter_or_set("use_camera_info", config_.use_camera_info, true);
-  this->get_parameter_or_set("max_angular_rate", config_.max_angular_rate,
+  config_.output_frame_id = this->declare_parameter("output_frame_id", std::string(""));
+  config_.input_frame_id = this->declare_parameter("input_frame_id", std::string(""));
+  config_.use_camera_info = this->declare_parameter("use_camera_info", true);
+  config_.max_angular_rate = this->declare_parameter("max_angular_rate",
     static_cast<double>(10));
-  this->get_parameter_or_set("output_image_size", config_.output_image_size,
+  config_.output_image_size = this->declare_parameter("output_image_size",
     static_cast<double>(2));
 
   auto reconfigureCallback =
@@ -111,7 +111,7 @@ ImageRotateNode::ImageRotateNode()
       }
       return result;
     };
-  this->register_param_change_callback(reconfigureCallback);
+  this->set_on_parameters_set_callback(reconfigureCallback);
   onInit();
 }
 
@@ -332,10 +332,7 @@ void ImageRotateNode::onInit()
   //  "image", 1, connect_cb, disconnect_cb);
   connectCb();
   img_pub_ = image_transport::create_publisher(this, "rotated/image");
-
-  // TODO(yechun1):  cannot be used in reconstructor. Use different
-  // constructor once available.
-  tf_pub_ = std::make_shared<tf2_ros::TransformBroadcaster>(rclcpp::Node::SharedPtr(this));
+  tf_pub_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
 }
 }  // namespace image_rotate
 
