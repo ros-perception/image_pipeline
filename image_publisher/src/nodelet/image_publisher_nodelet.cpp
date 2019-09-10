@@ -50,11 +50,11 @@ ImagePublisherNode::ImagePublisherNode()
 {
   pub_ = image_transport::create_camera_publisher(this, "image_raw");
 
-  this->declare_parameter("flip_horizontal", false);
-  this->declare_parameter("flip_vertical", false);
-  this->declare_parameter("frame_id", std::string("camera"));
-  this->declare_parameter("publish_rate", static_cast<double>(10));
-  this->declare_parameter("camera_info_url", std::string(""));
+  flip_horizontal_ = this->declare_parameter("flip_horizontal", false);
+  flip_vertical_ = this->declare_parameter("flip_vertical", false);
+  frame_id_ = this->declare_parameter("frame_id", std::string("camera"));
+  publish_rate_ = this->declare_parameter("publish_rate", static_cast<double>(10));
+  camera_info_url_ = this->declare_parameter("camera_info_url", std::string(""));
 
   auto param_change_callback =
     [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
