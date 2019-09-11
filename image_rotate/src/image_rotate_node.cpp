@@ -65,9 +65,9 @@ ImageRotateNode::ImageRotateNode()
   config_.input_frame_id = this->declare_parameter("input_frame_id", std::string(""));
   config_.use_camera_info = this->declare_parameter("use_camera_info", true);
   config_.max_angular_rate = this->declare_parameter("max_angular_rate",
-    static_cast<double>(10));
+      static_cast<double>(10));
   config_.output_image_size = this->declare_parameter("output_image_size",
-    static_cast<double>(2));
+      static_cast<double>(2));
 
   auto reconfigureCallback =
     [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
