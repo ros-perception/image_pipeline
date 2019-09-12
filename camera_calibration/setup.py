@@ -7,11 +7,15 @@ setup(
     name=PACKAGE_NAME,
     version='1.12.23',
     packages=["camera_calibration", "camera_calibration.nodes"],
+    data_files=[
+    ('share/ament_index/resource_index/packages',
+      ['resource/' + PACKAGE_NAME]),
+    ('share/' + PACKAGE_NAME, ['package.xml']),
+    ],
     py_modules=[],
     package_dir={'': 'src'},
     install_requires=[
         'setuptools',
-        'opencv-python'
     ],
     zip_safe=True,
     author='James Bowman, Patrick Mihelich',
