@@ -37,6 +37,7 @@ import ament_index_python
 import requests
 import unittest
 import tarfile
+import os
 
 from camera_calibration.calibrator import StereoCalibrator, ChessboardInfo, image_from_archive
 
@@ -82,6 +83,4 @@ class TestMultipleBoards(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    suite.addTest(TestMultipleBoards('test_multi_board_cal'))
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main(verbosity=2)

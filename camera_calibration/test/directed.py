@@ -51,7 +51,7 @@ board.n_rows = 6
 board.dim = 0.108
 
 class TestDirected(unittest.TestCase):
-    def __init__(self, *args):
+    def setUp(self):
         if not os.path.isfile('camera_calibration.tar.gz'):
             url = 'http://download.ros.org/data/camera_calibration/camera_calibration.tar.gz'
             r = requests.get(url, allow_redirects=True)
@@ -165,7 +165,6 @@ class TestArtificial(unittest.TestCase):
     def setUp(self):
         # Define some image transforms that will simulate a camera position
         M = []
-        cv2.getPerspectiveTransform
         self.K = numpy.array([[500, 0, 250], [0, 500, 250], [0, 0, 1]], numpy.float32)
         self.D = numpy.array([])
         # physical size of the board
@@ -202,7 +201,7 @@ class TestArtificial(unittest.TestCase):
                 pattern.fill(255)
                 for j in range(1, setup.rows+1):
                     for i in range(0, setup.cols):
-                        cv2.circle(pattern, (x*(1 + 2*i + (j%2)) + x/2, x*j + x/2), x/3, (0,0,0), -1)
+                        cv2.circle(pattern, (int(x*(1 + 2*i + (j%2)) + x/2), int(x*j + x/2)), int(x/3), (0,0,0), -1)
 
             rows, cols, _ = pattern.shape
             object_points_2d = numpy.array([[0, 0], [0, cols-1], [rows-1, cols-1], [rows-1, 0]], numpy.float32)
@@ -272,8 +271,4 @@ class TestArtificial(unittest.TestCase):
             print('intrinsics error is %f' % numpy.linalg.norm(mc.intrinsics - self.K, ord=numpy.inf))
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    #suite.addTest(TestDirected('directed'))
-    suite.addTest(TestArtificial('artificial'))
-
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main(verbosity=2)
