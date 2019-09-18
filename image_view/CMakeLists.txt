@@ -42,6 +42,10 @@ find_package(GTK2)
 add_definitions(-DHAVE_GTK)
 include_directories(${GTK2_INCLUDE_DIRS})
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(PC_HB REQUIRED harfbuzz)
+include_directories(${PC_HB_INCLUDE_DIRS})
+
 # Nodelet library
 add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
 target_link_libraries(image_view ${catkin_LIBRARIES}
