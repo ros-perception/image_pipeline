@@ -230,7 +230,16 @@ void DebayerNodelet::imageCb(const sensor_msgs::ImageConstPtr& raw_msg)
         if (algorithm == Debayer_VNG)
           code += cv::COLOR_BayerBG2BGR_VNG - cv::COLOR_BayerBG2BGR;
 
-        cv::cvtColor(bayer, color, code);
+        try
+        {
+          cv::cvtColor(bayer, color, code);
+        }
+        catch (cv::Exception &e)
+        {
+          NODELET_WARN_THROTTLE(30, "cvtColor error: '%s', bayer code: %d, width %d, height %d",
+                       e.what(), code, bayer.cols, bayer.rows);
+          return;
+        }
       }
       
       pub_color_.publish(color_msg);
