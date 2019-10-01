@@ -60,6 +60,25 @@ ament_target_dependencies(debayer
 rclcpp_components_register_nodes(debayer "image_proc::DebayerNode")
 set(node_plugins "${node_plugins}image_proc::DebayerNode;$<TARGET_FILE:debayer>\n")
 
+add_library(resize SHARED
+  src/resize.cpp
+  )
+
+target_compile_definitions(resize
+  PRIVATE "COMPOSITION_BUILDING_DLL")
+
+ament_target_dependencies(resize
+  "sensor_msgs"
+  "cv_bridge"
+  "class_loader"
+  "image_transport"
+  "rclcpp"
+  "rclcpp_components"
+  )
+
+rclcpp_components_register_nodes(resize "image_proc::ResizeNode")
+set(node_plugins "${node_plugins}image_proc::ResizeNode;$<TARGET_FILE:resize>\n")
+
 add_executable(image_proc
                src/image_proc.cpp
 )
@@ -84,6 +103,7 @@ ament_target_dependencies(image_proc
 )
 
 install(TARGETS
+  resize
   debayer
   rectify
   ARCHIVE DESTINATION lib
