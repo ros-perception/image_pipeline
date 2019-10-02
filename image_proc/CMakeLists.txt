@@ -20,7 +20,20 @@ find_package(sensor_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(image_geometry REQUIRED)
 
-include_directories(include)
+include_directories(
+  include
+)
+
+set(dependencies
+  image_geometry
+  sensor_msgs
+  cv_bridge
+  class_loader
+  image_transport
+  rclcpp
+  rclcpp_components
+  rcutils
+)
 
 add_library(rectify SHARED
   src/rectify.cpp)
@@ -28,14 +41,8 @@ target_compile_definitions(rectify
   PRIVATE "COMPOSITION_BUILDING_DLL")
 
 ament_target_dependencies(rectify
-  "image_geometry"
-  "sensor_msgs"
-  "cv_bridge"
-  "class_loader"
-  "image_transport"
-  "rclcpp"
-  "rclcpp_components"
-  )
+  ${dependencies}
+)
   
 rclcpp_components_register_nodes(rectify "image_proc::RectifyNode")
 set(node_plugins "${node_plugins}image_proc::RectifyNode;$<TARGET_FILE:rectify>\n")
@@ -49,13 +56,8 @@ target_compile_definitions(debayer
   PRIVATE "COMPOSITION_BUILDING_DLL")
 
 ament_target_dependencies(debayer
-  "sensor_msgs"
-  "cv_bridge"
-  "class_loader"
-  "image_transport"
-  "rclcpp"
-  "rclcpp_components"
-  )
+  ${dependencies}
+)
 
 rclcpp_components_register_nodes(debayer "image_proc::DebayerNode")
 set(node_plugins "${node_plugins}image_proc::DebayerNode;$<TARGET_FILE:debayer>\n")
@@ -68,13 +70,8 @@ target_compile_definitions(resize
   PRIVATE "COMPOSITION_BUILDING_DLL")
 
 ament_target_dependencies(resize
-  "sensor_msgs"
-  "cv_bridge"
-  "class_loader"
-  "image_transport"
-  "rclcpp"
-  "rclcpp_components"
-  )
+  ${dependencies}
+)
 
 rclcpp_components_register_nodes(resize "image_proc::ResizeNode")
 set(node_plugins "${node_plugins}image_proc::ResizeNode;$<TARGET_FILE:resize>\n")
@@ -82,6 +79,7 @@ set(node_plugins "${node_plugins}image_proc::ResizeNode;$<TARGET_FILE:resize>\n"
 add_executable(image_proc
                src/image_proc.cpp
 )
+
 target_link_libraries(image_proc
   debayer
   rectify
@@ -92,14 +90,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 ament_target_dependencies(image_proc
-  "image_geometry"
-  "sensor_msgs"
-  "cv_bridge"
-  "class_loader"
-  "image_transport"
-  "rclcpp"
-  "rclcpp_components"
-  "rcutils"
+  ${dependencies}
 )
 
 install(TARGETS
@@ -114,4 +105,5 @@ install(TARGETS
 install(TARGETS
         image_proc
         DESTINATION lib/${PROJECT_NAME})
+
 ament_package()

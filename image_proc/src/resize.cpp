@@ -65,7 +65,7 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options) : rclcpp::Node("Resi
 
       std::lock_guard<std::mutex> lock(connect_mutex_);
       pub_image_ = image_transport::create_publisher(this, image_topic_ + "/resize");
-      pub_info_ = this->create_publisher<sensor_msgs::msg::CameraInfo>(camera_info_topic_ + "/resize", rclcpp::QoS(1));
+      pub_info_ = this->create_publisher<sensor_msgs::msg::CameraInfo>(camera_info_topic_ + "/resize", rclcpp::SensorDataQoS());
 
       return result;
     };
@@ -95,14 +95,12 @@ void ResizeNode::connectCb()
   
   if (!sub_image_)
   {
-    std::cout << "subscribe sub_image_" << std::endl;
     sub_image_ = image_transport::create_subscription(this, image_topic_, std::bind(&ResizeNode::imageCb, this, std::placeholders::_1), "raw");
   }
   
   if (!sub_info_)
   {
-    std::cout << "subscribe sub_info_" << std::endl;
-    sub_info_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(camera_info_topic_, rclcpp::QoS(1), std::bind(&ResizeNode::infoCb, this, std::placeholders::_1));
+    sub_info_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(camera_info_topic_, rclcpp::SensorDataQoS(), std::bind(&ResizeNode::infoCb, this, std::placeholders::_1));
   }
 }
 
@@ -148,7 +146,7 @@ void ResizeNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& image_ms
   {
     cv_ptr = cv_bridge::toCvCopy(image_msg);
   }
-  catch (cv_bridge::Exception& e)
+  catch (cv_bridge::Exception & e)
   {
     RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
     return;
