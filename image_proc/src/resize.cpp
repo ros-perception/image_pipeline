@@ -81,7 +81,6 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options) : rclcpp::Node("Resi
 
   rclcpp::Parameter parameter;
   if (rclcpp::PARAMETER_NOT_SET != this->get_parameter("camera_namespace", parameter)) {
-    std::cout << "Camera space set" << std::endl;
     parameter_change_cb(this->get_parameters({"camera_namespace"}));
   }
 
