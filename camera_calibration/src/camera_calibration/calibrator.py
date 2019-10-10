@@ -335,7 +335,7 @@ class Calibrator():
             num_pts = b.n_cols * b.n_rows
             opts_loc = numpy.zeros((num_pts, 1, 3), numpy.float32)
             for j in range(num_pts):
-                opts_loc[j, 0, 0] = (j / b.n_cols)
+                opts_loc[j, 0, 0] = (j // b.n_cols)
                 if self.pattern == Patterns.ACircles:
                     opts_loc[j, 0, 1] = 2*(j % b.n_cols) + (opts_loc[j, 0, 0] % 2)
                 else:
@@ -669,7 +669,7 @@ class MonoCalibrator(Calibrator):
 
         self.size = (msg.width, msg.height)
         self.intrinsics = numpy.array(msg.k, dtype=numpy.float64, copy=True).reshape((3, 3))
-        self.distortion = numpy.array(msg.d, dtype=numpy.float64, copy=True).reshape((len(msg.D), 1))
+        self.distortion = numpy.array(msg.d, dtype=numpy.float64, copy=True).reshape((len(msg.d), 1))
         self.R = numpy.array(msg.r, dtype=numpy.float64, copy=True).reshape((3, 3))
         self.P = numpy.array(msg.p, dtype=numpy.float64, copy=True).reshape((3, 4))
 
