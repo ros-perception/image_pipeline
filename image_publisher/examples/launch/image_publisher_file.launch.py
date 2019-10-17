@@ -39,7 +39,7 @@ import launch_ros.actions
 
 def generate_launch_description():
     filename = os.path.join(get_package_share_directory('image_publisher'), 'launch',
-                                'splash.png')
+                            'splash.png')
     return LaunchDescription([
 
         launch_ros.actions.Node(
