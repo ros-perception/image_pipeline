@@ -5,7 +5,7 @@ find_package(catkin REQUIRED COMPONENTS camera_calibration_parsers cv_bridge dyn
 generate_dynamic_reconfigure_options(cfg/ImageView.cfg)
 
 catkin_package(CATKIN_DEPENDS dynamic_reconfigure)
-find_package(Boost REQUIRED COMPONENTS signals thread)
+find_package(Boost REQUIRED COMPONENTS thread)
 find_package(OpenCV REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS}
@@ -41,6 +41,10 @@ endif()
 find_package(GTK2)
 add_definitions(-DHAVE_GTK)
 include_directories(${GTK2_INCLUDE_DIRS})
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(PC_HB REQUIRED harfbuzz)
+include_directories(${PC_HB_INCLUDE_DIRS})
 
 # Nodelet library
 add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)

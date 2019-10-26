@@ -99,7 +99,7 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   if (g_gui && !g_last_image.empty()) {
     const cv::Mat &image = g_last_image;
     cv::imshow(g_window_name, image);
-    cv::waitKey(3);
+    cv::waitKey(1);
   }
   if (g_pub.getNumSubscribers() > 0) {
     g_pub.publish(cv_ptr);
@@ -134,6 +134,11 @@ static void mouseCb(int event, int x, int y, int flags, void* param)
   }
 }
 
+static void guiCb(const ros::WallTimerEvent&)
+{
+    // Process pending GUI events and return immediately
+    cv::waitKey(1);
+}
 
 int main(int argc, char **argv)
 {
@@ -145,6 +150,7 @@ int main(int argc, char **argv)
 
   ros::NodeHandle nh;
   ros::NodeHandle local_nh("~");
+  ros::WallTimer gui_timer;
 
   // Default window name is the resolved topic name
   std::string topic = nh.resolveName("image");
@@ -159,7 +165,7 @@ int main(int argc, char **argv)
     // Handle window size
     bool autosize;
     local_nh.param("autosize", autosize, false);
-    cv::namedWindow(g_window_name, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
+    cv::namedWindow(g_window_name, autosize ? (cv::WINDOW_AUTOSIZE | cv::WINDOW_KEEPRATIO | cv::WINDOW_GUI_EXPANDED) : 0);
     cv::setMouseCallback(g_window_name, &mouseCb);
 
     if(autosize == false)
@@ -174,8 +180,11 @@ int main(int argc, char **argv)
       }
     }
 
-    // Start the OpenCV window thread so we don't have to waitKey() somewhere
-    cv::startWindowThread();
+    // Since cv::startWindowThread() triggers a crash in cv::waitKey()
+    // if OpenCV is compiled against GTK, we call cv::waitKey() from
+    // the ROS event loop periodically, instead.
+    /*cv::startWindowThread();*/
+    gui_timer = local_nh.createWallTimer(ros::WallDuration(0.1), guiCb);
   }
 
   // Handle transport
@@ -208,5 +217,11 @@ int main(int argc, char **argv)
   if (g_gui) {
     cv::destroyWindow(g_window_name);
   }
+  // The publisher is a global variable, and therefore its scope exceeds those
+  // of the node handles in main(). Unfortunately, this will cause a crash
+  // when the publisher tries to shut down and all node handles are gone
+  // already. Therefore, we shut down the publisher now and avoid the annoying
+  // mutex assertion.
+  g_pub.shutdown();
   return 0;
 }

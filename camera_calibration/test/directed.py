@@ -32,16 +32,14 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import print_function
 import roslib
 import rosunit
-import rospy
 import cv2
 
 import collections
 import copy
 import numpy
-import os
-import sys
 import tarfile
 import unittest
 
@@ -163,7 +161,6 @@ class TestArtificial(unittest.TestCase):
     def setUp(self):
         # Define some image transforms that will simulate a camera position
         M = []
-        cv2.getPerspectiveTransform
         self.K = numpy.array([[500, 0, 250], [0, 500, 250], [0, 0, 1]], numpy.float32)
         self.D = numpy.array([])
         # physical size of the board
@@ -268,6 +265,28 @@ class TestArtificial(unittest.TestCase):
             self.assert_(err_intrinsics < setup.K_err,
                          'intrinsics error is %f for resolution i = %d' % (err_intrinsics, i))
             print('intrinsics error is %f' % numpy.linalg.norm(mc.intrinsics - self.K, ord=numpy.inf))
+
+    def test_rational_polynomial_model(self):
+        """Test that the distortion coefficients returned for a rational_polynomial model are not empty."""
+        for i, setup in enumerate(self.setups):
+            board = ChessboardInfo()
+            board.n_cols = setup.cols
+            board.n_rows = setup.rows
+            board.dim = self.board_width_dim
+
+            mc = MonoCalibrator([ board ], flags=cv2.CALIB_RATIONAL_MODEL, pattern=setup.pattern)
+            mc.cal(self.limages[i])
+            self.assertEqual(len(mc.distortion.flat), 8,
+                             'length of distortion coefficients is %d' % len(mc.distortion.flat))
+            self.assert_(all(mc.distortion.flat != 0),
+                         'some distortion coefficients are zero: %s' % str(mc.distortion.flatten()))
+            self.assertEqual(mc.as_message().distortion_model, 'rational_polynomial')
+            self.assert_good_mono(mc, self.limages[i], setup.lin_err)
+        
+            yaml = mc.yaml()
+            # Issue #278
+            self.assertIn('cols: 8', yaml)
+
 
 if __name__ == '__main__':
     #rosunit.unitrun('camera_calibration', 'directed', TestDirected)

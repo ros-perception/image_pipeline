@@ -1,12 +1,14 @@
 <package>
   <name>image_view</name>
-  <version>1.12.23</version>
+  <version>1.13.0</version>
   <description>
   A simple viewer for ROS image topics. Includes a specialized viewer
   for stereo + disparity images.
   </description>
   <author>Patrick Mihelich</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
+  <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
+  <maintainer email="software@autonomoustuff.com">Autonomoustuff team</maintainer>
   <license>BSD</license>
   <url>http://www.ros.org/wiki/image_view</url>
 

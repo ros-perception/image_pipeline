@@ -48,7 +48,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
         cv::Size size(image_msg->width, image_msg->height);
 
         outputVideo.open(filename, 
-#if CV_MAJOR_VERSION == 3
+#if CV_MAJOR_VERSION >= 3
                 cv::VideoWriter::fourcc(codec.c_str()[0],
 #else
                 CV_FOURCC(codec.c_str()[0],
@@ -70,7 +70,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
 
     }
 
-    if ((image_msg->header.stamp - g_last_wrote_time) < ros::Duration(1 / fps))
+    if ((image_msg->header.stamp - g_last_wrote_time) < ros::Duration(1.0 / fps))
     {
       // Skip to get video with correct fps
       return;

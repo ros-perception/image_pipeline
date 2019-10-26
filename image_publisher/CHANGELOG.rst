@@ -2,6 +2,15 @@
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.13.0 (2019-06-12)
+-------------------
+* Merge pull request `#358 <https://github.com/ros-perception/image_pipeline/issues/358>`_ from lucasw/image_pub_dr_private_namespace
+* Use a shared_ptr for the dynamic reconfigure pointer, and create it with the private node handle so that the parameters for the dynamic reconfigure server are in the private namespace and two image publishers can coexist in the same manager `#357 <https://github.com/ros-perception/image_pipeline/issues/357>`_
+* Merge pull request `#395 <https://github.com/ros-perception/image_pipeline/issues/395>`_ from ros-perception/steve_maintain
+* adding autonomoustuff mainainer
+* adding stevemacenski as maintainer to get emails
+* Contributors: Joshua Whitley, Lucas Walter, Yoshito Okada, stevemacenski
+
 1.12.23 (2018-05-10)
 --------------------
 * fix 'VideoCapture' undefined symbol error (`#318 <https://github.com/ros-perception/image_pipeline/issues/318>`_)

@@ -32,8 +32,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import print_function
 import os
-import sys
 import numpy
 
 import cv2
@@ -45,16 +45,10 @@ from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, Cali
 import rospy
 import sensor_msgs.srv
 
-def waitkey():
-    k = cv2.waitKey(6)
-    return k
-
 def display(win_name, img):
     cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
     cv2.imshow( win_name,  numpy.asarray( img[:,:] ))
-    k=-1
-    while k ==-1:
-        k=waitkey()
+    k = cv2.waitKey(0)
     cv2.destroyWindow(win_name)
     if k in [27, ord('q')]:
         rospy.signal_shutdown('Quit')

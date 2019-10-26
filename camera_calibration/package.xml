@@ -1,6 +1,6 @@
 <package>
   <name>camera_calibration</name>
-  <version>1.12.23</version>
+  <version>1.13.0</version>
   <description>
      camera_calibration allows easy calibration of monocular or stereo
      cameras using a checkerboard calibration target.
@@ -8,6 +8,8 @@
   <author>James Bowman</author>
   <author>Patrick Mihelich</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
+  <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
+  <maintainer email="software@autonomoustuff.com">Autonomoustuff team</maintainer>
 
   <buildtool_depend version_gte="0.5.68">catkin</buildtool_depend>
 

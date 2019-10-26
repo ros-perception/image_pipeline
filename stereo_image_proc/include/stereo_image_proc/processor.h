@@ -56,7 +56,7 @@ class StereoProcessor
 public:
   
   StereoProcessor()
-#if CV_MAJOR_VERSION == 3
+#if CV_MAJOR_VERSION >= 3
   {
     block_matcher_ = cv::StereoBM::create();
     sg_block_matcher_ = cv::StereoSGBM::create(1, 1, 10);
@@ -168,7 +168,7 @@ private:
   image_proc::Processor mono_processor_;
   
   mutable cv::Mat_<int16_t> disparity16_; // scratch buffer for 16-bit signed disparity image
-#if CV_MAJOR_VERSION == 3
+#if CV_MAJOR_VERSION >= 3
   mutable cv::Ptr<cv::StereoBM> block_matcher_; // contains scratch buffers for block matching
   mutable cv::Ptr<cv::StereoSGBM> sg_block_matcher_;
 #else
@@ -220,7 +220,7 @@ inline void StereoProcessor::SET(TYPE param) \
   sg_block_matcher_->SET_OPENCV(param); \
 }
 
-#if CV_MAJOR_VERSION == 3
+#if CV_MAJOR_VERSION >= 3
 STEREO_IMAGE_PROC_OPENCV3(getPreFilterCap, setPreFilterCap, int, getPreFilterCap, setPreFilterCap)
 STEREO_IMAGE_PROC_OPENCV3(getCorrelationWindowSize, setCorrelationWindowSize, int, getBlockSize, setBlockSize)
 STEREO_IMAGE_PROC_OPENCV3(getMinDisparity, setMinDisparity, int, getMinDisparity, setMinDisparity)
@@ -272,7 +272,7 @@ inline void StereoProcessor::SET(TYPE param) \
 }
 
 // BM only
-#if CV_MAJOR_VERSION == 3
+#if CV_MAJOR_VERSION >= 3
 STEREO_IMAGE_PROC_ONLY_OPENCV3(block_matcher_, getPreFilterSize, setPreFilterSize, int, getPreFilterSize, setPreFilterSize)
 STEREO_IMAGE_PROC_ONLY_OPENCV3(block_matcher_, getTextureThreshold, setTextureThreshold, int, getTextureThreshold, setTextureThreshold)
 #else
@@ -281,7 +281,7 @@ STEREO_IMAGE_PROC_BM_ONLY_OPENCV2(getTextureThreshold, setTextureThreshold, int,
 #endif
 
 // SGBM specific
-#if CV_MAJOR_VERSION == 3
+#if CV_MAJOR_VERSION >= 3
 // getSgbmMode can return MODE_SGBM = 0, MODE_HH = 1. FullDP == 1 was MODE_HH so we're good
 STEREO_IMAGE_PROC_ONLY_OPENCV3(sg_block_matcher_, getSgbmMode, setSgbmMode, int, getMode, setMode)
 STEREO_IMAGE_PROC_ONLY_OPENCV3(sg_block_matcher_, getP1, setP1, int, getP1, setP1)
