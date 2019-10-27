@@ -39,7 +39,7 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/exact_time.h>
-#include <image_geometry/pinhole_camera_model.h>
+#include <image_geometry/camera_model.h>
 #include <boost/thread.hpp>
 #include <depth_image_proc/depth_traits.h>
 

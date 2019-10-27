@@ -41,7 +41,7 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <sensor_msgs/image_encodings.h>
-#include <image_geometry/pinhole_camera_model.h>
+#include <image_geometry/camera_model.h>
 #include <Eigen/Geometry>
 #include <eigen_conversions/eigen_msg.h>
 #include <depth_image_proc/depth_traits.h>
@@ -69,7 +69,7 @@ class RegisterNodelet : public nodelet::Nodelet
   boost::mutex connect_mutex_;
   image_transport::CameraPublisher pub_registered_;
 
-  image_geometry::PinholeCameraModel depth_model_, rgb_model_;
+  image_geometry::CameraModel depth_model_, rgb_model_;
 
   virtual void onInit();
 

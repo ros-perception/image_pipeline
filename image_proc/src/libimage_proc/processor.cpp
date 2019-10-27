@@ -40,7 +40,7 @@ namespace image_proc {
 namespace enc = sensor_msgs::image_encodings;
 
 bool Processor::process(const sensor_msgs::ImageConstPtr& raw_image,
-                        const image_geometry::PinholeCameraModel& model,
+                        const image_geometry::CameraModel& model,
                         ImageSet& output, int flags) const
 {
   static const int MONO_EITHER = MONO | RECT;

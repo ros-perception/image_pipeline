@@ -39,7 +39,7 @@
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
-#include <image_geometry/pinhole_camera_model.h>
+#include <image_geometry/camera_model.h>
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
 #include <image_proc/RectifyConfig.h>
@@ -64,7 +64,7 @@ class RectifyNodelet : public nodelet::Nodelet
   Config config_;
 
   // Processing state (note: only safe because we're using single-threaded NodeHandle!)
-  image_geometry::PinholeCameraModel model_;
+  image_geometry::CameraModel model_;
 
   virtual void onInit();
 

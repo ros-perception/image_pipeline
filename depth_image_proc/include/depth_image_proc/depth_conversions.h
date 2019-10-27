@@ -36,7 +36,7 @@
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
-#include <image_geometry/pinhole_camera_model.h>
+#include <image_geometry/camera_model.h>
 #include <depth_image_proc/depth_traits.h>
 
 #include <limits>
@@ -50,7 +50,7 @@ template<typename T>
 void convert(
     const sensor_msgs::ImageConstPtr& depth_msg,
     PointCloud::Ptr& cloud_msg,
-    const image_geometry::PinholeCameraModel& model,
+    const image_geometry::CameraModel& model,
     double range_max = 0.0)
 {
   // Use correct principal point from calibration

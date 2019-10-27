@@ -35,7 +35,7 @@
 #define IMAGE_PROC_PROCESSOR_H
 
 #include <opencv2/core/core.hpp>
-#include <image_geometry/pinhole_camera_model.h>
+#include <image_geometry/camera_model.h>
 #include <sensor_msgs/Image.h>
 
 namespace image_proc {
@@ -68,7 +68,7 @@ public:
   };
   
   bool process(const sensor_msgs::ImageConstPtr& raw_image,
-               const image_geometry::PinholeCameraModel& model,
+               const image_geometry::CameraModel& model,
                ImageSet& output, int flags = ALL) const;
 };
 

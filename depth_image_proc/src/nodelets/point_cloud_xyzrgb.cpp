@@ -47,7 +47,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <image_geometry/pinhole_camera_model.h>
+#include <image_geometry/camera_model.h>
 #include <depth_image_proc/depth_traits.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -77,7 +77,7 @@ class PointCloudXyzrgbNodelet : public nodelet::Nodelet
   typedef sensor_msgs::PointCloud2 PointCloud;
   ros::Publisher pub_point_cloud_;
 
-  image_geometry::PinholeCameraModel model_;
+  image_geometry::CameraModel model_;
 
   virtual void onInit();
 
