@@ -81,7 +81,9 @@ class DisplayThread(threading.Thread):
     def run(self):
         cv2.namedWindow("display", cv2.WINDOW_NORMAL)
         cv2.setMouseCallback("display", self.opencv_calibration_node.on_mouse)
+        cv2.createTrackbar("Camera type: \n 0 : pinhole \n 1 : fisheye", "display", 0,1, self.opencv_calibration_node.on_model_change)
         cv2.createTrackbar("scale", "display", 0, 100, self.opencv_calibration_node.on_scale)
+        
         while True:
             if self.queue.qsize() > 0:
                 self.image = self.queue.get()
@@ -273,6 +275,8 @@ class OpenCVCalibrationNode(CalibrationNode):
                     # Only shut down if we set camera info correctly, #3993
                     if self.do_upload():
                         rospy.signal_shutdown('Quit')
+    def on_model_change(self,model_select_val):
+        self.c.set_distmodel( "pinhole" if model_select_val < 0.5 else "fisheye")
 
     def on_scale(self, scalevalue):
         if self.c.calibrated:
