@@ -1,6 +1,7 @@
 #image_proc_fisheye
 
-A ROS nodelet for image rectification of fisheye cameras images. Needs camera to be calibrated with OpenCV's 3.4+ fisheye model.
+A ROS nodelet for image rectification using OpenCV's gpu functions. This nodelet is useful to reduce CPU usage in rectifying large video streams.
+Needs OpenCV 3.4 with CUDA support
 
 Install:
 
