@@ -1,3 +1,18 @@
+1.13.0 (2019-06-12)
+-------------------
+* Merge pull request `#356 <https://github.com/ros-perception/image_pipeline/issues/356>`_ from sevangelatos/feature/calibrator_rolling_shutter
+* Add max-chessboard-speed option to allow more accurate calibration of rolling shutter cameras.
+* Merge pull request `#334 <https://github.com/ros-perception/image_pipeline/issues/334>`_ from Fruchtzwerg94/patch-2
+  Scale pixels down from 16 to 8 bits instead of just clipping
+* Merge pull request `#340 <https://github.com/ros-perception/image_pipeline/issues/340>`_ from k-okada/286
+  use waitKey(0) instead of while loop
+* Merge pull request `#395 <https://github.com/ros-perception/image_pipeline/issues/395>`_ from ros-perception/steve_maintain
+* adding autonomoustuff mainainer
+* adding stevemacenski as maintainer to get emails
+* Scale pixels down from 16 to 8 bits instead of just clipping
+  Clipping 16 bit pixels just to 8 bit pixels leads to white images if the original image uses the full range of the 16 bits. Instead the pixel should be scaled down to 8 bits.
+* Contributors: Joshua Whitley, Kei Okada, Philipp, Spiros Evangelatos, Yoshito Okada, stevemacenski
+
 1.12.23 (2018-05-10)
 --------------------
 * camera_checker: Ensure cols + rows are in correct order (`#319 <https://github.com/ros-perception/image_pipeline/issues/319>`_)

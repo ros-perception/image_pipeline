@@ -32,10 +32,10 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import print_function
 import cv2
 import functools
 import message_filters
-import os
 import rospy
 from camera_calibration.camera_calibrator import OpenCVCalibrationNode
 from camera_calibration.calibrator import ChessboardInfo, Patterns
@@ -68,6 +68,9 @@ def main():
     group.add_option("--no-service-check",
                      action="store_false", dest="service_check", default=True,
                      help="disable check for set_camera_info services at startup")
+    group.add_option("--queue-size",
+                     type="int", default=1,
+                     help="image queue size (default %default, set to 0 for unlimited)")
     parser.add_option_group(group)
     group = OptionGroup(parser, "Calibration Optimizer Options")
     group.add_option("--fix-principal-point",
@@ -84,6 +87,9 @@ def main():
                      help="number of radial distortion coefficients to use (up to 6, default %default)")
     group.add_option("--disable_calib_cb_fast_check", action='store_true', default=False,
                      help="uses the CALIB_CB_FAST_CHECK flag for findChessboardCorners")
+    group.add_option("--max-chessboard-speed", type="float", default=-1.0,
+                     help="Do not use samples where the calibration pattern is moving faster \
+                     than this speed in px/frame. Set to eg. 0.5 for rolling shutter cameras.")
     parser.add_option_group(group)
     options, args = parser.parse_args()
 
@@ -143,7 +149,8 @@ def main():
 
     rospy.init_node('cameracalibrator')
     node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
-                                 checkerboard_flags=checkerboard_flags)
+                                 checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed,
+                                 queue_size=options.queue_size)
     rospy.spin()
 
 if __name__ == "__main__":
