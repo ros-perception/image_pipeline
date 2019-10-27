@@ -17,7 +17,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 3 REQUIRED)
 find_package(image_geometry REQUIRED)
 
 include_directories(
@@ -94,16 +94,42 @@ ament_target_dependencies(image_proc
 )
 
 install(TARGETS
+  image_proc
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  TARGETS resize
+  EXPORT export_resize
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+install(
+  TARGETS debayer
+  EXPORT export_debayer
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+install(
+  TARGETS rectify
+  EXPORT export_rectify
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+ament_export_interfaces(
+  export_resize HAS_LIBRARY_TARGET
+  export_debayer HAS_LIBRARY_TARGET
+  export_rectify HAS_LIBRARY_TARGET
+)
+
+ament_export_libraries(
   resize
   debayer
   rectify
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
 )
-
-install(TARGETS
-        image_proc
-        DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

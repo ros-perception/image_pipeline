@@ -31,6 +31,8 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+#ifndef IMAGE_PROC_RESIZE_HPP
+#define IMAGE_PROC_RESIZE_HPP
 
 #include <cstring>
 #include <memory>
@@ -43,8 +45,6 @@
 
 #include <ament_index_cpp/get_resource.hpp>
 #include "rclcpp/rclcpp.hpp"
-#ifndef IMAGE_PROC_RESIZE_HPP
-#define IMAGE_PROC_RESIZE_HPP
 
 namespace image_proc {
 
