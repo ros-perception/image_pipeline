@@ -85,7 +85,7 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options) : rclcpp::Node("Resi
   }
 
   this->set_on_parameters_set_callback(parameter_change_cb);
-};
+}
 
 // Handles (un)subscribing when clients (un)subscribe
 void ResizeNode::connectCb()
