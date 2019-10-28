@@ -17,10 +17,23 @@ find_package(rclcpp_components REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 3 REQUIRED)
 find_package(image_geometry REQUIRED)
 
-include_directories(include)
+include_directories(
+  include
+)
+
+set(dependencies
+  image_geometry
+  sensor_msgs
+  cv_bridge
+  class_loader
+  image_transport
+  rclcpp
+  rclcpp_components
+  rcutils
+)
 
 add_library(rectify SHARED
   src/rectify.cpp)
@@ -28,14 +41,8 @@ target_compile_definitions(rectify
   PRIVATE "COMPOSITION_BUILDING_DLL")
 
 ament_target_dependencies(rectify
-  "image_geometry"
-  "sensor_msgs"
-  "cv_bridge"
-  "class_loader"
-  "image_transport"
-  "rclcpp"
-  "rclcpp_components"
-  )
+  ${dependencies}
+)
   
 rclcpp_components_register_nodes(rectify "image_proc::RectifyNode")
 set(node_plugins "${node_plugins}image_proc::RectifyNode;$<TARGET_FILE:rectify>\n")
@@ -49,20 +56,30 @@ target_compile_definitions(debayer
   PRIVATE "COMPOSITION_BUILDING_DLL")
 
 ament_target_dependencies(debayer
-  "sensor_msgs"
-  "cv_bridge"
-  "class_loader"
-  "image_transport"
-  "rclcpp"
-  "rclcpp_components"
-  )
+  ${dependencies}
+)
 
 rclcpp_components_register_nodes(debayer "image_proc::DebayerNode")
 set(node_plugins "${node_plugins}image_proc::DebayerNode;$<TARGET_FILE:debayer>\n")
 
+add_library(resize SHARED
+  src/resize.cpp
+  )
+
+target_compile_definitions(resize
+  PRIVATE "COMPOSITION_BUILDING_DLL")
+
+ament_target_dependencies(resize
+  ${dependencies}
+)
+
+rclcpp_components_register_nodes(resize "image_proc::ResizeNode")
+set(node_plugins "${node_plugins}image_proc::ResizeNode;$<TARGET_FILE:resize>\n")
+
 add_executable(image_proc
                src/image_proc.cpp
 )
+
 target_link_libraries(image_proc
   debayer
   rectify
@@ -73,25 +90,46 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 ament_target_dependencies(image_proc
-  "image_geometry"
-  "sensor_msgs"
-  "cv_bridge"
-  "class_loader"
-  "image_transport"
-  "rclcpp"
-  "rclcpp_components"
-  "rcutils"
+  ${dependencies}
 )
 
 install(TARGETS
+  image_proc
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  TARGETS resize
+  EXPORT export_resize
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+install(
+  TARGETS debayer
+  EXPORT export_debayer
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+install(
+  TARGETS rectify
+  EXPORT export_rectify
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+ament_export_interfaces(
+  export_resize HAS_LIBRARY_TARGET
+  export_debayer HAS_LIBRARY_TARGET
+  export_rectify HAS_LIBRARY_TARGET
+)
+
+ament_export_libraries(
+  resize
   debayer
   rectify
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
 )
 
-install(TARGETS
-        image_proc
-        DESTINATION lib/${PROJECT_NAME})
 ament_package()
