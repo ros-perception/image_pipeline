@@ -47,7 +47,7 @@ try:
     from queue import Queue
 except ImportError:
     from Queue import Queue
-
+from calibrator import CAMERA_MODEL
 
 class BufferQueue(Queue):
     """Slight modification of the standard Queue that discards the oldest item
@@ -275,8 +275,8 @@ class OpenCVCalibrationNode(CalibrationNode):
                     # Only shut down if we set camera info correctly, #3993
                     if self.do_upload():
                         rospy.signal_shutdown('Quit')
-    def on_model_change(self,model_select_val):
-        self.c.set_distmodel( "pinhole" if model_select_val < 0.5 else "fisheye")
+    def on_model_change(self, model_select_val):
+        self.c.set_cammodel( CAMERA_MODEL.PINHOLE if model_select_val < 0.5 else CAMERA_MODEL.FISHEYE)
 
     def on_scale(self, scalevalue):
         if self.c.calibrated:
