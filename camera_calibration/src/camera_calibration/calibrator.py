@@ -1025,7 +1025,7 @@ class StereoCalibrator(Calibrator):
                              self.T,
                              self.l.R, self.r.R, self.l.P, self.r.P,
                              alpha = a)
-            
+
             cv2.initUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.l.R, self.l.P, self.size, cv2.CV_32FC1,
                                        self.l.mapx, self.l.mapy)
             cv2.initUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.r.R, self.r.P, self.size, cv2.CV_32FC1,
@@ -1066,7 +1066,7 @@ class StereoCalibrator(Calibrator):
         """
 
         return (self.lrmsg(self.l.distortion, self.l.intrinsics, self.l.R, self.l.P, self.size,self.l.distortion_model),
-                self.lrmsg(self.r.distortion, self.r.intrinsics, self.r.R, self.r.P, self.size,seld.r.distortion_model))
+                self.lrmsg(self.r.distortion, self.r.intrinsics, self.r.R, self.r.P, self.size,self.r.distortion_model))
 
     def from_message(self, msgs, alpha = 0.0):
         """ Initialize the camera calibration from a pair of CameraInfo messages.  """
