@@ -477,7 +477,7 @@ class Calibrator(object):
         """ Used by :meth:`as_message`.  Return a CameraInfo message for the given calibration matrices """
         msg = sensor_msgs.msg.CameraInfo()
         msg.width, msg.height = size
-        msg.camera_model = _get_dist_model(d, camera_model)
+        msg.distortion_model = _get_dist_model(d, camera_model)
 
         msg.D = numpy.ravel(d).copy().tolist()
         msg.K = numpy.ravel(k).copy().tolist()
@@ -709,13 +709,12 @@ class MonoCalibrator(Calibrator):
                     self.P[j,i] = ncm[j, i]
             self.mapx, self.mapy = cv2.initUndistortRectifyMap(self.intrinsics, self.distortion, self.R, ncm, self.size, cv2.CV_32FC1)
         elif self.camera_model == CAMERA_MODEL.FISHEYE:
-            # TODO: Implement re-computation of P given users balance value
             # ncm = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(self.intrinsics, self.distortion, self.size, self.R, balance=a)
-            for j in range(3):
-                for i in range(3):
-                    self.P[j,i] = self.intrinsics[j, i]
-                    # self.P[j,i] = ncm[j, i]
-
+            # self.P[:3,:3] = ncm[:3,:3]
+            # NOTE: estimateNewCameraMatrixForUndistortRectify not producing proper results, using a naive approach instead:
+            self.P[:3,:3] = self.intrinsics[:3,:3]
+            self.P[0,0] /= (1. + a)
+            self.P[1,1] /= (1. + a)
             self.mapx, self.mapy = cv2.fisheye.initUndistortRectifyMap(self.intrinsics, self.distortion, self.R, self.P, self.size, cv2.CV_32FC1)
         else:
             print("Something went wrong when selecting a model")
