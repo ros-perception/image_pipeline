@@ -237,7 +237,7 @@ class Calibrator(object):
     """
     Base class for calibration system
     """
-    def __init__(self, boards, flags=0, pattern=Patterns.Chessboard, name='', 
+    def __init__(self, boards, flags=0, fisheye_flags = 0, pattern=Patterns.Chessboard, name='', 
     checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, max_chessboard_speed = -1.0):
         # Ordering the dimensions for the different detectors is actually a minefield...
         if pattern == Patterns.Chessboard:
@@ -253,6 +253,7 @@ class Calibrator(object):
         # Set to true after we perform calibration
         self.calibrated = False
         self.calib_flags = flags
+        self.fisheye_calib_flags = fisheye_flags
         self.checkerboard_flags = checkerboard_flags
         self.pattern = pattern
         self.br = cv_bridge.CvBridge()
@@ -679,10 +680,9 @@ class MonoCalibrator(Calibrator):
             # The extra ones include e.g. thin prism coefficients, which we are not interested in.
             self.distortion = dist_coeffs.flat[:8].reshape(-1, 1)
         elif self.camera_model == CAMERA_MODEL.FISHEYE:
-            calibration_flags = cv2.fisheye.CALIB_FIX_SKEW + self.calib_flags # Add user flags
             reproj_err, self.intrinsics, self.distortion, rvecs, tvecs = cv2.fisheye.calibrate(
                 opts, ipts, self.size,
-                intrinsics_in, None, flags = calibration_flags)
+                intrinsics_in, None, flags = self.fisheye_calib_flags)
         else:
             print("Something went wrong when selecting a model")
         # R is identity matrix for monocular calibration
@@ -1096,7 +1096,7 @@ class StereoCalibrator(Calibrator):
           self.lrost(self.name + "/right", self.r.distortion, self.r.intrinsics, self.r.R, self.r.P, self.size))
 
     def yaml(self, suffix, info):
-        return self.lryaml(self.name + suffix, info.distortion, info.intrinsics, info.R, info.P, self.size,self.camera_model)
+        return self.lryaml(self.name + suffix, info.distortion, info.intrinsics, info.R, info.P, self.size, self.camera_model)
 
     # TODO Get rid of "from_images" versions of these, instead have function to get undistorted corners
     def epipolar_error_from_images(self, limage, rimage):
