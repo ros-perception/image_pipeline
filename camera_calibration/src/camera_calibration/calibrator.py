@@ -736,8 +736,12 @@ class MonoCalibrator(Calibrator):
 
         Apply the post-calibration undistortion to the source points
         """
-
-        return cv2.undistortPoints(src, self.intrinsics, self.distortion, R = self.R, P = self.P)
+        if self.camera_model == CAMERA_MODEL.PINHOLE:
+            return cv2.undistortPoints(src, self.intrinsics, self.distortion, R = self.R, P = self.P)
+        elif self.camera_model == CAMERA_MODEL.FISHEYE:
+            return cv2.fisheye.undistortPoints(src, self.intrinsics, self.distortion, R = self.R, P = self.P)
+        else:
+            print("Something went wrong when selecting a model")
 
     def as_message(self):
         """ Return the camera calibration as a CameraInfo message """
