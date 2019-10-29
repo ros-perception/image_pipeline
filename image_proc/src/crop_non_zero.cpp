@@ -57,15 +57,21 @@ CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions& options) : Node("Cro
         RCLCPP_INFO(get_logger(), "camera_namespace: %s ", camera_namespace_.c_str());
         break;
       }
-      image_pub_ = camera_namespace_ + "/image";
-      connectCb();
-      // Make sure we don't enter connectCb() between advertising and assigning to pub_depth_
-      std::lock_guard<std::mutex> lock(connect_mutex_);
-      RCLCPP_INFO(this->get_logger(), "publish: %s", image_pub_.c_str());
-      pub_ = image_transport::create_publisher(this, image_pub_);
     }
+    image_pub_ = camera_namespace_ + "/image";
+    connectCb();
+    // Make sure we don't enter connectCb() between advertising and assigning to pub_depth_
+    std::lock_guard<std::mutex> lock(connect_mutex_);
+    RCLCPP_INFO(this->get_logger(), "publish: %s", image_pub_.c_str());
+    pub_ = image_transport::create_publisher(this, image_pub_);
     return result;
   };
+  this->declare_parameter("camera_namespace");
+
+  rclcpp::Parameter parameter;
+  if (rclcpp::PARAMETER_NOT_SET != this->get_parameter("camera_namespace", parameter)) {
+    parameter_change_cb(this->get_parameters({"camera_namespace"}));
+  }
 
   this->set_on_parameters_set_callback(parameter_change_cb);
 };
