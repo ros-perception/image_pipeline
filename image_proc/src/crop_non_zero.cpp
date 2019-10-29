@@ -45,103 +45,92 @@ namespace enc = sensor_msgs::image_encodings;
 
 CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions& options) : Node("CropNonZeroNode", options)
 {
-    auto parameter_change_cb =
-        [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult {
-        auto result = rcl_interfaces::msg::SetParametersResult();
-        result.successful = true;
-        for (auto parameter : parameters)
-        {
-            if (parameter.get_name() == "camera_namespace")
-            {
-                camera_namespace_ = parameter.as_string();
-                RCLCPP_INFO(get_logger(), "camera_namespace: %s ", camera_namespace_.c_str());
-                break;
-            }
-            image_pub_ = camera_namespace_ + "/image";
-            connectCb();
-            // Make sure we don't enter connectCb() between advertising and assigning to pub_depth_
-            std::lock_guard<std::mutex> lock(connect_mutex_);
-            RCLCPP_INFO(this->get_logger(), "publish: %s", image_pub_.c_str());
-            pub_ = image_transport::create_publisher(this, image_pub_);
-        }
-        return result;
-    };
+  auto parameter_change_cb =
+    [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult {
+    auto result = rcl_interfaces::msg::SetParametersResult();
+    result.successful = true;
+    for (auto parameter : parameters)
+    {
+      if (parameter.get_name() == "camera_namespace")
+      {
+        camera_namespace_ = parameter.as_string();
+        RCLCPP_INFO(get_logger(), "camera_namespace: %s ", camera_namespace_.c_str());
+        break;
+      }
+      image_pub_ = camera_namespace_ + "/image";
+      connectCb();
+      // Make sure we don't enter connectCb() between advertising and assigning to pub_depth_
+      std::lock_guard<std::mutex> lock(connect_mutex_);
+      RCLCPP_INFO(this->get_logger(), "publish: %s", image_pub_.c_str());
+      pub_ = image_transport::create_publisher(this, image_pub_);
+    }
+    return result;
+  };
 
-    this->set_on_parameters_set_callback(parameter_change_cb);
+  this->set_on_parameters_set_callback(parameter_change_cb);
 };
 
 // Handles (un)subscribing when clients (un)subscribe
 void CropNonZeroNode::connectCb()
 {
-    image_sub_ = camera_namespace_ + "/image_raw";
-    std::lock_guard<std::mutex> lock(connect_mutex_);
-    /*if (pub_.getNumSubscribers() == 0)
-    {
-        sub_raw_.shutdown();
-    }
-    else if (!sub_raw_)*/
-    RCLCPP_INFO(this->get_logger(), "subscribe: %s", image_sub_.c_str());
+  image_sub_ = camera_namespace_ + "/image_raw";
+  std::lock_guard<std::mutex> lock(connect_mutex_);
 
-    sub_raw_ = image_transport::create_subscription(this, image_sub_, std::bind(&CropNonZeroNode::imageCb, this, std::placeholders::_1), "raw");
+  RCLCPP_INFO(this->get_logger(), "subscribe: %s", image_sub_.c_str());
+  sub_raw_ = image_transport::create_subscription(this, image_sub_, std::bind(&CropNonZeroNode::imageCb, this, std::placeholders::_1), "raw");
 }
 
 void CropNonZeroNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr &raw_msg)
 {
-    cv_bridge::CvImagePtr cv_ptr;
-    try
-    {
-        cv_ptr = cv_bridge::toCvCopy(raw_msg);
-    }
-    catch (cv_bridge::Exception &e)
-    {
-        RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
-        return;
-    }
+  cv_bridge::CvImagePtr cv_ptr;
+  try
+  {
+    cv_ptr = cv_bridge::toCvCopy(raw_msg);
+  }
+  catch (cv_bridge::Exception &e)
+  {
+    RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
+    return;
+  }
 
-    // Check the number of channels
-    if (sensor_msgs::image_encodings::numChannels(raw_msg->encoding) != 1)
-    {
-        RCLCPP_ERROR(this->get_logger(), "Only grayscale image is acceptable, got [%s]", raw_msg->encoding.c_str());
-        return;
-    }
+  // Check the number of channels
+  if (sensor_msgs::image_encodings::numChannels(raw_msg->encoding) != 1)
+  {
+    RCLCPP_ERROR(this->get_logger(), "Only grayscale image is acceptable, got [%s]", raw_msg->encoding.c_str());
+    return;
+  }
 
-    std::vector<std::vector<cv::Point>> cnt;
-    cv::Mat1b m(raw_msg->width, raw_msg->height);
+  std::vector<std::vector<cv::Point>> cnt;
+  cv::Mat1b m(raw_msg->width, raw_msg->height);
 
-    if (raw_msg->encoding == enc::TYPE_8UC1)
-    {
-        m = cv_ptr->image;
-    }
-    else
-    {
-        double minVal, maxVal;
-        cv::minMaxIdx(cv_ptr->image, &minVal, &maxVal, 0, 0, cv_ptr->image != 0.);
-        double ra = maxVal - minVal;
+  if (raw_msg->encoding == enc::TYPE_8UC1)
+  {
+    m = cv_ptr->image;
+  }
+  else
+  {
+    double minVal, maxVal;
+    cv::minMaxIdx(cv_ptr->image, &minVal, &maxVal, 0, 0, cv_ptr->image != 0.);
+    double ra = maxVal - minVal;
 
-        cv_ptr->image.convertTo(m, CV_8U, 255. / ra, -minVal * 255. / ra);
-    }
+    cv_ptr->image.convertTo(m, CV_8U, 255. / ra, -minVal * 255. / ra);
+  }
 
-    cv::findContours(m, cnt, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+  cv::findContours(m, cnt, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 
-    // search the largest area
-    /* // -std=c++11
+  // search the largest area
   std::vector<std::vector<cv::Point> >::iterator it = std::max_element(cnt.begin(), cnt.end(), [](std::vector<cv::Point> a, std::vector<cv::Point> b) {
     return a.size() < b.size();
   });
-  */
-    std::vector<std::vector<cv::Point>>::iterator it = cnt.begin();
-    for (std::vector<std::vector<cv::Point>>::iterator i = cnt.begin(); i != cnt.end(); ++i)
-    {
-        it = (*it).size() < (*i).size() ? i : it;
-    }
-    cv::Rect r = cv::boundingRect(cnt[std::distance(cnt.begin(), it)]);
 
-    cv_bridge::CvImage out_msg;
-    out_msg.header = raw_msg->header;
-    out_msg.encoding = raw_msg->encoding;
-    out_msg.image = cv_ptr->image(r);
+  cv::Rect r = cv::boundingRect(cnt[std::distance(cnt.begin(), it)]);
 
-    pub_.publish(out_msg.toImageMsg());
+  cv_bridge::CvImage out_msg;
+  out_msg.header = raw_msg->header;
+  out_msg.encoding = raw_msg->encoding;
+  out_msg.image = cv_ptr->image(r);
+
+  pub_.publish(out_msg.toImageMsg());
 }
 
 } // namespace image_proc
