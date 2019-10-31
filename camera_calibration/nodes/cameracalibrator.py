@@ -73,16 +73,16 @@ def main():
                      help="image queue size (default %default, set to 0 for unlimited)")
     parser.add_option_group(group)
     group = OptionGroup(parser, "Calibration Optimizer Options")
-    group.add_option("--pinhole-fix-principal-point",
+    group.add_option("--fix-principal-point",
                      action="store_true", default=False,
                      help="for pinhole, fix the principal point at the image center")
-    group.add_option("--pinhole-fix-aspect-ratio",
+    group.add_option("--fix-aspect-ratio",
                      action="store_true", default=False,
                      help="for pinhole, enforce focal lengths (fx, fy) are equal")
-    group.add_option("--pinhole-zero-tangent-dist",
+    group.add_option("--zero-tangent-dist",
                      action="store_true", default=False,
                      help="for pinhole, set tangential distortion coefficients (p1, p2) to zero")
-    group.add_option("--pinhole-k-coefficients",
+    group.add_option("-k", "--k-coefficients",
                      type="int", default=2, metavar="NUM_COEFFS",
                      help="for pinhole, number of radial distortion coefficients to use (up to 6, default %default)")
 
@@ -131,14 +131,14 @@ def main():
         sync = functools.partial(ApproximateTimeSynchronizer, slop=options.approximate)
 
     # Pinhole opencv calibration options parsing
-    num_ks = options.pinhole_k_coefficients
+    num_ks = options.k_coefficients
 
     calib_flags = 0
-    if options.pinhole_fix_principal_point:
+    if options.fix_principal_point:
         calib_flags |= cv2.CALIB_FIX_PRINCIPAL_POINT
-    if options.pinhole_fix_aspect_ratio:
+    if options.fix_aspect_ratio:
         calib_flags |= cv2.CALIB_FIX_ASPECT_RATIO
-    if options.pinhole_zero_tangent_dist:
+    if options.zero_tangent_dist:
         calib_flags |= cv2.CALIB_ZERO_TANGENT_DIST
     if (num_ks > 3):
         calib_flags |= cv2.CALIB_RATIONAL_MODEL
