@@ -74,7 +74,7 @@ CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions& options) : Node("Cro
   }
 
   this->set_on_parameters_set_callback(parameter_change_cb);
-};
+}
 
 // Handles (un)subscribing when clients (un)subscribe
 void CropNonZeroNode::connectCb()
