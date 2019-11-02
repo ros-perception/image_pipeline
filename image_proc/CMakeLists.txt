@@ -100,6 +100,7 @@ ament_target_dependencies(crop_non_zero
   ${dependencies}
 )
 
+
 rclcpp_components_register_nodes(crop_non_zero "image_proc::CropNonZeroNode")
 set(node_plugins "${node_plugins}image_proc::CropNonZeroNode;$<TARGET_FILE:crop_non_zero>\n")
 
