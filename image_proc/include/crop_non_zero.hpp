@@ -46,7 +46,7 @@ namespace image_proc {
 class CropNonZeroNode : public rclcpp::Node
 {
   public:
-    CropNonZeroNode(const rclcpp::NodeOptions&);
+    explicit CropNonZeroNode(const rclcpp::NodeOptions&);
   private:
     std::string camera_namespace_;
     std::string image_pub_topic_;
