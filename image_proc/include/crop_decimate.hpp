@@ -47,6 +47,14 @@
 
 namespace image_proc {
 
+enum CropDecimateModes {
+  CropDecimate_NN = 0,
+  CropDecimate_Linear = 1,
+  CropDecimate_Cubic = 2,
+  CropDecimate_Area = 3,
+  CropDecimate_Lanczos4 = 4
+};
+
 using namespace cv_bridge;  // CvImage, toCvShare
 
 class CropDecimateNode : public rclcpp::Node
@@ -55,13 +63,15 @@ public:
   CropDecimateNode(const rclcpp::NodeOptions&);
 
 private:
-  image_transport::Subscriber sub_;
-  image_transport::Publisher pub_;
+  image_transport::CameraSubscriber sub_;
+  image_transport::CameraPublisher pub_;
   int queue_size_;
   std::string target_frame_id_;
+  int decimation_x_, decimation_y_, offset_x_, offset_y_, width_, height_;
+  int interpolation_;
 
-  void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr image_msg /*,
-    const sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg*/);
+  void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr image_msg,
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg);
 };
 
 }  // namespace image_proc

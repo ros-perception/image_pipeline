@@ -38,207 +38,6 @@
 
 namespace image_proc {
 
-CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions& options)
-: Node("CropNonZeroNode", options)
-{
-  queue_size_ = this->declare_parameter("queue_size", 5);
-  target_frame_id_ = this->declare_parameter("target_frame_id", std::string());
-
-  pub_ = image_transport::create_publisher(this, "image_raw");
-  sub_ = image_transport::create_subscription(this, "image_raw",
-    std::bind(&CropDecimateNode::imageCb, this, std::placeholders::_1), "raw");
-}
-
-void CropDecimateNode::imageCb(
-  const sensor_msgs::msg::Image::ConstSharedPtr /*image_msg,
-  const sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg*/)
-{
-  // /// @todo Check image dimensions match info_msg
-  // /// @todo Publish tweaks to config_ so they appear in reconfigure_gui
-
-  // Config config;
-  // {
-  //   std::lock_guard<std::recursive_mutex> lock(config_mutex_);
-  //   config = config_;
-  // }
-  // int decimation_x = config.decimation_x;
-  // int decimation_y = config.decimation_y;
-
-  // // Compute the ROI we'll actually use
-  // bool is_bayer = sensor_msgs::image_encodings::isBayer(image_msg->encoding);
-  // if (is_bayer)
-  // {
-  //   // Odd offsets for Bayer images basically change the Bayer pattern, but that's
-  //   // unnecessarily complicated to support
-  //   config.x_offset &= ~0x1;
-  //   config.y_offset &= ~0x1;
-  //   config.width &= ~0x1;
-  //   config.height &= ~0x1;    
-  // }
-
-  // int max_width = image_msg->width - config.x_offset;
-  // if (max_width <= 0)
-  // {
-  //   RCLCPP_WARN(get_logger(),
-  //     "x offset is outside the input image width: "
-  //     "%i, x offset: %i.", image_msg->width, config.x_offset);
-  //   return;
-  // }
-  // int max_height = image_msg->height - config.y_offset;
-  // if (max_height <= 0)
-  // {
-  //   RCLCPP_WARN(get_logger(),
-  //     "y offset is outside the input image height: "
-  //     "%i, y offset: %i", image_msg->height, config.y_offset);
-  //   return;
-  // }
-  // int width = config.width;
-  // int height = config.height;
-  // if (width == 0 || width > max_width)
-  //   width = max_width;
-  // if (height == 0 || height > max_height)
-  //   height = max_height;
-
-  // // On no-op, just pass the messages along
-  // if (decimation_x == 1               &&
-  //     decimation_y == 1               &&
-  //     config.x_offset == 0            &&
-  //     config.y_offset == 0            &&
-  //     width  == (int)image_msg->width &&
-  //     height == (int)image_msg->height)
-  // {
-  //   pub_.publish(image_msg, info_msg);
-  //   return;
-  // }
-
-  // // Get a cv::Mat view of the source data
-  // CvImageConstPtr source = toCvShare(image_msg);
-
-  // // Except in Bayer downsampling case, output has same encoding as the input
-  // CvImage output(source->header, source->encoding);
-  // // Apply ROI (no copy, still a view of the image_msg data)
-  // output.image = source->image(cv::Rect(config.x_offset, config.y_offset, width, height));
-
-  // // Special case: when decimating Bayer images, we first do a 2x2 decimation to BGR
-  // if (is_bayer && (decimation_x > 1 || decimation_y > 1))
-  // {
-  //   if (decimation_x % 2 != 0 || decimation_y % 2 != 0)
-  //   {
-  //     RCLCPP_ERROR(get_logger(),
-  //       "Odd decimation not supported for Bayer images");
-  //     return;
-  //   }
-
-  //   cv::Mat bgr;
-  //   int step = output.image.step1();
-  //   if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_RGGB8)
-  //     debayer2x2toBGR<uint8_t>(output.image, bgr, 0, 1, step, step + 1);
-  //   else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_BGGR8)
-  //     debayer2x2toBGR<uint8_t>(output.image, bgr, step + 1, 1, step, 0);
-  //   else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GBRG8)
-  //     debayer2x2toBGR<uint8_t>(output.image, bgr, step, 0, step + 1, 1);
-  //   else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG8)
-  //     debayer2x2toBGR<uint8_t>(output.image, bgr, 1, 0, step + 1, step);
-  //   else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_RGGB16)
-  //     debayer2x2toBGR<uint16_t>(output.image, bgr, 0, 1, step, step + 1);
-  //   else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_BGGR16)
-  //     debayer2x2toBGR<uint16_t>(output.image, bgr, step + 1, 1, step, 0);
-  //   else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GBRG16)
-  //     debayer2x2toBGR<uint16_t>(output.image, bgr, step, 0, step + 1, 1);
-  //   else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG16)
-  //     debayer2x2toBGR<uint16_t>(output.image, bgr, 1, 0, step + 1, step);
-  //   else
-  //   {
-  //     RCLCPP_ERROR(get_logger(), "Unrecognized Bayer encoding '%s'",
-  //       image_msg->encoding.c_str());
-  //     return;
-  //   }
-
-  //   output.image = bgr;
-  //   output.encoding = (bgr.depth() == CV_8U) ? sensor_msgs::image_encodings::BGR8
-  //                                            : sensor_msgs::image_encodings::BGR16;
-  //   decimation_x /= 2;
-  //   decimation_y /= 2;
-  // }
-
-  // // Apply further downsampling, if necessary
-  // if (decimation_x > 1 || decimation_y > 1)
-  // {
-  //   cv::Mat decimated;
-
-  //   if (config.interpolation == image_proc::CropDecimate_NN)
-  //   {
-  //     // Use optimized method instead of OpenCV's more general NN resize
-  //     int pixel_size = output.image.elemSize();
-  //     switch (pixel_size)
-  //     {
-  //       // Currently support up through 4-channel float
-  //       case 1:
-  //         decimate<1>(output.image, decimated, decimation_x, decimation_y);
-  //         break;
-  //       case 2:
-  //         decimate<2>(output.image, decimated, decimation_x, decimation_y);
-  //         break;
-  //       case 3:
-  //         decimate<3>(output.image, decimated, decimation_x, decimation_y);
-  //         break;
-  //       case 4:
-  //         decimate<4>(output.image, decimated, decimation_x, decimation_y);
-  //         break;
-  //       case 6:
-  //         decimate<6>(output.image, decimated, decimation_x, decimation_y);
-  //         break;
-  //       case 8:
-  //         decimate<8>(output.image, decimated, decimation_x, decimation_y);
-  //         break;
-  //       case 12:
-  //         decimate<12>(output.image, decimated, decimation_x, decimation_y);
-  //         break;
-  //       case 16:
-  //         decimate<16>(output.image, decimated, decimation_x, decimation_y);
-  //         break;
-  //       default:
-  //         RCLCPP_ERROR(get_logger(),
-  //           "Unsupported pixel size, %d bytes", pixel_size);
-  //         return;
-  //     }
-  //   }
-  //   else
-  //   {
-  //     // Linear, cubic, area, ...
-  //     cv::Size size(output.image.cols / decimation_x, output.image.rows / decimation_y);
-  //     cv::resize(output.image, decimated, size, 0.0, 0.0, config.interpolation);
-  //   }
-
-  //   output.image = decimated;
-  // }
-
-  // // Create output Image message
-  // /// @todo Could save copies by allocating this above and having output.image alias it
-  // sensor_msgs::ImagePtr out_image = output.toImageMsg();
-
-  // // Create updated CameraInfo message
-  // sensor_msgs::CameraInfoPtr out_info = std::make_shared<sensor_msgs::CameraInfo>(*info_msg);
-  // int binning_x = std::max((int)info_msg->binning_x, 1);
-  // int binning_y = std::max((int)info_msg->binning_y, 1);
-  // out_info->binning_x = binning_x * config.decimation_x;
-  // out_info->binning_y = binning_y * config.decimation_y;
-  // out_info->roi.x_offset += config.x_offset * binning_x;
-  // out_info->roi.y_offset += config.y_offset * binning_y;
-  // out_info->roi.height = height * binning_y;
-  // out_info->roi.width = width * binning_x;
-  // // If no ROI specified, leave do_rectify as-is. If ROI specified, set do_rectify = true.
-  // if (width != (int)image_msg->width || height != (int)image_msg->height)
-  //   out_info->roi.do_rectify = true;
-
-  // if (!target_frame_id_.empty()) {
-  //   out_image->header.frame_id = target_frame_id_;
-  //   out_info->header.frame_id = target_frame_id_;
-  // }
-
-  // pub_.publish(out_image, out_info);
-}
-
 template <typename T>
 void debayer2x2toBGR(const cv::Mat& src, cv::Mat& dst, int R, int G1, int G2, int B)
 {
@@ -290,6 +89,216 @@ void decimate(const cv::Mat& src, cv::Mat& dst, int decimation_x, int decimation
     src_row += src_row_step;
     dst_row += dst_row_step;
   }
+}
+
+CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions& options)
+: Node("CropNonZeroNode", options)
+{
+  queue_size_ = this->declare_parameter("queue_size", 5);
+  target_frame_id_ = this->declare_parameter("target_frame_id", std::string());
+
+  // default: do nothing
+  decimation_x_ = this->declare_parameter("decimation_x", 1);
+  decimation_y_ = this->declare_parameter("decimation_y", 1);
+
+  // default: use full image
+  width_ = this->declare_parameter("width", 0);
+  height_ = this->declare_parameter("height", 0);
+  offset_x_ = this->declare_parameter("offset_x", 0);
+  offset_y_ = this->declare_parameter("offset_y", 0);
+
+  // default: CropDecimate_NN
+  interpolation_ = this->declare_parameter("interpolation", 0);
+
+  pub_ = image_transport::create_camera_publisher(this, "image_raw");
+  sub_ = image_transport::create_camera_subscription(this, "image_raw",
+    std::bind(&CropDecimateNode::imageCb, this,
+      std::placeholders::_1, std::placeholders::_2), "raw");
+}
+
+void CropDecimateNode::imageCb(
+  const sensor_msgs::msg::Image::ConstSharedPtr image_msg,
+  const sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg)
+{
+  /// @todo Check image dimensions match info_msg
+
+  int decimation_x = decimation_x_;
+  int decimation_y = decimation_y_;
+
+  // Compute the ROI we'll actually use
+  bool is_bayer = sensor_msgs::image_encodings::isBayer(image_msg->encoding);
+  if (is_bayer)
+  {
+    // Odd offsets for Bayer images basically change the Bayer pattern, but that's
+    // unnecessarily complicated to support
+    offset_x_ &= ~0x1;
+    offset_y_ &= ~0x1;
+    width_ &= ~0x1;
+    height_ &= ~0x1;    
+  }
+
+  int max_width = image_msg->width - offset_x_;
+  if (max_width <= 0)
+  {
+    RCLCPP_WARN(get_logger(),
+      "x offset is outside the input image width: "
+      "%i, x offset: %i.", image_msg->width, offset_x_);
+    return;
+  }
+  int max_height = image_msg->height - offset_y_;
+  if (max_height <= 0)
+  {
+    RCLCPP_WARN(get_logger(),
+      "y offset is outside the input image height: "
+      "%i, y offset: %i", image_msg->height, offset_y_);
+    return;
+  }
+  int width = width_;
+  int height = height_;
+  if (width == 0 || width > max_width)
+    width = max_width;
+  if (height == 0 || height > max_height)
+    height = max_height;
+
+  // On no-op, just pass the messages along
+  if (decimation_x == 1               &&
+      decimation_y == 1               &&
+      offset_x_ == 0                  &&
+      offset_y_ == 0                  &&
+      width  == (int)image_msg->width &&
+      height == (int)image_msg->height)
+  {
+    pub_.publish(image_msg, info_msg);
+    return;
+  }
+
+  // Get a cv::Mat view of the source data
+  CvImageConstPtr source = toCvShare(image_msg);
+
+  // Except in Bayer downsampling case, output has same encoding as the input
+  CvImage output(source->header, source->encoding);
+  // Apply ROI (no copy, still a view of the image_msg data)
+  output.image = source->image(cv::Rect(offset_x_, offset_y_, width, height));
+
+  // Special case: when decimating Bayer images, we first do a 2x2 decimation to BGR
+  if (is_bayer && (decimation_x > 1 || decimation_y > 1))
+  {
+    if (decimation_x % 2 != 0 || decimation_y % 2 != 0)
+    {
+      RCLCPP_ERROR(get_logger(),
+        "Odd decimation not supported for Bayer images");
+      return;
+    }
+
+    cv::Mat bgr;
+    int step = output.image.step1();
+    if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_RGGB8)
+      debayer2x2toBGR<uint8_t>(output.image, bgr, 0, 1, step, step + 1);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_BGGR8)
+      debayer2x2toBGR<uint8_t>(output.image, bgr, step + 1, 1, step, 0);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GBRG8)
+      debayer2x2toBGR<uint8_t>(output.image, bgr, step, 0, step + 1, 1);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG8)
+      debayer2x2toBGR<uint8_t>(output.image, bgr, 1, 0, step + 1, step);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_RGGB16)
+      debayer2x2toBGR<uint16_t>(output.image, bgr, 0, 1, step, step + 1);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_BGGR16)
+      debayer2x2toBGR<uint16_t>(output.image, bgr, step + 1, 1, step, 0);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GBRG16)
+      debayer2x2toBGR<uint16_t>(output.image, bgr, step, 0, step + 1, 1);
+    else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG16)
+      debayer2x2toBGR<uint16_t>(output.image, bgr, 1, 0, step + 1, step);
+    else
+    {
+      RCLCPP_ERROR(get_logger(), "Unrecognized Bayer encoding '%s'",
+        image_msg->encoding.c_str());
+      return;
+    }
+
+    output.image = bgr;
+    output.encoding = (bgr.depth() == CV_8U) ? sensor_msgs::image_encodings::BGR8
+                                             : sensor_msgs::image_encodings::BGR16;
+    decimation_x /= 2;
+    decimation_y /= 2;
+  }
+
+  // Apply further downsampling, if necessary
+  if (decimation_x > 1 || decimation_y > 1)
+  {
+    cv::Mat decimated;
+
+    if (interpolation_ == image_proc::CropDecimate_NN)
+    {
+      // Use optimized method instead of OpenCV's more general NN resize
+      int pixel_size = output.image.elemSize();
+      switch (pixel_size)
+      {
+        // Currently support up through 4-channel float
+        case 1:
+          decimate<1>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 2:
+          decimate<2>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 3:
+          decimate<3>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 4:
+          decimate<4>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 6:
+          decimate<6>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 8:
+          decimate<8>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 12:
+          decimate<12>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        case 16:
+          decimate<16>(output.image, decimated, decimation_x, decimation_y);
+          break;
+        default:
+          RCLCPP_ERROR(get_logger(),
+            "Unsupported pixel size, %d bytes", pixel_size);
+          return;
+      }
+    }
+    else
+    {
+      // Linear, cubic, area, ...
+      cv::Size size(output.image.cols / decimation_x, output.image.rows / decimation_y);
+      cv::resize(output.image, decimated, size, 0.0, 0.0, interpolation_);
+    }
+
+    output.image = decimated;
+  }
+
+  // Create output Image message
+  /// @todo Could save copies by allocating this above and having output.image alias it
+  sensor_msgs::msg::Image::SharedPtr out_image = output.toImageMsg();
+
+  // Create updated CameraInfo message
+  sensor_msgs::msg::CameraInfo::SharedPtr out_info =
+    std::make_shared<sensor_msgs::msg::CameraInfo>(*info_msg);
+  int binning_x = std::max((int)info_msg->binning_x, 1);
+  int binning_y = std::max((int)info_msg->binning_y, 1);
+  out_info->binning_x = binning_x * decimation_x_;
+  out_info->binning_y = binning_y * decimation_y_;
+  out_info->roi.x_offset += offset_x_ * binning_x;
+  out_info->roi.y_offset += offset_y_ * binning_y;
+  out_info->roi.height = height * binning_y;
+  out_info->roi.width = width * binning_x;
+  // If no ROI specified, leave do_rectify as-is. If ROI specified, set do_rectify = true.
+  if (width != (int)image_msg->width || height != (int)image_msg->height)
+    out_info->roi.do_rectify = true;
+
+  if (!target_frame_id_.empty()) {
+    out_image->header.frame_id = target_frame_id_;
+    out_info->header.frame_id = target_frame_id_;
+  }
+
+  pub_.publish(out_image, out_info);
 }
 
 } // namespace image_proc
