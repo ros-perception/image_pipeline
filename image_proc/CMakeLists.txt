@@ -76,6 +76,20 @@ ament_target_dependencies(resize
 rclcpp_components_register_nodes(resize "image_proc::ResizeNode")
 set(node_plugins "${node_plugins}image_proc::ResizeNode;$<TARGET_FILE:resize>\n")
 
+add_library(crop_decimate SHARED
+  src/crop_decimate.cpp
+  )
+
+target_compile_definitions(crop_decimate
+  PRIVATE "COMPOSITION_BUILDING_DLL")
+
+ament_target_dependencies(crop_decimate
+  ${dependencies}
+)
+
+rclcpp_components_register_nodes(crop_decimate "image_proc::CropDecimateNode")
+set(node_plugins "${node_plugins}image_proc::CropDecimateNode;$<TARGET_FILE:crop_decimate>\n")
+
 add_executable(image_proc
                src/image_proc.cpp
 )
@@ -106,6 +120,13 @@ install(
   RUNTIME DESTINATION bin
 )
 install(
+  TARGETS crop_decimate
+  EXPORT export_resize
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+install(
   TARGETS debayer
   EXPORT export_debayer
   ARCHIVE DESTINATION lib
@@ -130,6 +151,7 @@ ament_export_libraries(
   resize
   debayer
   rectify
+  crop_decimate
 )
 
 ament_package()
