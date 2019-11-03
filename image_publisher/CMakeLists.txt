@@ -16,7 +16,18 @@ find_package(camera_info_manager REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(class_loader REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(image_geometry REQUIRED)
 find_package(rclcpp_components REQUIRED)
+
+set( DEPENDENCIES
+  rclcpp
+  rclcpp_components
+  image_geometry
+  class_loader
+  image_transport
+  camera_info_manager
+  cv_bridge
+)
 
 set(opencv_2_components core highgui)
 set(opencv_3_components core imgcodecs videoio)
@@ -33,13 +44,7 @@ include_directories(include)
 add_library(image_publisher_node SHARED src/nodelet/image_publisher_nodelet.cpp)
 target_link_libraries(image_publisher_node ${ament_LIBRARIES} ${OpenCV_LIBRARIES})
 ament_target_dependencies(image_publisher_node
-  "image_transport"
-  "image_geometry"
-  "cv_bridge"
-  "class_loader"
-  "camera_info_manager"
-  "rclcpp"
-  "rclcpp_components"
+  ${DEPENDENCIES}
 )
 
 rclcpp_components_register_nodes(image_publisher_node "${PROJECT_NAME}::ImagePublisherNode")
@@ -56,7 +61,7 @@ install(TARGETS image_publisher_node
 add_executable(image_publisher src/node/image_publisher.cpp)
 target_link_libraries(image_publisher ${ament_LIBRARIES} image_publisher_node)
 ament_target_dependencies(image_publisher
-  "rclcpp")
+  ${DEPENDENCIES})
 
 install(TARGETS image_publisher
         DESTINATION lib/${PROJECT_NAME}
@@ -73,4 +78,5 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+ament_export_dependencies(${DEPENDENCIES})
 ament_package()
