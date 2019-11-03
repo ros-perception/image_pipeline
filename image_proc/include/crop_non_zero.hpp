@@ -50,8 +50,8 @@ class CropNonZeroNode : public rclcpp::Node
     CropNonZeroNode(const rclcpp::NodeOptions&);
   private:
     std::string camera_namespace_;
-    std::string image_pub_;
-    std::string image_sub_;
+    std::string image_pub_topic_;
+    std::string image_sub_topic_;
 
     // Subscriptions
     image_transport::Subscriber sub_raw_;

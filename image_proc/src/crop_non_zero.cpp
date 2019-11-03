@@ -36,7 +36,7 @@
 #include <boost/thread.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include "crop_non_zero.hpp"
-//#include <algorithm> // for std::max_element
+#include <algorithm>
 
 namespace image_proc
 {
@@ -58,12 +58,13 @@ CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions& options) : Node("Cro
         break;
       }
     }
-    image_pub_ = camera_namespace_ + "/image";
+    image_pub_topic_ = camera_namespace_ + "/image";
+
+    std::lock_guard<std::mutex> lock(connect_mutex_);
     connectCb();
     // Make sure we don't enter connectCb() between advertising and assigning to pub_depth_
-    std::lock_guard<std::mutex> lock(connect_mutex_);
-    RCLCPP_INFO(this->get_logger(), "publish: %s", image_pub_.c_str());
-    pub_ = image_transport::create_publisher(this, image_pub_);
+    RCLCPP_INFO(this->get_logger(), "publish: %s", image_pub_topic_.c_str());
+    pub_ = image_transport::create_publisher(this, image_pub_topic_);
     return result;
   };
   this->declare_parameter("camera_namespace");
@@ -79,11 +80,10 @@ CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions& options) : Node("Cro
 // Handles (un)subscribing when clients (un)subscribe
 void CropNonZeroNode::connectCb()
 {
-  image_sub_ = camera_namespace_ + "/image_raw";
-  std::lock_guard<std::mutex> lock(connect_mutex_);
+  image_sub_topic_ = camera_namespace_ + "/image_raw";
 
-  RCLCPP_INFO(this->get_logger(), "subscribe: %s", image_sub_.c_str());
-  sub_raw_ = image_transport::create_subscription(this, image_sub_, std::bind(&CropNonZeroNode::imageCb, this, std::placeholders::_1), "raw");
+  RCLCPP_INFO(this->get_logger(), "subscribe: %s", image_sub_topic_.c_str());
+  sub_raw_ = image_transport::create_subscription(this, image_sub_topic_, std::bind(&CropNonZeroNode::imageCb, this, std::placeholders::_1), "raw");
 }
 
 void CropNonZeroNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr &raw_msg)
