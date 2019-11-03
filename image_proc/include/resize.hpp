@@ -54,10 +54,8 @@ public:
   ResizeNode(const rclcpp::NodeOptions &);
 protected:
   // ROS communication
-  image_transport::Publisher pub_image_;
-  rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr pub_info_;
-  image_transport::Subscriber sub_image_;
-  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr sub_info_;
+  image_transport::CameraPublisher pub_image_;
+  image_transport::CameraSubscriber sub_image_;
 
   std::string image_topic_;
   std::string camera_info_topic_;
@@ -75,9 +73,8 @@ protected:
 
   void connectCb();
 
-  void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& image_msg);
-  void infoCb(const sensor_msgs::msg::CameraInfo::SharedPtr info_msg);
-
+  void imageCb(sensor_msgs::msg::Image::ConstSharedPtr image_msg,
+    sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg);
 };
 } // namespace image_proc
 #endif

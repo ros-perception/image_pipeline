@@ -64,8 +64,7 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options) : rclcpp::Node("Resi
       connectCb();
 
       std::lock_guard<std::mutex> lock(connect_mutex_);
-      pub_image_ = image_transport::create_publisher(this, image_topic_ + "/resize");
-      pub_info_ = this->create_publisher<sensor_msgs::msg::CameraInfo>(camera_info_topic_ + "/resize", rclcpp::SensorDataQoS());
+      pub_image_ = image_transport::create_camera_publisher(this, image_topic_ + "/resize");
 
       return result;
     };
@@ -94,51 +93,14 @@ void ResizeNode::connectCb()
   
   if (!sub_image_)
   {
-    sub_image_ = image_transport::create_subscription(this, image_topic_, std::bind(&ResizeNode::imageCb, this, std::placeholders::_1), "raw");
-  }
-  
-  if (!sub_info_)
-  {
-    sub_info_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(camera_info_topic_, rclcpp::SensorDataQoS(), std::bind(&ResizeNode::infoCb, this, std::placeholders::_1));
+    sub_image_ = image_transport::create_camera_subscription(this, image_topic_,
+      std::bind(&ResizeNode::imageCb, this,
+        std::placeholders::_1, std::placeholders::_2), "raw");
   }
 }
 
-void ResizeNode::infoCb(const sensor_msgs::msg::CameraInfo::SharedPtr info_msg)
-{
-  sensor_msgs::msg::CameraInfo::SharedPtr dst_info_msg = info_msg;
-  
-  double scale_y;
-  double scale_x;
-  if (use_scale_)
-  {
-    scale_y = scale_height_;
-    scale_x = scale_width_;
-    dst_info_msg->height = static_cast<int>(info_msg->height * scale_height_);
-    dst_info_msg->width = static_cast<int>(info_msg->width * scale_width_);
-  }
-  else
-  {
-    scale_y = static_cast<double>(height_) / info_msg->height;
-    scale_x = static_cast<double>(width_) / info_msg->width;
-    dst_info_msg->height = height_;
-    dst_info_msg->width = width_;
-  }
-
-  dst_info_msg->k[0] = dst_info_msg->k[0] * scale_x;  // fx
-  dst_info_msg->k[2] = dst_info_msg->k[2] * scale_x;  // cx
-  dst_info_msg->k[4] = dst_info_msg->k[4] * scale_y;  // fy
-  dst_info_msg->k[5] = dst_info_msg->k[5] * scale_y;  // cy
-
-  dst_info_msg->p[0] = dst_info_msg->p[0] * scale_x;  // fx
-  dst_info_msg->p[2] = dst_info_msg->p[2] * scale_x;  // cx
-  dst_info_msg->p[3] = dst_info_msg->p[3] * scale_x;  // T
-  dst_info_msg->p[5] = dst_info_msg->p[5] * scale_y;  // fy
-  dst_info_msg->p[6] = dst_info_msg->p[6] * scale_y;  // cy
-
-  pub_info_->publish(*dst_info_msg);
-}
-
-void ResizeNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& image_msg)
+void ResizeNode::imageCb(sensor_msgs::msg::Image::ConstSharedPtr image_msg,
+  sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg)
 {
   if (pub_image_.getNumSubscribers() < 1)
   {
@@ -168,7 +130,38 @@ void ResizeNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& image_ms
     cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(width, height), 0, 0, interpolation_);
   }
 
-  pub_image_.publish(cv_ptr->toImageMsg());
+  sensor_msgs::msg::CameraInfo::SharedPtr dst_info_msg =
+    std::make_shared<sensor_msgs::msg::CameraInfo>(*info_msg);
+  
+  double scale_y;
+  double scale_x;
+  if (use_scale_)
+  {
+    scale_y = scale_height_;
+    scale_x = scale_width_;
+    dst_info_msg->height = static_cast<int>(info_msg->height * scale_height_);
+    dst_info_msg->width = static_cast<int>(info_msg->width * scale_width_);
+  }
+  else
+  {
+    scale_y = static_cast<double>(height_) / info_msg->height;
+    scale_x = static_cast<double>(width_) / info_msg->width;
+    dst_info_msg->height = height_;
+    dst_info_msg->width = width_;
+  }
+
+  dst_info_msg->k[0] = dst_info_msg->k[0] * scale_x;  // fx
+  dst_info_msg->k[2] = dst_info_msg->k[2] * scale_x;  // cx
+  dst_info_msg->k[4] = dst_info_msg->k[4] * scale_y;  // fy
+  dst_info_msg->k[5] = dst_info_msg->k[5] * scale_y;  // cy
+
+  dst_info_msg->p[0] = dst_info_msg->p[0] * scale_x;  // fx
+  dst_info_msg->p[2] = dst_info_msg->p[2] * scale_x;  // cx
+  dst_info_msg->p[3] = dst_info_msg->p[3] * scale_x;  // T
+  dst_info_msg->p[5] = dst_info_msg->p[5] * scale_y;  // fy
+  dst_info_msg->p[6] = dst_info_msg->p[6] * scale_y;  // cy
+
+  pub_image_.publish(*cv_ptr->toImageMsg(), *dst_info_msg);
 }
 
 }  // namespace image_proc
