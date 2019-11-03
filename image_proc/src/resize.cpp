@@ -140,6 +140,11 @@ void ResizeNode::infoCb(const sensor_msgs::msg::CameraInfo::SharedPtr info_msg)
 
 void ResizeNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& image_msg)
 {
+  if (pub_image_.getNumSubscribers() < 1)
+  {
+    return;
+  }
+
   cv_bridge::CvImagePtr cv_ptr;
   try
   {

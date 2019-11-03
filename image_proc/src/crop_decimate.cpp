@@ -122,6 +122,10 @@ void CropDecimateNode::imageCb(
 {
   /// @todo Check image dimensions match info_msg
 
+  if (pub_.getNumSubscribers() < 1) {
+    return;
+  }
+
   int decimation_x = decimation_x_;
   int decimation_y = decimation_y_;
 
