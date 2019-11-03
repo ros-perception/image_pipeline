@@ -31,9 +31,8 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-
-#ifndef IMAGE_PROC_PROCESSOR_H
-#define IMAGE_PROC_PROCESSOR_H
+#ifndef IMAGE_PROC__CROP_NON_ZERO_HPP_
+#define IMAGE_PROC__CROP_NON_ZERO_HPP_
 #include <thread>
 #include <memory>
 #include <vector>
