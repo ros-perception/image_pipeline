@@ -13,19 +13,19 @@
   <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>
   <url type="repository">https://github.com/ros-perception/image_pipeline</url>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <!-- Old stack contents -->
-  <run_depend>camera_calibration</run_depend>
+  <!-- stack contents -->
+  <!-- <run_depend>camera_calibration</run_depend> -->
   <run_depend>depth_image_proc</run_depend>
   <run_depend>image_proc</run_depend>
   <run_depend>image_publisher</run_depend>
   <run_depend>image_rotate</run_depend>
-  <run_depend>image_view</run_depend>
-  <run_depend>stereo_image_proc</run_depend>
+  <!-- <run_depend>image_view</run_depend> -->
+  <!-- <run_depend>stereo_image_proc</run_depend> -->
 
   <export>
-    <metapackage/>
+    <build_type>ament_cmake</build_type>
   </export>
 
 </package>

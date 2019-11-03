@@ -104,7 +104,8 @@ DisparityNode::DisparityNode()
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // pub_disparity_ =
   //   left_nh.advertise<stereo_msgs::DisparityImage>("disparity", 1, connect_cb, connect_cb);
-  pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>("left/disparity");
+  pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>(
+    "left/disparity", rclcpp::SensorDataQoS());
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -152,7 +153,7 @@ void DisparityNode::depthCb(
     return;
   }
 
-  pub_disparity_->publish(disp_msg);
+  pub_disparity_->publish(*disp_msg);
 }
 
 template<typename T>

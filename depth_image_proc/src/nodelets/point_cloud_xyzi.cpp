@@ -116,7 +116,7 @@ PointCloudXyziNode::PointCloudXyziNode()
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // pub_point_cloud_ = depth_nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
-  pub_point_cloud_ = create_publisher<PointCloud>("points");
+  pub_point_cloud_ = create_publisher<PointCloud>("points", rclcpp::SensorDataQoS());
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -242,7 +242,7 @@ void PointCloudXyziNode::imageCb(
     return;
   }
 
-  pub_point_cloud_->publish(cloud_msg);
+  pub_point_cloud_->publish(*cloud_msg);
 }
 
 template<typename T, typename T2>
