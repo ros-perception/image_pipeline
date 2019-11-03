@@ -137,7 +137,7 @@ PointCloudXyzRadialNode::PointCloudXyzRadialNode()
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // pub_point_cloud_ = nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
-  pub_point_cloud_ = create_publisher<sensor_msgs::msg::PointCloud2>("points");
+  pub_point_cloud_ = create_publisher<sensor_msgs::msg::PointCloud2>("points", rclcpp::SensorDataQoS());
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -195,7 +195,7 @@ void PointCloudXyzRadialNode::depthCb(
     return;
   }
 
-  pub_point_cloud_->publish(cloud_msg);
+  pub_point_cloud_->publish(*cloud_msg);
 }
 
 template<typename T>
