@@ -45,7 +45,7 @@ namespace image_publisher
 
 using namespace std::chrono_literals;
 
-ImagePublisher::ImagePublisher(const rclcpp::NodeOptions& options)
+ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options)
 : Node("ImagePublisher", options)
 {
   pub_ = image_transport::create_camera_publisher(this, "image_raw");
@@ -168,8 +168,10 @@ void ImagePublisher::onInit()
     return;
   }
 
-  RCLCPP_INFO(this->get_logger(), "Flip horizontal image is : %s", ((flip_horizontal_) ? "true" : "false"));
-  RCLCPP_INFO(this->get_logger(), "Flip flip_vertical image is : %s", ((flip_vertical_) ? "true" : "false"));
+  RCLCPP_INFO(this->get_logger(),
+    "Flip horizontal image is : %s", ((flip_horizontal_) ? "true" : "false"));
+  RCLCPP_INFO(this->get_logger(),
+    "Flip flip_vertical image is : %s", ((flip_vertical_) ? "true" : "false"));
 
   // From http://docs.opencv.org/modules/core/doc/operations_on_arrays.html
   // #void flip(InputArray src, OutputArray dst, int flipCode)
