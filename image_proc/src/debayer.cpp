@@ -35,12 +35,12 @@
 #include <thread>
 #include <memory>
 
-#include "debayer.hpp"
+#include "image_proc/debayer.hpp"
 #include <sensor_msgs/image_encodings.hpp>
 
 #include <opencv2/imgproc/imgproc.hpp>
 // Until merged into OpenCV
-#include "edge_aware.h"
+#include "image_proc/edge_aware.hpp"
 
 #include <cv_bridge/cv_bridge.h>
 

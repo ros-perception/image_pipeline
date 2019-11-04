@@ -39,7 +39,7 @@
 #include <sensor_msgs/msg/image.h>
 #include <image_transport/image_transport.h>
 
-#include "resize.hpp"
+#include "image_proc/resize.hpp"
 
 namespace image_proc
 {

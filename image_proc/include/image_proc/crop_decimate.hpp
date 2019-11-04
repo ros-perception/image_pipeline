@@ -34,6 +34,7 @@
 
 #ifndef IMAGE_PROC__CROP_DECIMATE_HPP_
 #define IMAGE_PROC__CROP_DECIMATE_HPP_
+
 #include <thread>
 #include <memory>
 #include <vector>

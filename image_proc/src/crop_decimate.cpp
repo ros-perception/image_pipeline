@@ -34,7 +34,7 @@
 
 #include <algorithm>
 #include <thread>
-#include "crop_decimate.hpp"
+#include "image_proc/crop_decimate.hpp"
 
 namespace image_proc {
 

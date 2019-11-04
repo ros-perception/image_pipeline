@@ -39,11 +39,10 @@
 #include <vector>
 
 #include <ament_index_cpp/get_resource.hpp>
-#include "class_loader/class_loader.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <rcutils/cmdline_parser.h>
-#include "debayer.hpp"
-#include "rectify.hpp"
+#include "image_proc/debayer.hpp"
+#include "image_proc/rectify.hpp"
 std::vector<std::string> split(
   const std::string & s, char delim, bool skip_empty = false)
 {

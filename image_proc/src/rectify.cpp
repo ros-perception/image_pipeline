@@ -37,7 +37,7 @@
 #include <image_transport/image_transport.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <cv_bridge/cv_bridge.h>
-#include "rectify.hpp"
+#include "image_proc/rectify.hpp"
 namespace image_proc {
 
 RectifyNode::RectifyNode(const rclcpp::NodeOptions& options)

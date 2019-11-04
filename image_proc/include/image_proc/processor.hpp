@@ -32,8 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef IMAGE_PROC_PROCESSOR_H
-#define IMAGE_PROC_PROCESSOR_H
+#ifndef IMAGE_PROC__PROCESSOR_HPP_
+#define IMAGE_PROC__PROCESSOR_HPP_
 
 #include <opencv2/core/core.hpp>
 #include <image_geometry/pinhole_camera_model.h>
@@ -73,6 +73,6 @@ public:
                ImageSet& output, int flags = ALL) const;
 };
 
-} //namespace image_proc
+}  // namespace image_proc
 
-#endif
+#endif  // IMAGE_PROC__PROCESSOR_HPP_
