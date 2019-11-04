@@ -4,9 +4,6 @@
   <name>image_proc</name>
   <version>1.12.23</version>
   <description>Single image rectification and color processing.</description>
-  <author>Patrick Mihelich</author>
-  <author>Kurt Konolige</author>
-  <author>Jeremy Leibs</author>
 
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
@@ -14,6 +11,10 @@
 
   <license>BSD</license>
   <url>http://www.ros.org/wiki/image_proc</url>
+
+  <author>Patrick Mihelich</author>
+  <author>Kurt Konolige</author>
+  <author>Jeremy Leibs</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

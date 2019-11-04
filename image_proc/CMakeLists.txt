@@ -43,14 +43,14 @@ target_compile_definitions(rectify
 ament_target_dependencies(rectify
   ${dependencies}
 )
-  
+
 rclcpp_components_register_nodes(rectify "image_proc::RectifyNode")
 set(node_plugins "${node_plugins}image_proc::RectifyNode;$<TARGET_FILE:rectify>\n")
 
 add_library(debayer SHARED
   src/debayer.cpp
   src/edge_aware.cpp
-  )
+)
 
 target_compile_definitions(debayer
   PRIVATE "COMPOSITION_BUILDING_DLL")
@@ -64,7 +64,7 @@ set(node_plugins "${node_plugins}image_proc::DebayerNode;$<TARGET_FILE:debayer>\
 
 add_library(resize SHARED
   src/resize.cpp
-  )
+)
 
 target_compile_definitions(resize
   PRIVATE "COMPOSITION_BUILDING_DLL")
@@ -78,7 +78,7 @@ set(node_plugins "${node_plugins}image_proc::ResizeNode;$<TARGET_FILE:resize>\n"
 
 add_library(crop_decimate SHARED
   src/crop_decimate.cpp
-  )
+)
 
 target_compile_definitions(crop_decimate
   PRIVATE "COMPOSITION_BUILDING_DLL")
@@ -91,7 +91,7 @@ rclcpp_components_register_nodes(crop_decimate "image_proc::CropDecimateNode")
 set(node_plugins "${node_plugins}image_proc::CropDecimateNode;$<TARGET_FILE:crop_decimate>\n")
 
 add_executable(image_proc
-               src/image_proc.cpp
+  src/image_proc.cpp
 )
 
 target_link_libraries(image_proc
