@@ -77,7 +77,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
 install(TARGETS ${PROJECT_NAME}
         DESTINATION lib
 )
-install(DIRECTORY examples/launch
+install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}/
 )
 
