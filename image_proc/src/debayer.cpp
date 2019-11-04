@@ -65,12 +65,19 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions& options)
       connectCb();
 
       std::lock_guard<std::mutex> lock(connect_mutex_);
-      RCLCPP_INFO(this->get_logger(), "mono: %s, color: %s", image_mono.c_str(), image_color.c_str());
+      RCLCPP_INFO(this->get_logger(), "Published mono topic: %s, Published color topic: %s", image_mono.c_str(), image_color.c_str());
       pub_mono_  = image_transport::create_publisher(this, image_mono);
       pub_color_ = image_transport::create_publisher(this, image_color);
       }
       return result;
   };
+
+  this->declare_parameter("camera_namespace");
+
+  rclcpp::Parameter parameter;
+  if (rclcpp::PARAMETER_NOT_SET != this->get_parameter("camera_namespace", parameter)) {
+    parameter_change_cb(this->get_parameters({"camera_namespace"}));
+  }
 
   debayer_ = this->declare_parameter("debayer", 3);
   this->set_on_parameters_set_callback(parameter_change_cb);
@@ -81,7 +88,7 @@ void DebayerNode::connectCb()
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
   std::string topic = camera_namespace_ + "/image_raw";
-  RCLCPP_INFO(this->get_logger(), "topic: %s", topic.c_str());
+  RCLCPP_INFO(this->get_logger(), "Subscribed on topic: %s", topic.c_str());
   /* 
   *  SubscriberStatusCallback not yet implemented
   */

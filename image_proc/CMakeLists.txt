@@ -107,6 +107,9 @@ ament_target_dependencies(image_proc
   ${dependencies}
 )
 
+install(DIRECTORY launch/
+        DESTINATION share/${PROJECT_NAME}/launch)
+
 install(TARGETS
   image_proc
   DESTINATION lib/${PROJECT_NAME}
