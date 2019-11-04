@@ -108,7 +108,8 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions& options)
   offset_y_ = this->declare_parameter("offset_y", 0);
 
   // default: CropDecimate_NN
-  interpolation_ = this->declare_parameter("interpolation", 0);
+  int interpolation = this->declare_parameter("interpolation", 0);
+  interpolation_ = static_cast<CropDecimateModes>(interpolation);
 
   pub_ = image_transport::create_camera_publisher(this, "image_raw");
   sub_ = image_transport::create_camera_subscription(this, "image_raw",
@@ -231,7 +232,7 @@ void CropDecimateNode::imageCb(
   {
     cv::Mat decimated;
 
-    if (interpolation_ == image_proc::CropDecimate_NN)
+    if (interpolation_ == image_proc::CropDecimateModes::CropDecimate_NN)
     {
       // Use optimized method instead of OpenCV's more general NN resize
       int pixel_size = output.image.elemSize();
@@ -272,7 +273,7 @@ void CropDecimateNode::imageCb(
     {
       // Linear, cubic, area, ...
       cv::Size size(output.image.cols / decimation_x, output.image.rows / decimation_y);
-      cv::resize(output.image, decimated, size, 0.0, 0.0, interpolation_);
+      cv::resize(output.image, decimated, size, 0.0, 0.0, static_cast<int>(interpolation_));
     }
 
     output.image = decimated;

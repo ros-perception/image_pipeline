@@ -121,7 +121,7 @@ install(
 )
 install(
   TARGETS crop_decimate
-  EXPORT export_resize
+  EXPORT export_crop_decimate
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -145,6 +145,7 @@ ament_export_interfaces(
   export_resize HAS_LIBRARY_TARGET
   export_debayer HAS_LIBRARY_TARGET
   export_rectify HAS_LIBRARY_TARGET
+  export_crop_decimate HAS_LIBRARY_TARGET
 )
 
 ament_export_libraries(
