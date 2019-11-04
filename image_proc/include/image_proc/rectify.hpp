@@ -50,7 +50,7 @@ class RectifyNode
   : public rclcpp::Node
 {
 public:
-  explicit RectifyNode(const rclcpp::NodeOptions&);
+  explicit RectifyNode(const rclcpp::NodeOptions &);
 
 private:
   image_transport::CameraSubscriber sub_camera_;

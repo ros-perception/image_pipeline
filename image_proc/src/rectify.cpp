@@ -44,50 +44,50 @@
 namespace image_proc
 {
 
-RectifyNode::RectifyNode(const rclcpp::NodeOptions& options)
+RectifyNode::RectifyNode(const rclcpp::NodeOptions & options)
 : Node("RectifyNode", options)
 {
   auto parameter_change_cb =
-  [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
-  {
-    auto result = rcl_interfaces::msg::SetParametersResult();
-    result.successful = true;
+    [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
+    {
+      auto result = rcl_interfaces::msg::SetParametersResult();
+      result.successful = true;
 
-    for (auto parameter : parameters) {
-      if (parameter.get_name() == "camera_namespace") {
-        camera_namespace_ = parameter.as_string();
-        RCLCPP_INFO(get_logger(), "camera_namespace: %s ", camera_namespace_.c_str());
-        break;
-      }
-    }
-
-    for (auto parameter : parameters) {
-      if (parameter.get_name() == "image_mono") {
-        image_topic = camera_namespace_ + parameter.as_string();
-        image_rect = camera_namespace_+"/image_rect";
-        RCLCPP_INFO(
-          this->get_logger(), "image_topic: %s, image_rect: %s",
-          image_topic.c_str(), image_rect.c_str());
-        connectCb();
-        std::lock_guard<std::mutex> lock(connect_mutex_);
-        pub_rect_ = image_transport::create_publisher(this, image_rect);
-        break;
+      for (auto parameter : parameters) {
+        if (parameter.get_name() == "camera_namespace") {
+          camera_namespace_ = parameter.as_string();
+          RCLCPP_INFO(get_logger(), "camera_namespace: %s ", camera_namespace_.c_str());
+          break;
+        }
       }
 
-      if (parameter.get_name() == "image_color") {
-        image_topic = camera_namespace_ + parameter.as_string();
-        image_rect = camera_namespace_ + "/image_rect_color";
-        RCLCPP_INFO(
-          this->get_logger(), "image_topic: %s, image_rect: %s",
-          image_topic.c_str(), image_rect.c_str());
-        connectCb();
-        std::lock_guard<std::mutex> lock(connect_mutex_);
-        pub_rect_ = image_transport::create_publisher(this, image_rect);
-        break;
+      for (auto parameter : parameters) {
+        if (parameter.get_name() == "image_mono") {
+          image_topic = camera_namespace_ + parameter.as_string();
+          image_rect = camera_namespace_ + "/image_rect";
+          RCLCPP_INFO(
+            this->get_logger(), "image_topic: %s, image_rect: %s",
+            image_topic.c_str(), image_rect.c_str());
+          connectCb();
+          std::lock_guard<std::mutex> lock(connect_mutex_);
+          pub_rect_ = image_transport::create_publisher(this, image_rect);
+          break;
+        }
+
+        if (parameter.get_name() == "image_color") {
+          image_topic = camera_namespace_ + parameter.as_string();
+          image_rect = camera_namespace_ + "/image_rect_color";
+          RCLCPP_INFO(
+            this->get_logger(), "image_topic: %s, image_rect: %s",
+            image_topic.c_str(), image_rect.c_str());
+          connectCb();
+          std::lock_guard<std::mutex> lock(connect_mutex_);
+          pub_rect_ = image_transport::create_publisher(this, image_rect);
+          break;
+        }
       }
-    }
-    return result;
-  };
+      return result;
+    };
 
   queue_size_ = this->declare_parameter("queue_size", 5);
   interpolation = this->declare_parameter("interpolation", 0);
@@ -95,21 +95,22 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions& options)
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void RectifyNode::connectCb( )
+void RectifyNode::connectCb()
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
 
-  /* 
+  /*
   *  SubscriberStatusCallback not yet implemented
-  */
-  /*if (pub_rect_.getNumSubscribers() == 0)
+  *
+  if (pub_rect_.getNumSubscribers() == 0)
     sub_camera_.shutdown();
   else if (!sub_camera_)
-  {*/
+  {
+  */
   sub_camera_ = image_transport::create_camera_subscription(
     this, image_topic, std::bind(&RectifyNode::imageCb,
-      this, std::placeholders::_1, std::placeholders::_2), "raw");
-  //}
+    this, std::placeholders::_1, std::placeholders::_2), "raw");
+  // }
 }
 
 void RectifyNode::imageCb(

@@ -42,7 +42,7 @@
 #include <string>
 
 class ImageProcTest
-: public testing::Test
+  : public testing::Test
 {
 protected:
   virtual void SetUp()
@@ -51,28 +51,37 @@ protected:
 
     // Determine topic names
     std::string camera_ns = nh.resolveName("camera") + "/";
-    if (camera_ns == "/camera")
+
+    if (camera_ns == "/camera") {
       throw "Must remap 'camera' to the camera namespace.";
-    topic_raw        = camera_ns + "image_raw";
-    topic_mono       = camera_ns + "image_mono";
-    topic_rect       = camera_ns + "image_rect";
-    topic_color      = camera_ns + "image_color";
+    }
+
+    topic_raw = camera_ns + "image_raw";
+    topic_mono = camera_ns + "image_mono";
+    topic_rect = camera_ns + "image_rect";
+    topic_color = camera_ns + "image_color";
     topic_rect_color = camera_ns + "image_rect_color";
 
     // Load raw image and cam info
     /// @todo Make these cmd-line args instead?
     std::string raw_image_file, cam_info_file;
-    if (!local_nh.getParam("raw_image_file", raw_image_file))
+
+    if (!local_nh.getParam("raw_image_file", raw_image_file)) {
       throw "Must set parameter ~raw_image_file.";
-    if (!local_nh.getParam("camera_info_file", cam_info_file))
+    }
+
+    if (!local_nh.getParam("camera_info_file", cam_info_file)) {
       throw "Must set parameter ~camera_info_file.";
+    }
 
     /// @todo Test variety of encodings for raw image (bayer, mono, color)
     cv::Mat img = cv::imread(raw_image_file, 0);
     raw_image = cv_bridge::CvImage(std_msgs::Header(), "mono8", img).toImageMsg();
     std::string cam_name;
-    if (!camera_calibration_parsers::readCalibration(cam_info_file, cam_name, cam_info))
+
+    if (!camera_calibration_parsers::readCalibration(cam_info_file, cam_name, cam_info)) {
       throw "Failed to read camera info file.";
+    }
 
     // Create raw camera publisher
     image_transport::ImageTransport it(nh);
@@ -82,11 +91,13 @@ protected:
     ros::master::V_TopicInfo topics;
     while (true) {
       if (ros::master::getTopics(topics)) {
-        BOOST_FOREACH(ros::master::TopicInfo& topic, topics) {
-          if (topic.name == topic_rect_color)
+        BOOST_FOREACH(ros::master::TopicInfo & topic, topics) {
+          if (topic.name == topic_rect_color) {
             return;
+          }
         }
       }
+
       ros::Duration(0.5).sleep();
     }
   }
@@ -108,7 +119,7 @@ protected:
   }
 };
 
-void callback(const sensor_msgs::ImageConstPtr& msg)
+void callback(const sensor_msgs::ImageConstPtr & msg)
 {
   ROS_FATAL("Got an image");
   ros::shutdown();

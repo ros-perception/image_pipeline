@@ -37,22 +37,22 @@ namespace image_proc
 
 constexpr int avg(int a, int b)
 {
-  return ((a + b) >> 1);
+  return (a + b) >> 1;
 }
 
 constexpr int avg3(int a, int b, int c)
 {
-  return ((a + b + c) / 3);
+  return (a + b + c) / 3;
 }
 
 constexpr int avg4(int a, int b, int c, int d)
 {
-  return ((a + b + c + d) >> 2);
+  return (a + b + c + d) >> 2;
 }
 
 constexpr int wavg4(int a, int b, int c, int d, int x, int y)
 {
-  return (((a + b) * x + (c + d) * y) / (2 * (x + y)));
+  return ((a + b) * x + (c + d) * y) / (2 * (x + y));
 }
 
 void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
@@ -94,7 +94,7 @@ void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
   //         0     g r g
   // line_step     B g b
   // line_step2    g r g
-  rgb_buffer[rgb_line_step + 3] = rgb_buffer[rgb_line_step ] =
+  rgb_buffer[rgb_line_step + 3] = rgb_buffer[rgb_line_step] =
     avg(bayer_pixel[1], bayer_pixel[bayer_line_step2 + 1]);
   rgb_buffer[rgb_line_step + 1] =
     avg3(bayer_pixel[0], bayer_pixel[bayer_line_step + 1], bayer_pixel[bayer_line_step2]);
@@ -135,7 +135,7 @@ void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
     //         0      r g r g
     // line_step      g B g b
     // line_step2     r g r g
-    rgb_buffer[rgb_line_step ] = avg4(
+    rgb_buffer[rgb_line_step] = avg4(
       bayer_pixel[1], bayer_pixel[bayer_line_step2 + 1],
       bayer_pixel[-1], bayer_pixel[bayer_line_step2 - 1]);
     rgb_buffer[rgb_line_step + 1] = avg4(
@@ -176,7 +176,7 @@ void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
   //          0    r g r
   //  line_step    g B g
   // line_step2    r g r
-  rgb_buffer[rgb_line_step ] = avg4(
+  rgb_buffer[rgb_line_step] = avg4(
     bayer_pixel[1], bayer_pixel[bayer_line_step2 + 1],
     bayer_pixel[-1], bayer_pixel[bayer_line_step2 - 1]);
   rgb_buffer[rgb_line_step + 1] = avg4(
@@ -226,7 +226,7 @@ void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
     //         0     g r g
     // line_step     B g b
     // line_step2    g r g
-    rgb_buffer[rgb_line_step + 3] = rgb_buffer[rgb_line_step ] =
+    rgb_buffer[rgb_line_step + 3] = rgb_buffer[rgb_line_step] =
       avg(bayer_pixel[1], bayer_pixel[bayer_line_step2 + 1]);
     rgb_buffer[rgb_line_step + 1] = avg3(
       bayer_pixel[0], bayer_pixel[bayer_line_step + 1], bayer_pixel[bayer_line_step2]);
@@ -262,8 +262,8 @@ void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
       //  line_step    g b g b
       // line_step2    r g r g
 
-      dh = abs (bayer_pixel[0] - bayer_pixel[2]);
-      dv = abs (bayer_pixel[-bayer_line_step + 1] - bayer_pixel[bayer_line_step + 1]);
+      dh = std::abs(bayer_pixel[0] - bayer_pixel[2]);
+      dv = std::abs(bayer_pixel[-bayer_line_step + 1] - bayer_pixel[bayer_line_step + 1]);
 
       if (dh > dv) {
         rgb_buffer[4] = avg(bayer_pixel[-bayer_line_step + 1], bayer_pixel[bayer_line_step + 1]);
@@ -286,13 +286,13 @@ void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
       //          0     r g r g
       // line_step      g B g b
       // line_step2     r g r g
-      rgb_buffer[rgb_line_step ] = avg4(
+      rgb_buffer[rgb_line_step] = avg4(
         bayer_pixel[1], bayer_pixel[bayer_line_step2 + 1],
         bayer_pixel[-1], bayer_pixel[bayer_line_step2 - 1]);
       rgb_buffer[rgb_line_step + 2] = bayer_pixel[bayer_line_step];
 
-      dv = abs (bayer_pixel[0] - bayer_pixel[bayer_line_step2]);
-      dh = abs (bayer_pixel[bayer_line_step - 1] - bayer_pixel[bayer_line_step + 1]);
+      dv = std::abs(bayer_pixel[0] - bayer_pixel[bayer_line_step2]);
+      dh = std::abs(bayer_pixel[bayer_line_step - 1] - bayer_pixel[bayer_line_step + 1]);
 
       if (dv > dh) {
         rgb_buffer[rgb_line_step + 1] =
@@ -341,7 +341,7 @@ void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
     //          0    r g r
     //  line_step    g B g
     // line_step2    r g r
-    rgb_buffer[rgb_line_step ] = avg4(
+    rgb_buffer[rgb_line_step] = avg4(
       bayer_pixel[1], bayer_pixel[bayer_line_step2 + 1],
       bayer_pixel[-1], bayer_pixel[bayer_line_step2 - 1]);
     rgb_buffer[rgb_line_step + 1] = avg4(
@@ -367,7 +367,7 @@ void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
   //         0     G r g
   // line_step     b g b
 
-  rgb_buffer[rgb_line_step + 3] = rgb_buffer[rgb_line_step ] =
+  rgb_buffer[rgb_line_step + 3] = rgb_buffer[rgb_line_step] =
     rgb_buffer[3] = rgb_buffer[0] = bayer_pixel[1];  // red pixel
   rgb_buffer[1] = bayer_pixel[0];  // green pixel
   rgb_buffer[rgb_line_step + 2] = rgb_buffer[2] = bayer_pixel[bayer_line_step];  // blue;
@@ -389,7 +389,7 @@ void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
   //        -1     b g b
   //         0     g r g
   // line_step     B g b
-  // rgb_pixel[rgb_line_step    ] = bayer_pixel[1];
+  // rgb_pixel[rgb_line_step] = bayer_pixel[1];
   rgb_buffer[rgb_line_step + 1] = avg(bayer_pixel[0], bayer_pixel[bayer_line_step + 1]);
   rgb_buffer[rgb_line_step + 2] = bayer_pixel[bayer_line_step];
 
@@ -433,7 +433,7 @@ void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
     //        -1    g b g b
     //         0    r g r g
     // line_step    g B g b
-    rgb_buffer[rgb_line_step ] = avg(bayer_pixel[-1], bayer_pixel[1]);
+    rgb_buffer[rgb_line_step] = avg(bayer_pixel[-1], bayer_pixel[1]);
     rgb_buffer[rgb_line_step + 1] = avg3(
       bayer_pixel[0], bayer_pixel[bayer_line_step - 1],
       bayer_pixel[bayer_line_step + 1]);
@@ -455,7 +455,7 @@ void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
   //        -1    g b g
   //         0    r G r
   // line_step    g b g
-  rgb_buffer[rgb_line_step ] = rgb_buffer[0] = avg(bayer_pixel[1], bayer_pixel[-1]);
+  rgb_buffer[rgb_line_step] = rgb_buffer[0] = avg(bayer_pixel[1], bayer_pixel[-1]);
   rgb_buffer[1] = bayer_pixel[0];
   rgb_buffer[5] = rgb_buffer[2] = avg(bayer_pixel[bayer_line_step], bayer_pixel[-bayer_line_step]);
 
@@ -474,7 +474,7 @@ void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
   //        -1    g b g
   //         0    r g r
   // line_step    g B g
-  // rgb_pixel[rgb_line_step    ] = avg2(bayer_pixel[-1], bayer_pixel[1] );
+  // rgb_pixel[rgb_line_step] = avg2(bayer_pixel[-1], bayer_pixel[1] );
   rgb_buffer[rgb_line_step + 1] = avg3(
     bayer_pixel[0], bayer_pixel[bayer_line_step - 1],
     bayer_pixel[bayer_line_step + 1]);
@@ -489,7 +489,7 @@ void debayerEdgeAware(const cv::Mat & bayer, cv::Mat & color)
   // rgb_pixel[rgb_line_step + 5] = bayer_pixel[line_step];
 }
 
-void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
+void debayerEdgeAwareWeighted(const cv::Mat & bayer, cv::Mat & color)
 {
   unsigned width = bayer.cols;
   unsigned height = bayer.rows;
@@ -498,8 +498,8 @@ void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
   int bayer_line_step = bayer.step[0];
   int bayer_line_step2 = bayer_line_step * 2;
 
-  unsigned char* rgb_buffer = color.data;
-  unsigned char* bayer_pixel = bayer.data;
+  unsigned char * rgb_buffer = color.data;
+  unsigned char * bayer_pixel = bayer.data;
   unsigned yIdx, xIdx;
 
   int dh, dv;
@@ -528,7 +528,7 @@ void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
   //         0     g r g
   // line_step     B g b
   // line_step2    g r g
-  rgb_buffer[rgb_line_step + 3] = rgb_buffer[rgb_line_step ] =
+  rgb_buffer[rgb_line_step + 3] = rgb_buffer[rgb_line_step] =
     avg(bayer_pixel[1], bayer_pixel[bayer_line_step2 + 1]);
   rgb_buffer[rgb_line_step + 1] = avg3(
     bayer_pixel[0], bayer_pixel[bayer_line_step + 1],
@@ -571,7 +571,7 @@ void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
     //         0      r g r g
     // line_step      g B g b
     // line_step2     r g r g
-    rgb_buffer[rgb_line_step ] = avg4(
+    rgb_buffer[rgb_line_step] = avg4(
       bayer_pixel[1], bayer_pixel[bayer_line_step2 + 1],
       bayer_pixel[-1], bayer_pixel[bayer_line_step2 - 1]);
     rgb_buffer[rgb_line_step + 1] = avg4(
@@ -612,7 +612,7 @@ void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
   //          0    r g r
   //  line_step    g B g
   // line_step2    r g r
-  rgb_buffer[rgb_line_step ] = avg4(
+  rgb_buffer[rgb_line_step] = avg4(
     bayer_pixel[1], bayer_pixel[bayer_line_step2 + 1],
     bayer_pixel[-1], bayer_pixel[bayer_line_step2 - 1]);
   rgb_buffer[rgb_line_step + 1] = avg4(
@@ -662,7 +662,7 @@ void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
     //         0     g r g
     // line_step     B g b
     // line_step2    g r g
-    rgb_buffer[rgb_line_step + 3] = rgb_buffer[rgb_line_step ] =
+    rgb_buffer[rgb_line_step + 3] = rgb_buffer[rgb_line_step] =
       avg(bayer_pixel[1], bayer_pixel[bayer_line_step2 + 1]);
     rgb_buffer[rgb_line_step + 1] = avg3(
       bayer_pixel[0], bayer_pixel[bayer_line_step + 1],
@@ -699,8 +699,8 @@ void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
       //  line_step    g b g b
       // line_step2    r g r g
 
-      dh = abs (bayer_pixel[0] - bayer_pixel[2]);
-      dv = abs (bayer_pixel[-bayer_line_step + 1] - bayer_pixel[bayer_line_step + 1]);
+      dh = std::abs(bayer_pixel[0] - bayer_pixel[2]);
+      dv = std::abs(bayer_pixel[-bayer_line_step + 1] - bayer_pixel[bayer_line_step + 1]);
 
       if (dv == 0 && dh == 0) {
         rgb_buffer[4] = avg4(
@@ -778,7 +778,7 @@ void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
     //          0    r g r
     //  line_step    g B g
     // line_step2    r g r
-    rgb_buffer[rgb_line_step ] = avg4(
+    rgb_buffer[rgb_line_step] = avg4(
       bayer_pixel[1], bayer_pixel[bayer_line_step2 + 1],
       bayer_pixel[-1], bayer_pixel[bayer_line_step2 - 1]);
     rgb_buffer[rgb_line_step + 1] = avg4(
@@ -804,7 +804,7 @@ void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
   //         0     G r g
   // line_step     b g b
 
-  rgb_buffer[rgb_line_step + 3] = rgb_buffer[rgb_line_step ] =
+  rgb_buffer[rgb_line_step + 3] = rgb_buffer[rgb_line_step] =
     rgb_buffer[3] = rgb_buffer[0] = bayer_pixel[1];  // red pixel
   rgb_buffer[1] = bayer_pixel[0];  // green pixel
   rgb_buffer[rgb_line_step + 2] = rgb_buffer[2] = bayer_pixel[bayer_line_step];  // blue;
@@ -826,7 +826,7 @@ void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
   //        -1     b g b
   //         0     g r g
   // line_step     B g b
-  // rgb_pixel[rgb_line_step    ] = bayer_pixel[1];
+  // rgb_pixel[rgb_line_step] = bayer_pixel[1];
   rgb_buffer[rgb_line_step + 1] = avg(bayer_pixel[0], bayer_pixel[bayer_line_step + 1]);
   rgb_buffer[rgb_line_step + 2] = bayer_pixel[bayer_line_step];
 
@@ -891,7 +891,7 @@ void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
   //        -1    g b g
   //         0    r G r
   // line_step    g b g
-  rgb_buffer[rgb_line_step ] = rgb_buffer[0] = avg(bayer_pixel[1], bayer_pixel[-1]);
+  rgb_buffer[rgb_line_step] = rgb_buffer[0] = avg(bayer_pixel[1], bayer_pixel[-1]);
   rgb_buffer[1] = bayer_pixel[0];
   rgb_buffer[5] = rgb_buffer[2] = avg(bayer_pixel[bayer_line_step], bayer_pixel[-bayer_line_step]);
 
@@ -910,7 +910,7 @@ void debayerEdgeAwareWeighted(const cv::Mat& bayer, cv::Mat& color)
   //        -1    g b g
   //         0    r g r
   // line_step    g B g
-  // rgb_pixel[rgb_line_step    ] = avg2(bayer_pixel[-1], bayer_pixel[1] );
+  // rgb_pixel[rgb_line_step] = avg2(bayer_pixel[-1], bayer_pixel[1] );
   rgb_buffer[rgb_line_step + 1] = avg3(
     bayer_pixel[0], bayer_pixel[bayer_line_step - 1],
     bayer_pixel[bayer_line_step + 1]);

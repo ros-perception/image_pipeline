@@ -74,7 +74,7 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
           this->get_logger(), "mono: %s, color: %s",
           image_mono.c_str(), image_color.c_str());
 
-        pub_mono_  = image_transport::create_publisher(this, image_mono);
+        pub_mono_ = image_transport::create_publisher(this, image_mono);
         pub_color_ = image_transport::create_publisher(this, image_color);
       }
 
@@ -91,18 +91,19 @@ void DebayerNode::connectCb()
   std::lock_guard<std::mutex> lock(connect_mutex_);
   std::string topic = camera_namespace_ + "/image_raw";
   RCLCPP_INFO(this->get_logger(), "topic: %s", topic.c_str());
-  /* 
+  /*
   *  SubscriberStatusCallback not yet implemented
-  */
-  /*if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0)
+  *
+  if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0)
   {
     sub_raw_.shutdown();
   }
   else
-  {*/
+  {
+  */
   sub_raw_ = image_transport::create_subscription(
     this, topic,
-    std::bind(&DebayerNode::imageCb, this, std::placeholders:: _1), "raw");
+    std::bind(&DebayerNode::imageCb, this, std::placeholders::_1), "raw");
   // }
 }
 
@@ -120,13 +121,15 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
       pub_mono_.publish(raw_msg);
     } else {
       if ((bit_depth != 8) && (bit_depth != 16)) {
-        RCLCPP_WARN(this->get_logger(),
-                    "Raw image data from topic '%s' has unsupported depth: %d",
-                    sub_raw_.getTopic().c_str(), bit_depth);
+        RCLCPP_WARN(
+          this->get_logger(),
+          "Raw image data from topic '%s' has unsupported depth: %d",
+          sub_raw_.getTopic().c_str(), bit_depth);
       } else {
         // Use cv_bridge to convert to Mono. If a type is not supported,
         // it will error out there
         sensor_msgs::msg::Image::SharedPtr gray_msg;
+
         try {
           if (bit_depth == 8) {
             gray_msg = cv_bridge::toCvCopy(raw_msg, enc::MONO8)->toImageMsg();
@@ -135,7 +138,7 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
           }
 
           pub_mono_.publish(gray_msg);
-        } catch (cv_bridge::Exception &e) {
+        } catch (cv_bridge::Exception & e) {
           RCLCPP_WARN(this->get_logger(), "cv_bridge conversion error: '%s'", e.what());
         }
       }
@@ -162,7 +165,7 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
     int type = bit_depth == 8 ? CV_8U : CV_16U;
     const cv::Mat bayer(
       raw_msg->height, raw_msg->width, CV_MAKETYPE(type, 1),
-      const_cast<uint8_t*>(&raw_msg->data[0]), raw_msg->step);
+      const_cast<uint8_t *>(&raw_msg->data[0]), raw_msg->step);
 
     sensor_msgs::msg::Image::SharedPtr color_msg =
       std::make_shared<sensor_msgs::msg::Image>();
@@ -178,7 +181,7 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
       &color_msg->data[0], color_msg->step);
 
     int algorithm;
-      // std::loc_guard<std::recursive_mutex> loc(config_mutex_)
+    // std::loc_guard<std::recursive_mutex> loc(config_mutex_)
     algorithm = debayer_;
 
     if (algorithm == debayer_edgeaware_ ||
@@ -228,7 +231,7 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
       color_msg = cv_bridge::toCvCopy(raw_msg, enc::BGR8)->toImageMsg();
       pub_color_.publish(color_msg);
       RCLCPP_INFO(this->get_logger(), "Publish color!");
-    } catch (cv_bridge::Exception &e) {
+    } catch (cv_bridge::Exception & e) {
       RCLCPP_WARN(this->get_logger(), "cv_bridge conversion error: '%s'", e.what());
     }
   } else if (raw_msg->encoding == enc::TYPE_8UC3) {

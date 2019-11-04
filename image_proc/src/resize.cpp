@@ -47,31 +47,31 @@ namespace image_proc
 {
 
 ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
-  : rclcpp::Node("ResizeNode", options)
+: rclcpp::Node("ResizeNode", options)
 {
- auto parameter_change_cb =
-  [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
-  {
-    auto result = rcl_interfaces::msg::SetParametersResult();
-    result.successful = true;
+  auto parameter_change_cb =
+    [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
+    {
+      auto result = rcl_interfaces::msg::SetParametersResult();
+      result.successful = true;
 
-    for (auto parameter : parameters) {
-      if (parameter.get_name() == "camera_namespace") {
-        camera_namespace_ = parameter.as_string();
-        RCLCPP_INFO(get_logger(), "camera_namespace: %s ", camera_namespace_.c_str());
-        break;
+      for (auto parameter : parameters) {
+        if (parameter.get_name() == "camera_namespace") {
+          camera_namespace_ = parameter.as_string();
+          RCLCPP_INFO(get_logger(), "camera_namespace: %s ", camera_namespace_.c_str());
+          break;
+        }
       }
-    }
 
-    image_topic_ = camera_namespace_ + "/image";
-    camera_info_topic_ = camera_namespace_ + "/camera_info";
-    connectCb();
+      image_topic_ = camera_namespace_ + "/image";
+      camera_info_topic_ = camera_namespace_ + "/camera_info";
+      connectCb();
 
-    std::lock_guard<std::mutex> lock(connect_mutex_);
-    pub_image_ = image_transport::create_camera_publisher(this, image_topic_ + "/resize");
+      std::lock_guard<std::mutex> lock(connect_mutex_);
+      pub_image_ = image_transport::create_camera_publisher(this, image_topic_ + "/resize");
 
-    return result;
-  };
+      return result;
+    };
 
   this->declare_parameter("camera_namespace");
 
@@ -99,7 +99,7 @@ void ResizeNode::connectCb()
   if (!sub_image_) {
     sub_image_ = image_transport::create_camera_subscription(
       this, image_topic_, std::bind(&ResizeNode::imageCb, this,
-        std::placeholders::_1, std::placeholders::_2), "raw");
+      std::placeholders::_1, std::placeholders::_2), "raw");
   }
 }
 

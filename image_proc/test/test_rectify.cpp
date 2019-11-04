@@ -43,19 +43,22 @@
 #include <string>
 
 class ImageProcRectifyTest
-: public testing::Test
+  : public testing::Test
 {
 protected:
   virtual void SetUp()
   {
     // Determine topic names
     std::string camera_ns = nh_.resolveName("camera") + "/";
-    if (camera_ns == "/camera")
+
+    if (camera_ns == "/camera") {
       throw "Must remap 'camera' to the camera namespace.";
-    topic_raw_        = camera_ns + "image_raw";
-    topic_mono_       = camera_ns + "image_mono";
-    topic_rect_       = camera_ns + "image_rect";
-    topic_color_      = camera_ns + "image_color";
+    }
+
+    topic_raw_ = camera_ns + "image_raw";
+    topic_mono_ = camera_ns + "image_mono";
+    topic_rect_ = camera_ns + "image_rect";
+    topic_color_ = camera_ns + "image_color";
     topic_rect_color_ = camera_ns + "image_rect_color";
 
     // Taken from vision_opencv/image_geometry/test/utest.cpp
@@ -67,28 +70,28 @@ protected:
 
     double K[] =
     {
-      430.15433020105519, 0.0,                311.71339830549732,
-      0.0,                430.60920415473657, 221.06824942698509,
-      0.0,                0.0,                1.0
+      430.15433020105519, 0.0, 311.71339830549732,
+      0.0, 430.60920415473657, 221.06824942698509,
+      0.0, 0.0, 1.0
     };
 
     double R[] =
     {
-       0.99806560714807102,   0.0068562422224214027, 0.061790256276695904,
-      -0.0067522959054715113, 0.99997541519165112,  -0.0018909025066874664,
-      -0.061801701660692349,  0.0014700186639396652, 0.99808736527268516
+      0.99806560714807102, 0.0068562422224214027, 0.061790256276695904,
+      -0.0067522959054715113, 0.99997541519165112, -0.0018909025066874664,
+      -0.061801701660692349, 0.0014700186639396652, 0.99808736527268516
     };
 
     double P[] =
     {
-      295.53402059708782, 0.0,                285.55760765075684, 0.0,
-      0.0,                295.53402059708782, 223.29617881774902, 0.0,
-      0.0,                0.0,                1.0,                0.0
+      295.53402059708782, 0.0, 285.55760765075684, 0.0,
+      0.0, 295.53402059708782, 223.29617881774902, 0.0,
+      0.0, 0.0, 1.0, 0.0
     };
 
     cam_info_.header.frame_id = "tf_frame";
     cam_info_.height = 480;
-    cam_info_.width  = 640;
+    cam_info_.width = 640;
     // No ROI
     cam_info_.D.resize(5);
     std::copy(D, D + 5, cam_info_.D.begin());
@@ -141,13 +144,13 @@ protected:
   image_transport::Subscriber cam_sub_;
 
 public:
-  void imageCallback(const sensor_msgs::ImageConstPtr& msg)
+  void imageCallback(const sensor_msgs::ImageConstPtr & msg)
   {
     cv_bridge::CvImageConstPtr cv_ptr;
 
     try {
       cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
-    } catch (cv_bridge::Exception& e) {
+    } catch (cv_bridge::Exception & e) {
       ROS_FATAL("cv_bridge exception: %s", e.what());
       return;
     }
@@ -169,7 +172,7 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
   image_transport::ImageTransport it(nh_);
   cam_sub_ = it.subscribe(
     topic_rect_, 1, &ImageProcRectifyTest::imageCallback,
-    dynamic_cast<ImageProcRectifyTest*>(this));
+    dynamic_cast<ImageProcRectifyTest *>(this));
 
   // Wait for image_proc to be operational
   bool wait_for_topic = true;
@@ -180,7 +183,7 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
     // loaded system it may take longer than 0.5 seconds, and the test
     // would hang until the timeout is reached and fail.
     if (cam_sub_.getNumPublishers() > 0) {
-       wait_for_topic = false;
+      wait_for_topic = false;
     }
 
     ros::Duration(0.5).sleep();

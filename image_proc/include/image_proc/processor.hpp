@@ -56,13 +56,14 @@ class Processor
 {
 public:
   Processor()
-    : interpolation_(cv::INTER_LINEAR)
+  : interpolation_(cv::INTER_LINEAR)
   {
   }
 
   int interpolation_;
 
-  enum {
+  enum
+  {
     MONO       = 1 << 0,
     RECT       = 1 << 1,
     COLOR      = 1 << 2,
@@ -70,9 +71,10 @@ public:
     ALL = MONO | RECT | COLOR | RECT_COLOR
   };
 
-  bool process(const sensor_msgs::msg::Image::SharedConstPtr& raw_image,
-               const image_geometry::PinholeCameraModel& model,
-               ImageSet& output, int flags = ALL) const;
+  bool process(
+    const sensor_msgs::msg::Image::SharedConstPtr & raw_image,
+    const image_geometry::PinholeCameraModel & model,
+    ImageSet & output, int flags = ALL) const;
 };
 
 }  // namespace image_proc

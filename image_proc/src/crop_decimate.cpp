@@ -40,7 +40,7 @@
 namespace image_proc
 {
 
-template <typename T>
+template<typename T>
 void debayer2x2toBGR(
   const cv::Mat & src, cv::Mat & dst,
   int R, int G1, int G2, int B)
@@ -56,9 +56,9 @@ void debayer2x2toBGR(
   // 2x2 downsample and debayer at once
   for (int y = 0; y < dst.rows; ++y) {
     for (int x = 0; x < dst.cols; ++x) {
-      dst_row[x*3 + 0] = src_row[x * 2 + B];
-      dst_row[x*3 + 1] = (src_row[x * 2 + G1] + src_row[x*2 + G2]) / 2;
-      dst_row[x*3 + 2] = src_row[x * 2 + R];
+      dst_row[x * 3 + 0] = src_row[x * 2 + B];
+      dst_row[x * 3 + 1] = (src_row[x * 2 + G1] + src_row[x * 2 + G2]) / 2;
+      dst_row[x * 3 + 2] = src_row[x * 2 + R];
     }
 
     src_row += src_row_step * 2;
@@ -67,7 +67,7 @@ void debayer2x2toBGR(
 }
 
 // Templated on pixel size, in bytes (MONO8 = 1, BGR8 = 3, RGBA16 = 8, ...)
-template <int N>
+template<int N>
 void decimate(const cv::Mat & src, cv::Mat & dst, int decimation_x, int decimation_y)
 {
   dst.create(src.rows / decimation_y, src.cols / decimation_x, src.type());
@@ -117,7 +117,7 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
   pub_ = image_transport::create_camera_publisher(this, "image_raw");
   sub_ = image_transport::create_camera_subscription(
     this, "image_raw", std::bind(&CropDecimateNode::imageCb, this,
-      std::placeholders::_1, std::placeholders::_2), "raw");
+    std::placeholders::_1, std::placeholders::_2), "raw");
 }
 
 void CropDecimateNode::imageCb(
@@ -178,7 +178,7 @@ void CropDecimateNode::imageCb(
   if (
     decimation_x == 1 && decimation_y == 1 &&
     offset_x_ == 0 && offset_y_ == 0 &&
-    width  == static_cast<int>(image_msg->width) &&
+    width == static_cast<int>(image_msg->width) &&
     height == static_cast<int>(image_msg->height))
   {
     pub_.publish(image_msg, info_msg);

@@ -57,12 +57,14 @@ enum class CropDecimateModes
   CropDecimate_Lanczos4 = 4
 };
 
-using namespace::cv_bridge;  // CvImage, toCvShare
+using cv_bridge::CvImage;
+using cv_bridge::CvImageConstPtr;
+using cv_bridge::toCvShare;
 
 class CropDecimateNode : public rclcpp::Node
 {
 public:
-  explicit CropDecimateNode(const rclcpp::NodeOptions&);
+  explicit CropDecimateNode(const rclcpp::NodeOptions &);
 
 private:
   image_transport::CameraSubscriber sub_;
@@ -72,8 +74,9 @@ private:
   int decimation_x_, decimation_y_, offset_x_, offset_y_, width_, height_;
   CropDecimateModes interpolation_;
 
-  void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr image_msg,
-  const sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg);
+  void imageCb(
+    const sensor_msgs::msg::Image::ConstSharedPtr image_msg,
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg);
 };
 
 }  // namespace image_proc
