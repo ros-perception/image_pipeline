@@ -245,6 +245,10 @@ namespace depth_image_proc {
 	{
 	    convert_intensity<uint8_t>(intensity_msg, cloud_msg);
 	}
+	else if(intensity_msg->encoding == enc::TYPE_32FC1)
+	{
+	    convert_intensity<float>(intensity_msg, cloud_msg);
+	}
 	else
 	{
 	    NODELET_ERROR_THROTTLE(5, "Intensity image has unsupported encoding [%s]", intensity_msg->encoding.c_str());
