@@ -33,15 +33,15 @@ find_package(OpenCV REQUIRED)
 include_directories(include ${BOOST_INCLUDE_DIRS} ${rclcpp_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} SHARED
-  src/nodelets/convert_metric.cpp
-  src/nodelets/crop_foremost.cpp
-  src/nodelets/disparity.cpp
-  src/nodelets/point_cloud_xyz.cpp
-  src/nodelets/point_cloud_xyzrgb.cpp
-  src/nodelets/point_cloud_xyzi.cpp
-  src/nodelets/point_cloud_xyz_radial.cpp
-  src/nodelets/point_cloud_xyzi_radial.cpp
-  src/nodelets/register.cpp
+  src/convert_metric.cpp
+  src/crop_foremost.cpp
+  src/disparity.cpp
+  src/point_cloud_xyz.cpp
+  src/point_cloud_xyzrgb.cpp
+  src/point_cloud_xyzi.cpp
+  src/point_cloud_xyz_radial.cpp
+  src/point_cloud_xyzi_radial.cpp
+  src/register.cpp
 )
 ament_target_dependencies(${PROJECT_NAME}
   "image_transport"
@@ -77,7 +77,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
 install(TARGETS ${PROJECT_NAME}
         DESTINATION lib
 )
-install(DIRECTORY examples/launch
+install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}/
 )
 

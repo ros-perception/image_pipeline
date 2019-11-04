@@ -53,7 +53,7 @@ ament_target_dependencies(image_rotate_bin
 install(TARGETS image_rotate_bin
         DESTINATION lib/${PROJECT_NAME}
 )
-install(DIRECTORY examples/launch
+install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}/
 )
 

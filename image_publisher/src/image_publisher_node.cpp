@@ -29,50 +29,28 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifndef IMAGE_PUBLISHER__IMAGE_PUBLISHER_NODELET_HPP_
-#define IMAGE_PUBLISHER__IMAGE_PUBLISHER_NODELET_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <image_publisher/visibility.h>
-#include <image_transport/image_transport.h>
-#include <cv_bridge/cv_bridge.h>
-#include <opencv2/highgui/highgui.hpp>
-#include <string>
+#include "image_publisher/image_publisher.hpp"
+#include <memory>
 
-namespace image_publisher
+int main(int argc, char ** argv)
 {
+  // Force flush of the stdout buffer.
+  setvbuf(stdout, NULL, _IONBF, BUFSIZ);
 
-class ImagePublisherNode : public rclcpp::Node
-{
-public:
-  IMAGE_PUBLISHER_PUBLIC ImagePublisherNode();
+  rclcpp::init(argc, argv);
 
-protected:
-  void onInit();
-  void doWork();
-  void reconfigureCallback();
+  if (argc <= 1) {
+    RCUTILS_LOG_ERROR("image_publisher requires filename. Typical command-line usage:\n"
+      "\t$ ros2 run image_publisher image_publisher <filename>");
+    return 1;
+  }
 
-private:
-  image_transport::CameraPublisher pub_;
+  rclcpp::NodeOptions options;
+  auto publisher = std::make_shared<image_publisher::ImagePublisher>(options);
+  publisher->declare_parameter("filename", argv[1]);
 
-  cv::VideoCapture cap_;
-  cv::Mat image_;
-  rclcpp::TimerBase::SharedPtr timer_;
-
-  std::string filename_;
-  bool flip_horizontal_;
-  bool flip_vertical_;
-
-  std::string frame_id_;
-  double publish_rate_;
-  std::string camera_info_url_;
-  bool flip_image_;
-  int flip_value_;
-  sensor_msgs::msg::CameraInfo camera_info_;
-
-  rclcpp::Logger logger_ = rclcpp::get_logger("ImagePublisherNode");
-};
-
-}  // namespace image_publisher
-
-#endif  // IMAGE_PUBLISHER__IMAGE_PUBLISHER_NODELET_HPP_
+  rclcpp::spin(publisher);
+  rclcpp::shutdown();
+  return 0;
+}
