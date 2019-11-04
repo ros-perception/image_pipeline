@@ -38,15 +38,15 @@
 #include <vector>
 #include <string>
 
-#include "image_publisher/image_publisher_nodelet.hpp"
+#include "image_publisher/image_publisher.hpp"
 
 namespace image_publisher
 {
 
 using namespace std::chrono_literals;
 
-ImagePublisherNode::ImagePublisherNode()
-: Node("ImagePublisherNode")
+ImagePublisher::ImagePublisher(const rclcpp::NodeOptions& options)
+: Node("ImagePublisher", options)
 {
   pub_ = image_transport::create_camera_publisher(this, "image_raw");
 
@@ -67,17 +67,17 @@ ImagePublisherNode::ImagePublisherNode()
         if (parameter.get_name() == "filename") {
           filename_ = parameter.as_string();
           RCLCPP_INFO(get_logger(), "Reset filename as '%s'", filename_.c_str());
-          ImagePublisherNode::onInit();
+          ImagePublisher::onInit();
           return result;
         } else if (parameter.get_name() == "flip_horizontal") {
           flip_horizontal_ = parameter.as_bool();
           RCLCPP_INFO(get_logger(), "Reset flip_horizontal as '%d'", flip_horizontal_);
-          ImagePublisherNode::onInit();
+          ImagePublisher::onInit();
           return result;
         } else if (parameter.get_name() == "flip_vertical") {
           flip_vertical_ = parameter.as_bool();
           RCLCPP_INFO(get_logger(), "Reset flip_vertical as '%d'", flip_vertical_);
-          ImagePublisherNode::onInit();
+          ImagePublisher::onInit();
           return result;
         } else if (parameter.get_name() == "frame_id") {
           frame_id_ = parameter.as_string();
@@ -90,17 +90,17 @@ ImagePublisherNode::ImagePublisherNode()
           RCLCPP_INFO(get_logger(), "Reset camera_info_rul as '%s'", camera_info_url_.c_str());
         }
       }
-      ImagePublisherNode::reconfigureCallback();
+      ImagePublisher::reconfigureCallback();
       return result;
     };
   this->set_on_parameters_set_callback(param_change_callback);
 }
 
-void ImagePublisherNode::reconfigureCallback()
+void ImagePublisher::reconfigureCallback()
 {
   timer_ = this->create_wall_timer(
     std::chrono::milliseconds(static_cast<int>(1000 / publish_rate_)),
-    std::bind(&ImagePublisherNode::doWork, this));
+    std::bind(&ImagePublisher::doWork, this));
 
   camera_info_manager::CameraInfoManager c(this);
   if (!camera_info_url_.empty()) {
@@ -110,7 +110,7 @@ void ImagePublisherNode::reconfigureCallback()
       c.loadCameraInfo(camera_info_url_);
       camera_info_ = c.getCameraInfo();
     } catch (cv::Exception & e) {
-      RCLCPP_ERROR(logger_, "camera calibration failed to load: %s %s %s %i",
+      RCLCPP_ERROR(this->get_logger(), "camera calibration failed to load: %s %s %s %i",
         e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
     }
   } else {
@@ -118,7 +118,7 @@ void ImagePublisherNode::reconfigureCallback()
   }
 }
 
-void ImagePublisherNode::doWork()
+void ImagePublisher::doWork()
 {
   // Transform the image.
   try {
@@ -140,14 +140,14 @@ void ImagePublisherNode::doWork()
 
     pub_.publish(*out_img, camera_info_);
   } catch (cv::Exception & e) {
-    RCLCPP_ERROR(logger_, "Image processing error: %s %s %s %i",
+    RCLCPP_ERROR(this->get_logger(), "Image processing error: %s %s %s %i",
       e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
   }
 }
 
-void ImagePublisherNode::onInit()
+void ImagePublisher::onInit()
 {
-  RCLCPP_INFO(logger_, "File name for publishing image is : %s", filename_.c_str());
+  RCLCPP_INFO(this->get_logger(), "File name for publishing image is : %s", filename_.c_str());
   try {
     image_ = cv::imread(filename_, CV_LOAD_IMAGE_COLOR);
     if (image_.empty()) {  // if filename not exist, open video device
@@ -163,13 +163,13 @@ void ImagePublisherNode::onInit()
     }
     CV_Assert(!image_.empty());
   } catch (cv::Exception & e) {
-    RCLCPP_ERROR(logger_, "Failed to load image (%s): %s %s %s %i",
+    RCLCPP_ERROR(this->get_logger(), "Failed to load image (%s): %s %s %s %i",
       filename_.c_str(), e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
     return;
   }
 
-  RCLCPP_INFO(logger_, "Flip horizontal image is : %s", ((flip_horizontal_) ? "true" : "false"));
-  RCLCPP_INFO(logger_, "Flip flip_vertical image is : %s", ((flip_vertical_) ? "true" : "false"));
+  RCLCPP_INFO(this->get_logger(), "Flip horizontal image is : %s", ((flip_horizontal_) ? "true" : "false"));
+  RCLCPP_INFO(this->get_logger(), "Flip flip_vertical image is : %s", ((flip_vertical_) ? "true" : "false"));
 
   // From http://docs.opencv.org/modules/core/doc/operations_on_arrays.html
   // #void flip(InputArray src, OutputArray dst, int flipCode)
@@ -197,12 +197,14 @@ void ImagePublisherNode::onInit()
 
   timer_ = this->create_wall_timer(
     std::chrono::milliseconds(static_cast<int>(1000 / publish_rate_)),
-    std::bind(&ImagePublisherNode::doWork, this));
+    std::bind(&ImagePublisher::doWork, this));
 }
 
 }  // namespace image_publisher
 
-#include "class_loader/register_macro.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
 
 // Register the component with class_loader.
-CLASS_LOADER_REGISTER_CLASS(image_publisher::ImagePublisherNode, rclcpp::Node)
+// This acts as a sort of entry point, allowing the component to be discoverable when its library
+// is being loaded into a running process.
+RCLCPP_COMPONENTS_REGISTER_NODE(image_publisher::ImagePublisher)

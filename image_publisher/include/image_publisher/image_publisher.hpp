@@ -29,8 +29,8 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifndef IMAGE_PUBLISHER__IMAGE_PUBLISHER_NODELET_HPP_
-#define IMAGE_PUBLISHER__IMAGE_PUBLISHER_NODELET_HPP_
+#ifndef IMAGE_PUBLISHER__IMAGE_PUBLISHER_HPP_
+#define IMAGE_PUBLISHER__IMAGE_PUBLISHER_HPP_
 
 #include <rclcpp/rclcpp.hpp>
 #include <image_publisher/visibility.h>
@@ -42,10 +42,10 @@
 namespace image_publisher
 {
 
-class ImagePublisherNode : public rclcpp::Node
+class ImagePublisher : public rclcpp::Node
 {
 public:
-  IMAGE_PUBLISHER_PUBLIC ImagePublisherNode();
+  explicit ImagePublisher(const rclcpp::NodeOptions& options);
 
 protected:
   void onInit();
@@ -69,10 +69,8 @@ private:
   bool flip_image_;
   int flip_value_;
   sensor_msgs::msg::CameraInfo camera_info_;
-
-  rclcpp::Logger logger_ = rclcpp::get_logger("ImagePublisherNode");
 };
 
 }  // namespace image_publisher
 
-#endif  // IMAGE_PUBLISHER__IMAGE_PUBLISHER_NODELET_HPP_
+#endif  // IMAGE_PUBLISHER__IMAGE_PUBLISHER_HPP_

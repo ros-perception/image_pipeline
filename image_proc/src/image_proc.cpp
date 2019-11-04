@@ -87,18 +87,18 @@ int main(int argc, char * argv[])
   rclcpp::executors::SingleThreadedExecutor exec;
   const rclcpp::NodeOptions options;
 
-  // Debayer nodelet, image_raw -> image_mono, image_color
+  // Debayer component, image_raw -> image_mono, image_color
   auto debayer_node = std::make_shared<image_proc::DebayerNode>(options);
   debayer_node->declare_parameter("camera_namespace", camera_namespace);
   
 
-  // Rectify nodelet, image_mono -> image_rect
+  // Rectify component, image_mono -> image_rect
   auto rectify_mono_node = std::make_shared<image_proc::RectifyNode>(options);
   rectify_mono_node->declare_parameter("camera_namespace", camera_namespace);
   rectify_mono_node->declare_parameter("image_mono", "/image_mono");
   
 
-  // Rectify nodelet, image_color -> image_rect_color
+  // Rectify component, image_color -> image_rect_color
   auto rectify_color_node = std::make_shared<image_proc::RectifyNode>(options);
   rectify_color_node->declare_parameter("camera_namespace", camera_namespace);
   rectify_color_node->declare_parameter("image_color", "/image_color");

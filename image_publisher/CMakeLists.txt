@@ -41,35 +41,34 @@ endif()
 
 include_directories(include)
 
-add_library(image_publisher_node SHARED src/nodelet/image_publisher_nodelet.cpp)
-target_link_libraries(image_publisher_node ${ament_LIBRARIES} ${OpenCV_LIBRARIES})
-ament_target_dependencies(image_publisher_node
+add_library(image_publisher SHARED src/image_publisher.cpp)
+target_link_libraries(image_publisher ${ament_LIBRARIES} ${OpenCV_LIBRARIES})
+ament_target_dependencies(image_publisher
   ${DEPENDENCIES}
 )
 
-rclcpp_components_register_nodes(image_publisher_node "${PROJECT_NAME}::ImagePublisherNode")
-set(node_plugins "${node_plugins}${PROJECT_NAME}::ImagePublisherNode;$<TARGET_FILE:ImagePublisherNode>\n")
+rclcpp_components_register_nodes(image_publisher "${PROJECT_NAME}::ImagePublisher")
+set(node_plugins "${node_plugins}${PROJECT_NAME}::ImagePublisher;$<TARGET_FILE:ImagePublisher>\n")
 
 install(DIRECTORY include/${PROJECT_NAME}/
     DESTINATION include/${PROJECT_NAME}
     FILES_MATCHING PATTERN "*.h")
 
-install(TARGETS image_publisher_node
-        DESTINATION lib
-)
-
-add_executable(image_publisher src/node/image_publisher.cpp)
-target_link_libraries(image_publisher ${ament_LIBRARIES} image_publisher_node)
-ament_target_dependencies(image_publisher
+add_executable(image_publisher_node src/image_publisher_node.cpp)
+target_link_libraries(image_publisher_node ${ament_LIBRARIES} image_publisher)
+ament_target_dependencies(image_publisher_node
   ${DEPENDENCIES})
 
+install(TARGETS image_publisher_node
+        DESTINATION lib/${PROJECT_NAME}
+)
 install(TARGETS image_publisher
         DESTINATION lib/${PROJECT_NAME}
 )
 install(TARGETS image_publisher
         DESTINATION bin
 )
-install(DIRECTORY examples/launch
+install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}/
 )
 

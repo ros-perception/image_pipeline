@@ -30,7 +30,7 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "image_publisher/image_publisher_nodelet.hpp"
+#include "image_publisher/image_publisher.hpp"
 #include <memory>
 
 int main(int argc, char ** argv)
@@ -46,7 +46,8 @@ int main(int argc, char ** argv)
     return 1;
   }
 
-  auto publisher = std::make_shared<image_publisher::ImagePublisherNode>();
+  rclcpp::NodeOptions options;
+  auto publisher = std::make_shared<image_publisher::ImagePublisher>(options);
   publisher->declare_parameter("filename", argv[1]);
 
   rclcpp::spin(publisher);
