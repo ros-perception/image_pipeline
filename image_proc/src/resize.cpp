@@ -1,12 +1,12 @@
 // Copyright 2017, 2019 Kentaro Wada, Joshua Whitley
 // All rights reserved.
-// 
+//
 // Software License Agreement (BSD License 2.0)
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
-// 
+//
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
 // * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 // * Neither the name of {copyright_holder} nor the names of its
 //   contributors may be used to endorse or promote products derived
 //   from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -37,37 +37,41 @@
 #include <sensor_msgs/msg/camera_info.h>
 #include <sensor_msgs/msg/image.h>
 
+#include <memory>
 #include <mutex>
+#include <vector>
 
 #include "image_proc/resize.hpp"
 
 namespace image_proc
 {
-ResizeNode::ResizeNode(const rclcpp::NodeOptions & options) : rclcpp::Node("ResizeNode", options)
+
+ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
+  : rclcpp::Node("ResizeNode", options)
 {
+ auto parameter_change_cb =
+  [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
+  {
+    auto result = rcl_interfaces::msg::SetParametersResult();
+    result.successful = true;
 
-   auto parameter_change_cb =
-    [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
-    {
-      auto result = rcl_interfaces::msg::SetParametersResult();
-      result.successful = true;
-      for (auto parameter : parameters) {
-        if (parameter.get_name() == "camera_namespace") {
-          camera_namespace_ = parameter.as_string();
-          RCLCPP_INFO(get_logger(), "camera_namespace: %s ", camera_namespace_.c_str());
-          break;
-        }
+    for (auto parameter : parameters) {
+      if (parameter.get_name() == "camera_namespace") {
+        camera_namespace_ = parameter.as_string();
+        RCLCPP_INFO(get_logger(), "camera_namespace: %s ", camera_namespace_.c_str());
+        break;
       }
+    }
 
-      image_topic_ = camera_namespace_ + "/image";
-      camera_info_topic_ = camera_namespace_ + "/camera_info";
-      connectCb();
+    image_topic_ = camera_namespace_ + "/image";
+    camera_info_topic_ = camera_namespace_ + "/camera_info";
+    connectCb();
 
-      std::lock_guard<std::mutex> lock(connect_mutex_);
-      pub_image_ = image_transport::create_camera_publisher(this, image_topic_ + "/resize");
+    std::lock_guard<std::mutex> lock(connect_mutex_);
+    pub_image_ = image_transport::create_camera_publisher(this, image_topic_ + "/resize");
 
-      return result;
-    };
+    return result;
+  };
 
   this->declare_parameter("camera_namespace");
 
@@ -79,6 +83,7 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options) : rclcpp::Node("Resi
   width_ = this->declare_parameter("width", -1);
 
   rclcpp::Parameter parameter;
+
   if (rclcpp::PARAMETER_NOT_SET != this->get_parameter("camera_namespace", parameter)) {
     parameter_change_cb(this->get_parameters({"camera_namespace"}));
   }
@@ -90,41 +95,36 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options) : rclcpp::Node("Resi
 void ResizeNode::connectCb()
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
-  
-  if (!sub_image_)
-  {
-    sub_image_ = image_transport::create_camera_subscription(this, image_topic_,
-      std::bind(&ResizeNode::imageCb, this,
+
+  if (!sub_image_) {
+    sub_image_ = image_transport::create_camera_subscription(
+      this, image_topic_, std::bind(&ResizeNode::imageCb, this,
         std::placeholders::_1, std::placeholders::_2), "raw");
   }
 }
 
-void ResizeNode::imageCb(sensor_msgs::msg::Image::ConstSharedPtr image_msg,
+void ResizeNode::imageCb(
+  sensor_msgs::msg::Image::ConstSharedPtr image_msg,
   sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg)
 {
-  if (pub_image_.getNumSubscribers() < 1)
-  {
+  if (pub_image_.getNumSubscribers() < 1) {
     return;
   }
 
   cv_bridge::CvImagePtr cv_ptr;
-  try
-  {
+
+  try {
     cv_ptr = cv_bridge::toCvCopy(image_msg);
-  }
-  catch (cv_bridge::Exception & e)
-  {
+  } catch (cv_bridge::Exception & e) {
     RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
     return;
   }
 
-  if (use_scale_)
-  {
-    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(0, 0), scale_width_, scale_height_,
-               interpolation_);
-  }
-  else
-  {
+  if (use_scale_) {
+    cv::resize(
+      cv_ptr->image, cv_ptr->image, cv::Size(0, 0), scale_width_,
+      scale_height_, interpolation_);
+  } else {
     int height = height_ == -1 ? image_msg->height : height_;
     int width = width_ == -1 ? image_msg->width : width_;
     cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(width, height), 0, 0, interpolation_);
@@ -132,18 +132,16 @@ void ResizeNode::imageCb(sensor_msgs::msg::Image::ConstSharedPtr image_msg,
 
   sensor_msgs::msg::CameraInfo::SharedPtr dst_info_msg =
     std::make_shared<sensor_msgs::msg::CameraInfo>(*info_msg);
-  
+
   double scale_y;
   double scale_x;
-  if (use_scale_)
-  {
+
+  if (use_scale_) {
     scale_y = scale_height_;
     scale_x = scale_width_;
     dst_info_msg->height = static_cast<int>(info_msg->height * scale_height_);
     dst_info_msg->width = static_cast<int>(info_msg->width * scale_width_);
-  }
-  else
-  {
+  } else {
     scale_y = static_cast<double>(height_) / info_msg->height;
     scale_x = static_cast<double>(width_) / info_msg->width;
     dst_info_msg->height = height_;

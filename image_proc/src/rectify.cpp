@@ -1,12 +1,12 @@
 // Copyright 2008, 2019 Willow Garage, Inc., Andreas Klintberg, Joshua Whitley
 // All rights reserved.
-// 
+//
 // Software License Agreement (BSD License 2.0)
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
-// 
+//
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
 // * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 // * Neither the name of {copyright_holder} nor the names of its
 //   contributors may be used to endorse or promote products derived
 //   from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -37,6 +37,7 @@
 
 #include <thread>
 #include <memory>
+#include <vector>
 
 #include "image_proc/rectify.hpp"
 
@@ -46,40 +47,48 @@ namespace image_proc
 RectifyNode::RectifyNode(const rclcpp::NodeOptions& options)
 : Node("RectifyNode", options)
 {
-    auto parameter_change_cb =
-    [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
-    {
-      auto result = rcl_interfaces::msg::SetParametersResult();
-      result.successful = true;
-      for (auto parameter : parameters) {
-        if (parameter.get_name() == "camera_namespace") {
-          camera_namespace_ = parameter.as_string();
-          RCLCPP_INFO(get_logger(), "camera_namespace: %s ", camera_namespace_.c_str());
-          break;
-        }
+  auto parameter_change_cb =
+  [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
+  {
+    auto result = rcl_interfaces::msg::SetParametersResult();
+    result.successful = true;
+
+    for (auto parameter : parameters) {
+      if (parameter.get_name() == "camera_namespace") {
+        camera_namespace_ = parameter.as_string();
+        RCLCPP_INFO(get_logger(), "camera_namespace: %s ", camera_namespace_.c_str());
+        break;
       }
-      for (auto parameter : parameters){
-        if (parameter.get_name() == "image_mono") {
-          image_topic = camera_namespace_ + parameter.as_string();
-          image_rect = camera_namespace_+"/image_rect";
-          RCLCPP_INFO(get_logger(), "image_topic: %s, image_rect: %s", image_topic.c_str(), image_rect.c_str());
-          connectCb();
-          std::lock_guard<std::mutex> lock(connect_mutex_);
-          pub_rect_ = image_transport::create_publisher(this, image_rect);
-          break;
-        }
-        if (parameter.get_name() == "image_color") {
-          image_topic = camera_namespace_ + parameter.as_string();
-          image_rect = camera_namespace_ + "/image_rect_color";
-          RCLCPP_INFO(get_logger(), "image_topic: %s, image_rect: %s", image_topic.c_str(), image_rect.c_str());
-          connectCb();
-          std::lock_guard<std::mutex> lock(connect_mutex_);
-          pub_rect_ = image_transport::create_publisher(this, image_rect);
-          break;
-        }
+    }
+
+    for (auto parameter : parameters) {
+      if (parameter.get_name() == "image_mono") {
+        image_topic = camera_namespace_ + parameter.as_string();
+        image_rect = camera_namespace_+"/image_rect";
+        RCLCPP_INFO(
+          this->get_logger(), "image_topic: %s, image_rect: %s",
+          image_topic.c_str(), image_rect.c_str());
+        connectCb();
+        std::lock_guard<std::mutex> lock(connect_mutex_);
+        pub_rect_ = image_transport::create_publisher(this, image_rect);
+        break;
       }
-      return result;
-    };
+
+      if (parameter.get_name() == "image_color") {
+        image_topic = camera_namespace_ + parameter.as_string();
+        image_rect = camera_namespace_ + "/image_rect_color";
+        RCLCPP_INFO(
+          this->get_logger(), "image_topic: %s, image_rect: %s",
+          image_topic.c_str(), image_rect.c_str());
+        connectCb();
+        std::lock_guard<std::mutex> lock(connect_mutex_);
+        pub_rect_ = image_transport::create_publisher(this, image_rect);
+        break;
+      }
+    }
+    return result;
+  };
+
   queue_size_ = this->declare_parameter("queue_size", 5);
   interpolation = this->declare_parameter("interpolation", 0);
   this->set_on_parameters_set_callback(parameter_change_cb);
@@ -97,48 +106,47 @@ void RectifyNode::connectCb( )
     sub_camera_.shutdown();
   else if (!sub_camera_)
   {*/
-  sub_camera_ = image_transport::create_camera_subscription(this, image_topic,
-                      std::bind(&RectifyNode::imageCb, 
-                                this, std::placeholders::_1, std::placeholders::_2),"raw");
+  sub_camera_ = image_transport::create_camera_subscription(
+    this, image_topic, std::bind(&RectifyNode::imageCb,
+      this, std::placeholders::_1, std::placeholders::_2), "raw");
   //}
 }
 
-void RectifyNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
-                             const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
+void RectifyNode::imageCb(
+  const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
+  const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
 {
-  if (pub_rect_.getNumSubscribers() < 1)
-  {
+  if (pub_rect_.getNumSubscribers() < 1) {
     return;
   }
 
   // Verify camera is actually calibrated
   if (info_msg->k[0] == 0.0) {
-    RCLCPP_ERROR(this->get_logger(), "Rectified topic '%s' requested but camera publishing '%s' "
-                           "is uncalibrated", pub_rect_.getTopic().c_str(),
-                           sub_camera_.getInfoTopic().c_str());
+    RCLCPP_ERROR(
+      this->get_logger(), "Rectified topic '%s' requested but camera publishing '%s' "
+      "is uncalibrated", pub_rect_.getTopic().c_str(), sub_camera_.getInfoTopic().c_str());
     return;
   }
 
   // If zero distortion, just pass the message along
   bool zero_distortion = true;
-  for (size_t i = 0; i < info_msg->d.size(); ++i)
-  {
-    if (info_msg->d[i] != 0.0)
-    {
+
+  for (size_t i = 0; i < info_msg->d.size(); ++i) {
+    if (info_msg->d[i] != 0.0) {
       zero_distortion = false;
       break;
     }
   }
+
   // This will be true if D is empty/zero sized
-  if (zero_distortion)
-  {
+  if (zero_distortion) {
     pub_rect_.publish(image_msg);
     return;
   }
 
   // Update the camera model
   model_.fromCameraInfo(info_msg);
-  
+
   // Create cv::Mat views onto both buffers
   const cv::Mat image = cv_bridge::toCvShare(image_msg)->image;
   cv::Mat rect;
@@ -147,7 +155,8 @@ void RectifyNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & image_
   model_.rectifyImage(image, rect, interpolation);
 
   // Allocate new rectified image message
-  sensor_msgs::msg::Image::SharedPtr rect_msg = cv_bridge::CvImage(image_msg->header, image_msg->encoding, rect).toImageMsg();
+  sensor_msgs::msg::Image::SharedPtr rect_msg =
+    cv_bridge::CvImage(image_msg->header, image_msg->encoding, rect).toImageMsg();
   pub_rect_.publish(rect_msg);
 }
 

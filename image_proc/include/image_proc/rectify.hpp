@@ -1,12 +1,12 @@
 // Copyright 2008, 2019 Willow Garage, Inc., Andreas Klintberg, Joshua Whitley
 // All rights reserved.
-// 
+//
 // Software License Agreement (BSD License 2.0)
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
-// 
+//
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
 // * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 // * Neither the name of {copyright_holder} nor the names of its
 //   contributors may be used to endorse or promote products derived
 //   from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -46,31 +46,33 @@
 namespace image_proc
 {
 
-class RectifyNode : public rclcpp::Node
+class RectifyNode
+  : public rclcpp::Node
 {
-  public:
-    RectifyNode(const rclcpp::NodeOptions&);
-  private:
-    // ROS communication
-    image_transport::CameraSubscriber sub_camera_;
+public:
+  explicit RectifyNode(const rclcpp::NodeOptions&);
 
-    int queue_size_;
-    int interpolation;
-    std::string camera_namespace_;
-    std::string image_rect;
-    std::string image_topic;
+private:
+  image_transport::CameraSubscriber sub_camera_;
 
-    std::mutex connect_mutex_;
-    image_transport::Publisher pub_rect_;
+  int queue_size_;
+  int interpolation;
+  std::string camera_namespace_;
+  std::string image_rect;
+  std::string image_topic;
 
-    // Processing state (note: only safe because we're using single-threaded NodeHandle!)
-    image_geometry::PinholeCameraModel model_;
+  std::mutex connect_mutex_;
+  image_transport::Publisher pub_rect_;
 
-    void connectCb();
-    void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
-                const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg);
+  // Processing state (note: only safe because we're using single-threaded NodeHandle!)
+  image_geometry::PinholeCameraModel model_;
 
+  void connectCb();
+  void imageCb(
+    const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg);
 };
+
 }  // namespace image_proc
 
 #endif  // IMAGE_PROC__RECTIFY_HPP_

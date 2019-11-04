@@ -1,12 +1,12 @@
 // Copyright 2008, 2019, Willow Garage, Inc., Andreas Klintberg, Joshua Whitley
 // All rights reserved.
-// 
+//
 // Software License Agreement (BSD License 2.0)
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
-// 
+//
 // * Redistributions of source code must retain the above copyright
 //   notice, this list of conditions and the following disclaimer.
 // * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 // * Neither the name of {copyright_holder} nor the names of its
 //   contributors may be used to endorse or promote products derived
 //   from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -30,6 +30,9 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef IMAGE_PROC__DEBAYER_HPP_
+#define IMAGE_PROC__DEBAYER_HPP_
+
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
 #include <ament_index_cpp/get_resource.hpp>
@@ -41,35 +44,35 @@
 #include <vector>
 #include <thread>
 
-#ifndef IMAGE_PROC__DEBAYER_HPP_
-#define IMAGE_PROC__DEBAYER_HPP_
-
 namespace image_proc
 {
-class DebayerNode : public rclcpp::Node
+
+class DebayerNode
+  : public rclcpp::Node
 {
-  // ROS communication
-  public:
-    DebayerNode(const rclcpp::NodeOptions&);
-  private:
-    image_transport::Subscriber sub_raw_;
+public:
+  explicit DebayerNode(const rclcpp::NodeOptions &);
 
-    std::string camera_namespace_;
-    int debayer_;
+private:
+  image_transport::Subscriber sub_raw_;
 
-    int debayer_bilinear_ = 0;
-    int debayer_edgeaware_ = 1;
-    int debayer_edgeaware_weighted_ = 2;
-    int debayer_vng_ = 3;
+  std::string camera_namespace_;
+  int debayer_;
 
-    std::mutex connect_mutex_;
+  int debayer_bilinear_ = 0;
+  int debayer_edgeaware_ = 1;
+  int debayer_edgeaware_weighted_ = 2;
+  int debayer_vng_ = 3;
 
-    image_transport::Publisher pub_mono_;
-    image_transport::Publisher pub_color_;
+  std::mutex connect_mutex_;
 
-    void connectCb();
-    void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg);
+  image_transport::Publisher pub_mono_;
+  image_transport::Publisher pub_color_;
+
+  void connectCb();
+  void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg);
 };
+
 }  // namespace image_proc
 
 #endif  // IMAGE_PROC__DEBAYER_HPP_
