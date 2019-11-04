@@ -17,12 +17,12 @@ jobs:
           name: Build
           command: |
             source `find /opt/ros -maxdepth 2 -name local_setup.bash | sort | head -1`
-            colcon build --parallel-workers 4
+            colcon build --parallel-workers 2
       - run:
           name: Run Tests
           command: |
             source `find /opt/ros -maxdepth 2 -name local_setup.bash | sort | head -1`
-            colcon test --parallel-workers 4
+            colcon test --parallel-workers 2
             colcon test-result
 
 workflows:

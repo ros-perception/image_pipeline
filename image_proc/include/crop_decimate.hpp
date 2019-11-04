@@ -1,7 +1,7 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
-*  Copyright (c) 2008, 2019, Willow Garage, Inc., Andreas Klintberg.
+*  Copyright (c) 2008, 2019 Willow Garage, Inc., Steve Macenski
 *  All rights reserved.
 * 
 *  Redistribution and use in source and binary forms, with or without
@@ -31,50 +31,49 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#ifndef IMAGE_PROC_RESIZE_HPP
-#define IMAGE_PROC_RESIZE_HPP
 
-#include <cstring>
-#include <memory>
-#include <sstream>
-#include <string>
-#include <vector>
+#ifndef IMAGE_PROC__CROP_DECIMATE_HPP_
+#define IMAGE_PROC__CROP_DECIMATE_HPP_
 #include <thread>
+#include <memory>
+#include <vector>
+#include <string>
+
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
-
-#include <ament_index_cpp/get_resource.hpp>
-#include "rclcpp/rclcpp.hpp"
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 namespace image_proc {
 
-class ResizeNode : public rclcpp::Node
+enum class CropDecimateModes {
+  CropDecimate_NN = 0,
+  CropDecimate_Linear = 1,
+  CropDecimate_Cubic = 2,
+  CropDecimate_Area = 3,
+  CropDecimate_Lanczos4 = 4
+};
+
+using namespace::cv_bridge;  // CvImage, toCvShare
+
+class CropDecimateNode : public rclcpp::Node
 {
 public:
-  ResizeNode(const rclcpp::NodeOptions &);
-protected:
-  // ROS communication
-  image_transport::CameraPublisher pub_image_;
-  image_transport::CameraSubscriber sub_image_;
+  explicit CropDecimateNode(const rclcpp::NodeOptions&);
 
-  std::string image_topic_;
-  std::string camera_info_topic_;
+private:
+  image_transport::CameraSubscriber sub_;
+  image_transport::CameraPublisher pub_;
+  int queue_size_;
+  std::string target_frame_id_;
+  int decimation_x_, decimation_y_, offset_x_, offset_y_, width_, height_;
+  CropDecimateModes interpolation_;
 
-  // Configuration
-  std::string camera_namespace_;
-  int interpolation_;
-  bool use_scale_;
-  double scale_height_;
-  double scale_width_;
-  int height_;
-  int width_;
-
-  std::mutex connect_mutex_;
-
-  void connectCb();
-
-  void imageCb(sensor_msgs::msg::Image::ConstSharedPtr image_msg,
-    sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg);
+  void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr image_msg,
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg);
 };
-} // namespace image_proc
-#endif
+
+}  // namespace image_proc
+
+#endif  // IMAGE_PROC__CROP_DECIMATE_HPP_
