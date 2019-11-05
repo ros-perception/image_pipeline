@@ -683,8 +683,7 @@ class MonoCalibrator(Calibrator):
             reproj_err, self.intrinsics, self.distortion, rvecs, tvecs = cv2.fisheye.calibrate(
                 opts, ipts, self.size,
                 intrinsics_in, None, flags = self.fisheye_calib_flags)
-        else:
-            print("Something went wrong when selecting a model")
+
         # R is identity matrix for monocular calibration
         self.R = numpy.eye(3, dtype=numpy.float64)
         self.P = numpy.zeros((3, 4), dtype=numpy.float64)
@@ -709,15 +708,11 @@ class MonoCalibrator(Calibrator):
                     self.P[j,i] = ncm[j, i]
             self.mapx, self.mapy = cv2.initUndistortRectifyMap(self.intrinsics, self.distortion, self.R, ncm, self.size, cv2.CV_32FC1)
         elif self.camera_model == CAMERA_MODEL.FISHEYE:
-            # ncm = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(self.intrinsics, self.distortion, self.size, self.R, balance=a)
-            # self.P[:3,:3] = ncm[:3,:3]
             # NOTE: estimateNewCameraMatrixForUndistortRectify not producing proper results, using a naive approach instead:
             self.P[:3,:3] = self.intrinsics[:3,:3]
             self.P[0,0] /= (1. + a)
             self.P[1,1] /= (1. + a)
             self.mapx, self.mapy = cv2.fisheye.initUndistortRectifyMap(self.intrinsics, self.distortion, self.R, self.P, self.size, cv2.CV_32FC1)
-        else:
-            print("Something went wrong when selecting a model")
 
 
     def remap(self, src):
@@ -740,8 +735,6 @@ class MonoCalibrator(Calibrator):
             return cv2.undistortPoints(src, self.intrinsics, self.distortion, R = self.R, P = self.P)
         elif self.camera_model == CAMERA_MODEL.FISHEYE:
             return cv2.fisheye.undistortPoints(src, self.intrinsics, self.distortion, R = self.R, P = self.P)
-        else:
-            print("Something went wrong when selecting a model")
 
     def as_message(self):
         """ Return the camera calibration as a CameraInfo message """
@@ -1009,8 +1002,6 @@ class StereoCalibrator(Calibrator):
                                    self.T,                            # T
                                    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5), # 30, 1e-6
                                    flags = flags)
-        else:
-            print("Something went wrong when selecting a model")
 
         self.set_alpha(0.0)
 
@@ -1062,8 +1053,6 @@ class StereoCalibrator(Calibrator):
                                        self.l.mapx, self.l.mapy)
             cv2.fisheye.initUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.r.R, self.r.intrinsics, self.size, cv2.CV_32FC1,
                                        self.r.mapx, self.r.mapy)
-        else:
-            print("Something went wrong when selecting a model")
 
     def as_message(self):
         """
