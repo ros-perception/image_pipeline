@@ -108,9 +108,8 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
   dimage.step = dimage.width * sizeof(float);
   dimage.data.resize(dimage.step * dimage.height);
   cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
-  // We convert from fixed-point to float disparity and also adjust for any x-offset between
-  // the principal points: d = d_fp*inv_dpp - (cx_l - cx_r)
-  disparity16_.convertTo(dmat, dmat.type(), inv_dpp, -(model.left().cx() - model.right().cx()));
+  // We convert from fixed-point to float disparity: d = d_fp*inv_dpp
+  disparity16_.convertTo(dmat, dmat.type(), inv_dpp);
   ROS_ASSERT(dmat.data == &dimage.data[0]);
   /// @todo is_bigendian? :)
 
