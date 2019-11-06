@@ -1,56 +1,60 @@
-/*********************************************************************
-* Software License Agreement (BSD License)
-*
-*  Copyright (c) 2017, Kentaro Wada.
-*  All rights reserved.
-*
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions
-*  are met:
-*
-*   * Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   * Redistributions in binary form must reproduce the above
-*     copyright notice, this list of conditions and the following
-*     disclaimer in the documentation and/or other materials provided
-*     with the distribution.
-*   * Neither the name of the Kentaro Wada nor the names of its
-*     contributors may be used to endorse or promote products derived
-*     from this software without specific prior written permission.
-*
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-*********************************************************************/
-#include <mutex>
-#include <cv_bridge/cv_bridge.h>
+// Copyright 2017, 2019 Kentaro Wada, Joshua Whitley
+// All rights reserved.
+//
+// Software License Agreement (BSD License 2.0)
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+//
+// * Redistributions of source code must retain the above copyright
+//   notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above
+//   copyright notice, this list of conditions and the following
+//   disclaimer in the documentation and/or other materials provided
+//   with the distribution.
+// * Neither the name of {copyright_holder} nor the names of its
+//   contributors may be used to endorse or promote products derived
+//   from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+// COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+// ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
 #include <rclcpp/rclcpp.hpp>
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
 #include <rclcpp/qos.hpp>
 #include <sensor_msgs/msg/camera_info.h>
 #include <sensor_msgs/msg/image.h>
-#include <image_transport/image_transport.h>
 
-#include "resize.hpp"
+#include <memory>
+#include <mutex>
+#include <vector>
+
+#include "image_proc/resize.hpp"
 
 namespace image_proc
 {
-ResizeNode::ResizeNode(const rclcpp::NodeOptions & options) : rclcpp::Node("ResizeNode", options)
-{
 
-   auto parameter_change_cb =
+ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
+: rclcpp::Node("ResizeNode", options)
+{
+  auto parameter_change_cb =
     [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
     {
       auto result = rcl_interfaces::msg::SetParametersResult();
       result.successful = true;
+
       for (auto parameter : parameters) {
         if (parameter.get_name() == "camera_namespace") {
           camera_namespace_ = parameter.as_string();
@@ -79,6 +83,7 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options) : rclcpp::Node("Resi
   width_ = this->declare_parameter("width", -1);
 
   rclcpp::Parameter parameter;
+
   if (rclcpp::PARAMETER_NOT_SET != this->get_parameter("camera_namespace", parameter)) {
     parameter_change_cb(this->get_parameters({"camera_namespace"}));
   }
@@ -90,41 +95,36 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options) : rclcpp::Node("Resi
 void ResizeNode::connectCb()
 {
   std::lock_guard<std::mutex> lock(connect_mutex_);
-  
-  if (!sub_image_)
-  {
-    sub_image_ = image_transport::create_camera_subscription(this, image_topic_,
-      std::bind(&ResizeNode::imageCb, this,
-        std::placeholders::_1, std::placeholders::_2), "raw");
+
+  if (!sub_image_) {
+    sub_image_ = image_transport::create_camera_subscription(
+      this, image_topic_, std::bind(&ResizeNode::imageCb, this,
+      std::placeholders::_1, std::placeholders::_2), "raw");
   }
 }
 
-void ResizeNode::imageCb(sensor_msgs::msg::Image::ConstSharedPtr image_msg,
+void ResizeNode::imageCb(
+  sensor_msgs::msg::Image::ConstSharedPtr image_msg,
   sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg)
 {
-  if (pub_image_.getNumSubscribers() < 1)
-  {
+  if (pub_image_.getNumSubscribers() < 1) {
     return;
   }
 
   cv_bridge::CvImagePtr cv_ptr;
-  try
-  {
+
+  try {
     cv_ptr = cv_bridge::toCvCopy(image_msg);
-  }
-  catch (cv_bridge::Exception & e)
-  {
+  } catch (cv_bridge::Exception & e) {
     RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
     return;
   }
 
-  if (use_scale_)
-  {
-    cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(0, 0), scale_width_, scale_height_,
-               interpolation_);
-  }
-  else
-  {
+  if (use_scale_) {
+    cv::resize(
+      cv_ptr->image, cv_ptr->image, cv::Size(0, 0), scale_width_,
+      scale_height_, interpolation_);
+  } else {
     int height = height_ == -1 ? image_msg->height : height_;
     int width = width_ == -1 ? image_msg->width : width_;
     cv::resize(cv_ptr->image, cv_ptr->image, cv::Size(width, height), 0, 0, interpolation_);
@@ -132,18 +132,16 @@ void ResizeNode::imageCb(sensor_msgs::msg::Image::ConstSharedPtr image_msg,
 
   sensor_msgs::msg::CameraInfo::SharedPtr dst_info_msg =
     std::make_shared<sensor_msgs::msg::CameraInfo>(*info_msg);
-  
+
   double scale_y;
   double scale_x;
-  if (use_scale_)
-  {
+
+  if (use_scale_) {
     scale_y = scale_height_;
     scale_x = scale_width_;
     dst_info_msg->height = static_cast<int>(info_msg->height * scale_height_);
     dst_info_msg->width = static_cast<int>(info_msg->width * scale_width_);
-  }
-  else
-  {
+  } else {
     scale_y = static_cast<double>(height_) / info_msg->height;
     scale_x = static_cast<double>(width_) / info_msg->width;
     dst_info_msg->height = height_;
