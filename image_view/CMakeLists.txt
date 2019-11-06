@@ -15,25 +15,26 @@ find_package(Boost REQUIRED COMPONENTS thread)
 find_package(OpenCV REQUIRED)
 
 include_directories(
+  include
   ${Boost_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
 
 # Extra tools
 add_executable(extract_images
-  src/nodes/extract_images.cpp)
+  src/extract_images.cpp)
 target_link_libraries(extract_images
   ${OpenCV_LIBRARIES}
 )
 
 add_executable(image_saver
-  src/nodes/image_saver.cpp)
+  src/image_saver.cpp)
 target_link_libraries(image_saver
   ${OpenCV_LIBRARIES}
 )
 
 add_executable(video_recorder
-  src/nodes/video_recorder.cpp)
+  src/video_recorder.cpp)
 target_link_libraries(video_recorder
   ${OpenCV_LIBRARIES}
 )
@@ -52,9 +53,9 @@ add_definitions(-DHAVE_GTK)
 include_directories(${GTK2_INCLUDE_DIRS})
 
 add_library(image_view_node SHARED
-  src/nodelets/image_nodelet.cpp
-  src/nodelets/disparity_nodelet.cpp
-  src/nodelets/window_thread.cpp)
+  src/image_view_node.cpp
+  src/disparity_view_node.cpp
+  src/window_thread.cpp)
 target_link_libraries(image_view_node
   ${GTK_LIBRARIES}
   ${GTK2_LIBRARIES}
@@ -67,20 +68,20 @@ install(TARGETS image_view_node
 
 # Image viewers
 add_executable(image_view
-  src/nodes/image_view.cpp)
+  src/image_view.cpp)
 target_link_libraries(image_view
   ${OpenCV_LIBRARIES}
   ${Boost_LIBRARIES}
 )
 
 add_executable(disparity_view
-  src/nodes/disparity_view.cpp)
+  src/disparity_view.cpp)
 target_link_libraries(disparity_view
   ${OpenCV_LIBRARIES}
 )
 
 add_executable(stereo_view
-  src/nodes/stereo_view.cpp)
+  src/stereo_view.cpp)
 target_link_libraries(stereo_view
   ${Boost_LIBRARIES}
   ${GTK_LIBRARIES}
