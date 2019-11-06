@@ -31,22 +31,28 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include "window_thread.h"
+
 #include <opencv2/highgui/highgui.hpp>
-#include <boost/thread.hpp>
+
+#include <mutex>
+
+#include "image_view/window_thread.hpp"
 
 namespace {
-void startWindowThreadLocal() {
+
+void startWindowThreadLocal()
+{
   cv::startWindowThread();
 }
+
 }
 
 namespace image_view {
 
 void startWindowThread()
 {
-  static boost::once_flag cv_thread_flag = BOOST_ONCE_INIT;
-  boost::call_once(&startWindowThreadLocal, cv_thread_flag);
+  static std::once_flag cv_thread_flag;
+  std::call_once(cv_thread_flag, &startWindowThreadLocal);
 }
 
 } // namespace image_view

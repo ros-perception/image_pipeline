@@ -21,7 +21,6 @@
   <depend>gtk2</depend>
   <depend>image_transport</depend>
   <depend>message_filters</depend>
-  <depend>rosconsole</depend>
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
   <depend>std_srvs</depend>

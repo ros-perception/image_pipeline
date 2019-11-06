@@ -31,108 +31,71 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include <ros/ros.h>
-#include <nodelet/nodelet.h>
+#include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
-#include "window_thread.h"
 
-#include <boost/bind.hpp>
-#include <boost/thread.hpp>
 #include <boost/format.hpp>
 
+#include <mutex>
+#include <thread>
 
-namespace image_view {
+#include "image_view/image_view_node.hpp"
+#include "image_view/window_thread.hpp"
 
-class ThreadSafeImage
+namespace image_view
 {
-  boost::mutex mutex_;
-  boost::condition_variable condition_;
-  cv::Mat image_;
-
-public:
-  void set(const cv::Mat& image);
-
-  cv::Mat get();
-
-  cv::Mat pop();
-};
 
 void ThreadSafeImage::set(const cv::Mat& image)
 {
-  boost::unique_lock<boost::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   image_ = image;
   condition_.notify_one();
 }
 
 cv::Mat ThreadSafeImage::get()
 {
-  boost::unique_lock<boost::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   return image_;
 }
 
 cv::Mat ThreadSafeImage::pop()
 {
   cv::Mat image;
+
   {
-    boost::unique_lock<boost::mutex> lock(mutex_);
-    while (image_.empty())
-    {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    while (image_.empty()) {
       condition_.wait(lock);
     }
+
     image = image_;
     image_.release();
   }
+
   return image;
 }
 
-class ImageNodelet : public nodelet::Nodelet
-{
-  image_transport::Subscriber sub_;
-
-  boost::thread window_thread_;
-
-  ThreadSafeImage queued_image_, shown_image_;
-  
-  std::string window_name_;
-  bool autosize_;
-  boost::format filename_format_;
-  int count_;
-  
-  ros::WallTimer gui_timer_;
-
-  virtual void onInit();
-  
-  void imageCb(const sensor_msgs::ImageConstPtr& msg);
-
-  static void mouseCb(int event, int x, int y, int flags, void* param);
-  static void guiCb(const ros::WallTimerEvent&);
-
-  void windowThread();  
-
-public:
-  ImageNodelet();
-
-  ~ImageNodelet();
-};
-
-ImageNodelet::ImageNodelet()
-  : filename_format_(""), count_(0)
+ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
+  : rclcpp::Node("image_view_node", options),
+    filename_format_(""), count_(0)
 {
 }
 
-ImageNodelet::~ImageNodelet()
+ImageViewNode::~ImageViewNode()
 {
   if (window_thread_.joinable())
   {
-    window_thread_.interrupt();
+    // TODO(jwhitleyastuff): Figure out if interruption is necessary
+    // window_thread_.interrupt();
     window_thread_.join();
   }
 }
 
-void ImageNodelet::onInit()
+void ImageViewNode::onInit()
 {
   ros::NodeHandle nh = getNodeHandle();
   ros::NodeHandle local_nh = getPrivateNodeHandle();
@@ -169,16 +132,16 @@ void ImageNodelet::onInit()
   // if OpenCV is compiled against GTK, we call cv::waitKey() from
   // the ROS event loop periodically, instead.
   /*cv::startWindowThread();*/
-  gui_timer_ = local_nh.createWallTimer(ros::WallDuration(0.1), ImageNodelet::guiCb);
+  gui_timer_ = local_nh.createWallTimer(ros::WallDuration(0.1), ImageViewNode::guiCb);
 
-  window_thread_ = boost::thread(&ImageNodelet::windowThread, this);
+  window_thread_ = std::thread(&ImageViewNode::windowThread, this);
 
   image_transport::ImageTransport it(nh);
   image_transport::TransportHints hints(transport, ros::TransportHints(), getPrivateNodeHandle());
-  sub_ = it.subscribe(topic, 1, &ImageNodelet::imageCb, this, hints);
+  sub_ = it.subscribe(topic, 1, &ImageViewNode::imageCb, this, hints);
 }
 
-void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
+void ImageViewNode::imageCb(const sensor_msgs::msg::Image::SharedPtr& msg)
 {
   // We want to scale floating point images so that they display nicely
   bool do_dynamic_scaling = (msg->encoding.find("F") != std::string::npos);
@@ -188,25 +151,24 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
     cv_bridge::CvtColorForDisplayOptions options;
     options.do_dynamic_scaling = do_dynamic_scaling;
     queued_image_.set(cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options)->image);
-  }
-  catch (cv_bridge::Exception& e) {
+  } catch (cv_bridge::Exception& e) {
     NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
                              msg->encoding.c_str(), e.what());
   }
 }
 
-void ImageNodelet::guiCb(const ros::WallTimerEvent&)
+void ImageViewNode::guiCb(const ros::WallTimerEvent&)
 {
   // Process pending GUI events and return immediately
   cv::waitKey(1);
 }
 
-void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
+void ImageViewNode::mouseCb(int event, int x, int y, int flags, void* param)
 {
-  ImageNodelet *this_ = reinterpret_cast<ImageNodelet*>(param);
+  ImageViewNode *this_ = reinterpret_cast<ImageViewNode *>(param);
   // Trick to use NODELET_* logging macros in static function
-  boost::function<const std::string&()> getName =
-    boost::bind(&ImageNodelet::getName, this_);
+  std::function<const std::string &()> getName =
+    std::bind(&ImageViewNode::getName, this_);
 
   if (event == cv::EVENT_LBUTTONDOWN)
   {
@@ -236,10 +198,10 @@ void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
   }
 }
 
-void ImageNodelet::windowThread()
+void ImageViewNode::windowThread()
 {
   cv::namedWindow(window_name_, autosize_ ? cv::WND_PROP_AUTOSIZE : 0);
-  cv::setMouseCallback(window_name_, &ImageNodelet::mouseCb, this);
+  cv::setMouseCallback(window_name_, &ImageViewNode::mouseCb, this);
 
   try
   {
@@ -262,4 +224,4 @@ void ImageNodelet::windowThread()
 
 // Register the nodelet
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS( image_view::ImageNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS( image_view::ImageViewNode, nodelet::Nodelet)

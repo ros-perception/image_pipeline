@@ -23,18 +23,27 @@ include_directories(
 # Extra tools
 add_executable(extract_images
   src/extract_images.cpp)
+ament_target_dependencies(extract_images
+  rclcpp
+)
 target_link_libraries(extract_images
   ${OpenCV_LIBRARIES}
 )
 
 add_executable(image_saver
   src/image_saver.cpp)
+ament_target_dependencies(image_saver
+  rclcpp
+)
 target_link_libraries(image_saver
   ${OpenCV_LIBRARIES}
 )
 
 add_executable(video_recorder
   src/video_recorder.cpp)
+ament_target_dependencies(video_recorder
+  rclcpp
+)
 target_link_libraries(video_recorder
   ${OpenCV_LIBRARIES}
 )
@@ -56,6 +65,11 @@ add_library(image_view_node SHARED
   src/image_view_node.cpp
   src/disparity_view_node.cpp
   src/window_thread.cpp)
+ament_target_dependencies(image_view_node
+  rclcpp
+  rclcpp_components
+  stereo_msgs
+)
 target_link_libraries(image_view_node
   ${GTK_LIBRARIES}
   ${GTK2_LIBRARIES}
@@ -69,6 +83,10 @@ install(TARGETS image_view_node
 # Image viewers
 add_executable(image_view
   src/image_view.cpp)
+ament_target_dependencies(image_view
+  rclcpp
+  rclcpp_components
+)
 target_link_libraries(image_view
   ${OpenCV_LIBRARIES}
   ${Boost_LIBRARIES}
@@ -76,12 +94,20 @@ target_link_libraries(image_view
 
 add_executable(disparity_view
   src/disparity_view.cpp)
+ament_target_dependencies(disparity_view
+  rclcpp
+  rclcpp_components
+)
 target_link_libraries(disparity_view
   ${OpenCV_LIBRARIES}
 )
 
 add_executable(stereo_view
   src/stereo_view.cpp)
+ament_target_dependencies(stereo_view
+  rclcpp
+  rclcpp_components
+)
 target_link_libraries(stereo_view
   ${Boost_LIBRARIES}
   ${GTK_LIBRARIES}

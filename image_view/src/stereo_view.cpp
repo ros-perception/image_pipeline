@@ -34,7 +34,7 @@
 
 #include <opencv2/highgui/highgui.hpp>
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 #include <stereo_msgs/DisparityImage.h>

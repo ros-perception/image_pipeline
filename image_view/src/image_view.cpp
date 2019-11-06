@@ -31,23 +31,21 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include <image_view/ImageViewConfig.h>
-
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
-#include <dynamic_reconfigure/server.h>
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <mutex>
+
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
 
 int g_count;
 cv::Mat g_last_image;
 boost::format g_filename_format;
-boost::mutex g_image_mutex;
+std::mutex g_image_mutex;
 std::string g_window_name;
 bool g_gui;
 ros::Publisher g_pub;
@@ -58,7 +56,7 @@ double g_max_image_value;
 
 void reconfigureCb(image_view::ImageViewConfig &config, uint32_t level)
 {
-  boost::mutex::scoped_lock lock(g_image_mutex);
+  std::lock_guard<std::mutex> lock(g_image_mutex);
   g_do_dynamic_scaling = config.do_dynamic_scaling;
   g_colormap = config.colormap;
   g_min_image_value = config.min_image_value;
@@ -67,7 +65,7 @@ void reconfigureCb(image_view::ImageViewConfig &config, uint32_t level)
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
-  boost::mutex::scoped_lock lock(g_image_mutex);
+  std::lock_guard<std::mutex> lock(g_image_mutex);
 
   // Convert to OpenCV native BGR color
   cv_bridge::CvImageConstPtr cv_ptr;
@@ -115,7 +113,7 @@ static void mouseCb(int event, int x, int y, int flags, void* param)
     return;
   }
 
-  boost::mutex::scoped_lock lock(g_image_mutex);
+  std::lock_guard<std::mutex> lock(g_image_mutex);
 
   const cv::Mat &image = g_last_image;
 
