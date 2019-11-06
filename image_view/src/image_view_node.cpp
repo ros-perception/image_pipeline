@@ -33,6 +33,7 @@
 *********************************************************************/
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
+#include <rclcpp_components/register_node_macro.hpp>
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -222,6 +223,4 @@ void ImageViewNode::windowThread()
 
 } // namespace image_view
 
-// Register the nodelet
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS( image_view::ImageViewNode, nodelet::Nodelet)
+RCLCPP_COMPONENTS_REGISTER_NODE(image_view::ImageViewNode)

@@ -35,6 +35,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <stereo_msgs/msg/disparity_image.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
 
 #include <opencv2/highgui/highgui.hpp>
 
@@ -425,6 +426,4 @@ unsigned char DisparityViewNode::colormap[768] =
 
 }  // namespace image_view
 
-// Register the nodelet
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS( image_view::DisparityViewNode, nodelet::Nodelet)
+RCLCPP_COMPONENTS_REGISTER_NODE(image_view::DisparityViewNode)
