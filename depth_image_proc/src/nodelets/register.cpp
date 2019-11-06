@@ -71,9 +71,6 @@ class RegisterNodelet : public nodelet::Nodelet
 
   image_geometry::PinholeCameraModel depth_model_, rgb_model_;
 
-  // Parameters
-  bool fill_upsampling_holes_;	// fills holes which occur due to upsampling by scaling each pixel to the target image scale (only takes effect on upsampling)
-
   virtual void onInit();
 
   void connectCb();
@@ -101,7 +98,6 @@ void RegisterNodelet::onInit()
   // Read parameters
   int queue_size;
   private_nh.param("queue_size", queue_size, 5);
-  private_nh.param("fill_upsampling_holes", fill_upsampling_holes_, false);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   sync_.reset( new Synchronizer(SyncPolicy(queue_size), sub_depth_image_, sub_depth_info_, sub_rgb_info_) );
@@ -231,75 +227,31 @@ void RegisterNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
       
       double depth = DepthTraits<T>::toMeters(raw_depth);
 
-      if (fill_upsampling_holes_ == false)
-      {
-        /// @todo Combine all operations into one matrix multiply on (u,v,d)
-        // Reproject (u,v,Z) to (X,Y,Z,1) in depth camera frame
-        Eigen::Vector4d xyz_depth;
-        xyz_depth << ((u - depth_cx)*depth - depth_Tx) * inv_depth_fx,
-                     ((v - depth_cy)*depth - depth_Ty) * inv_depth_fy,
-                     depth,
-                     1;
+      /// @todo Combine all operations into one matrix multiply on (u,v,d)
+      // Reproject (u,v,Z) to (X,Y,Z,1) in depth camera frame
+      Eigen::Vector4d xyz_depth;
+      xyz_depth << ((u - depth_cx)*depth - depth_Tx) * inv_depth_fx,
+                   ((v - depth_cy)*depth - depth_Ty) * inv_depth_fy,
+                   depth,
+                   1;
 
-        // Transform to RGB camera frame
-        Eigen::Vector4d xyz_rgb = depth_to_rgb * xyz_depth;
+      // Transform to RGB camera frame
+      Eigen::Vector4d xyz_rgb = depth_to_rgb * xyz_depth;
 
-        // Project to (u,v) in RGB image
-        double inv_Z = 1.0 / xyz_rgb.z();
-        int u_rgb = (rgb_fx*xyz_rgb.x() + rgb_Tx)*inv_Z + rgb_cx + 0.5;
-        int v_rgb = (rgb_fy*xyz_rgb.y() + rgb_Ty)*inv_Z + rgb_cy + 0.5;
+      // Project to (u,v) in RGB image
+      double inv_Z = 1.0 / xyz_rgb.z();
+      int u_rgb = (rgb_fx*xyz_rgb.x() + rgb_Tx)*inv_Z + rgb_cx + 0.5;
+      int v_rgb = (rgb_fy*xyz_rgb.y() + rgb_Ty)*inv_Z + rgb_cy + 0.5;
       
-        if (u_rgb < 0 || u_rgb >= (int)registered_msg->width ||
-            v_rgb < 0 || v_rgb >= (int)registered_msg->height)
-          continue;
+      if (u_rgb < 0 || u_rgb >= (int)registered_msg->width ||
+          v_rgb < 0 || v_rgb >= (int)registered_msg->height)
+        continue;
       
-        T& reg_depth = registered_data[v_rgb*registered_msg->width + u_rgb];
-        T  new_depth = DepthTraits<T>::fromMeters(xyz_rgb.z());
-        // Validity and Z-buffer checks
-        if (!DepthTraits<T>::valid(reg_depth) || reg_depth > new_depth)
-          reg_depth = new_depth;
-      }
-      else
-      {
-        // Reproject (u,v,Z) to (X,Y,Z,1) in depth camera frame
-        Eigen::Vector4d xyz_depth_1, xyz_depth_2;
-        xyz_depth_1 << ((u-0.5f - depth_cx)*depth - depth_Tx) * inv_depth_fx,
-                       ((v-0.5f - depth_cy)*depth - depth_Ty) * inv_depth_fy,
-                       depth,
-                       1;
-        xyz_depth_2 << ((u+0.5f - depth_cx)*depth - depth_Tx) * inv_depth_fx,
-                       ((v+0.5f - depth_cy)*depth - depth_Ty) * inv_depth_fy,
-                       depth,
-                       1;
-
-        // Transform to RGB camera frame
-        Eigen::Vector4d xyz_rgb_1 = depth_to_rgb * xyz_depth_1;
-        Eigen::Vector4d xyz_rgb_2 = depth_to_rgb * xyz_depth_2;
-
-        // Project to (u,v) in RGB image
-        double inv_Z = 1.0 / xyz_rgb_1.z();
-        int u_rgb_1 = (rgb_fx*xyz_rgb_1.x() + rgb_Tx)*inv_Z + rgb_cx + 0.5;
-        int v_rgb_1 = (rgb_fy*xyz_rgb_1.y() + rgb_Ty)*inv_Z + rgb_cy + 0.5;
-        inv_Z = 1.0 / xyz_rgb_2.z();
-        int u_rgb_2 = (rgb_fx*xyz_rgb_2.x() + rgb_Tx)*inv_Z + rgb_cx + 0.5;
-        int v_rgb_2 = (rgb_fy*xyz_rgb_2.y() + rgb_Ty)*inv_Z + rgb_cy + 0.5;
-
-        if (u_rgb_1 < 0 || u_rgb_2 >= (int)registered_msg->width ||
-            v_rgb_1 < 0 || v_rgb_2 >= (int)registered_msg->height)
-          continue;
-
-        for (int nv=v_rgb_1; nv<=v_rgb_2; ++nv)
-        {
-          for (int nu=u_rgb_1; nu<=u_rgb_2; ++nu)
-          {
-            T& reg_depth = registered_data[nv*registered_msg->width + nu];
-            T  new_depth = DepthTraits<T>::fromMeters(0.5*(xyz_rgb_1.z()+xyz_rgb_2.z()));
-            // Validity and Z-buffer checks
-            if (!DepthTraits<T>::valid(reg_depth) || reg_depth > new_depth)
-              reg_depth = new_depth;
-          }
-        }
-      }
+      T& reg_depth = registered_data[v_rgb*registered_msg->width + u_rgb];
+      T  new_depth = DepthTraits<T>::fromMeters(xyz_rgb.z());
+      // Validity and Z-buffer checks
+      if (!DepthTraits<T>::valid(reg_depth) || reg_depth > new_depth)
+        reg_depth = new_depth;
     }
   }
 }
