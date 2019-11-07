@@ -47,7 +47,7 @@ try:
     from queue import Queue
 except ImportError:
     from Queue import Queue
-
+from calibrator import CAMERA_MODEL
 
 class BufferQueue(Queue):
     """Slight modification of the standard Queue that discards the oldest item
@@ -91,8 +91,8 @@ class ConsumerThread(threading.Thread):
 
 class CalibrationNode(Node):
     def __init__(self, name, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
-                 pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0, max_chessboard_speed = -1,
-                 queue_size = 1):
+                 fisheye_flags = 0, pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0,
+                 max_chessboard_speed = -1, queue_size = 1):
         super().__init__(name)
 
         self.set_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
@@ -119,6 +119,7 @@ class CalibrationNode(Node):
 
         self._boards = boards
         self._calib_flags = flags
+        self._fisheye_calib_flags = fisheye_flags
         self._checkerboard_flags = checkerboard_flags
         self._pattern = pattern
         self._camera_name = camera_name
@@ -160,11 +161,11 @@ class CalibrationNode(Node):
     def handle_monocular(self, msg):
         if self.c == None:
             if self._camera_name:
-                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
+                self.c = MonoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern, name=self._camera_name,
                                         checkerboard_flags=self._checkerboard_flags,
                                         max_chessboard_speed = self._max_chessboard_speed)
             else:
-                self.c = MonoCalibrator(self._boards, self._calib_flags, self._pattern,
+                self.c = MonoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern,
                                         checkerboard_flags=self.checkerboard_flags,
                                         max_chessboard_speed = self._max_chessboard_speed)
 
@@ -176,11 +177,11 @@ class CalibrationNode(Node):
     def handle_stereo(self, msg):
         if self.c == None:
             if self._camera_name:
-                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern, name=self._camera_name,
+                self.c = StereoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern, name=self._camera_name,
                                           checkerboard_flags=self._checkerboard_flags,
                                           max_chessboard_speed = self._max_chessboard_speed)
             else:
-                self.c = StereoCalibrator(self._boards, self._calib_flags, self._pattern,
+                self.c = StereoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern,
                                           checkerboard_flags=self._checkerboard_flags,
                                           max_chessboard_speed = self._max_chessboard_speed)
 
@@ -260,6 +261,7 @@ class OpenCVCalibrationNode(CalibrationNode):
     def initWindow(self):
         cv2.namedWindow("display", cv2.WINDOW_NORMAL)
         cv2.setMouseCallback("display", self.on_mouse)
+        cv2.createTrackbar("Camera type: \n 0 : pinhole \n 1 : fisheye", "display", 0,1, self.on_model_change)
         cv2.createTrackbar("scale", "display", 0, 100, self.on_scale)
 
     @classmethod
@@ -285,6 +287,8 @@ class OpenCVCalibrationNode(CalibrationNode):
                     # Only shut down if we set camera info correctly, #3993
                     if self.do_upload():
                         rclpy.shutdown()
+    def on_model_change(self, model_select_val):
+        self.c.set_cammodel( CAMERA_MODEL.PINHOLE if model_select_val < 0.5 else CAMERA_MODEL.FISHEYE)
 
     def on_scale(self, scalevalue):
         if self.c.calibrated:
