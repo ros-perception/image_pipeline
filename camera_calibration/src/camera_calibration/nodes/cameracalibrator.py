@@ -74,21 +74,40 @@ def main():
     group = OptionGroup(parser, "Calibration Optimizer Options")
     group.add_option("--fix-principal-point",
                      action="store_true", default=False,
-                     help="fix the principal point at the image center")
+                     help="for pinhole, fix the principal point at the image center")
     group.add_option("--fix-aspect-ratio",
                      action="store_true", default=False,
-                     help="enforce focal lengths (fx, fy) are equal")
+                     help="for pinhole, enforce focal lengths (fx, fy) are equal")
     group.add_option("--zero-tangent-dist",
                      action="store_true", default=False,
-                     help="set tangential distortion coefficients (p1, p2) to zero")
+                     help="for pinhole, set tangential distortion coefficients (p1, p2) to zero")
     group.add_option("-k", "--k-coefficients",
                      type="int", default=2, metavar="NUM_COEFFS",
-                     help="number of radial distortion coefficients to use (up to 6, default %default)")
+                     help="for pinhole, number of radial distortion coefficients to use (up to 6, default %default)")
+
+    group.add_option("--fisheye-recompute-extrinsicsts",
+                     action="store_true", default=False,
+                     help="for fisheye, extrinsic will be recomputed after each iteration of intrinsic optimization")
+    group.add_option("--fisheye-fix-skew",
+                     action="store_true", default=False,
+                     help="for fisheye, skew coefficient (alpha) is set to zero and stay zero")
+    group.add_option("--fisheye-fix-principal-point",
+                     action="store_true", default=False,
+                     help="for fisheye,fix the principal point at the image center")
+    group.add_option("--fisheye-k-coefficients",
+                     type="int", default=4, metavar="NUM_COEFFS",
+                     help="for fisheye, number of radial distortion coefficients to use fixing to zero the rest (up to 4, default %default)")
+
+    group.add_option("--fisheye-check-conditions",
+                     action="store_true", default=False,
+                     help="for fisheye, the functions will check validity of condition number")
+
     group.add_option("--disable_calib_cb_fast_check", action='store_true', default=False,
                      help="uses the CALIB_CB_FAST_CHECK flag for findChessboardCorners")
     group.add_option("--max-chessboard-speed", type="float", default=-1.0,
                      help="Do not use samples where the calibration pattern is moving faster \
                      than this speed in px/frame. Set to eg. 0.5 for rolling shutter cameras.")
+
     parser.add_option_group(group)
     options, _ = parser.parse_args(rclpy.utilities.remove_ros_args())
 
@@ -109,6 +128,7 @@ def main():
     else:
         sync = functools.partial(ApproximateTimeSynchronizer, slop=options.approximate)
 
+    # Pinhole opencv calibration options parsing
     num_ks = options.k_coefficients
 
     calib_flags = 0
@@ -133,6 +153,26 @@ def main():
     if (num_ks < 1):
         calib_flags |= cv2.CALIB_FIX_K1
 
+    # Opencv calibration flags parsing:
+    num_ks = options.fisheye_k_coefficients
+    fisheye_calib_flags = 0
+    if options.fisheye_fix_principal_point:
+        fisheye_calib_flags |= cv2.fisheye.CALIB_FIX_PRINCIPAL_POINT
+    if options.fisheye_fix_skew:
+        fisheye_calib_flags |= cv2.fisheye.CALIB_FIX_SKEW
+    if options.fisheye_recompute_extrinsicsts:
+        fisheye_calib_flags |= cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC
+    if options.fisheye_check_conditions:
+        fisheye_calib_flags |= cv2.fisheye.CALIB_CHECK_COND
+    if (num_ks < 4):
+        fisheye_calib_flags |= cv2.fisheye.CALIB_FIX_K4
+    if (num_ks < 3):
+        fisheye_calib_flags |= cv2.fisheye.CALIB_FIX_K3
+    if (num_ks < 2):
+        fisheye_calib_flags |= cv2.fisheye.CALIB_FIX_K2
+    if (num_ks < 1):
+        fisheye_calib_flags |= cv2.fisheye.CALIB_FIX_K1
+
     pattern = Patterns.Chessboard
     if options.pattern == 'circles':
         pattern = Patterns.Circles
@@ -147,7 +187,8 @@ def main():
         checkerboard_flags = cv2.CALIB_CB_FAST_CHECK
 
     rclpy.init()
-    node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
+    node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync,
+                                 calib_flags, fisheye_calib_flags, pattern, options.camera_name,
                                  checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed,
                                  queue_size=options.queue_size)
     node.spin()

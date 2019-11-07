@@ -45,6 +45,7 @@ import tarfile
 import time
 import sys
 from distutils.version import LooseVersion
+import sys
 from enum import Enum
 
 # Supported camera models
@@ -306,6 +307,8 @@ class Calibrator():
         skew = _get_skew(corners, board)
         params = [p_x, p_y, p_size, skew]
         return params
+    def set_cammodel(self, modeltype):
+        self.camera_model = modeltype
 
     def set_cammodel(self, modeltype):
         self.camera_model = modeltype
@@ -469,16 +472,13 @@ class Calibrator():
 
         return (scrib, corners, downsampled_corners, board, (x_scale, y_scale))
 
-
     @staticmethod
-    def lrmsg(d, k, r, p, size):
+    def lrmsg(d, k, r, p, size, camera_model):
         """ Used by :meth:`as_message`.  Return a CameraInfo message for the given calibration matrices """
         msg = sensor_msgs.msg.CameraInfo()
         msg.width, msg.height = size
-        if d.size > 5:
-            msg.distortion_model = "rational_polynomial"
-        else:
-            msg.distortion_model = "plumb_bob"
+        msg.distortion_model = _get_dist_model(d, camera_model)
+
         msg.d = numpy.ravel(d).copy().tolist()
         msg.k = numpy.ravel(k).copy().tolist()
         msg.r = numpy.ravel(r).copy().tolist()
@@ -534,12 +534,14 @@ class Calibrator():
         return calmessage
 
     @staticmethod
-    def lryaml(name, d, k, r, p, size):
+    def lryaml(name, d, k, r, p, size, cam_model):
         def format_mat(x, precision):
             return ("[%s]" % (
                 numpy.array2string(x, precision=precision, suppress_small=True, separator=", ")
                     .replace("[", "").replace("]", "").replace("\n", "\n        ")
             ))
+
+        dist_model = _get_dist_model(d, cam_model)
 
         assert k.shape == (3, 3)
         assert r.shape == (3, 3)
@@ -552,7 +554,7 @@ class Calibrator():
             "  rows: 3",
             "  cols: 3",
             "  data: " + format_mat(k, 5),
-            "distortion_model: " + ("rational_polynomial" if d.size > 5 else "plumb_bob"),
+            "camera_model: " + dist_model,
             "distortion_coefficients:",
             "  rows: 1",
             "  cols: %d" % d.size,
