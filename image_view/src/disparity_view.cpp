@@ -42,15 +42,9 @@ using image_view::DisparityViewNode;
 int main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
-  if (rclcpp::names::remap("image") == "image") {
-    ROS_WARN("Topic 'image' has not been remapped! Typical command-line usage:\n"
-             "\t$ rosrun image_view disparity_view image:=<disparity image topic>");
-  }
 
   rclcpp::NodeOptions options;
   auto dv_node = std::make_shared<DisparityViewNode>(options);
-
-  // my_argv.push_back("--shutdown-on-close"); // Internal
 
   rclcpp::spin(dv_node);
   return 0;

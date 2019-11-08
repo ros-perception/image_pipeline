@@ -31,6 +31,7 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
 #include <rclcpp_components/register_node_macro.hpp>
@@ -40,6 +41,7 @@
 
 #include <boost/format.hpp>
 
+#include <chrono>
 #include <mutex>
 #include <thread>
 
@@ -67,7 +69,7 @@ cv::Mat ThreadSafeImage::pop()
   cv::Mat image;
 
   {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
 
     while (image_.empty()) {
       condition_.wait(lock);
@@ -81,121 +83,162 @@ cv::Mat ThreadSafeImage::pop()
 }
 
 ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
-  : rclcpp::Node("image_view_node", options),
-    filename_format_(""), count_(0)
+  : rclcpp::Node("image_view_node", options)
 {
-}
-
-ImageViewNode::~ImageViewNode()
-{
-  if (window_thread_.joinable())
-  {
-    // TODO(jwhitleyastuff): Figure out if interruption is necessary
-    // window_thread_.interrupt();
-    window_thread_.join();
-  }
-}
-
-void ImageViewNode::onInit()
-{
-  ros::NodeHandle nh = getNodeHandle();
-  ros::NodeHandle local_nh = getPrivateNodeHandle();
-
-  // Command line argument parsing
-  const std::vector<std::string>& argv = getMyArgv();
-  // First positional argument is the transport type
-  std::string transport;
-  local_nh.param("image_transport", transport, std::string("raw"));
-  for (int i = 0; i < (int)argv.size(); ++i)
-  {
-    if (argv[i][0] != '-')
-    {
-      transport = argv[i];
-      break;
-    }
-  }
-  NODELET_INFO_STREAM("Using transport \"" << transport << "\"");
-  // Internal option, should be used only by the image_view node
-  bool shutdown_on_close = std::find(argv.begin(), argv.end(),
-                                     "--shutdown-on-close") != argv.end();
+  auto transport = this->declare_parameter("image_transport", "raw");
+  RCLCPP_INFO(this->get_logger(), "Using transport \"%s\"", transport.c_str());
 
   // Default window name is the resolved topic name
-  std::string topic = nh.resolveName("image");
-  local_nh.param("window_name", window_name_, topic);
+  std::string topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
+  window_name_ = this->declare_parameter("window_name", topic);
 
-  local_nh.param("autosize", autosize_, false);
+  if (topic == "image") {
+    RCLCPP_WARN(
+      this->get_logger(), "Topic 'image' has not been remapped! Typical command-line usage:\n"
+      "\t$ rosrun image_view image_view image:=<image topic> [transport]");
+  }
+
+  // Default window name is the resolved topic name
+  g_window_name = this->declare_parameter("window_name", topic);
+  g_gui = this->declare_parameter("gui", true);  // gui/no_gui mode
   
-  std::string format_string;
-  local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
+  std::string format_string = this->declare_parameter("filename_format", std::string("frame%04i.jpg"));
   filename_format_.parse(format_string);
 
   // Since cv::startWindowThread() triggers a crash in cv::waitKey()
   // if OpenCV is compiled against GTK, we call cv::waitKey() from
   // the ROS event loop periodically, instead.
   /*cv::startWindowThread();*/
-  gui_timer_ = local_nh.createWallTimer(ros::WallDuration(0.1), ImageViewNode::guiCb);
+  gui_timer_ = this->create_wall_timer(std::chrono::milliseconds(100), ImageViewNode::guiCb);
 
   window_thread_ = std::thread(&ImageViewNode::windowThread, this);
 
-  image_transport::ImageTransport it(nh);
-  image_transport::TransportHints hints(transport, ros::TransportHints(), getPrivateNodeHandle());
-  sub_ = it.subscribe(topic, 1, &ImageViewNode::imageCb, this, hints);
+  image_transport::TransportHints hints(this, transport);
+  pub_ = this->create_publisher<sensor_msgs::msg::Image>("output", 1);
+  sub_ = image_transport::create_subscription(this, topic, std::bind(&ImageViewNode::imageCb, this, std::placeholders::_1), hints.getTransport());
+
+  if (g_gui) {
+    std::string format_string = this->declare_parameter("filename_format", std::string("frame%04i.jpg"));
+    g_filename_format.parse(format_string);
+
+    // Handle window size
+    bool autosize = this->declare_parameter("autosize", false);
+    cv::namedWindow(g_window_name, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
+    cv::setMouseCallback(g_window_name, &mouseCb);
+
+    if(autosize == false) {
+      int width = this->declare_parameter("width", -1);
+      int height = this->declare_parameter("height", -1);
+
+      if (width > -1 && height > -1) {
+        cv::resizeWindow(g_window_name, width, height);
+      }
+    }
+  }
 }
 
-void ImageViewNode::imageCb(const sensor_msgs::msg::Image::SharedPtr& msg)
+ImageViewNode::~ImageViewNode()
+{
+  if (window_thread_.joinable()) {
+    // TODO(jwhitleyastuff): Figure out if interruption is necessary
+    // window_thread_.interrupt();
+    window_thread_.join();
+  }
+
+  if (g_gui) {
+    cv::destroyWindow(g_window_name);
+  }
+}
+
+void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   // We want to scale floating point images so that they display nicely
   bool do_dynamic_scaling = (msg->encoding.find("F") != std::string::npos);
+
+  std::lock_guard<std::mutex> lock(g_image_mutex);
+
+  // Convert to OpenCV native BGR color
+  cv_bridge::CvImageConstPtr cv_ptr;
 
   // Convert to OpenCV native BGR color
   try {
     cv_bridge::CvtColorForDisplayOptions options;
     options.do_dynamic_scaling = do_dynamic_scaling;
-    queued_image_.set(cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options)->image);
+    options.colormap = g_colormap;
+    // Set min/max value for scaling to visualize depth/float image.
+    if (g_min_image_value == g_max_image_value) {
+      // Not specified by rosparam, then set default value.
+      // Because of current sensor limitation, we use 10m as default of max range of depth
+      // with consistency to the configuration in rqt_image_view.
+      options.min_image_value = 0;
+      if (msg->encoding == "32FC1") {
+        options.max_image_value = 10;  // 10 [m]
+      } else if (msg->encoding == "16UC1") {
+        options.max_image_value = 10 * 1000;  // 10 * 1000 [mm]
+      }
+    } else {
+      options.min_image_value = g_min_image_value;
+      options.max_image_value = g_max_image_value;
+    }
+
+    cv_ptr = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options);
+    g_last_image = cv_ptr->image;
   } catch (cv_bridge::Exception& e) {
-    NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
-                             msg->encoding.c_str(), e.what());
+    RCLCPP_ERROR_EXPRESSION(
+      this->get_logger(), (static_cast<int>(this->now().seconds()) % 30 == 0),
+      "Unable to convert '%s' image for display: '%s'",
+      msg->encoding.c_str(), e.what());
+  }
+
+  if (g_gui && !g_last_image.empty()) {
+    const cv::Mat &image = g_last_image;
+    cv::imshow(g_window_name, image);
+    cv::waitKey(1);
+  }
+
+  if (pub_->get_subscription_count() > 0) {
+    pub_->publish(*(cv_ptr->toImageMsg()));
   }
 }
 
-void ImageViewNode::guiCb(const ros::WallTimerEvent&)
+void ImageViewNode::guiCb()
 {
   // Process pending GUI events and return immediately
   cv::waitKey(1);
 }
 
-void ImageViewNode::mouseCb(int event, int x, int y, int flags, void* param)
+void ImageViewNode::mouseCb(int event, int x, int y, int flags, void * param)
 {
-  ImageViewNode *this_ = reinterpret_cast<ImageViewNode *>(param);
-  // Trick to use NODELET_* logging macros in static function
-  std::function<const std::string &()> getName =
-    std::bind(&ImageViewNode::getName, this_);
+  (void)x;
+  (void)y;
+  (void)flags;
 
-  if (event == cv::EVENT_LBUTTONDOWN)
-  {
-    NODELET_WARN_ONCE("Left-clicking no longer saves images. Right-click instead.");
+  ImageViewNode *this_ = reinterpret_cast<ImageViewNode *>(param);
+
+  if (event == cv::EVENT_LBUTTONDOWN) {
+    RCLCPP_WARN_ONCE(this_->get_logger(), "Left-clicking no longer saves images. Right-click instead.");
     return;
   }
-  if (event != cv::EVENT_RBUTTONDOWN)
+
+  if (event != cv::EVENT_RBUTTONDOWN) {
     return;
+  }
   
   cv::Mat image(this_->shown_image_.get());
-  if (image.empty())
-  {
-    NODELET_WARN("Couldn't save image, no data!");
+
+  if (image.empty()) {
+    RCLCPP_WARN(this_->get_logger(), "Couldn't save image, no data!");
     return;
   }
 
   std::string filename = (this_->filename_format_ % this_->count_).str();
-  if (cv::imwrite(filename, image))
-  {
-    NODELET_INFO("Saved image %s", filename.c_str());
+
+  if (cv::imwrite(filename, image)) {
+    RCLCPP_INFO(this_->get_logger(), "Saved image %s", filename.c_str());
     this_->count_++;
-  }
-  else
-  {
+  } else {
     /// @todo Show full path, ask if user has permission to write there
-    NODELET_ERROR("Failed to save image.");
+    RCLCPP_ERROR(this_->get_logger(), "Failed to save image.");
   }
 }
 
@@ -204,18 +247,11 @@ void ImageViewNode::windowThread()
   cv::namedWindow(window_name_, autosize_ ? cv::WND_PROP_AUTOSIZE : 0);
   cv::setMouseCallback(window_name_, &ImageViewNode::mouseCb, this);
 
-  try
-  {
-    while (true)
-    {
-      cv::Mat image(queued_image_.pop());
-      cv::imshow(window_name_, image);
-      cv::waitKey(1);
-      shown_image_.set(image);
-    }
-  }
-  catch (const boost::thread_interrupted&)
-  {
+  while (rclcpp::ok()) {
+    cv::Mat image(queued_image_.pop());
+    cv::imshow(window_name_, image);
+    cv::waitKey(1);
+    shown_image_.set(image);
   }
 
   cv::destroyWindow(window_name_);

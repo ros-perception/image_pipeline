@@ -51,14 +51,6 @@
 
 #include <gtk/gtk.h>
 
-// Platform-specific workaround for #3026: image_view doesn't close when
-// closing image window. On platforms using GTK+ we connect this to the
-// window's "destroy" event so that image_view exits.
-static void destroy(GtkWidget *widget, gpointer data)
-{
-  rclcpp::shutdown();
-}
-
 #endif
 
 #include <chrono>
@@ -365,7 +357,7 @@ private:
   boost::format filename_format_;
   int save_count_;
 
-  rclcpp::WallTimer<std::function<void (void)>>::SharedPtr check_synced_timer_;
+  rclcpp::TimerBase::SharedPtr check_synced_timer_;
   int left_received_, right_received_, disp_received_, all_received_;
 
 public:
@@ -390,25 +382,6 @@ public:
     cv::setMouseCallback("left", &StereoViewNode::mouseCb, this);
     cv::setMouseCallback("right", &StereoViewNode::mouseCb, this);
     cv::setMouseCallback("disparity", &StereoViewNode::mouseCb, this);
-#if CV_MAJOR_VERSION == 2
-
-  #ifdef HAVE_GTK
-
-    g_signal_connect(
-      GTK_WIDGET(cvGetWindowHandle("left")),
-      "destroy", G_CALLBACK(destroy), NULL);
-    g_signal_connect(
-      GTK_WIDGET(cvGetWindowHandle("right")),
-      "destroy", G_CALLBACK(destroy), NULL);
-    g_signal_connect(
-      GTK_WIDGET(cvGetWindowHandle("disparity")),
-      "destroy", G_CALLBACK(destroy), NULL);
-
-  #endif
-
-    cvStartWindowThread();
-
-#endif
 
     // Resolve topic names
     std::string stereo_ns = rclcpp::expand_topic_or_service_name(
@@ -437,7 +410,7 @@ public:
     right_sub_.registerCallback(std::bind(increment, &right_received_));
     disparity_sub_.registerCallback(std::bind(increment, &disp_received_));
     check_synced_timer_ = this->create_wall_timer(
-      std::chrono::duration_cast<std::chrono::seconds>(15),
+      std::chrono::seconds(15),
       std::bind(&StereoViewNode::checkInputsSynchronized, this));
 
     // Synchronize input topics. Optionally do approximate synchronization.

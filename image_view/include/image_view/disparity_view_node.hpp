@@ -4,6 +4,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include <stereo_msgs/msg/disparity_image.hpp>
 
+#include <opencv2/highgui/highgui.hpp>
+
 #include <memory>
 #include <string>
 
@@ -23,9 +25,9 @@ class DisparityViewNode
 
   virtual void onInit();
 
-  void imageCb(const stereo_msgs::msg::DisparityImage::SharedPtr& msg);
+  void imageCb(const stereo_msgs::msg::DisparityImage::SharedPtr msg);
 
-  public:
+public:
   explicit DisparityViewNode(const rclcpp::NodeOptions & options);
   ~DisparityViewNode();
 };

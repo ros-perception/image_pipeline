@@ -48,6 +48,10 @@
 namespace image_view
 {
 
+using std::placeholders::_1;
+using std::placeholders::_2;
+using std::placeholders::_3;
+
 class ImageSaverNode
   : public rclcpp::Node
 {
@@ -63,8 +67,8 @@ class ImageSaverNode
   image_transport::CameraSubscriber cam_sub_;
   image_transport::Subscriber image_sub_;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr save_srv_;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr start_srv_;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr end_srv_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_srv_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr end_srv_;
 
   bool saveImage(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg, std::string & filename)
   {
@@ -145,47 +149,55 @@ public:
     }
 
     save_srv_ = this->create_service<std_srvs::srv::Empty>(
-      "save", std::bind(&ImageSaverNode::service, this, std::placeholders::_1, std::placeholders::_2));
+      "save", std::bind(&ImageSaverNode::service, this, _1, _2, _3));
 
     // FIXME(unkown): This does not make services appear
     // if (request_start_end) {
-    start_srv_ = this->create_service<std_srvs::srv::Empty>(
-        "start", std::bind(&ImageSaverNode::callbackStartSave, this, std::placeholders::_1, std::placeholders::_2));
-    end_srv_ = this->create_service<std_srvs::srv::Empty>(
-        "end", std::bind(&ImageSaverNode::callbackEndSave, this, std::placeholders::_1, std::placeholders::_2));
+    start_srv_ = this->create_service<std_srvs::srv::Trigger>(
+        "start", std::bind(&ImageSaverNode::callbackStartSave, this, _1, _2, _3));
+    end_srv_ = this->create_service<std_srvs::srv::Trigger>(
+        "end", std::bind(&ImageSaverNode::callbackEndSave, this, _1, _2, _3));
     // }
   }
 
-  bool service(std_srvs::srv::Empty::Request &req, std_srvs::srv::Empty::Response &res)
+  bool service(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::Empty::Request> request,
+    std::shared_ptr<std_srvs::srv::Empty::Response> response)
   {
-    (void)req;
-    (void)res;
+    (void)request_header;
+    (void)request;
+    (void)response;
     save_image_service = true;
     return true;
   }
 
   bool callbackStartSave(
-    std_srvs::srv::Trigger::Request &req,
-    std_srvs::srv::Trigger::Response &res)
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response)
   {
-    (void)req;
+    (void)request_header;
+    (void)request;
     RCLCPP_INFO(this->get_logger(), "Received start saving request");
     start_time_ = this->now();
     end_time_ = rclcpp::Time(0);
 
-    res.success = true;
+    response->success = true;
     return true;
   }
 
   bool callbackEndSave(
-    std_srvs::srv::Trigger::Request &req,
-    std_srvs::srv::Trigger::Response &res)
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> response)
   {
-    (void)req;
+    (void)request_header;
+    (void)request;
     RCLCPP_INFO(this->get_logger(), "Received end saving request");
     end_time_ = this->now();
 
-    res.success = true;
+    response->success = true;
     return true;
   }
 

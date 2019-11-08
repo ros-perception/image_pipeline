@@ -46,21 +46,6 @@
 
 #include <gtk/gtk.h>
 
-// Platform-specific workaround for #3026: image_view doesn't close when
-// closing image window. On platforms using GTK+ we connect this to the
-// window's "destroy" event so that image_view exits.
-static void destroyNode(GtkWidget *widget, gpointer data)
-{
-  exit(0);
-}
-
-static void destroyNodelet(GtkWidget *widget, gpointer data)
-{
-  // We can't actually unload the nodelet from here, but we can at least
-  // unsubscribe from the image topic.
-  reinterpret_cast<ros::Subscriber*>(data)->shutdown();
-}
-
 #endif
 
 namespace image_view
@@ -69,6 +54,24 @@ namespace image_view
 DisparityViewNode::DisparityViewNode(const rclcpp::NodeOptions & options)
   : rclcpp::Node("disparity_view_node", options)
 {
+  std::string topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
+
+  if (topic == "image") {
+    RCLCPP_WARN(
+      this->get_logger(), "Topic 'image' has not been remapped! Typical command-line usage:\n"
+      "\t$ rosrun image_view disparity_view image:=<disparity image topic>");
+  }
+
+  initialized = false;
+
+  // Default window name is the resolved topic name
+  window_name_ = this->declare_parameter("window_name", topic);
+  bool autosize = this->declare_parameter("autosize", false);
+
+  //cv::namedWindow(window_name_, autosize ? cv::WND_PROP_AUTOSIZE : 0);
+
+  sub_ = this->create_subscription<stereo_msgs::msg::DisparityImage>(
+    topic, rclcpp::QoS(10), std::bind(&DisparityViewNode::imageCb, this, std::placeholders::_1));
 }
 
 DisparityViewNode::~DisparityViewNode()
@@ -76,54 +79,22 @@ DisparityViewNode::~DisparityViewNode()
   cv::destroyWindow(window_name_);
 }
 
-void DisparityViewNode::onInit()
-{
-  initialized = false;
-  const std::vector<std::string>& argv = getMyArgv();
-
-  // Internal option, should be used only by image_view nodes
-  bool shutdown_on_close = std::find(
-    argv.begin(), argv.end(), "--shutdown-on-close") != argv.end();
-
-  // Default window name is the resolved topic name
-  std::string topic = this->resolveName("image");
-  local_nh.param("window_name", window_name_, topic);
-
-  bool autosize;
-  local_nh.param("autosize", autosize, false);
-
-  //cv::namedWindow(window_name_, autosize ? cv::WND_PROP_AUTOSIZE : 0);
-#if CV_MAJOR_VERSION ==2
-#ifdef HAVE_GTK
-  // Register appropriate handler for when user closes the display window
-  GtkWidget *widget = GTK_WIDGET( cvGetWindowHandle(window_name_.c_str()) );
-  if (shutdown_on_close)
-    g_signal_connect(widget, "destroy", G_CALLBACK(destroyNode), NULL);
-  else
-    g_signal_connect(widget, "destroy", G_CALLBACK(destroyNodelet), &sub_);
-#endif
-  // Start the OpenCV window thread so we don't have to waitKey() somewhere
-  startWindowThread();
-#endif
-
-  sub_ = this->create_subscription<stereo_msgs::msg::DisparityImage>(
-    topic, rclcpp::QoS(10), std::bind(&DisparityViewNode::imageCb, this, std::placeholders::_1));
-}
-
-void DisparityViewNode::imageCb(const stereo_msgs::msg::DisparityImage::SharedPtr& msg)
+void DisparityViewNode::imageCb(const stereo_msgs::msg::DisparityImage::SharedPtr msg)
 {
   // Check for common errors in input
   if (msg->min_disparity == 0.0 && msg->max_disparity == 0.0)
   {
-    NODELET_ERROR_THROTTLE(30, "Disparity image fields min_disparity and "
-                           "max_disparity are not set");
+    RCLCPP_ERROR_EXPRESSION(
+      this->get_logger(), (static_cast<int>(this->now().seconds()) % 30 == 0),
+      "Disparity image fields min_disparity and max_disparity are not set");
     return;
   }
   if (msg->image.encoding != sensor_msgs::image_encodings::TYPE_32FC1)
   {
-    NODELET_ERROR_THROTTLE(30, "Disparity image must be 32-bit floating point "
-                           "(encoding '32FC1'), but has encoding '%s'",
-                           msg->image.encoding.c_str());
+    RCLCPP_ERROR_EXPRESSION(
+        this->get_logger(), (static_cast<int>(this->now().seconds()) % 30 == 0),
+      "Disparity image must be 32-bit floating point (encoding '32FC1'), but has encoding '%s'",
+       msg->image.encoding.c_str());
     return;
   }
   
@@ -131,19 +102,23 @@ void DisparityViewNode::imageCb(const stereo_msgs::msg::DisparityImage::SharedPt
     cv::namedWindow(window_name_, false ? cv::WND_PROP_AUTOSIZE : 0);
     initialized = true;
   }
+
   // Colormap and display the disparity image
   float min_disparity = msg->min_disparity;
   float max_disparity = msg->max_disparity;
   float multiplier = 255.0f / (max_disparity - min_disparity);
 
-  const cv::Mat_<float> dmat(msg->image.height, msg->image.width,
-                             (float*)&msg->image.data[0], msg->image.step);
+  const cv::Mat_<float> dmat(
+    msg->image.height, msg->image.width,
+    (float*)&msg->image.data[0], msg->image.step);
   disparity_color_.create(msg->image.height, msg->image.width);
     
   for (int row = 0; row < disparity_color_.rows; ++row) {
     const float* d = dmat[row];
-    cv::Vec3b *disparity_color = disparity_color_[row],
-              *disparity_color_end = disparity_color + disparity_color_.cols;
+    cv::Vec3b *disparity_color =
+      disparity_color_[row], *disparity_color_end =
+      disparity_color + disparity_color_.cols;
+
     for (; disparity_color < disparity_color_end; ++disparity_color, ++d) {
       int index = (*d - min_disparity) * multiplier + 0.5;
       index = std::min(255, std::max(0, index));
