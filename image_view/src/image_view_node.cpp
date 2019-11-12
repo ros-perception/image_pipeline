@@ -98,6 +98,8 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
   }
 
   g_gui = this->declare_parameter("gui", true);  // gui/no_gui mode
+
+  autosize_ = this->declare_parameter("autosize", false);
   
   std::string format_string = this->declare_parameter("filename_format", std::string("frame%04i.jpg"));
   filename_format_.parse(format_string);
@@ -108,30 +110,13 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
   /*cv::startWindowThread();*/
   gui_timer_ = this->create_wall_timer(std::chrono::milliseconds(100), &ImageViewNode::guiCb);
 
-  window_thread_ = std::thread(&ImageViewNode::windowThread, this);
+  if(g_gui) {
+    window_thread_ = std::thread(&ImageViewNode::windowThread, this);
+  }
 
   image_transport::TransportHints hints(this, transport);
   pub_ = this->create_publisher<sensor_msgs::msg::Image>("output", 1);
   sub_ = image_transport::create_subscription(this, topic, std::bind(&ImageViewNode::imageCb, this, std::placeholders::_1), hints.getTransport());
-
-  if (g_gui) {
-    std::string format_string = this->declare_parameter("filename_format", std::string("frame%04i.jpg"));
-    g_filename_format.parse(format_string);
-
-    // Handle window size
-    bool autosize = this->declare_parameter("autosize", false);
-    cv::namedWindow(window_name_, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
-    cv::setMouseCallback(window_name_, &mouseCb);
-
-    if(autosize == false) {
-      int width = this->declare_parameter("width", -1);
-      int height = this->declare_parameter("height", -1);
-
-      if (width > -1 && height > -1) {
-        cv::resizeWindow(window_name_, width, height);
-      }
-    }
-  }
 }
 
 ImageViewNode::~ImageViewNode()
@@ -243,6 +228,15 @@ void ImageViewNode::windowThread()
 {
   cv::namedWindow(window_name_, autosize_ ? cv::WND_PROP_AUTOSIZE : 0);
   cv::setMouseCallback(window_name_, &ImageViewNode::mouseCb, this);
+
+  if(!autosize_) {
+    int width = this->declare_parameter("width", -1);
+    int height = this->declare_parameter("height", -1);
+
+    if (width > -1 && height > -1) {
+      cv::resizeWindow(window_name_, width, height);
+    }
+  }
 
   while (rclcpp::ok()) {
     cv::Mat image(queued_image_.pop());

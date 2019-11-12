@@ -105,8 +105,17 @@ rclcpp_components_register_nodes(image_view_nodes
 rclcpp_components_register_nodes(image_view_nodes
   "image_view::DisparityViewNode"
 )
+ament_export_include_directories(include)
+ament_export_interfaces(export_image_view_nodes)
+ament_export_libraries(image_view_nodes)
+install(DIRECTORY include/
+  DESTINATION include
+)
 install(TARGETS image_view_nodes
-  DESTINATION lib/${PROJECT_NAME}
+  EXPORT export_image_view_nodes
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 # Image viewers
