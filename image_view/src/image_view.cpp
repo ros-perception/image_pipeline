@@ -59,14 +59,9 @@ int main(int argc, char **argv)
   rclcpp::NodeOptions options;
   auto iv_node = std::make_shared<ImageViewNode>(options);
   
-  /*
-  dynamic_reconfigure::Server<image_view::ImageViewConfig> srv;
-  dynamic_reconfigure::Server<image_view::ImageViewConfig>::CallbackType f =
-    boost::bind(&reconfigureCb, _1, _2);
-  srv.setCallback(f);
-  */
-
   rclcpp::spin(iv_node);
+
+  rclcpp::shutdown();
 
   return 0;
 }

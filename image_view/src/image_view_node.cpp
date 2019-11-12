@@ -33,9 +33,10 @@
 *********************************************************************/
 
 #include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.h>
-
 #include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
+#include <std_msgs/msg/header.hpp>
+
 #include <opencv2/highgui/highgui.hpp>
 
 #include <boost/format.hpp>
@@ -70,9 +71,9 @@ cv::Mat ThreadSafeImage::pop()
   {
     std::unique_lock<std::mutex> lock(mutex_);
 
-    while (image_.empty()) {
-      condition_.wait(lock);
-    }
+    condition_.wait_for(lock, std::chrono::milliseconds(100), [this] {
+      return !image_.empty();
+    });
 
     image = image_;
     image_.release();
@@ -87,48 +88,47 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
   auto transport = this->declare_parameter("image_transport", "raw");
   RCLCPP_INFO(this->get_logger(), "Using transport \"%s\"", transport.c_str());
 
-  // Default window name is the resolved topic name
   std::string topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
-  window_name_ = this->declare_parameter("window_name", topic);
 
-  if (topic == "image") {
+  image_transport::TransportHints hints(this, transport);
+  pub_ = this->create_publisher<sensor_msgs::msg::Image>("output", 1);
+  sub_ = image_transport::create_subscription(this, topic, std::bind(&ImageViewNode::imageCb, this, std::placeholders::_1), hints.getTransport());
+
+  auto topics = this->get_topic_names_and_types();
+
+  if (topics.find(topic) != topics.end()) {
     RCLCPP_WARN(
       this->get_logger(), "Topic 'image' has not been remapped! Typical command-line usage:\n"
       "\t$ rosrun image_view image_view image:=<image topic> [transport]");
   }
 
+  // Default window name is the resolved topic name
+  window_name_ = this->declare_parameter("window_name", topic);
   g_gui = this->declare_parameter("gui", true);  // gui/no_gui mode
-
   autosize_ = this->declare_parameter("autosize", false);
-  
+  window_height_ = this->declare_parameter("height", -1);
+  window_width_ = this->declare_parameter("width", -1);
   std::string format_string = this->declare_parameter("filename_format", std::string("frame%04i.jpg"));
   filename_format_.parse(format_string);
 
-  // Since cv::startWindowThread() triggers a crash in cv::waitKey()
-  // if OpenCV is compiled against GTK, we call cv::waitKey() from
-  // the ROS event loop periodically, instead.
-  /*cv::startWindowThread();*/
-  gui_timer_ = this->create_wall_timer(std::chrono::milliseconds(100), &ImageViewNode::guiCb);
+  colormap_ = this->declare_parameter("colormap", 0);
+  min_image_value_ = this->declare_parameter("min_image_value", 0);
+  max_image_value_ = this->declare_parameter("max_image_value", 0);
 
   if(g_gui) {
+    // Since cv::startWindowThread() triggers a crash in cv::waitKey()
+    // if OpenCV is compiled against GTK, we call cv::waitKey() from
+    // the ROS event loop periodically, instead.
+    gui_timer_ = this->create_wall_timer(std::chrono::milliseconds(100), &ImageViewNode::guiCb);
+
     window_thread_ = std::thread(&ImageViewNode::windowThread, this);
   }
-
-  image_transport::TransportHints hints(this, transport);
-  pub_ = this->create_publisher<sensor_msgs::msg::Image>("output", 1);
-  sub_ = image_transport::create_subscription(this, topic, std::bind(&ImageViewNode::imageCb, this, std::placeholders::_1), hints.getTransport());
 }
 
 ImageViewNode::~ImageViewNode()
 {
   if (window_thread_.joinable()) {
-    // TODO(jwhitleyastuff): Figure out if interruption is necessary
-    // window_thread_.interrupt();
     window_thread_.join();
-  }
-
-  if (g_gui) {
-    cv::destroyWindow(window_name_);
   }
 }
 
@@ -137,34 +137,32 @@ void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
   // We want to scale floating point images so that they display nicely
   bool do_dynamic_scaling = (msg->encoding.find("F") != std::string::npos);
 
-  std::lock_guard<std::mutex> lock(g_image_mutex);
-
-  // Convert to OpenCV native BGR color
-  cv_bridge::CvImageConstPtr cv_ptr;
-
   // Convert to OpenCV native BGR color
   try {
     cv_bridge::CvtColorForDisplayOptions options;
     options.do_dynamic_scaling = do_dynamic_scaling;
-    options.colormap = g_colormap;
+    options.colormap = colormap_;
+
     // Set min/max value for scaling to visualize depth/float image.
-    if (g_min_image_value == g_max_image_value) {
+    if (min_image_value_ == max_image_value_) {
       // Not specified by rosparam, then set default value.
       // Because of current sensor limitation, we use 10m as default of max range of depth
       // with consistency to the configuration in rqt_image_view.
       options.min_image_value = 0;
+
       if (msg->encoding == "32FC1") {
         options.max_image_value = 10;  // 10 [m]
       } else if (msg->encoding == "16UC1") {
         options.max_image_value = 10 * 1000;  // 10 * 1000 [mm]
       }
     } else {
-      options.min_image_value = g_min_image_value;
-      options.max_image_value = g_max_image_value;
+      options.min_image_value = min_image_value_;
+      options.max_image_value = max_image_value_;
     }
 
-    cv_ptr = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options);
-    g_last_image = cv_ptr->image;
+    queued_image_.set(
+      cv_bridge::cvtColorForDisplay(
+        cv_bridge::toCvShare(msg), "", options)->image);
   } catch (cv_bridge::Exception& e) {
     RCLCPP_ERROR_EXPRESSION(
       this->get_logger(), (static_cast<int>(this->now().seconds()) % 30 == 0),
@@ -172,14 +170,8 @@ void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
       msg->encoding.c_str(), e.what());
   }
 
-  if (g_gui && !g_last_image.empty()) {
-    const cv::Mat &image = g_last_image;
-    cv::imshow(window_name_, image);
-    cv::waitKey(1);
-  }
-
   if (pub_->get_subscription_count() > 0) {
-    pub_->publish(*(cv_ptr->toImageMsg()));
+    pub_->publish(*msg);
   }
 }
 
@@ -189,12 +181,8 @@ void ImageViewNode::guiCb()
   cv::waitKey(1);
 }
 
-void ImageViewNode::mouseCb(int event, int x, int y, int flags, void * param)
+void ImageViewNode::mouseCb(int event, int /* x */, int /* y */, int /* flags */, void * param)
 {
-  (void)x;
-  (void)y;
-  (void)flags;
-
   ImageViewNode *this_ = reinterpret_cast<ImageViewNode *>(param);
 
   if (event == cv::EVENT_LBUTTONDOWN) {
@@ -226,23 +214,21 @@ void ImageViewNode::mouseCb(int event, int x, int y, int flags, void * param)
 
 void ImageViewNode::windowThread()
 {
-  cv::namedWindow(window_name_, autosize_ ? cv::WND_PROP_AUTOSIZE : 0);
+  cv::namedWindow(window_name_, autosize_ ? (cv::WINDOW_AUTOSIZE | cv::WINDOW_KEEPRATIO | cv::WINDOW_GUI_EXPANDED) : 0);
   cv::setMouseCallback(window_name_, &ImageViewNode::mouseCb, this);
 
-  if(!autosize_) {
-    int width = this->declare_parameter("width", -1);
-    int height = this->declare_parameter("height", -1);
-
-    if (width > -1 && height > -1) {
-      cv::resizeWindow(window_name_, width, height);
-    }
+  if(!autosize_ && window_width_ > -1 && window_height_ > -1) {
+    cv::resizeWindow(window_name_, window_width_, window_height_);
   }
 
-  while (rclcpp::ok()) {
-    cv::Mat image(queued_image_.pop());
-    cv::imshow(window_name_, image);
-    cv::waitKey(1);
-    shown_image_.set(image);
+  while(rclcpp::ok()) {
+    const cv::Mat & image(queued_image_.pop());
+    
+    if (!image.empty()) {
+      cv::imshow(window_name_, image);
+      shown_image_.set(image);
+      cv::waitKey(1);
+    }
   }
 
   cv::destroyWindow(window_name_);

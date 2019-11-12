@@ -33,19 +33,14 @@ class ImageViewNode
 {
   ThreadSafeImage queued_image_, shown_image_;
   bool autosize_;
-  bool g_do_dynamic_scaling;
+  int window_height_, window_width_;
   bool g_gui;
   boost::format filename_format_;
-  boost::format g_filename_format;
-  cv::Mat g_last_image;
-  double g_max_image_value;
-  double g_min_image_value;
   image_transport::Subscriber sub_;
   int count_;
-  int g_colormap;
-  int g_count;
+  double min_image_value_, max_image_value_;
+  int colormap_;
   rclcpp::TimerBase::SharedPtr gui_timer_;
-  std::mutex g_image_mutex;
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> pub_;
   std::string window_name_;
   std::thread window_thread_;
