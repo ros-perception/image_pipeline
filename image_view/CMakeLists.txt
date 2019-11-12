@@ -9,6 +9,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+find_package(ament_cmake REQUIRED)
 find_package(camera_calibration_parsers REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
@@ -123,7 +124,8 @@ add_dependencies(image_view
 )
 
 add_executable(disparity_view
-  src/disparity_view.cpp)
+  src/disparity_view.cpp
+)
 ament_target_dependencies(disparity_view
   rclcpp
 )

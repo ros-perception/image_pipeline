@@ -35,7 +35,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <stereo_msgs/msg/disparity_image.hpp>
-#include <rclcpp_components/register_node_macro.hpp>
 
 #include <opencv2/highgui/highgui.hpp>
 
@@ -66,9 +65,9 @@ DisparityViewNode::DisparityViewNode(const rclcpp::NodeOptions & options)
 
   // Default window name is the resolved topic name
   window_name_ = this->declare_parameter("window_name", topic);
-  bool autosize = this->declare_parameter("autosize", false);
+  // bool autosize = this->declare_parameter("autosize", false);
 
-  //cv::namedWindow(window_name_, autosize ? cv::WND_PROP_AUTOSIZE : 0);
+  // cv::namedWindow(window_name_, autosize ? cv::WND_PROP_AUTOSIZE : 0);
 
   sub_ = this->create_subscription<stereo_msgs::msg::DisparityImage>(
     topic, rclcpp::QoS(10), std::bind(&DisparityViewNode::imageCb, this, std::placeholders::_1));
@@ -401,4 +400,5 @@ unsigned char DisparityViewNode::colormap[768] =
 
 }  // namespace image_view
 
+#include <rclcpp_components/register_node_macro.hpp>
 RCLCPP_COMPONENTS_REGISTER_NODE(image_view::DisparityViewNode)

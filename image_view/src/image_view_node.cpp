@@ -34,7 +34,6 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
-#include <rclcpp_components/register_node_macro.hpp>
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -109,7 +108,7 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
   // if OpenCV is compiled against GTK, we call cv::waitKey() from
   // the ROS event loop periodically, instead.
   /*cv::startWindowThread();*/
-  gui_timer_ = this->create_wall_timer(std::chrono::milliseconds(100), ImageViewNode::guiCb);
+  gui_timer_ = this->create_wall_timer(std::chrono::milliseconds(100), &ImageViewNode::guiCb);
 
   window_thread_ = std::thread(&ImageViewNode::windowThread, this);
 
@@ -259,4 +258,5 @@ void ImageViewNode::windowThread()
 
 } // namespace image_view
 
+#include <rclcpp_components/register_node_macro.hpp>
 RCLCPP_COMPONENTS_REGISTER_NODE(image_view::ImageViewNode)

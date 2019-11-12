@@ -23,8 +23,6 @@ class DisparityViewNode
   cv::Mat_<cv::Vec3b> disparity_color_;
   bool initialized;
 
-  virtual void onInit();
-
   void imageCb(const stereo_msgs::msg::DisparityImage::SharedPtr msg);
 
 public:
