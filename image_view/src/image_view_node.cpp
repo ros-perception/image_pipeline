@@ -97,8 +97,6 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
       "\t$ rosrun image_view image_view image:=<image topic> [transport]");
   }
 
-  // Default window name is the resolved topic name
-  g_window_name = this->declare_parameter("window_name", topic);
   g_gui = this->declare_parameter("gui", true);  // gui/no_gui mode
   
   std::string format_string = this->declare_parameter("filename_format", std::string("frame%04i.jpg"));
@@ -122,15 +120,15 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
 
     // Handle window size
     bool autosize = this->declare_parameter("autosize", false);
-    cv::namedWindow(g_window_name, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
-    cv::setMouseCallback(g_window_name, &mouseCb);
+    cv::namedWindow(window_name_, autosize ? (CV_WINDOW_AUTOSIZE | CV_WINDOW_KEEPRATIO | CV_GUI_EXPANDED) : 0);
+    cv::setMouseCallback(window_name_, &mouseCb);
 
     if(autosize == false) {
       int width = this->declare_parameter("width", -1);
       int height = this->declare_parameter("height", -1);
 
       if (width > -1 && height > -1) {
-        cv::resizeWindow(g_window_name, width, height);
+        cv::resizeWindow(window_name_, width, height);
       }
     }
   }
@@ -145,7 +143,7 @@ ImageViewNode::~ImageViewNode()
   }
 
   if (g_gui) {
-    cv::destroyWindow(g_window_name);
+    cv::destroyWindow(window_name_);
   }
 }
 
@@ -191,7 +189,7 @@ void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 
   if (g_gui && !g_last_image.empty()) {
     const cv::Mat &image = g_last_image;
-    cv::imshow(g_window_name, image);
+    cv::imshow(window_name_, image);
     cv::waitKey(1);
   }
 

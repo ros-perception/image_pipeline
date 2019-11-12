@@ -106,7 +106,7 @@ rclcpp_components_register_nodes(image_view_nodes
   "image_view::DisparityViewNode"
 )
 install(TARGETS image_view_nodes
-  DESTINATION lib
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 # Image viewers
@@ -153,7 +153,7 @@ target_link_libraries(stereo_view
 )
 
 install(TARGETS disparity_view image_view stereo_view
-  DESTINATION bin 
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 # Python programs

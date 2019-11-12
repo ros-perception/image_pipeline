@@ -47,7 +47,6 @@ class ImageViewNode
   rclcpp::TimerBase::SharedPtr gui_timer_;
   std::mutex g_image_mutex;
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> pub_;
-  std::string g_window_name;
   std::string window_name_;
   std::thread window_thread_;
 
