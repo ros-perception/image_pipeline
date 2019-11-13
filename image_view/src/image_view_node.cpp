@@ -46,37 +46,35 @@
 #include <thread>
 
 #include "image_view/image_view_node.hpp"
-#include "image_view/window_thread.hpp"
 
 namespace image_view
 {
 
-void ThreadSafeImage::set(const cv::Mat& image)
+void ThreadSafeImage::set(cv_bridge::CvImageConstPtr image)
 {
   std::lock_guard<std::mutex> lock(mutex_);
   image_ = image;
   condition_.notify_one();
 }
 
-cv::Mat ThreadSafeImage::get()
+cv_bridge::CvImageConstPtr ThreadSafeImage::get()
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return image_;
 }
 
-cv::Mat ThreadSafeImage::pop()
+cv_bridge::CvImageConstPtr ThreadSafeImage::pop()
 {
-  cv::Mat image;
+  cv_bridge::CvImageConstPtr image;
 
   {
     std::unique_lock<std::mutex> lock(mutex_);
 
     condition_.wait_for(lock, std::chrono::milliseconds(100), [this] {
-      return !image_.empty();
+      return !image_;
     });
 
-    image = image_;
-    image_.release();
+    image = std::move(image_);
   }
 
   return image;
@@ -162,7 +160,7 @@ void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 
     queued_image_.set(
       cv_bridge::cvtColorForDisplay(
-        cv_bridge::toCvShare(msg), "", options)->image);
+        cv_bridge::toCvShare(msg), "bgr8", options));
   } catch (cv_bridge::Exception& e) {
     RCLCPP_ERROR_EXPRESSION(
       this->get_logger(), (static_cast<int>(this->now().seconds()) % 30 == 0),
@@ -194,16 +192,16 @@ void ImageViewNode::mouseCb(int event, int /* x */, int /* y */, int /* flags */
     return;
   }
   
-  cv::Mat image(this_->shown_image_.get());
+  cv_bridge::CvImageConstPtr image(this_->shown_image_.get());
 
-  if (image.empty()) {
+  if (!image) {
     RCLCPP_WARN(this_->get_logger(), "Couldn't save image, no data!");
     return;
   }
 
   std::string filename = (this_->filename_format_ % this_->count_).str();
 
-  if (cv::imwrite(filename, image)) {
+  if (cv::imwrite(filename, image->image)) {
     RCLCPP_INFO(this_->get_logger(), "Saved image %s", filename.c_str());
     this_->count_++;
   } else {
@@ -222,10 +220,10 @@ void ImageViewNode::windowThread()
   }
 
   while(rclcpp::ok()) {
-    const cv::Mat & image(queued_image_.pop());
+    cv_bridge::CvImageConstPtr image(queued_image_.pop());
     
-    if (!image.empty()) {
-      cv::imshow(window_name_, image);
+    if (image) {
+      cv::imshow(window_name_, image->image);
       shown_image_.set(image);
       cv::waitKey(1);
     }

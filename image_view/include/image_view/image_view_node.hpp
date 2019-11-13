@@ -2,6 +2,7 @@
 #define IMAGE_VIEW__IMAGE_VIEW_NODE_HPP_
 
 #include <rclcpp/rclcpp.hpp>
+#include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/msg/image.hpp>
 #include <image_transport/image_transport.h>
 
@@ -20,12 +21,12 @@ class ThreadSafeImage
 {
   std::mutex mutex_;
   std::condition_variable condition_;
-  cv::Mat image_;
+  cv_bridge::CvImageConstPtr image_;
 
 public:
-  void set(const cv::Mat & image);
-  cv::Mat get();
-  cv::Mat pop();
+  void set(cv_bridge::CvImageConstPtr image);
+  cv_bridge::CvImageConstPtr get();
+  cv_bridge::CvImageConstPtr pop();
 };
 
 class ImageViewNode

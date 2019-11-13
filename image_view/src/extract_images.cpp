@@ -77,7 +77,14 @@ public:
   {
     auto topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
 
-    if (topic == "/image") {
+    sub_ = image_transport::create_subscription(
+      this, topic, std::bind(
+        &ExtractImagesNode::image_cb, this, std::placeholders::_1),
+      transport);
+
+    auto topics = this->get_topic_names_and_types();
+
+    if (topics.find(topic) != topics.end()) {
       RCLCPP_WARN(
         this->get_logger(), "extract_images: image has not been remapped! Typical command-line usage:\n"
         "\t$ ./extract_images image:=<image topic> [transport]");
@@ -88,11 +95,6 @@ public:
     filename_format_.parse(format_string);
 
     double sec_per_frame_ = this->declare_parameter("sec_per_frame", 0.1);
-
-    sub_ = image_transport::create_subscription(
-      this, topic, std::bind(
-        &ExtractImagesNode::image_cb, this, std::placeholders::_1),
-      transport);
 
 #ifdef _VIDEO
 

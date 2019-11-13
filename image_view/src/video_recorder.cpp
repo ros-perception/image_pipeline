@@ -24,12 +24,7 @@
 #include <sensor_msgs/image_encodings.hpp>
 
 #include <opencv2/highgui/highgui.hpp>
-
-#if CV_MAJOR_VERSION == 3
-
 #include <opencv2/videoio.hpp>
-
-#endif
 
 #include <iostream>
 #include <memory>
@@ -58,13 +53,10 @@ class VideoRecorderNode
     if (!outputVideo.isOpened()) {
       cv::Size size(image_msg->width, image_msg->height);
 
-      outputVideo.open(filename, 
-#if CV_MAJOR_VERSION == 3
-
-        cv::VideoWriter::fourcc(codec.c_str()[0],
-#else
-        CV_FOURCC(codec.c_str()[0],
-#endif
+      outputVideo.open(
+        filename, 
+        cv::VideoWriter::fourcc(
+          codec.c_str()[0],
           codec.c_str()[1],
           codec.c_str()[2],
           codec.c_str()[3]), 
@@ -96,6 +88,7 @@ class VideoRecorderNode
       options.min_image_value = min_depth_range;
       options.max_image_value = max_depth_range;
       options.colormap = colormap;
+
       const cv::Mat image =
         cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image;
 

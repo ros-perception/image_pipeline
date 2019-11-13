@@ -367,15 +367,14 @@ public:
     left_received_(0), right_received_(0), disp_received_(0), all_received_(0)
   {
     // Read local parameters
-    bool autosize;
-    autosize = this->declare_parameter("autosize", true);
+    bool autosize = this->declare_parameter("autosize", true);
     
     std::string format_string;
     format_string = this->declare_parameter("filename_format", std::string("%s%04i.jpg"));
     filename_format_.parse(format_string);
 
     // Do GUI window setup
-    int flags = autosize ? cv::WND_PROP_AUTOSIZE : 0;
+    int flags = autosize ? (cv::WINDOW_AUTOSIZE | cv::WINDOW_KEEPRATIO | cv::WINDOW_GUI_EXPANDED) : 0;
     cv::namedWindow("left", flags);
     cv::namedWindow("right", flags);
     cv::namedWindow("disparity", flags);

@@ -39,7 +39,6 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "image_view/disparity_view_node.hpp"
-#include "image_view/window_thread.hpp"
 
 #ifdef HAVE_GTK
 

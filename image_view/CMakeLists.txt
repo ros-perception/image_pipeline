@@ -81,7 +81,6 @@ include_directories(${GTK2_INCLUDE_DIRS})
 add_library(image_view_nodes SHARED
   src/image_view_node.cpp
   src/disparity_view_node.cpp
-  src/window_thread.cpp
 )
 ament_target_dependencies(image_view_nodes
   rclcpp
