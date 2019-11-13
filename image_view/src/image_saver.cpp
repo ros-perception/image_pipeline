@@ -201,7 +201,7 @@ public:
     return true;
   }
 
-  void callbackWithoutCameraInfo(const sensor_msgs::msg::Image::ConstSharedPtr& image_msg)
+  void callbackWithoutCameraInfo(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg)
   {
     if (is_first_image_) {
       is_first_image_ = false;

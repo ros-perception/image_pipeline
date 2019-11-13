@@ -415,27 +415,28 @@ public:
     // Synchronize input topics. Optionally do approximate synchronization.
     queue_size_ = this->declare_parameter("queue_size", 5);
     bool approx = this->declare_parameter("approximate_sync", false);
-    if (approx)
-    {
+    if (approx) {
       approximate_sync_.reset(new ApproximateSync(
         ApproximatePolicy(queue_size_), left_sub_, right_sub_, disparity_sub_));
       approximate_sync_->registerCallback(std::bind(
         &StereoViewNode::imageCb, this, _1, _2, _3));
-    }
-    else
-    {
+    } else {
       exact_sync_.reset( new ExactSync(ExactPolicy(queue_size_),
                                        left_sub_, right_sub_, disparity_sub_) );
       exact_sync_->registerCallback(std::bind(
         &StereoViewNode::imageCb, this, _1, _2, _3));
     }
 
-    if (rclcpp::expand_topic_or_service_name("stereo", this->get_name(), this->get_namespace()) == "stereo") {
+    std::string stereo_topic = rclcpp::expand_topic_or_service_name("stereo", this->get_name(), this->get_namespace());
+    std::string image_topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
+    auto topics = this->get_topic_names_and_types();
+
+    if (topics.find(stereo_topic) != topics.end()) {
       RCLCPP_WARN(
         this->get_logger(), "'stereo' has not been remapped! Example command-line usage:\n"
         "\t$ rosrun image_view stereo_view stereo:=narrow_stereo image:=image_color");
     }
-    if (rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace()) == "/image_raw") {
+    if (topics.find(image_topic) != topics.end()) {
       RCLCPP_WARN(
         this->get_logger(), "There is a delay between when the camera drivers publish the raw images and "
         "when stereo_image_proc publishes the computed point cloud. stereo_view "
