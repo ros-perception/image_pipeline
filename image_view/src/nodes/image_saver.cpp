@@ -39,6 +39,7 @@
 #include <camera_calibration_parsers/parse.h>
 #include <boost/format.hpp>
 #include <thread>
+#include <mutex>
 
 #include <std_srvs/Empty.h>
 #include <std_srvs/Trigger.h>
