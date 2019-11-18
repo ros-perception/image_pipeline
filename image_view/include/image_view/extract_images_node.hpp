@@ -32,21 +32,41 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+#ifndef IMAGE_VIEW__EXTRACT_IMAGES_NODE_HPP_
+#define IMAGE_VIEW__EXTRACT_IMAGES_NODE_HPP_
+
 #include <rclcpp/rclcpp.hpp>
+#include <image_transport/image_transport.h>
+#include <sensor_msgs/msg/image.hpp>
 
-#include <image_view/extract_images_node.hpp>
+#include <boost/format.hpp>
 
-int main(int argc, char ** argv)
+#include <mutex>
+#include <string>
+
+namespace image_view
 {
-  using image_view::ExtractImagesNode;
 
-  rclcpp::init(argc, argv);
+class ExtractImagesNode
+  : public rclcpp::Node
+{
+private:
+  image_transport::Subscriber sub_;
 
-  rclcpp::NodeOptions options;
-  options.append_parameter_override("transport", (argc > 1) ? argv[1] : "raw");
-  auto ein = std::make_shared<ExtractImagesNode>(options);
+  sensor_msgs::msg::Image::ConstSharedPtr last_msg_;
+  std::mutex image_mutex_;
 
-  rclcpp::spin(ein);
+  std::string window_name_;
+  boost::format filename_format_;
+  int count_;
+  rclcpp::Time _time;
+  double sec_per_frame_;
 
-  return 0;
-}
+public:
+  ExtractImagesNode(const rclcpp::NodeOptions & options);
+  void image_cb(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
+};
+
+}  // namespace image_view
+
+#endif  // IMAGE_VIEW__EXTRACT_IMAGES_NODE_HPP_

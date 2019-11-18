@@ -29,18 +29,6 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
-# Extra tools
-add_executable(extract_images
-  src/extract_images.cpp)
-ament_target_dependencies(extract_images
-  rclcpp
-  cv_bridge
-  image_transport
-)
-target_link_libraries(extract_images
-  ${OpenCV_LIBRARIES}
-)
-
 add_executable(image_saver
   src/image_saver.cpp)
 ament_target_dependencies(image_saver
@@ -65,10 +53,6 @@ target_link_libraries(video_recorder
   ${OpenCV_LIBRARIES}
 )
 
-install(TARGETS extract_images image_saver video_recorder
-  DESTINATION lib/${PROJECT_NAME}
-)
-
 # Deal with the GUI's
 if(ANDROID)
   return()
@@ -79,8 +63,9 @@ add_definitions(-DHAVE_GTK)
 include_directories(${GTK2_INCLUDE_DIRS})
 
 add_library(image_view_nodes SHARED
-  src/image_view_node.cpp
   src/disparity_view_node.cpp
+  src/extract_images_node.cpp
+  src/image_view_node.cpp
 )
 ament_target_dependencies(image_view_nodes
   rclcpp
@@ -99,38 +84,19 @@ target_compile_definitions(image_view_nodes
   PRIVATE "COMPOSITION_BUILDING_DLL"
 )
 rclcpp_components_register_nodes(image_view_nodes
-  "image_view::ImageViewNode"
+  "image_view::DisparityViewNode"
 )
 rclcpp_components_register_nodes(image_view_nodes
-  "image_view::DisparityViewNode"
+  "image_view::ExtractImagesNode"
+)
+rclcpp_components_register_nodes(image_view_nodes
+  "image_view::ImageViewNode"
 )
 ament_export_include_directories(include)
 ament_export_interfaces(export_image_view_nodes)
 ament_export_libraries(image_view_nodes)
-install(DIRECTORY include/
-  DESTINATION include
-)
-install(TARGETS image_view_nodes
-  EXPORT export_image_view_nodes
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
 
 # Image viewers
-add_executable(image_view
-  src/image_view.cpp
-)
-ament_target_dependencies(image_view
-  rclcpp
-)
-target_link_libraries(image_view
-  image_view_nodes
-)
-add_dependencies(image_view
-  image_view_nodes
-)
-
 add_executable(disparity_view
   src/disparity_view.cpp
 )
@@ -141,6 +107,19 @@ target_link_libraries(disparity_view
   image_view_nodes
 )
 add_dependencies(disparity_view
+  image_view_nodes
+)
+
+add_executable(image_view
+  src/image_view.cpp
+)
+ament_target_dependencies(image_view
+  rclcpp
+)
+target_link_libraries(image_view
+  image_view_nodes
+)
+add_dependencies(image_view
   image_view_nodes
 )
 
@@ -160,8 +139,39 @@ target_link_libraries(stereo_view
   ${OpenCV_LIBRARIES}
 )
 
-install(TARGETS disparity_view image_view stereo_view
+# Other Tools
+add_executable(extract_images
+  src/extract_images.cpp)
+ament_target_dependencies(extract_images
+  rclcpp
+)
+target_link_libraries(extract_images
+  image_view_nodes
+)
+add_dependencies(extract_images
+  image_view_nodes
+)
+
+install(
+  TARGETS
+    disparity_view
+    extract_images
+    image_saver
+    image_view
+    stereo_view
+    video_recorder
   DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+install(TARGETS image_view_nodes
+  EXPORT export_image_view_nodes
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 # Python programs
