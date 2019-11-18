@@ -73,7 +73,7 @@ public:
 
   void subscribe()
   {
-    boost::mutex::scoped_lock lock(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
 
     if (subscribing_) return;
     subscribing_ = true;
@@ -94,7 +94,7 @@ public:
 
   void unsubscribe()
   {
-    boost::mutex::scoped_lock lock(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
 
     if (!subscribing_) return;
     subscribing_ = false;
@@ -271,13 +271,13 @@ private:
 
 private:
   boost::format format_;
-  boost::mutex mutex_;
   ros::NodeHandle nh_;
   ros::ServiceServer srv_save_, srv_start_, srv_end_;
   ros::Timer save_timeout_timer_;
   image_transport::ImageTransport it_;
   image_transport::CameraSubscriber sub_camera_;
   image_transport::Subscriber sub_image_;
+  std::mutex mutex_;
   std::string topic_;
   std::string encoding_;
   size_t count_;
