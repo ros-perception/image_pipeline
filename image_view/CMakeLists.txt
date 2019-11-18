@@ -29,17 +29,6 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
-add_executable(video_recorder
-  src/video_recorder.cpp)
-ament_target_dependencies(video_recorder
-  rclcpp
-  cv_bridge
-  image_transport
-)
-target_link_libraries(video_recorder
-  ${OpenCV_LIBRARIES}
-)
-
 # Deal with the GUI's
 if(ANDROID)
   return()
@@ -55,6 +44,7 @@ add_library(image_view_nodes SHARED
   src/image_view_node.cpp
   src/image_saver_node.cpp
   src/stereo_view_node.cpp
+  src/video_recorder_node.cpp
 )
 ament_target_dependencies(image_view_nodes
   camera_calibration_parsers
@@ -89,6 +79,9 @@ rclcpp_components_register_nodes(image_view_nodes
 )
 rclcpp_components_register_nodes(image_view_nodes
   "image_view::StereoViewNode"
+)
+rclcpp_components_register_nodes(image_view_nodes
+  "image_view::VideoRecorderNode"
 )
 ament_export_include_directories(include)
 ament_export_interfaces(export_image_view_nodes)
@@ -158,6 +151,19 @@ target_link_libraries(image_saver
   image_view_nodes
 )
 add_dependencies(image_saver
+  image_view_nodes
+)
+
+add_executable(video_recorder
+  src/video_recorder.cpp
+)
+ament_target_dependencies(video_recorder
+  rclcpp
+)
+target_link_libraries(video_recorder
+  image_view_nodes
+)
+add_dependencies(video_recorder
   image_view_nodes
 )
 

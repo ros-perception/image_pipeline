@@ -17,24 +17,43 @@
 *
 *****************************************************************************/
 
+#ifndef IMAGE_VIEW__VIDEO_RECORDER_NODE_HPP_
+#define IMAGE_VIEW__VIDEO_RECORDER_NODE_HPP_
+
 #include <rclcpp/rclcpp.hpp>
+#include <image_transport/image_transport.h>
+
+#include <opencv2/highgui/highgui.hpp>
 
 #include <memory>
+#include <string>
 
-#include "image_view/video_recorder_node.hpp"
-
-int main(int argc, char** argv)
+namespace image_view
 {
-  using image_view::VideoRecorderNode;
 
-  rclcpp::init(argc, argv);
+class VideoRecorderNode
+  : public rclcpp::Node
+{
+  cv::VideoWriter outputVideo;
 
-  rclcpp::NodeOptions options;
-  auto vr_node = std::make_shared<VideoRecorderNode>(options);
+  int g_count = 0;
+  rclcpp::Time g_last_wrote_time = rclcpp::Time(0);
+  std::string encoding;
+  std::string codec;
+  int fps;
+  double min_depth_range;
+  double max_depth_range;
+  bool use_dynamic_range;
+  int colormap;
+  image_transport::Subscriber sub_image;
 
-  rclcpp::spin(vr_node);
+  void callback(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg);
 
-  std::cout << "\nVideo saved as " << vr_node->filename << std::endl;
+public:
+  VideoRecorderNode(const rclcpp::NodeOptions & options);
+  std::string filename;
+};
 
-  return 0;
-}
+}  // namespace image_view
+
+#endif  // IMAGE_VIEW__VIDEO_RECORDER_NODE_HPP_
