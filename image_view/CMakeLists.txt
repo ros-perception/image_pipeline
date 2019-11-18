@@ -29,19 +29,6 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
-add_executable(image_saver
-  src/image_saver.cpp)
-ament_target_dependencies(image_saver
-  rclcpp
-  camera_calibration_parsers
-  cv_bridge
-  image_transport
-  std_srvs
-)
-target_link_libraries(image_saver
-  ${OpenCV_LIBRARIES}
-)
-
 add_executable(video_recorder
   src/video_recorder.cpp)
 ament_target_dependencies(video_recorder
@@ -66,12 +53,16 @@ add_library(image_view_nodes SHARED
   src/disparity_view_node.cpp
   src/extract_images_node.cpp
   src/image_view_node.cpp
+  src/image_saver_node.cpp
 )
 ament_target_dependencies(image_view_nodes
-  rclcpp
-  rclcpp_components
+  camera_calibration_parsers
   cv_bridge
   image_transport
+  rclcpp
+  rclcpp_components
+  sensor_msgs
+  std_srvs
   stereo_msgs
 )
 target_link_libraries(image_view_nodes
@@ -91,6 +82,9 @@ rclcpp_components_register_nodes(image_view_nodes
 )
 rclcpp_components_register_nodes(image_view_nodes
   "image_view::ImageViewNode"
+)
+rclcpp_components_register_nodes(image_view_nodes
+  "image_view::ImageSaverNode"
 )
 ament_export_include_directories(include)
 ament_export_interfaces(export_image_view_nodes)
@@ -141,7 +135,8 @@ target_link_libraries(stereo_view
 
 # Other Tools
 add_executable(extract_images
-  src/extract_images.cpp)
+  src/extract_images.cpp
+)
 ament_target_dependencies(extract_images
   rclcpp
 )
@@ -149,6 +144,19 @@ target_link_libraries(extract_images
   image_view_nodes
 )
 add_dependencies(extract_images
+  image_view_nodes
+)
+
+add_executable(image_saver
+  src/image_saver.cpp
+)
+ament_target_dependencies(image_saver
+  rclcpp
+)
+target_link_libraries(image_saver
+  image_view_nodes
+)
+add_dependencies(image_saver
   image_view_nodes
 )
 
