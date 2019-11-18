@@ -119,11 +119,13 @@ public:
   bool callbackSave(std_srvs::Empty::Request &req,
                     std_srvs::Empty::Response &res)
   {
+    std::unique_lock<std::mutex> lock(mutex_);
     if (subscribing_)
     {
       ROS_ERROR("Images are already being saved.");
       return false;
     }
+    lock.unlock();
 
     const size_t count = count_;
     should_unsubscribe_ = true;
