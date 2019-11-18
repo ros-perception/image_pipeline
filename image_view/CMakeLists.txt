@@ -1,5 +1,8 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1.3)
 project(image_view)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(catkin REQUIRED COMPONENTS camera_calibration_parsers cv_bridge dynamic_reconfigure image_transport message_filters message_generation nodelet rosconsole roscpp std_srvs stereo_msgs)
 generate_dynamic_reconfigure_options(cfg/ImageView.cfg)
