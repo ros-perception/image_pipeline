@@ -34,6 +34,8 @@
 
 #include <rclcpp/rclcpp.hpp>
 
+#include <memory>
+
 #include <image_view/extract_images_node.hpp>
 
 int main(int argc, char ** argv)

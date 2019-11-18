@@ -54,6 +54,7 @@ add_library(image_view_nodes SHARED
   src/extract_images_node.cpp
   src/image_view_node.cpp
   src/image_saver_node.cpp
+  src/stereo_view_node.cpp
 )
 ament_target_dependencies(image_view_nodes
   camera_calibration_parsers
@@ -85,6 +86,9 @@ rclcpp_components_register_nodes(image_view_nodes
 )
 rclcpp_components_register_nodes(image_view_nodes
   "image_view::ImageSaverNode"
+)
+rclcpp_components_register_nodes(image_view_nodes
+  "image_view::StereoViewNode"
 )
 ament_export_include_directories(include)
 ament_export_interfaces(export_image_view_nodes)
@@ -122,15 +126,12 @@ add_executable(stereo_view
 )
 ament_target_dependencies(stereo_view
   rclcpp
-  cv_bridge
-  image_transport
-  stereo_msgs
 )
 target_link_libraries(stereo_view
-  ${Boost_LIBRARIES}
-  ${GTK_LIBRARIES}
-  ${GTK2_LIBRARIES}
-  ${OpenCV_LIBRARIES}
+  image_view_nodes
+)
+add_dependencies(stereo_view
+  image_view_nodes
 )
 
 # Other Tools
