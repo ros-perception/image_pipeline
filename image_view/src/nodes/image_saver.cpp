@@ -38,7 +38,7 @@
 #include <image_transport/image_transport.h>
 #include <camera_calibration_parsers/parse.h>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
+#include <thread>
 
 #include <std_srvs/Empty.h>
 #include <std_srvs/Trigger.h>
