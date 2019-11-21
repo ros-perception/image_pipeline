@@ -91,24 +91,14 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
   format_string = this->declare_parameter("filename_format", std::string("left%04i.%s"));
   encoding = this->declare_parameter("encoding", std::string("bgr8"));
   save_all_image = this->declare_parameter("save_all_image", true);
-  request_start_end = this->declare_parameter("request_start_end", false);
   g_format.parse(format_string);
-
-  if (request_start_end && !save_all_image) {
-    RCLCPP_WARN(
-      this->get_logger(), "'request_start_end' is true, so overwriting 'save_all_image' as true");
-  }
 
   save_srv_ = this->create_service<std_srvs::srv::Empty>(
     "save", std::bind(&ImageSaverNode::service, this, _1, _2, _3));
-
-  // FIXME(unkown): This does not make services appear
-  // if (request_start_end) {
   start_srv_ = this->create_service<std_srvs::srv::Trigger>(
       "start", std::bind(&ImageSaverNode::callbackStartSave, this, _1, _2, _3));
   end_srv_ = this->create_service<std_srvs::srv::Trigger>(
       "end", std::bind(&ImageSaverNode::callbackEndSave, this, _1, _2, _3));
-  // }
 }
 
 bool ImageSaverNode::saveImage(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg, std::string & filename)
