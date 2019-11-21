@@ -52,18 +52,6 @@
 
 #include "image_view/image_view_node.hpp"
 
-/*
-TODO(jwhitleyastuff): Add ROS2 dynamic reconfigure stuff
-void reconfigureCb(image_view::ImageViewConfig &config, uint32_t level)
-{
-  std::lock_guard<std::mutex> lock(g_image_mutex);
-  g_do_dynamic_scaling = config.do_dynamic_scaling;
-  g_colormap = config.colormap;
-  g_min_image_value = config.min_image_value;
-  g_max_image_value = config.max_image_value;
-}
-*/
-
 int main(int argc, char **argv)
 {
   using image_view::ImageViewNode;

@@ -27,6 +27,7 @@
 #include <mutex>
 #include <thread>
 #include <string>
+#include <vector>
 
 namespace image_view
 {
@@ -73,6 +74,8 @@ private:
   static void mouseCb(int event, int x, int y, int flags, void * param);
   static void guiCb();
   void windowThread();
+  rcl_interfaces::msg::SetParametersResult paramCallback(const std::vector<rclcpp::Parameter> &);
+  std::mutex param_mutex_;
 };
 
 }  // namespace image_view

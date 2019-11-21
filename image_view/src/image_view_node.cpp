@@ -56,6 +56,7 @@
 #include <boost/format.hpp>
 
 #include <chrono>
+#include <memory>
 #include <mutex>
 #include <thread>
 
@@ -123,7 +124,7 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
   std::string format_string = this->declare_parameter("filename_format", std::string("frame%04i.jpg"));
   filename_format_.parse(format_string);
 
-  colormap_ = this->declare_parameter("colormap", 0);
+  colormap_ = this->declare_parameter("colormap", -1);
   min_image_value_ = this->declare_parameter("min_image_value", 0);
   max_image_value_ = this->declare_parameter("max_image_value", 0);
 
@@ -135,6 +136,8 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
 
     window_thread_ = std::thread(&ImageViewNode::windowThread, this);
   }
+
+  this->set_on_parameters_set_callback(std::bind(&ImageViewNode::paramCallback, this, std::placeholders::_1));
 }
 
 ImageViewNode::~ImageViewNode()
@@ -153,23 +156,27 @@ void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
   try {
     cv_bridge::CvtColorForDisplayOptions options;
     options.do_dynamic_scaling = do_dynamic_scaling;
-    options.colormap = colormap_;
 
-    // Set min/max value for scaling to visualize depth/float image.
-    if (min_image_value_ == max_image_value_) {
-      // Not specified by rosparam, then set default value.
-      // Because of current sensor limitation, we use 10m as default of max range of depth
-      // with consistency to the configuration in rqt_image_view.
-      options.min_image_value = 0;
+    {
+      std::lock_guard<std::mutex> lock(param_mutex_);
+      options.colormap = colormap_;
 
-      if (msg->encoding == "32FC1") {
-        options.max_image_value = 10;  // 10 [m]
-      } else if (msg->encoding == "16UC1") {
-        options.max_image_value = 10 * 1000;  // 10 * 1000 [mm]
+      // Set min/max value for scaling to visualize depth/float image.
+      if (min_image_value_ == max_image_value_) {
+        // Not specified by rosparam, then set default value.
+        // Because of current sensor limitation, we use 10m as default of max range of depth
+        // with consistency to the configuration in rqt_image_view.
+        options.min_image_value = 0;
+
+        if (msg->encoding == "32FC1") {
+          options.max_image_value = 10;  // 10 [m]
+        } else if (msg->encoding == "16UC1") {
+          options.max_image_value = 10 * 1000;  // 10 * 1000 [mm]
+        }
+      } else {
+        options.min_image_value = min_image_value_;
+        options.max_image_value = max_image_value_;
       }
-    } else {
-      options.min_image_value = min_image_value_;
-      options.max_image_value = max_image_value_;
     }
 
     queued_image_.set(
@@ -244,6 +251,31 @@ void ImageViewNode::windowThread()
   }
 
   cv::destroyWindow(window_name_);
+}
+
+rcl_interfaces::msg::SetParametersResult
+ImageViewNode::paramCallback(const std::vector<rclcpp::Parameter> & parameters)
+{
+  auto result = rcl_interfaces::msg::SetParametersResult();
+  result.successful = true;
+
+  for (const auto & parameter : parameters) {
+    if (parameter.get_name() == "colormap") {
+      std::lock_guard<std::mutex> lock(param_mutex_);
+      colormap_ = parameter.as_int();
+      break;
+    } else if (parameter.get_name() == "min_image_value") {
+      std::lock_guard<std::mutex> lock(param_mutex_);
+      min_image_value_ = parameter.as_int();
+      break;
+    } else if (parameter.get_name() == "max_image_value") {
+      std::lock_guard<std::mutex> lock(param_mutex_);
+      max_image_value_ = parameter.as_int();
+      break;
+    }
+  }
+
+  return result;
 }
 
 } // namespace image_view
