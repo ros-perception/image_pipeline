@@ -29,6 +29,15 @@ namespace image_view
 class DisparityViewNode
   : public rclcpp::Node
 {
+public:
+  explicit DisparityViewNode(const rclcpp::NodeOptions & options);
+  explicit DisparityViewNode(const DisparityViewNode &) = default;
+  explicit DisparityViewNode(DisparityViewNode &&) = default;
+  DisparityViewNode & operator=(const DisparityViewNode &) = default;
+  DisparityViewNode & operator=(DisparityViewNode &&) = default;
+  ~DisparityViewNode();
+
+private:
   // colormap for disparities, RGB order
   static unsigned char colormap[];
 
@@ -38,10 +47,6 @@ class DisparityViewNode
   bool initialized;
 
   void imageCb(const stereo_msgs::msg::DisparityImage::SharedPtr msg);
-
-public:
-  explicit DisparityViewNode(const rclcpp::NodeOptions & options);
-  ~DisparityViewNode();
 };
 
 }  // namespace image_view

@@ -64,6 +64,9 @@ namespace image_view
 class ExtractImagesNode
   : public rclcpp::Node
 {
+public:
+  ExtractImagesNode(const rclcpp::NodeOptions & options);
+
 private:
   image_transport::Subscriber sub_;
 
@@ -76,8 +79,6 @@ private:
   rclcpp::Time _time;
   double sec_per_frame_;
 
-public:
-  ExtractImagesNode(const rclcpp::NodeOptions & options);
   void image_cb(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 };
 

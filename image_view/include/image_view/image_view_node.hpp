@@ -46,6 +46,15 @@ public:
 class ImageViewNode
   : public rclcpp::Node
 {
+public:
+  explicit ImageViewNode(const rclcpp::NodeOptions & options);
+  explicit ImageViewNode(const ImageViewNode &) = default;
+  explicit ImageViewNode(ImageViewNode &&) = default;
+  ImageViewNode & operator=(const ImageViewNode &) = default;
+  ImageViewNode & operator=(ImageViewNode &&) = default;
+  ~ImageViewNode();
+
+private:
   ThreadSafeImage queued_image_, shown_image_;
   bool autosize_;
   int window_height_, window_width_;
@@ -64,10 +73,6 @@ class ImageViewNode
   static void mouseCb(int event, int x, int y, int flags, void * param);
   static void guiCb();
   void windowThread();
-  
-public:
-  explicit ImageViewNode(const rclcpp::NodeOptions & options);
-  ~ImageViewNode();
 };
 
 }  // namespace image_view

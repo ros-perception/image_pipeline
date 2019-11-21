@@ -29,10 +29,19 @@ namespace image_view
 class VideoRecorderNode
   : public rclcpp::Node
 {
+public:
+  explicit VideoRecorderNode(const rclcpp::NodeOptions & options);
+  explicit VideoRecorderNode(const VideoRecorderNode &) = default;
+  explicit VideoRecorderNode(VideoRecorderNode &&) = default;
+  VideoRecorderNode & operator=(const VideoRecorderNode &) = default;
+  VideoRecorderNode & operator=(VideoRecorderNode &&) = default;
+  ~VideoRecorderNode();
+
+private:
   cv::VideoWriter outputVideo;
 
-  int g_count = 0;
-  rclcpp::Time g_last_wrote_time = rclcpp::Time(0);
+  int g_count;
+  rclcpp::Time g_last_wrote_time;
   std::string encoding;
   std::string codec;
   int fps;
@@ -41,12 +50,10 @@ class VideoRecorderNode
   bool use_dynamic_range;
   int colormap;
   image_transport::Subscriber sub_image;
+  bool recording_started;
+  std::string filename;
 
   void callback(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg);
-
-public:
-  VideoRecorderNode(const rclcpp::NodeOptions & options);
-  std::string filename;
 };
 
 }  // namespace image_view

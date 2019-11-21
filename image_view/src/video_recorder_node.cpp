@@ -29,6 +29,53 @@
 namespace image_view
 {
 
+VideoRecorderNode::VideoRecorderNode(const rclcpp::NodeOptions & options)
+  : rclcpp::Node("video_recorder_node", options),
+    g_count(0),
+    g_last_wrote_time(rclcpp::Time(0)),
+    recording_started(false)
+{
+  bool stamped_filename;
+
+  filename = this->declare_parameter("filename", std::string("output.avi"));
+  stamped_filename = this->declare_parameter("stamped_filename", false);
+  fps = this->declare_parameter("fps", 15);
+  codec = this->declare_parameter("codec", std::string("MJPG"));
+  encoding = this->declare_parameter("encoding", std::string("bgr8"));
+  // cv_bridge::CvtColorForDisplayOptions
+  min_depth_range = this->declare_parameter("min_depth_range", 0.0);
+  max_depth_range = this->declare_parameter("max_depth_range", 0.0);
+  use_dynamic_range = this->declare_parameter("use_dynamic_depth_range", false);
+  colormap = this->declare_parameter("colormap", -1);
+
+  if (stamped_filename) {
+    std::size_t found = filename.find_last_of("/\\");
+    std::string path = filename.substr(0, found + 1);
+    std::string basename = filename.substr(found + 1);
+    std::stringstream ss;
+    ss << this->now().nanoseconds() << basename;
+    filename = path + ss.str();
+    RCLCPP_INFO(this->get_logger(), "Video recording to %s", filename.c_str());
+  }
+
+  if (codec.size() != 4) {
+    RCLCPP_ERROR(this->get_logger(), "The video codec must be a FOURCC identifier (4 chars)");
+    rclcpp::shutdown();
+  }
+
+  auto topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
+  sub_image = image_transport::create_subscription(this, topic, std::bind(&VideoRecorderNode::callback, this, std::placeholders::_1), "raw");
+
+  RCLCPP_INFO(this->get_logger(), "Waiting for topic %s...", topic.c_str());
+}
+
+VideoRecorderNode::~VideoRecorderNode()
+{
+  if (recording_started) {
+    std::cout << "\nVideo saved as: " << filename << std::endl;
+  }
+}
+
 void VideoRecorderNode::callback(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg)
 {
   if (!outputVideo.isOpened()) {
@@ -51,6 +98,8 @@ void VideoRecorderNode::callback(const sensor_msgs::msg::Image::ConstSharedPtr &
         "Could not create the output video! Check filename and/or support for codec.");
       rclcpp::shutdown();
     }
+
+    recording_started = true;
 
     RCLCPP_INFO(
       this->get_logger(),
@@ -88,43 +137,6 @@ void VideoRecorderNode::callback(const sensor_msgs::msg::Image::ConstSharedPtr &
       image_msg->encoding.c_str(), encoding.c_str());
     return;
   }
-}
-
-VideoRecorderNode::VideoRecorderNode(const rclcpp::NodeOptions & options)
-  : rclcpp::Node("video_recorder_node", options)
-{
-  bool stamped_filename;
-
-  filename = this->declare_parameter("filename", std::string("output.avi"));
-  stamped_filename = this->declare_parameter("stamped_filename", false);
-  fps = this->declare_parameter("fps", 15);
-  codec = this->declare_parameter("codec", std::string("MJPG"));
-  encoding = this->declare_parameter("encoding", std::string("bgr8"));
-  // cv_bridge::CvtColorForDisplayOptions
-  min_depth_range = this->declare_parameter("min_depth_range", 0.0);
-  max_depth_range = this->declare_parameter("max_depth_range", 0.0);
-  use_dynamic_range = this->declare_parameter("use_dynamic_depth_range", false);
-  colormap = this->declare_parameter("colormap", -1);
-
-  if (stamped_filename) {
-    std::size_t found = filename.find_last_of("/\\");
-    std::string path = filename.substr(0, found + 1);
-    std::string basename = filename.substr(found + 1);
-    std::stringstream ss;
-    ss << this->now().nanoseconds() << basename;
-    filename = path + ss.str();
-    RCLCPP_INFO(this->get_logger(), "Video recording to %s", filename.c_str());
-  }
-
-  if (codec.size() != 4) {
-    RCLCPP_ERROR(this->get_logger(), "The video codec must be a FOURCC identifier (4 chars)");
-    rclcpp::shutdown();
-  }
-
-  auto topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
-  sub_image = image_transport::create_subscription(this, topic, std::bind(&VideoRecorderNode::callback, this, std::placeholders::_1), "raw");
-
-  RCLCPP_INFO(this->get_logger(), "Waiting for topic %s...", topic.c_str());
 }
 
 }  // namespace image_view

@@ -62,6 +62,10 @@ namespace image_view
 class ImageSaverNode
   : public rclcpp::Node
 {
+public:
+  ImageSaverNode(const rclcpp::NodeOptions & options);
+
+private:
   boost::format g_format;
   bool save_all_image, save_image_service;
   std::string encoding;
@@ -94,9 +98,6 @@ class ImageSaverNode
   void callbackWithCameraInfo(
     const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
     const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info);
-
-public:
-  ImageSaverNode(const rclcpp::NodeOptions & options);
 };
 
 }  // namespace image_view

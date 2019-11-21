@@ -29,7 +29,5 @@ int main(int argc, char** argv)
 
   rclcpp::spin(vr_node);
 
-  std::cout << "\nVideo saved as " << vr_node->filename << std::endl;
-
   return 0;
 }

@@ -69,6 +69,48 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;
 
+ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
+  : rclcpp::Node("image_saver_node", options),
+    is_first_image_(true), has_camera_info_(false), count_(0)
+{
+  auto topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
+
+  // Useful when CameraInfo is being published
+  cam_sub_ = image_transport::create_camera_subscription(
+    this, topic, std::bind(
+      &ImageSaverNode::callbackWithCameraInfo, this, std::placeholders::_1, std::placeholders::_2),
+    "raw");
+
+  // Useful when CameraInfo is not being published
+  image_sub_ = image_transport::create_subscription(
+    this, topic, std::bind(
+      &ImageSaverNode::callbackWithoutCameraInfo, this, std::placeholders::_1),
+    "raw");
+
+  std::string format_string;
+  format_string = this->declare_parameter("filename_format", std::string("left%04i.%s"));
+  encoding = this->declare_parameter("encoding", std::string("bgr8"));
+  save_all_image = this->declare_parameter("save_all_image", true);
+  request_start_end = this->declare_parameter("request_start_end", false);
+  g_format.parse(format_string);
+
+  if (request_start_end && !save_all_image) {
+    RCLCPP_WARN(
+      this->get_logger(), "'request_start_end' is true, so overwriting 'save_all_image' as true");
+  }
+
+  save_srv_ = this->create_service<std_srvs::srv::Empty>(
+    "save", std::bind(&ImageSaverNode::service, this, _1, _2, _3));
+
+  // FIXME(unkown): This does not make services appear
+  // if (request_start_end) {
+  start_srv_ = this->create_service<std_srvs::srv::Trigger>(
+      "start", std::bind(&ImageSaverNode::callbackStartSave, this, _1, _2, _3));
+  end_srv_ = this->create_service<std_srvs::srv::Trigger>(
+      "end", std::bind(&ImageSaverNode::callbackEndSave, this, _1, _2, _3));
+  // }
+}
+
 bool ImageSaverNode::saveImage(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg, std::string & filename)
 {
   cv::Mat image;
@@ -222,48 +264,6 @@ void ImageSaverNode::callbackWithCameraInfo(
   }
 
   count_++;
-}
-
-ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
-  : rclcpp::Node("image_saver_node", options),
-    is_first_image_(true), has_camera_info_(false), count_(0)
-{
-  auto topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
-
-  // Useful when CameraInfo is being published
-  cam_sub_ = image_transport::create_camera_subscription(
-    this, topic, std::bind(
-      &ImageSaverNode::callbackWithCameraInfo, this, std::placeholders::_1, std::placeholders::_2),
-    "raw");
-
-  // Useful when CameraInfo is not being published
-  image_sub_ = image_transport::create_subscription(
-    this, topic, std::bind(
-      &ImageSaverNode::callbackWithoutCameraInfo, this, std::placeholders::_1),
-    "raw");
-
-  std::string format_string;
-  format_string = this->declare_parameter("filename_format", std::string("left%04i.%s"));
-  encoding = this->declare_parameter("encoding", std::string("bgr8"));
-  save_all_image = this->declare_parameter("save_all_image", true);
-  request_start_end = this->declare_parameter("request_start_end", false);
-  g_format.parse(format_string);
-
-  if (request_start_end && !save_all_image) {
-    RCLCPP_WARN(
-      this->get_logger(), "'request_start_end' is true, so overwriting 'save_all_image' as true");
-  }
-
-  save_srv_ = this->create_service<std_srvs::srv::Empty>(
-    "save", std::bind(&ImageSaverNode::service, this, _1, _2, _3));
-
-  // FIXME(unkown): This does not make services appear
-  // if (request_start_end) {
-  start_srv_ = this->create_service<std_srvs::srv::Trigger>(
-      "start", std::bind(&ImageSaverNode::callbackStartSave, this, _1, _2, _3));
-  end_srv_ = this->create_service<std_srvs::srv::Trigger>(
-      "end", std::bind(&ImageSaverNode::callbackEndSave, this, _1, _2, _3));
-  // }
 }
 
 }  // namespace image_view

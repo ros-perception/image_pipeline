@@ -74,6 +74,14 @@ using message_filters::sync_policies::ApproximateTime;
 class StereoViewNode
   : public rclcpp::Node
 {
+public:
+  explicit StereoViewNode(const rclcpp::NodeOptions & options);
+  explicit StereoViewNode(const StereoViewNode &) = default;
+  explicit StereoViewNode(StereoViewNode &&) = default;
+  StereoViewNode & operator=(const StereoViewNode &) = default;
+  StereoViewNode & operator=(StereoViewNode &&) = default;
+  ~StereoViewNode();
+
 private:
   using ExactPolicy = ExactTime<Image, Image, DisparityImage>;
   using ApproximatePolicy = ApproximateTime<Image, Image, DisparityImage>;
@@ -165,10 +173,6 @@ private:
   {
     ++(*value);
   }
-
-public:
-  StereoViewNode(const rclcpp::NodeOptions & options);
-  ~StereoViewNode();
 };
 
 }
