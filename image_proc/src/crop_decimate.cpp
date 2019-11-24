@@ -47,9 +47,9 @@ void debayer2x2toBGR(
 {
   typedef cv::Vec<T, 3> DstPixel;  // 8- or 16-bit BGR
   #if CV_MAJOR_VERSION >= 3 && CV_MINOR_VERSION > 2
-      dst.create(src.rows / 2, src.cols / 2, cv::traits::Type<DstPixel>::value);
+  dst.create(src.rows / 2, src.cols / 2, cv::traits::Type<DstPixel>::value);
   #else
-      dst.create(src.rows / 2, src.cols / 2, cv::DataType<DstPixel>::type);
+  dst.create(src.rows / 2, src.cols / 2, cv::DataType<DstPixel>::type);
   #endif
 
   int src_row_step = src.step1();
