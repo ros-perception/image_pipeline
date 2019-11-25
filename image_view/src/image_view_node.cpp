@@ -129,11 +129,6 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
   max_image_value_ = this->declare_parameter("max_image_value", 0);
 
   if(g_gui) {
-    // Since cv::startWindowThread() triggers a crash in cv::waitKey()
-    // if OpenCV is compiled against GTK, we call cv::waitKey() from
-    // the ROS event loop periodically, instead.
-    gui_timer_ = this->create_wall_timer(std::chrono::milliseconds(100), &ImageViewNode::guiCb);
-
     window_thread_ = std::thread(&ImageViewNode::windowThread, this);
   }
 
@@ -192,12 +187,6 @@ void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
   if (pub_->get_subscription_count() > 0) {
     pub_->publish(*msg);
   }
-}
-
-void ImageViewNode::guiCb()
-{
-  // Process pending GUI events and return immediately
-  cv::waitKey(1);
 }
 
 void ImageViewNode::mouseCb(int event, int /* x */, int /* y */, int /* flags */, void * param)
