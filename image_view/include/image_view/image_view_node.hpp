@@ -72,7 +72,6 @@ private:
 
   void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
   static void mouseCb(int event, int x, int y, int flags, void * param);
-  static void guiCb();
   void windowThread();
   rcl_interfaces::msg::SetParametersResult paramCallback(const std::vector<rclcpp::Parameter> &);
   std::mutex param_mutex_;
