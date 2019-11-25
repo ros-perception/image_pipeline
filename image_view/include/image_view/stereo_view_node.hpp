@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -46,8 +46,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef IMAGE_VIEW__STEREO_VIEW_HPP_
-#define IMAGE_VIEW__STEREO_VIEW_HPP_
+#ifndef IMAGE_VIEW__STEREO_VIEW_NODE_HPP_
+#define IMAGE_VIEW__STEREO_VIEW_NODE_HPP_
 
 #include <opencv2/highgui/highgui.hpp>
 
@@ -106,7 +106,7 @@ private:
   int left_received_, right_received_, disp_received_, all_received_;
 
   // colormap for disparities, RGB
-  static constexpr unsigned char colormap[768] = 
+  static constexpr unsigned char colormap[768] =
   {
     150, 150, 150, 107, 0, 12, 106, 0, 18, 105, 0, 24, 103, 0, 30,
     102, 0, 36, 101, 0, 42, 99, 0, 48, 98, 0, 54, 97, 0, 60,
@@ -158,8 +158,8 @@ private:
     255, 120, 0, 255, 114, 0, 255, 108, 0, 255, 102, 0, 255, 96, 0,
     255, 90, 0, 255, 84, 0, 255, 78, 0, 255, 72, 0, 255, 66, 0,
     255, 60, 0, 255, 54, 0, 255, 48, 0, 255, 42, 0, 255, 36, 0,
-    255, 30, 0, 255, 24, 0, 255, 18, 0, 255, 12, 0, 255,  6, 0,
-    255,  0, 0,
+    255, 30, 0, 255, 24, 0, 255, 18, 0, 255, 12, 0, 255, 6, 0,
+    255, 0, 0,
   };
 
   void imageCb(
@@ -175,6 +175,6 @@ private:
   }
 };
 
-}
+}  // namespace image_view
 
-#endif  // IMAGE_VIEW__STEREO_VIEW_HPP_
+#endif  // IMAGE_VIEW__STEREO_VIEW_NODE_HPP_

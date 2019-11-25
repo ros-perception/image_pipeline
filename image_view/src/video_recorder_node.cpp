@@ -14,26 +14,28 @@
 
 #include "image_view/video_recorder_node.hpp"
 
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/videoio.hpp>
+
 #include <rclcpp/rclcpp.hpp>
 #include <camera_calibration_parsers/parse.h>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
+#include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/image_encodings.hpp>
-
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/videoio.hpp>
 
 #include <iostream>
 #include <memory>
+#include <string>
 
 namespace image_view
 {
 
 VideoRecorderNode::VideoRecorderNode(const rclcpp::NodeOptions & options)
-  : rclcpp::Node("video_recorder_node", options),
-    g_count(0),
-    g_last_wrote_time(rclcpp::Time(0)),
-    recording_started(false)
+: rclcpp::Node("video_recorder_node", options),
+  g_count(0),
+  g_last_wrote_time(rclcpp::Time(0)),
+  recording_started(false)
 {
   bool stamped_filename;
 
@@ -63,8 +65,10 @@ VideoRecorderNode::VideoRecorderNode(const rclcpp::NodeOptions & options)
     rclcpp::shutdown();
   }
 
-  auto topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
-  sub_image = image_transport::create_subscription(this, topic, std::bind(&VideoRecorderNode::callback, this, std::placeholders::_1), "raw");
+  auto topic = rclcpp::expand_topic_or_service_name(
+    "image", this->get_name(), this->get_namespace());
+  sub_image = image_transport::create_subscription(
+    this, topic, std::bind(&VideoRecorderNode::callback, this, std::placeholders::_1), "raw");
 
   RCLCPP_INFO(this->get_logger(), "Waiting for topic %s...", topic.c_str());
 }
@@ -82,12 +86,12 @@ void VideoRecorderNode::callback(const sensor_msgs::msg::Image::ConstSharedPtr &
     cv::Size size(image_msg->width, image_msg->height);
 
     outputVideo.open(
-      filename, 
+      filename,
       cv::VideoWriter::fourcc(
         codec.c_str()[0],
         codec.c_str()[1],
         codec.c_str()[2],
-        codec.c_str()[3]), 
+        codec.c_str()[3]),
       fps,
       size,
       true);
@@ -130,7 +134,7 @@ void VideoRecorderNode::callback(const sensor_msgs::msg::Image::ConstSharedPtr &
     } else {
       RCLCPP_WARN(this->get_logger(), "Frame skipped, no data!");
     }
-  } catch(cv_bridge::Exception) {
+  } catch (cv_bridge::Exception) {
     RCLCPP_ERROR(
       this->get_logger(),
       "Unable to convert %s image to %s",
@@ -141,5 +145,4 @@ void VideoRecorderNode::callback(const sensor_msgs::msg::Image::ConstSharedPtr &
 
 }  // namespace image_view
 
-#include <rclcpp_components/register_node_macro.hpp>
 RCLCPP_COMPONENTS_REGISTER_NODE(image_view::VideoRecorderNode)

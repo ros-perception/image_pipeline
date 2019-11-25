@@ -52,7 +52,7 @@
 
 #include "image_view/image_view_node.hpp"
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   using image_view::ImageViewNode;
 
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 
   rclcpp::NodeOptions options;
   auto iv_node = std::make_shared<ImageViewNode>(options);
-  
+
   rclcpp::spin(iv_node);
 
   rclcpp::shutdown();

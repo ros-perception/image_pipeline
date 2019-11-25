@@ -65,7 +65,7 @@ class ExtractImagesNode
   : public rclcpp::Node
 {
 public:
-  ExtractImagesNode(const rclcpp::NodeOptions & options);
+  explicit ExtractImagesNode(const rclcpp::NodeOptions & options);
 
 private:
   image_transport::Subscriber sub_;
