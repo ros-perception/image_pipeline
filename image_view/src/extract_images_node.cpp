@@ -51,6 +51,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
+#include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
 #include <boost/format.hpp>
@@ -64,10 +65,11 @@ namespace image_view
 {
 
 ExtractImagesNode::ExtractImagesNode(const rclcpp::NodeOptions & options)
-  : rclcpp::Node("extract_images_node", options),
-    filename_format_(""), count_(0), _time(this->now())
+: rclcpp::Node("extract_images_node", options),
+  filename_format_(""), count_(0), _time(this->now())
 {
-  auto topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
+  auto topic = rclcpp::expand_topic_or_service_name(
+    "image", this->get_name(), this->get_namespace());
 
   std::string transport = this->declare_parameter("transport", std::string("raw"));
 
@@ -80,8 +82,8 @@ ExtractImagesNode::ExtractImagesNode(const rclcpp::NodeOptions & options)
 
   if (topics.find(topic) != topics.end()) {
     RCLCPP_WARN(
-      this->get_logger(), "extract_images: image has not been remapped! Typical command-line usage:\n"
-      "\t$ ./extract_images image:=<image topic> [transport]");
+      this->get_logger(), "extract_images: image has not been remapped! "
+      "Typical command-line usage:\n\t$ ./extract_images image:=<image topic> [transport]");
   }
 
   std::string format_string =
@@ -102,13 +104,14 @@ void ExtractImagesNode::image_cb(const sensor_msgs::msg::Image::ConstSharedPtr &
 
   // May want to view raw bayer data
   // NB: This is hacky, but should be OK since we have only one image CB.
-  if (msg->encoding.find("bayer") != std::string::npos)
+  if (msg->encoding.find("bayer") != std::string::npos) {
     std::const_pointer_cast<sensor_msgs::msg::Image>(msg)->encoding = "mono8";
+  }
 
   cv::Mat image;
   try {
     image = cv_bridge::toCvShare(msg, "bgr8")->image;
-  } catch(cv_bridge::Exception) {
+  } catch (cv_bridge::Exception) {
     RCLCPP_ERROR(this->get_logger(), "Unable to convert %s image to bgr8", msg->encoding.c_str());
   }
 
@@ -132,5 +135,4 @@ void ExtractImagesNode::image_cb(const sensor_msgs::msg::Image::ConstSharedPtr &
 
 }  // namespace image_view
 
-#include <rclcpp_components/register_node_macro.hpp>
 RCLCPP_COMPONENTS_REGISTER_NODE(image_view::ExtractImagesNode)

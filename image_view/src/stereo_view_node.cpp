@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -46,6 +46,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "image_view/stereo_view_node.hpp"
+
+#include <boost/format.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 #include <rclcpp/rclcpp.hpp>
@@ -55,11 +58,10 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/synchronizer.h>
+#include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <stereo_msgs/msg/disparity_image.hpp>
-
-#include <boost/format.hpp>
 
 #ifdef HAVE_GTK
 
@@ -67,11 +69,11 @@
 
 #endif
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include <mutex>
-
-#include "image_view/stereo_view_node.hpp"
+#include <string>
 
 namespace image_view
 {
@@ -95,7 +97,7 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
 {
   // Read local parameters
   bool autosize = this->declare_parameter("autosize", true);
-  
+
   std::string format_string;
   format_string = this->declare_parameter("filename_format", std::string("%s%04i.jpg"));
   filename_format_.parse(format_string);
@@ -114,14 +116,16 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
   // Resolve topic names
   std::string stereo_ns = rclcpp::expand_topic_or_service_name(
     "stereo", this->get_name(), this->get_namespace());
-  std::string left_topic = rclcpp::expand_topic_or_service_name(stereo_ns + "/left/" +
-    rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace()),
+  std::string left_topic = rclcpp::expand_topic_or_service_name(
+    stereo_ns + "/left/" + rclcpp::expand_topic_or_service_name(
+      "image", this->get_name(), this->get_namespace()),
     this->get_name(), this->get_namespace());
-  std::string right_topic = rclcpp::expand_topic_or_service_name(stereo_ns + "/right/" +
-    rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace()),
+  std::string right_topic = rclcpp::expand_topic_or_service_name(
+    stereo_ns + "/right/" + rclcpp::expand_topic_or_service_name(
+      "image", this->get_name(), this->get_namespace()),
     this->get_name(), this->get_namespace());
-  std::string disparity_topic = rclcpp::expand_topic_or_service_name(stereo_ns + "/disparity",
-    this->get_name(), this->get_namespace());
+  std::string disparity_topic = rclcpp::expand_topic_or_service_name(
+    stereo_ns + "/disparity", this->get_name(), this->get_namespace());
   RCLCPP_INFO(
     this->get_logger(),
     "Subscribing to:\n\t* %s\n\t* %s\n\t* %s",
@@ -144,20 +148,25 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
   // Synchronize input topics. Optionally do approximate synchronization.
   queue_size_ = this->declare_parameter("queue_size", 5);
   bool approx = this->declare_parameter("approximate_sync", false);
+
   if (approx) {
-    approximate_sync_.reset(new ApproximateSync(
-      ApproximatePolicy(queue_size_), left_sub_, right_sub_, disparity_sub_));
-    approximate_sync_->registerCallback(std::bind(
-      &StereoViewNode::imageCb, this, _1, _2, _3));
+    approximate_sync_.reset(
+      new ApproximateSync(
+        ApproximatePolicy(queue_size_), left_sub_, right_sub_, disparity_sub_));
+    approximate_sync_->registerCallback(
+      std::bind(&StereoViewNode::imageCb, this, _1, _2, _3));
   } else {
-    exact_sync_.reset( new ExactSync(ExactPolicy(queue_size_),
-                                     left_sub_, right_sub_, disparity_sub_) );
-    exact_sync_->registerCallback(std::bind(
-      &StereoViewNode::imageCb, this, _1, _2, _3));
+    exact_sync_.reset(
+      new ExactSync(ExactPolicy(queue_size_),
+      left_sub_, right_sub_, disparity_sub_));
+    exact_sync_->registerCallback(
+      std::bind(&StereoViewNode::imageCb, this, _1, _2, _3));
   }
 
-  std::string stereo_topic = rclcpp::expand_topic_or_service_name("stereo", this->get_name(), this->get_namespace());
-  std::string image_topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
+  std::string stereo_topic =
+    rclcpp::expand_topic_or_service_name("stereo", this->get_name(), this->get_namespace());
+  std::string image_topic =
+    rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
   auto topics = this->get_topic_names_and_types();
 
   if (topics.find(stereo_topic) != topics.end()) {
@@ -165,11 +174,12 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
       this->get_logger(), "'stereo' has not been remapped! Example command-line usage:\n"
       "\t$ rosrun image_view stereo_view stereo:=narrow_stereo image:=image_color");
   }
+
   if (topics.find(image_topic) != topics.end()) {
     RCLCPP_WARN(
-      this->get_logger(), "There is a delay between when the camera drivers publish the raw images and "
-      "when stereo_image_proc publishes the computed point cloud. stereo_view "
-      "may fail to synchronize these topics without a large queue_size.");
+      this->get_logger(), "There is a delay between when the camera drivers publish "
+      "the raw images and when stereo_image_proc publishes the computed point cloud. "
+      "stereo_view may fail to synchronize these topics without a large queue_size.");
   }
 }
 
@@ -180,17 +190,20 @@ StereoViewNode::~StereoViewNode()
 
 void StereoViewNode::imageCb(
   const Image::ConstSharedPtr & left, const Image::ConstSharedPtr & right,
-  const DisparityImage::ConstSharedPtr& disparity_msg)
+  const DisparityImage::ConstSharedPtr & disparity_msg)
 {
-  ++all_received_; // For error checking
-  
+  ++all_received_;  // For error checking
+
   image_mutex_.lock();
 
   // May want to view raw bayer data
-  if (left->encoding.find("bayer") != std::string::npos)
+  if (left->encoding.find("bayer") != std::string::npos) {
     std::const_pointer_cast<Image>(left)->encoding = "mono8";
-  if (right->encoding.find("bayer") != std::string::npos)
+  }
+
+  if (right->encoding.find("bayer") != std::string::npos) {
     std::const_pointer_cast<Image>(right)->encoding = "mono8";
+  }
 
   // Hang on to image data for sake of mouseCb
   last_left_msg_ = left;
@@ -199,7 +212,7 @@ void StereoViewNode::imageCb(
   try {
     last_left_image_ = cv_bridge::toCvShare(left, "bgr8")->image;
     last_right_image_ = cv_bridge::toCvShare(right, "bgr8")->image;
-  } catch (cv_bridge::Exception& e) {
+  } catch (cv_bridge::Exception & e) {
     RCLCPP_ERROR(
       this->get_logger(), "Unable to convert one of '%s' or '%s' to 'bgr8'",
       left->encoding.c_str(), right->encoding.c_str());
@@ -211,34 +224,40 @@ void StereoViewNode::imageCb(
   float multiplier = 255.0f / (max_disparity - min_disparity);
 
   assert(disparity_msg->image.encoding == enc::TYPE_32FC1);
-  const cv::Mat_<float> dmat(disparity_msg->image.height, disparity_msg->image.width,
-                             (float*)&disparity_msg->image.data[0], disparity_msg->image.step);
+  const cv::Mat_<float> dmat(
+    disparity_msg->image.height,
+    disparity_msg->image.width,
+    reinterpret_cast<float *>(&disparity_msg->image.data[0]),
+    disparity_msg->image.step);
   disparity_color_.create(disparity_msg->image.height, disparity_msg->image.width);
-  
+
   for (int row = 0; row < disparity_color_.rows; ++row) {
-    const float* d = dmat[row];
+    const float * d = dmat[row];
 
     for (int col = 0; col < disparity_color_.cols; ++col) {
       int index = (d[col] - min_disparity) * multiplier + 0.5;
       index = std::min(255, std::max(0, index));
       // Fill as BGR
-      disparity_color_(row, col)[2] = colormap[3*index + 0];
-      disparity_color_(row, col)[1] = colormap[3*index + 1];
-      disparity_color_(row, col)[0] = colormap[3*index + 2];
+      disparity_color_(row, col)[2] = colormap[3 * index + 0];
+      disparity_color_(row, col)[1] = colormap[3 * index + 1];
+      disparity_color_(row, col)[0] = colormap[3 * index + 2];
     }
   }
 
   // Must release the mutex before calling cv::imshow, or can deadlock against
   // OpenCV's window mutex.
   image_mutex_.unlock();
+
   if (!last_left_image_.empty()) {
     cv::imshow("left", last_left_image_);
     cv::waitKey(1);
   }
+
   if (!last_right_image_.empty()) {
     cv::imshow("right", last_right_image_);
     cv::waitKey(1);
   }
+
   cv::imshow("disparity", disparity_color_);
   cv::waitKey(1);
 }
@@ -261,20 +280,22 @@ void StereoViewNode::mouseCb(int event, int x, int y, int flags, void * param)
   (void)flags;
 
   if (event == cv::EVENT_LBUTTONDOWN) {
-    // RCLCPP_WARN_ONCE(this->get_logger(), "Left-clicking no longer saves images. Right-click instead.");
+    RCLCPP_WARN_ONCE(
+      this->get_logger(),
+      "Left-clicking no longer saves images. Right-click instead.");
     return;
   }
 
   if (event != cv::EVENT_RBUTTONDOWN) {
     return;
   }
-  
-  StereoViewNode *sv = (StereoViewNode*)param;
+
+  StereoViewNode * sv = reinterpret_cast<StereoViewNode *>(param);
   std::lock_guard<std::mutex> guard(sv->image_mutex_);
 
-  sv->saveImage("left",  sv->last_left_image_);
+  sv->saveImage("left", sv->last_left_image_);
   sv->saveImage("right", sv->last_right_image_);
-  sv->saveImage("disp",  sv->disparity_color_);
+  sv->saveImage("disp", sv->disparity_color_);
   sv->save_count_++;
 }
 
@@ -303,7 +324,6 @@ void StereoViewNode::checkInputsSynchronized()
   }
 }
 
-}
+}  // namespace image_view
 
-#include <rclcpp_components/register_node_macro.hpp>
 RCLCPP_COMPONENTS_REGISTER_NODE(image_view::StereoViewNode)

@@ -167,6 +167,11 @@ add_dependencies(video_recorder
   image_view_nodes
 )
 
+if(BUILD_TESTING)
+  find_package(ament_lint_auto)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
 install(
   TARGETS
     disparity_view

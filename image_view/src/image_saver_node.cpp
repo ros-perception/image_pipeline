@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -48,19 +48,20 @@
 
 #include "image_view/image_saver_node.hpp"
 
+#include <boost/format.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 #include <camera_calibration_parsers/parse.h>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
+#include <rclcpp_components/register_node_macro.hpp>
 #include <std_srvs/srv/empty.hpp>
 #include <std_srvs/srv/trigger.hpp>
 
-#include <boost/format.hpp>
-
 #include <chrono>
 #include <memory>
+#include <string>
 
 namespace image_view
 {
@@ -70,10 +71,11 @@ using std::placeholders::_2;
 using std::placeholders::_3;
 
 ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
-  : rclcpp::Node("image_saver_node", options),
-    is_first_image_(true), has_camera_info_(false), count_(0)
+: rclcpp::Node("image_saver_node", options),
+  is_first_image_(true), has_camera_info_(false), count_(0)
 {
-  auto topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
+  auto topic = rclcpp::expand_topic_or_service_name(
+    "image", this->get_name(), this->get_namespace());
 
   // Useful when CameraInfo is being published
   cam_sub_ = image_transport::create_camera_subscription(
@@ -96,17 +98,18 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
   save_srv_ = this->create_service<std_srvs::srv::Empty>(
     "save", std::bind(&ImageSaverNode::service, this, _1, _2, _3));
   start_srv_ = this->create_service<std_srvs::srv::Trigger>(
-      "start", std::bind(&ImageSaverNode::callbackStartSave, this, _1, _2, _3));
+    "start", std::bind(&ImageSaverNode::callbackStartSave, this, _1, _2, _3));
   end_srv_ = this->create_service<std_srvs::srv::Trigger>(
-      "end", std::bind(&ImageSaverNode::callbackEndSave, this, _1, _2, _3));
+    "end", std::bind(&ImageSaverNode::callbackEndSave, this, _1, _2, _3));
 }
 
-bool ImageSaverNode::saveImage(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg, std::string & filename)
+bool ImageSaverNode::saveImage(
+  const sensor_msgs::msg::Image::ConstSharedPtr & image_msg, std::string & filename)
 {
   cv::Mat image;
   try {
     image = cv_bridge::toCvShare(image_msg, encoding)->image;
-  } catch(cv_bridge::Exception) {
+  } catch (cv_bridge::Exception) {
     RCLCPP_ERROR(
       this->get_logger(), "Unable to convert %s image to %s",
       image_msg->encoding.c_str(), encoding.c_str());
@@ -126,13 +129,13 @@ bool ImageSaverNode::saveImage(const sensor_msgs::msg::Image::ConstSharedPtr & i
       g_format.clear();
     }
 
-    try { 
+    try {
       filename = (g_format % count_ % "jpg").str();
     } catch (...) {
       g_format.clear();
     }
 
-    if (save_all_image || save_image_service ) {
+    if (save_all_image || save_image_service) {
       cv::imwrite(filename, image);
       RCLCPP_INFO(this->get_logger(), "Saved image %s", filename.c_str());
 
@@ -189,7 +192,8 @@ bool ImageSaverNode::callbackEndSave(
   return true;
 }
 
-void ImageSaverNode::callbackWithoutCameraInfo(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg)
+void ImageSaverNode::callbackWithoutCameraInfo(
+  const sensor_msgs::msg::Image::ConstSharedPtr & image_msg)
 {
   if (is_first_image_) {
     is_first_image_ = false;
@@ -258,5 +262,4 @@ void ImageSaverNode::callbackWithCameraInfo(
 
 }  // namespace image_view
 
-#include <rclcpp_components/register_node_macro.hpp>
 RCLCPP_COMPONENTS_REGISTER_NODE(image_view::ImageSaverNode)

@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -46,21 +46,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "image_view/image_view_node.hpp"
+
+#include <boost/format.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 #include <rclcpp/rclcpp.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
+#include <rclcpp_components/register_node_macro.hpp>
 #include <std_msgs/msg/header.hpp>
-
-#include <opencv2/highgui/highgui.hpp>
-
-#include <boost/format.hpp>
 
 #include <chrono>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
-
-#include "image_view/image_view_node.hpp"
+#include <utility>
+#include <vector>
 
 namespace image_view
 {
@@ -85,9 +88,10 @@ cv_bridge::CvImageConstPtr ThreadSafeImage::pop()
   {
     std::unique_lock<std::mutex> lock(mutex_);
 
-    condition_.wait_for(lock, std::chrono::milliseconds(100), [this] {
-      return !image_;
-    });
+    condition_.wait_for(lock, std::chrono::milliseconds(100),
+      [this] {
+        return !image_;
+      });
 
     image = std::move(image_);
   }
@@ -96,22 +100,26 @@ cv_bridge::CvImageConstPtr ThreadSafeImage::pop()
 }
 
 ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
-  : rclcpp::Node("image_view_node", options)
+: rclcpp::Node("image_view_node", options)
 {
   auto transport = this->declare_parameter("image_transport", "raw");
   RCLCPP_INFO(this->get_logger(), "Using transport \"%s\"", transport.c_str());
 
-  std::string topic = rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
+  std::string topic = rclcpp::expand_topic_or_service_name(
+    "image", this->get_name(), this->get_namespace());
 
   image_transport::TransportHints hints(this, transport);
   pub_ = this->create_publisher<sensor_msgs::msg::Image>("output", 1);
-  sub_ = image_transport::create_subscription(this, topic, std::bind(&ImageViewNode::imageCb, this, std::placeholders::_1), hints.getTransport());
+  sub_ = image_transport::create_subscription(
+    this, topic, std::bind(
+      &ImageViewNode::imageCb, this, std::placeholders::_1), hints.getTransport());
 
   auto topics = this->get_topic_names_and_types();
 
   if (topics.find(topic) != topics.end()) {
     RCLCPP_WARN(
-      this->get_logger(), "Topic 'image' has not been remapped! Typical command-line usage:\n"
+      this->get_logger(), "Topic 'image' has not been remapped! "
+      "Typical command-line usage:\n"
       "\t$ rosrun image_view image_view image:=<image topic> [transport]");
   }
 
@@ -121,18 +129,20 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
   autosize_ = this->declare_parameter("autosize", false);
   window_height_ = this->declare_parameter("height", -1);
   window_width_ = this->declare_parameter("width", -1);
-  std::string format_string = this->declare_parameter("filename_format", std::string("frame%04i.jpg"));
+  std::string format_string =
+    this->declare_parameter("filename_format", std::string("frame%04i.jpg"));
   filename_format_.parse(format_string);
 
   colormap_ = this->declare_parameter("colormap", -1);
   min_image_value_ = this->declare_parameter("min_image_value", 0);
   max_image_value_ = this->declare_parameter("max_image_value", 0);
 
-  if(g_gui) {
+  if (g_gui) {
     window_thread_ = std::thread(&ImageViewNode::windowThread, this);
   }
 
-  this->set_on_parameters_set_callback(std::bind(&ImageViewNode::paramCallback, this, std::placeholders::_1));
+  this->set_on_parameters_set_callback(
+    std::bind(&ImageViewNode::paramCallback, this, std::placeholders::_1));
 }
 
 ImageViewNode::~ImageViewNode()
@@ -177,7 +187,7 @@ void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
     queued_image_.set(
       cv_bridge::cvtColorForDisplay(
         cv_bridge::toCvShare(msg), "bgr8", options));
-  } catch (cv_bridge::Exception& e) {
+  } catch (cv_bridge::Exception & e) {
     RCLCPP_ERROR_EXPRESSION(
       this->get_logger(), (static_cast<int>(this->now().seconds()) % 30 == 0),
       "Unable to convert '%s' image for display: '%s'",
@@ -191,17 +201,19 @@ void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 
 void ImageViewNode::mouseCb(int event, int /* x */, int /* y */, int /* flags */, void * param)
 {
-  ImageViewNode *this_ = reinterpret_cast<ImageViewNode *>(param);
+  ImageViewNode * this_ = reinterpret_cast<ImageViewNode *>(param);
 
   if (event == cv::EVENT_LBUTTONDOWN) {
-    RCLCPP_WARN_ONCE(this_->get_logger(), "Left-clicking no longer saves images. Right-click instead.");
+    RCLCPP_WARN_ONCE(
+      this_->get_logger(),
+      "Left-clicking no longer saves images. Right-click instead.");
     return;
   }
 
   if (event != cv::EVENT_RBUTTONDOWN) {
     return;
   }
-  
+
   cv_bridge::CvImageConstPtr image(this_->shown_image_.get());
 
   if (!image) {
@@ -222,20 +234,22 @@ void ImageViewNode::mouseCb(int event, int /* x */, int /* y */, int /* flags */
 
 void ImageViewNode::windowThread()
 {
-  cv::namedWindow(window_name_, autosize_ ? (cv::WINDOW_AUTOSIZE | cv::WINDOW_KEEPRATIO | cv::WINDOW_GUI_EXPANDED) : 0);
+  int flags = autosize_ ?
+    (cv::WINDOW_AUTOSIZE | cv::WINDOW_KEEPRATIO | cv::WINDOW_GUI_EXPANDED) : 0;
+  cv::namedWindow(window_name_, flags_);
   cv::setMouseCallback(window_name_, &ImageViewNode::mouseCb, this);
 
-  if(!autosize_ && window_width_ > -1 && window_height_ > -1) {
+  if (!autosize_ && window_width_ > -1 && window_height_ > -1) {
     cv::resizeWindow(window_name_, window_width_, window_height_);
   }
 
-  while(rclcpp::ok()) {
+  while (rclcpp::ok()) {
     cv_bridge::CvImageConstPtr image(queued_image_.pop());
 
     if (cv::getWindowProperty(window_name_, 1) < 0) {
       break;
     }
-    
+
     if (image) {
       cv::imshow(window_name_, image->image);
       shown_image_.set(image);
@@ -275,7 +289,6 @@ ImageViewNode::paramCallback(const std::vector<rclcpp::Parameter> & parameters)
   return result;
 }
 
-} // namespace image_view
+}  // namespace image_view
 
-#include <rclcpp_components/register_node_macro.hpp>
 RCLCPP_COMPONENTS_REGISTER_NODE(image_view::ImageViewNode)

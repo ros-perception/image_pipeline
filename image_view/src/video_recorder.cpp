@@ -18,7 +18,7 @@
 
 #include "image_view/video_recorder_node.hpp"
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   using image_view::VideoRecorderNode;
 
