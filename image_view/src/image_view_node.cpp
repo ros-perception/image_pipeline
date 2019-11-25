@@ -242,6 +242,10 @@ void ImageViewNode::windowThread()
 
   while(rclcpp::ok()) {
     cv_bridge::CvImageConstPtr image(queued_image_.pop());
+
+    if (cv::getWindowProperty(window_name_, 1) < 0) {
+      break;
+    }
     
     if (image) {
       cv::imshow(window_name_, image->image);
@@ -251,6 +255,10 @@ void ImageViewNode::windowThread()
   }
 
   cv::destroyWindow(window_name_);
+
+  if (rclcpp::ok()) {
+    rclcpp::shutdown();
+  }
 }
 
 rcl_interfaces::msg::SetParametersResult
