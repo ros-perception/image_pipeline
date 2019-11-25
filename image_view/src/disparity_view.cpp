@@ -31,22 +31,36 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include "window_thread.h"
-#include <opencv2/highgui/highgui.hpp>
-#include <boost/thread.hpp>
 
-namespace {
-void startWindowThreadLocal() {
-  cv::startWindowThread();
-}
-}
+// Copyright 2019, Joshua Whitley
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-namespace image_view {
+#include <rclcpp/rclcpp.hpp>
 
-void startWindowThread()
+#include <memory>
+
+#include "image_view/disparity_view_node.hpp"
+
+using image_view::DisparityViewNode;
+
+int main(int argc, char **argv)
 {
-  static boost::once_flag cv_thread_flag = BOOST_ONCE_INIT;
-  boost::call_once(&startWindowThreadLocal, cv_thread_flag);
-}
+  rclcpp::init(argc, argv);
 
-} // namespace image_view
+  rclcpp::NodeOptions options;
+  auto dv_node = std::make_shared<DisparityViewNode>(options);
+
+  rclcpp::spin(dv_node);
+  return 0;
+}

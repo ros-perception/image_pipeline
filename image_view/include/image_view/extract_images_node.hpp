@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -31,24 +31,57 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include <ros/ros.h>
-#include <nodelet/loader.h>
 
-int main(int argc, char **argv)
+// Copyright 2019, Joshua Whitley
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef IMAGE_VIEW__EXTRACT_IMAGES_NODE_HPP_
+#define IMAGE_VIEW__EXTRACT_IMAGES_NODE_HPP_
+
+#include <rclcpp/rclcpp.hpp>
+#include <image_transport/image_transport.h>
+#include <sensor_msgs/msg/image.hpp>
+
+#include <boost/format.hpp>
+
+#include <mutex>
+#include <string>
+
+namespace image_view
 {
-  ros::init(argc, argv, "disparity_view", ros::init_options::AnonymousName);
-  if (ros::names::remap("image") == "image") {
-    ROS_WARN("Topic 'image' has not been remapped! Typical command-line usage:\n"
-             "\t$ rosrun image_view disparity_view image:=<disparity image topic>");
-  }
 
-  nodelet::Loader manager(false);
-  nodelet::M_string remappings;
-  nodelet::V_string my_argv(argv + 1, argv + argc);
-  my_argv.push_back("--shutdown-on-close"); // Internal
+class ExtractImagesNode
+  : public rclcpp::Node
+{
+public:
+  ExtractImagesNode(const rclcpp::NodeOptions & options);
 
-  manager.load(ros::this_node::getName(), "image_view/disparity", remappings, my_argv);
+private:
+  image_transport::Subscriber sub_;
 
-  ros::spin();
-  return 0;
-}
+  sensor_msgs::msg::Image::ConstSharedPtr last_msg_;
+  std::mutex image_mutex_;
+
+  std::string window_name_;
+  boost::format filename_format_;
+  int count_;
+  rclcpp::Time _time;
+  double sec_per_frame_;
+
+  void image_cb(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
+};
+
+}  // namespace image_view
+
+#endif  // IMAGE_VIEW__EXTRACT_IMAGES_NODE_HPP_
