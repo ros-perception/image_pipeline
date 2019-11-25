@@ -236,7 +236,7 @@ void ImageViewNode::windowThread()
 {
   int flags = autosize_ ?
     (cv::WINDOW_AUTOSIZE | cv::WINDOW_KEEPRATIO | cv::WINDOW_GUI_EXPANDED) : 0;
-  cv::namedWindow(window_name_, flags_);
+  cv::namedWindow(window_name_, flags);
   cv::setMouseCallback(window_name_, &ImageViewNode::mouseCb, this);
 
   if (!autosize_ && window_width_ > -1 && window_height_ > -1) {

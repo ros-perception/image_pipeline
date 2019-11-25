@@ -227,7 +227,7 @@ void StereoViewNode::imageCb(
   const cv::Mat_<float> dmat(
     disparity_msg->image.height,
     disparity_msg->image.width,
-    reinterpret_cast<float *>(&disparity_msg->image.data[0]),
+    const_cast<float *>(reinterpret_cast<const float *>(&disparity_msg->image.data[0])),
     disparity_msg->image.step);
   disparity_color_.create(disparity_msg->image.height, disparity_msg->image.width);
 
@@ -279,9 +279,11 @@ void StereoViewNode::mouseCb(int event, int x, int y, int flags, void * param)
   (void)y;
   (void)flags;
 
+  StereoViewNode * this_ = reinterpret_cast<StereoViewNode *>(param);
+
   if (event == cv::EVENT_LBUTTONDOWN) {
     RCLCPP_WARN_ONCE(
-      this->get_logger(),
+      this_->get_logger(),
       "Left-clicking no longer saves images. Right-click instead.");
     return;
   }
@@ -290,13 +292,12 @@ void StereoViewNode::mouseCb(int event, int x, int y, int flags, void * param)
     return;
   }
 
-  StereoViewNode * sv = reinterpret_cast<StereoViewNode *>(param);
-  std::lock_guard<std::mutex> guard(sv->image_mutex_);
+  std::lock_guard<std::mutex> guard(this_->image_mutex_);
 
-  sv->saveImage("left", sv->last_left_image_);
-  sv->saveImage("right", sv->last_right_image_);
-  sv->saveImage("disp", sv->disparity_color_);
-  sv->save_count_++;
+  this_->saveImage("left", this_->last_left_image_);
+  this_->saveImage("right", this_->last_right_image_);
+  this_->saveImage("disp", this_->disparity_color_);
+  this_->save_count_++;
 }
 
 void StereoViewNode::checkInputsSynchronized()
