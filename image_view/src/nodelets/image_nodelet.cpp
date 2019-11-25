@@ -101,14 +101,11 @@ class ImageNodelet : public nodelet::Nodelet
   boost::format filename_format_;
   int count_;
   
-  ros::WallTimer gui_timer_;
-
   virtual void onInit();
   
   void imageCb(const sensor_msgs::ImageConstPtr& msg);
 
   static void mouseCb(int event, int x, int y, int flags, void* param);
-  static void guiCb(const ros::WallTimerEvent&);
 
   void windowThread();  
 
@@ -165,12 +162,6 @@ void ImageNodelet::onInit()
   local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
   filename_format_.parse(format_string);
 
-  // Since cv::startWindowThread() triggers a crash in cv::waitKey()
-  // if OpenCV is compiled against GTK, we call cv::waitKey() from
-  // the ROS event loop periodically, instead.
-  /*cv::startWindowThread();*/
-  gui_timer_ = local_nh.createWallTimer(ros::WallDuration(0.1), ImageNodelet::guiCb);
-
   window_thread_ = boost::thread(&ImageNodelet::windowThread, this);
 
   image_transport::ImageTransport it(nh);
@@ -193,12 +184,6 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
     NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
                              msg->encoding.c_str(), e.what());
   }
-}
-
-void ImageNodelet::guiCb(const ros::WallTimerEvent&)
-{
-  // Process pending GUI events and return immediately
-  cv::waitKey(1);
 }
 
 void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
@@ -243,12 +228,17 @@ void ImageNodelet::windowThread()
 
   try
   {
-    while (true)
+    while (ros::ok())
     {
       cv::Mat image(queued_image_.pop());
       cv::imshow(window_name_, image);
-      cv::waitKey(1);
       shown_image_.set(image);
+      cv::waitKey(1);
+
+      if (cv::getWindowProperty(window_name_, 1) < 0)
+      {
+        break;
+      }
     }
   }
   catch (const boost::thread_interrupted&)
@@ -256,6 +246,11 @@ void ImageNodelet::windowThread()
   }
 
   cv::destroyWindow(window_name_);
+
+  if (ros::ok())
+  {
+    ros::shutdown();
+  }
 }
 
 } // namespace image_view
