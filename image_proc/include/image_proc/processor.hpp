@@ -72,7 +72,7 @@ public:
   };
 
   bool process(
-    const sensor_msgs::msg::Image::SharedConstPtr & raw_image,
+    const sensor_msgs::msg::Image::ConstSharedPtr & raw_image,
     const image_geometry::PinholeCameraModel & model,
     ImageSet & output, int flags = ALL) const;
 };
