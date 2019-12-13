@@ -30,7 +30,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import array
 import sys
+
+import cv2
+
+import numpy
 
 import rclpy
 from rclpy.node import Node
@@ -38,12 +43,8 @@ from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import Image
 from stereo_msgs.msg import DisparityImage
 
-import array
-import cv2
-import numpy
 
-
-class DisparityImagePublisher(rclpy.node.Node):
+class DisparityImagePublisher(Node):
     """
     Disparity image publisher test fixture.
 

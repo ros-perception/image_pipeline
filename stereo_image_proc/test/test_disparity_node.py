@@ -35,18 +35,15 @@ import sys
 import time
 import unittest
 
-import cv2
-import numpy
-
 from launch import LaunchDescription
 
 from launch_ros.actions import Node
 
 import launch_testing
 
-from stereo_msgs.msg import DisparityImage
-
 import pytest
+
+from stereo_msgs.msg import DisparityImage
 
 
 @pytest.mark.rostest
@@ -85,7 +82,7 @@ class TestDisparityNode(unittest.TestCase):
 
         # Expect the disparity node to publish on '/diparity' topic
         msgs_received = []
-        sub = node.create_subscription(
+        node.create_subscription(
             DisparityImage,
             'disparity',
             lambda msg: msgs_received.append(msg),

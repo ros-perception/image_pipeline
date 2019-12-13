@@ -30,19 +30,20 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import array
 import sys
+
+import cv2
+
+import numpy
 
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import Image
 
-import array
-import cv2
-import numpy
 
-
-class StereoImagePublisher(rclpy.node.Node):
+class StereoImagePublisher(Node):
     """
     Stereo image publisher test fixture.
 

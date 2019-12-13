@@ -35,18 +35,15 @@ import sys
 import time
 import unittest
 
-import cv2
-import numpy
-
 from launch import LaunchDescription
 
 from launch_ros.actions import Node
 
 import launch_testing
 
-from sensor_msgs.msg import PointCloud2
-
 import pytest
+
+from sensor_msgs.msg import PointCloud2
 
 
 @pytest.mark.rostest
@@ -88,7 +85,7 @@ class TestPointCloudNode(unittest.TestCase):
 
         # Expect the point cloud node to publish on '/points2' topic
         msgs_received = []
-        sub = node.create_subscription(
+        node.create_subscription(
             PointCloud2,
             'points2',
             lambda msg: msgs_received.append(msg),

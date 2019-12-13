@@ -1,60 +1,56 @@
-/*********************************************************************
-* Software License Agreement (BSD License)
-* 
-*  Copyright (c) 2008, Willow Garage, Inc.
-*  All rights reserved.
-* 
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions
-*  are met:
-* 
-*   * Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   * Redistributions in binary form must reproduce the above
-*     copyright notice, this list of conditions and the following
-*     disclaimer in the documentation and/or other materials provided
-*     with the distribution.
-*   * Neither the name of the Willow Garage nor the names of its
-*     contributors may be used to endorse or promote products derived
-*     from this software without specific prior written permission.
-* 
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-*********************************************************************/
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp_components/register_node_macro.hpp>
-
-#include <image_transport/image_transport.h>
-#include <image_transport/subscriber_filter.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/exact_time.h>
-#include <message_filters/sync_policies/approximate_time.h>
-
-#include <image_geometry/stereo_camera_model.h>
-#include <opencv2/calib3d/calib3d.hpp>
-#include <cv_bridge/cv_bridge.h>
-
-#include <sensor_msgs/image_encodings.hpp>
-#include <stereo_msgs/msg/disparity_image.hpp>
-
-#include <stereo_image_proc/stereo_processor.hpp>
-
+// Copyright (c) 2008, Willow Garage, Inc.
+// All rights reserved.
+//
+// Software License Agreement (BSD License 2.0)
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+//
+//  * Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+//  * Redistributions in binary form must reproduce the above
+//    copyright notice, this list of conditions and the following
+//    disclaimer in the documentation and/or other materials provided
+//    with the distribution.
+//  * Neither the name of the copyright holder nor the names of its
+//    contributors may be used to endorse or promote products derived
+//    from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+// COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+// ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+#include <algorithm>
 #include <memory>
 
-namespace stereo_image_proc {
+#include "stereo_image_proc/stereo_processor.hpp"
 
-using namespace message_filters::sync_policies;
+#include "cv_bridge/cv_bridge.h"
+#include "image_geometry/stereo_camera_model.h"
+#include "image_transport/image_transport.h"
+#include "image_transport/subscriber_filter.h"
+#include "message_filters/subscriber.h"
+#include "message_filters/synchronizer.h"
+#include "message_filters/sync_policies/approximate_time.h"
+#include "message_filters/sync_policies/exact_time.h"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
+#include "sensor_msgs/image_encodings.hpp"
+#include "stereo_msgs/msg/disparity_image.hpp"
+
+#include "opencv2/calib3d/calib3d.hpp"
+
+namespace stereo_image_proc
+{
 
 class DisparityNode : public rclcpp::Node
 {
@@ -65,12 +61,12 @@ private:
   // Subscriptions
   image_transport::SubscriberFilter sub_l_image_, sub_r_image_;
   message_filters::Subscriber<sensor_msgs::msg::CameraInfo> sub_l_info_, sub_r_info_;
-  using ExactPolicy = ExactTime<
+  using ExactPolicy = message_filters::sync_policies::ExactTime<
     sensor_msgs::msg::Image,
     sensor_msgs::msg::CameraInfo,
     sensor_msgs::msg::Image,
     sensor_msgs::msg::CameraInfo>;
-  using ApproximatePolicy = ApproximateTime<
+  using ApproximatePolicy = message_filters::sync_policies::ApproximateTime<
     sensor_msgs::msg::Image,
     sensor_msgs::msg::CameraInfo,
     sensor_msgs::msg::Image,
@@ -86,23 +82,24 @@ private:
 
   // Processing state (note: only safe because we're single-threaded!)
   image_geometry::StereoCameraModel model_;
-  stereo_image_proc::StereoProcessor block_matcher_; // contains scratch buffers for block matching
+  // contains scratch buffers for block matching
+  stereo_image_proc::StereoProcessor block_matcher_;
 
   virtual void onInit();
 
   void connectCb();
 
   void imageCb(
-    const sensor_msgs::msg::Image::ConstSharedPtr& l_image_msg,
-    const sensor_msgs::msg::CameraInfo::ConstSharedPtr& l_info_msg,
-    const sensor_msgs::msg::Image::ConstSharedPtr& r_image_msg,
-    const sensor_msgs::msg::CameraInfo::ConstSharedPtr& r_info_msg);
+    const sensor_msgs::msg::Image::ConstSharedPtr & l_image_msg,
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr & l_info_msg,
+    const sensor_msgs::msg::Image::ConstSharedPtr & r_image_msg,
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr & r_info_msg);
 
   // void configCb(Config &config, uint32_t level);
 };
 
 DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
-  : rclcpp::Node("disparity_node", options)
+: rclcpp::Node("disparity_node", options)
 {
   onInit();
 }
@@ -117,26 +114,25 @@ void DisparityNode::onInit()
   queue_size = this->declare_parameter("queue_size", 5);
   bool approx;
   approx = this->declare_parameter("approximate_sync", false);
-  if (approx)
-  {
-    approximate_sync_.reset( new ApproximateSync(ApproximatePolicy(queue_size),
-                                                 sub_l_image_, sub_l_info_,
-                                                 sub_r_image_, sub_r_info_) );
-    approximate_sync_->registerCallback(std::bind(&DisparityNode::imageCb,
-                                                    this, _1, _2, _3, _4));
-  }
-  else
-  {
-    exact_sync_.reset( new ExactSync(ExactPolicy(queue_size),
-                                     sub_l_image_, sub_l_info_,
-                                     sub_r_image_, sub_r_info_) );
-    exact_sync_->registerCallback(std::bind(&DisparityNode::imageCb,
-                                              this, _1, _2, _3, _4));
+  if (approx) {
+    approximate_sync_.reset(new ApproximateSync(
+        ApproximatePolicy(queue_size),
+        sub_l_image_, sub_l_info_,
+        sub_r_image_, sub_r_info_));
+    approximate_sync_->registerCallback(
+      std::bind(&DisparityNode::imageCb, this, _1, _2, _3, _4));
+  } else {
+    exact_sync_.reset(new ExactSync(
+        ExactPolicy(queue_size),
+        sub_l_image_, sub_l_info_,
+        sub_r_image_, sub_r_info_));
+    exact_sync_->registerCallback(
+      std::bind(&DisparityNode::imageCb, this, _1, _2, _3, _4));
   }
 
   // TODO(jacobperron): Setup equivalent of dynamic reconfigure with ROS 2 parameters
   //                    See configCb
-  
+
   // TODO(jacobperron): Monitoring subscriber status is currently not possible in ROS 2
   // std::lock_guard<std::mutex> lock(connect_mutex_);
 
@@ -162,45 +158,51 @@ void DisparityNode::connectCb()
   //   sub_r_info_ .unsubscribe();
   // }
   // else if (!sub_l_image_.getSubscriber())
-  if (!sub_l_image_.getSubscriber())
-  {
+  if (!sub_l_image_.getSubscriber()) {
     image_transport::TransportHints hints(this, "raw");
     sub_l_image_.subscribe(this, "left/image_rect", hints.getTransport());
-    sub_l_info_ .subscribe(this, "left/camera_info");
+    sub_l_info_.subscribe(this, "left/camera_info");
     sub_r_image_.subscribe(this, "right/image_rect", hints.getTransport());
-    sub_r_info_ .subscribe(this, "right/camera_info");
+    sub_r_info_.subscribe(this, "right/camera_info");
   }
 }
 
 void DisparityNode::imageCb(
-    const sensor_msgs::msg::Image::ConstSharedPtr& l_image_msg,
-    const sensor_msgs::msg::CameraInfo::ConstSharedPtr& l_info_msg,
-    const sensor_msgs::msg::Image::ConstSharedPtr& r_image_msg,
-    const sensor_msgs::msg::CameraInfo::ConstSharedPtr& r_info_msg) 
+  const sensor_msgs::msg::Image::ConstSharedPtr & l_image_msg,
+  const sensor_msgs::msg::CameraInfo::ConstSharedPtr & l_info_msg,
+  const sensor_msgs::msg::Image::ConstSharedPtr & r_image_msg,
+  const sensor_msgs::msg::CameraInfo::ConstSharedPtr & r_info_msg)
 {
   // Update the camera model
   model_.fromCameraInfo(l_info_msg, r_info_msg);
 
   // Allocate new disparity image message
   auto disp_msg = std::make_shared<stereo_msgs::msg::DisparityImage>();
-  disp_msg->header         = l_info_msg->header;
-  disp_msg->image.header   = l_info_msg->header;
+  disp_msg->header = l_info_msg->header;
+  disp_msg->image.header = l_info_msg->header;
 
   // Compute window of (potentially) valid disparities
-  int border   = block_matcher_.getCorrelationWindowSize() / 2;
-  int left   = block_matcher_.getDisparityRange() + block_matcher_.getMinDisparity() + border - 1;
-  int wtf = (block_matcher_.getMinDisparity() >= 0) ? border + block_matcher_.getMinDisparity() : std::max(border, -block_matcher_.getMinDisparity());
-  int right  = disp_msg->image.width - 1 - wtf;
-  int top    = border;
+  int border = block_matcher_.getCorrelationWindowSize() / 2;
+  int left = block_matcher_.getDisparityRange() + block_matcher_.getMinDisparity() + border - 1;
+  int wtf;
+  if (block_matcher_.getMinDisparity() >= 0) {
+    wtf = border + block_matcher_.getMinDisparity();
+  } else {
+    wtf = std::max(border, -block_matcher_.getMinDisparity());
+  }
+  int right = disp_msg->image.width - 1 - wtf;
+  int top = border;
   int bottom = disp_msg->image.height - 1 - border;
   disp_msg->valid_window.x_offset = left;
   disp_msg->valid_window.y_offset = top;
-  disp_msg->valid_window.width    = right - left;
-  disp_msg->valid_window.height   = bottom - top;
+  disp_msg->valid_window.width = right - left;
+  disp_msg->valid_window.height = bottom - top;
 
   // Create cv::Mat views onto all buffers
-  const cv::Mat_<uint8_t> l_image = cv_bridge::toCvShare(l_image_msg, sensor_msgs::image_encodings::MONO8)->image;
-  const cv::Mat_<uint8_t> r_image = cv_bridge::toCvShare(r_image_msg, sensor_msgs::image_encodings::MONO8)->image;
+  const cv::Mat_<uint8_t> l_image =
+    cv_bridge::toCvShare(l_image_msg, sensor_msgs::image_encodings::MONO8)->image;
+  const cv::Mat_<uint8_t> r_image =
+    cv_bridge::toCvShare(r_image_msg, sensor_msgs::image_encodings::MONO8)->image;
 
   // Perform block matching to find the disparities
   block_matcher_.processDisparity(l_image, r_image, model_, *disp_msg);
@@ -209,9 +211,10 @@ void DisparityNode::imageCb(
   double cx_l = model_.left().cx();
   double cx_r = model_.right().cx();
   if (cx_l != cx_r) {
-    cv::Mat_<float> disp_image(disp_msg->image.height, disp_msg->image.width,
-                              reinterpret_cast<float*>(&disp_msg->image.data[0]),
-                              disp_msg->image.step);
+    cv::Mat_<float> disp_image(
+      disp_msg->image.height, disp_msg->image.width,
+      reinterpret_cast<float *>(&disp_msg->image.data[0]),
+      disp_msg->image.step);
     cv::subtract(disp_image, cv::Scalar(cx_l - cx_r), disp_image);
   }
 
@@ -224,7 +227,7 @@ void DisparityNode::imageCb(
 //   config.prefilter_size |= 0x1; // must be odd
 //   config.correlation_window_size |= 0x1; // must be odd
 //   config.disparity_range = (config.disparity_range / 16) * 16; // must be multiple of 16
-//   
+//
 //   // check stereo method
 //   // Note: With single-threaded NodeHandle, configCb and imageCb can't be called
 //   // concurrently, so this is thread-safe.
@@ -249,7 +252,7 @@ void DisparityNode::imageCb(
 //   }
 // }
 
-} // namespace stereo_image_proc
+}  // namespace stereo_image_proc
 
 // Register component
 RCLCPP_COMPONENTS_REGISTER_NODE(stereo_image_proc::DisparityNode)
