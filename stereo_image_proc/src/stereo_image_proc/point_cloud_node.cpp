@@ -31,13 +31,10 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include <boost/version.hpp>
-#if ((BOOST_VERSION / 100) % 1000) >= 53
-#include <boost/thread/lock_guard.hpp>
-#endif
 
-#include <ros/ros.h>
-#include <nodelet/nodelet.h>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
+#include <rcutils/logging_macros.h>
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
 #include <message_filters/subscriber.h>
@@ -46,35 +43,44 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <image_geometry/stereo_camera_model.h>
 
-#include <stereo_msgs/DisparityImage.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/image_encodings.h>
-#include <sensor_msgs/point_cloud2_iterator.h>
+#include <stereo_msgs/msg/disparity_image.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/image_encodings.hpp>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 
 namespace stereo_image_proc {
 
-using namespace sensor_msgs;
-using namespace stereo_msgs;
 using namespace message_filters::sync_policies;
 
-class PointCloud2Nodelet : public nodelet::Nodelet
+class PointCloudNode : public rclcpp::Node
 {
-  boost::shared_ptr<image_transport::ImageTransport> it_;
+public:
+  explicit PointCloudNode(const rclcpp::NodeOptions & options);
 
+private:
   // Subscriptions
   image_transport::SubscriberFilter sub_l_image_;
-  message_filters::Subscriber<CameraInfo> sub_l_info_, sub_r_info_;
-  message_filters::Subscriber<DisparityImage> sub_disparity_;
-  typedef ExactTime<Image, CameraInfo, CameraInfo, DisparityImage> ExactPolicy;
-  typedef ApproximateTime<Image, CameraInfo, CameraInfo, DisparityImage> ApproximatePolicy;
-  typedef message_filters::Synchronizer<ExactPolicy> ExactSync;
-  typedef message_filters::Synchronizer<ApproximatePolicy> ApproximateSync;
-  boost::shared_ptr<ExactSync> exact_sync_;
-  boost::shared_ptr<ApproximateSync> approximate_sync_;
+  message_filters::Subscriber<sensor_msgs::msg::CameraInfo> sub_l_info_, sub_r_info_;
+  message_filters::Subscriber<stereo_msgs::msg::DisparityImage> sub_disparity_;
+  using ExactPolicy = ExactTime<
+    sensor_msgs::msg::Image,
+    sensor_msgs::msg::CameraInfo,
+    sensor_msgs::msg::CameraInfo,
+    stereo_msgs::msg::DisparityImage>;
+  using ApproximatePolicy = ApproximateTime<
+    sensor_msgs::msg::Image,
+    sensor_msgs::msg::CameraInfo,
+    sensor_msgs::msg::CameraInfo,
+    stereo_msgs::msg::DisparityImage>;
+  using ExactSync = message_filters::Synchronizer<ExactPolicy>;
+  using ApproximateSync = message_filters::Synchronizer<ApproximatePolicy>;
+  std::shared_ptr<ExactSync> exact_sync_;
+  std::shared_ptr<ApproximateSync> approximate_sync_;
 
   // Publications
-  boost::mutex connect_mutex_;
-  ros::Publisher pub_points2_;
+  // TODO(jacobperron): Uncomment when we can be notified of subscriber status
+  // std::mutex connect_mutex_;
+  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pub_points2_;
 
   // Processing state (note: only safe because we're single-threaded!)
   image_geometry::StereoCameraModel model_;
@@ -84,30 +90,33 @@ class PointCloud2Nodelet : public nodelet::Nodelet
 
   void connectCb();
 
-  void imageCb(const ImageConstPtr& l_image_msg,
-               const CameraInfoConstPtr& l_info_msg,
-               const CameraInfoConstPtr& r_info_msg,
-               const DisparityImageConstPtr& disp_msg);
+  void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& l_image_msg,
+               const sensor_msgs::msg::CameraInfo::ConstSharedPtr& l_info_msg,
+               const sensor_msgs::msg::CameraInfo::ConstSharedPtr& r_info_msg,
+               const stereo_msgs::msg::DisparityImage::ConstSharedPtr& disp_msg);
 };
 
-void PointCloud2Nodelet::onInit()
+PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
+  : rclcpp::Node("point_cloud_node", options)
 {
-  ros::NodeHandle &nh = getNodeHandle();
-  ros::NodeHandle &private_nh = getPrivateNodeHandle();
-  it_.reset(new image_transport::ImageTransport(nh));
+  onInit();
+}
 
+void PointCloudNode::onInit()
+{
+  using namespace std::placeholders;
   // Synchronize inputs. Topic subscriptions happen on demand in the connection
   // callback. Optionally do approximate synchronization.
   int queue_size;
-  private_nh.param("queue_size", queue_size, 5);
+  queue_size = this->declare_parameter("queue_size", 5);
   bool approx;
-  private_nh.param("approximate_sync", approx, false);
+  approx = this->declare_parameter("approximate_sync", false);
   if (approx)
   {
     approximate_sync_.reset( new ApproximateSync(ApproximatePolicy(queue_size),
                                                  sub_l_image_, sub_l_info_,
                                                  sub_r_info_, sub_disparity_) );
-    approximate_sync_->registerCallback(boost::bind(&PointCloud2Nodelet::imageCb,
+    approximate_sync_->registerCallback(std::bind(&PointCloudNode::imageCb,
                                                     this, _1, _2, _3, _4));
   }
   else
@@ -115,37 +124,38 @@ void PointCloud2Nodelet::onInit()
     exact_sync_.reset( new ExactSync(ExactPolicy(queue_size),
                                      sub_l_image_, sub_l_info_,
                                      sub_r_info_, sub_disparity_) );
-    exact_sync_->registerCallback(boost::bind(&PointCloud2Nodelet::imageCb,
+    exact_sync_->registerCallback(std::bind(&PointCloudNode::imageCb,
                                               this, _1, _2, _3, _4));
   }
 
+  // TODO(jacobperron): Monitoring subscriber status is currently not possible in ROS 2
   // Monitor whether anyone is subscribed to the output
-  ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloud2Nodelet::connectCb, this);
+  // ros::SubscriberStatusCallback connect_cb = std::bind(&PointCloudNode::connectCb, this);
   // Make sure we don't enter connectCb() between advertising and assigning to pub_points2_
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  pub_points2_  = nh.advertise<PointCloud2>("points2",  1, connect_cb, connect_cb);
+  // std::lock_guard<std::mutex> lock(connect_mutex_);
+  pub_points2_  = create_publisher<sensor_msgs::msg::PointCloud2>("points2",  1);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void PointCloud2Nodelet::connectCb()
+void PointCloudNode::connectCb()
 {
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  if (pub_points2_.getNumSubscribers() == 0)
+  // TODO(jacobperron): Uncomment when we can be notified of subscriber status
+  // std::lock_guard<std::mutex> lock(connect_mutex_);
+  // if (pub_points2_.getNumSubscribers() == 0)
+  // {
+  //   sub_l_image_  .unsubscribe();
+  //   sub_l_info_   .unsubscribe();
+  //   sub_r_info_   .unsubscribe();
+  //   sub_disparity_.unsubscribe();
+  // }
+  // else if (!sub_l_image_.getSubscriber())
+  if (!sub_l_image_.getSubscriber())
   {
-    sub_l_image_  .unsubscribe();
-    sub_l_info_   .unsubscribe();
-    sub_r_info_   .unsubscribe();
-    sub_disparity_.unsubscribe();
-  }
-  else if (!sub_l_image_.getSubscriber())
-  {
-    ros::NodeHandle &nh = getNodeHandle();
-    // Queue size 1 should be OK; the one that matters is the synchronizer queue size.
-    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-    sub_l_image_  .subscribe(*it_, "left/image_rect_color", 1, hints);
-    sub_l_info_   .subscribe(nh,   "left/camera_info", 1);
-    sub_r_info_   .subscribe(nh,   "right/camera_info", 1);
-    sub_disparity_.subscribe(nh,   "disparity", 1);
+    image_transport::TransportHints hints(this, "raw");
+    sub_l_image_  .subscribe(this, "left/image_rect_color", hints.getTransport());
+    sub_l_info_   .subscribe(this, "left/camera_info");
+    sub_r_info_   .subscribe(this, "right/camera_info");
+    sub_disparity_.subscribe(this, "disparity");
   }
 }
 
@@ -156,22 +166,22 @@ inline bool isValidPoint(const cv::Vec3f& pt)
   return pt[2] != image_geometry::StereoCameraModel::MISSING_Z && !std::isinf(pt[2]);
 }
 
-void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
-                                 const CameraInfoConstPtr& l_info_msg,
-                                 const CameraInfoConstPtr& r_info_msg,
-                                 const DisparityImageConstPtr& disp_msg)
+void PointCloudNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr& l_image_msg,
+                              const sensor_msgs::msg::CameraInfo::ConstSharedPtr& l_info_msg,
+                              const sensor_msgs::msg::CameraInfo::ConstSharedPtr& r_info_msg,
+                              const stereo_msgs::msg::DisparityImage::ConstSharedPtr& disp_msg)
 {
   // Update the camera model
   model_.fromCameraInfo(l_info_msg, r_info_msg);
 
   // Calculate point cloud
-  const Image& dimage = disp_msg->image;
+  const sensor_msgs::msg::Image& dimage = disp_msg->image;
   const cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
   model_.projectDisparityImageTo3d(dmat, points_mat_, true);
   cv::Mat_<cv::Vec3f> mat = points_mat_;
 
   // Fill in new PointCloud2 message (2D image-like layout)
-  PointCloud2Ptr points_msg = boost::make_shared<PointCloud2>();
+  auto points_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
   points_msg->header = disp_msg->header;
   points_msg->height = mat.rows;
   points_msg->width  = mat.cols;
@@ -258,15 +268,16 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
   }
   else
   {
-    NODELET_WARN_THROTTLE(30, "Could not fill color channel of the point cloud, "
-                          "unsupported encoding '%s'", encoding.c_str());
+    // Throttle duration in milliseconds
+    RCUTILS_LOG_WARN_THROTTLE(RCUTILS_STEADY_TIME, 30000,
+      "Could not fill color channel of the point cloud, "
+      "unsupported encoding '%s'", encoding.c_str());
   }
 
-  pub_points2_.publish(points_msg);
+  pub_points2_->publish(*points_msg);
 }
 
 } // namespace stereo_image_proc
 
-// Register nodelet
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(stereo_image_proc::PointCloud2Nodelet,nodelet::Nodelet)
+// Register node
+RCLCPP_COMPONENTS_REGISTER_NODE(stereo_image_proc::PointCloudNode)

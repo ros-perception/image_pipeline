@@ -31,16 +31,25 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include <ros/assert.h>
-#include "stereo_image_proc/processor.h"
-#include <sensor_msgs/image_encodings.h>
+#include "stereo_image_proc/stereo_processor.hpp"
+#include <rcutils/logging_macros.h>
+#include <sensor_msgs/image_encodings.hpp>
 #include <cmath>
 #include <limits>
 
+
+// TODO(jacobperron): Remove this after it's implemented upstream
+// https://github.com/ros2/rcutils/pull/112
+#ifndef RCUTILS_ASSERT
+#define RCUTILS_ASSERT assert
+#endif
+// Uncomment below instead
+// #include <rcutils/assert.h>
+
 namespace stereo_image_proc {
 
-bool StereoProcessor::process(const sensor_msgs::ImageConstPtr& left_raw,
-                              const sensor_msgs::ImageConstPtr& right_raw,
+bool StereoProcessor::process(const sensor_msgs::msg::Image::ConstSharedPtr& left_raw,
+                              const sensor_msgs::msg::Image::ConstSharedPtr& right_raw,
                               const image_geometry::StereoCameraModel& model,
                               StereoImageSet& output, int flags) const
 {
@@ -82,7 +91,7 @@ bool StereoProcessor::process(const sensor_msgs::ImageConstPtr& left_raw,
 
 void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& right_rect,
                                        const image_geometry::StereoCameraModel& model,
-                                       stereo_msgs::DisparityImage& disparity) const
+                                       stereo_msgs::msg::DisparityImage& disparity) const
 {
   // Fixed-point disparity is 16 times the true value: d = d_fp / 16.0 = x_l - x_r.
   static const int DPP = 16; // disparities per pixel
@@ -101,7 +110,7 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
 #endif
 
   // Fill in DisparityImage image data, converting to 32-bit float
-  sensor_msgs::Image& dimage = disparity.image;
+  sensor_msgs::msg::Image& dimage = disparity.image;
   dimage.height = disparity16_.rows;
   dimage.width = disparity16_.cols;
   dimage.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
@@ -111,12 +120,12 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
   // We convert from fixed-point to float disparity and also adjust for any x-offset between
   // the principal points: d = d_fp*inv_dpp - (cx_l - cx_r)
   disparity16_.convertTo(dmat, dmat.type(), inv_dpp, -(model.left().cx() - model.right().cx()));
-  ROS_ASSERT(dmat.data == &dimage.data[0]);
+  RCUTILS_ASSERT(dmat.data == &dimage.data[0]);
   /// @todo is_bigendian? :)
 
   // Stereo parameters
   disparity.f = model.right().fx();
-  disparity.T = model.baseline();
+  disparity.t = model.baseline();
 
   /// @todo Window of (potentially) valid disparities
 
@@ -133,13 +142,13 @@ inline bool isValidPoint(const cv::Vec3f& pt)
   return pt[2] != image_geometry::StereoCameraModel::MISSING_Z && !std::isinf(pt[2]);
 }
 
-void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity,
+void StereoProcessor::processPoints(const stereo_msgs::msg::DisparityImage& disparity,
                                     const cv::Mat& color, const std::string& encoding,
                                     const image_geometry::StereoCameraModel& model,
-                                    sensor_msgs::PointCloud& points) const
+                                    sensor_msgs::msg::PointCloud& points) const
 {
   // Calculate dense point cloud
-  const sensor_msgs::Image& dimage = disparity.image;
+  const sensor_msgs::msg::Image& dimage = disparity.image;
   const cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
   model.projectDisparityImageTo3d(dmat, dense_points_, true);
 
@@ -157,7 +166,7 @@ void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity
     for (int32_t v = 0; v < dense_points_.cols; ++v) {
       if (isValidPoint(dense_points_(u,v))) {
         // x,y,z
-        geometry_msgs::Point32 pt;
+        geometry_msgs::msg::Point32 pt;
         pt.x = dense_points_(u,v)[0];
         pt.y = dense_points_(u,v)[1];
         pt.z = dense_points_(u,v)[2];
@@ -206,17 +215,17 @@ void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity
     }
   }
   else {
-    ROS_WARN("Could not fill color channel of the point cloud, unrecognized encoding '%s'", encoding.c_str());
+    RCUTILS_LOG_WARN("Could not fill color channel of the point cloud, unrecognized encoding '%s'", encoding.c_str());
   }
 }
 
-void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparity,
+void StereoProcessor::processPoints2(const stereo_msgs::msg::DisparityImage& disparity,
                                      const cv::Mat& color, const std::string& encoding,
                                      const image_geometry::StereoCameraModel& model,
-                                     sensor_msgs::PointCloud2& points) const
+                                     sensor_msgs::msg::PointCloud2& points) const
 {
   // Calculate dense point cloud
-  const sensor_msgs::Image& dimage = disparity.image;
+  const sensor_msgs::msg::Image& dimage = disparity.image;
   const cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
   model.projectDisparityImageTo3d(dmat, dense_points_, true);
 
@@ -227,19 +236,19 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
   points.fields[0].name = "x";
   points.fields[0].offset = 0;
   points.fields[0].count = 1;
-  points.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
+  points.fields[0].datatype = sensor_msgs::msg::PointField::FLOAT32;
   points.fields[1].name = "y";
   points.fields[1].offset = 4;
   points.fields[1].count = 1;
-  points.fields[1].datatype = sensor_msgs::PointField::FLOAT32;
+  points.fields[1].datatype = sensor_msgs::msg::PointField::FLOAT32;
   points.fields[2].name = "z";
   points.fields[2].offset = 8;
   points.fields[2].count = 1;
-  points.fields[2].datatype = sensor_msgs::PointField::FLOAT32;
+  points.fields[2].datatype = sensor_msgs::msg::PointField::FLOAT32;
   points.fields[3].name = "rgb";
   points.fields[3].offset = 12;
   points.fields[3].count = 1;
-  points.fields[3].datatype = sensor_msgs::PointField::FLOAT32;
+  points.fields[3].datatype = sensor_msgs::msg::PointField::FLOAT32;
   //points.is_bigendian = false; ???
   points.point_step = 16;
   points.row_step = points.point_step * points.width;
@@ -310,7 +319,7 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
     }
   }
   else {
-    ROS_WARN("Could not fill color channel of the point cloud, unrecognized encoding '%s'", encoding.c_str());
+    RCUTILS_LOG_WARN("Could not fill color channel of the point cloud, unrecognized encoding '%s'", encoding.c_str());
   }
 }
 

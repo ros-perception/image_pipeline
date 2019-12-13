@@ -31,13 +31,9 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
-#include <boost/version.hpp>
-#if ((BOOST_VERSION / 100) % 1000) >= 53
-#include <boost/thread/lock_guard.hpp>
-#endif
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
 
-#include <ros/ros.h>
-#include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
 #include <message_filters/subscriber.h>
@@ -49,43 +45,45 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include <cv_bridge/cv_bridge.h>
 
-#include <sensor_msgs/image_encodings.h>
-#include <stereo_msgs/DisparityImage.h>
+#include <sensor_msgs/image_encodings.hpp>
+#include <stereo_msgs/msg/disparity_image.hpp>
 
-#include <stereo_image_proc/DisparityConfig.h>
-#include <dynamic_reconfigure/server.h>
+#include <stereo_image_proc/stereo_processor.hpp>
 
-#include <stereo_image_proc/processor.h>
+#include <memory>
 
 namespace stereo_image_proc {
 
-using namespace sensor_msgs;
-using namespace stereo_msgs;
 using namespace message_filters::sync_policies;
 
-class DisparityNodelet : public nodelet::Nodelet
+class DisparityNode : public rclcpp::Node
 {
-  boost::shared_ptr<image_transport::ImageTransport> it_;
-  
+public:
+  explicit DisparityNode(const rclcpp::NodeOptions & options);
+
+private:
   // Subscriptions
   image_transport::SubscriberFilter sub_l_image_, sub_r_image_;
-  message_filters::Subscriber<CameraInfo> sub_l_info_, sub_r_info_;
-  typedef ExactTime<Image, CameraInfo, Image, CameraInfo> ExactPolicy;
-  typedef ApproximateTime<Image, CameraInfo, Image, CameraInfo> ApproximatePolicy;
-  typedef message_filters::Synchronizer<ExactPolicy> ExactSync;
-  typedef message_filters::Synchronizer<ApproximatePolicy> ApproximateSync;
-  boost::shared_ptr<ExactSync> exact_sync_;
-  boost::shared_ptr<ApproximateSync> approximate_sync_;
+  message_filters::Subscriber<sensor_msgs::msg::CameraInfo> sub_l_info_, sub_r_info_;
+  using ExactPolicy = ExactTime<
+    sensor_msgs::msg::Image,
+    sensor_msgs::msg::CameraInfo,
+    sensor_msgs::msg::Image,
+    sensor_msgs::msg::CameraInfo>;
+  using ApproximatePolicy = ApproximateTime<
+    sensor_msgs::msg::Image,
+    sensor_msgs::msg::CameraInfo,
+    sensor_msgs::msg::Image,
+    sensor_msgs::msg::CameraInfo>;
+  using ExactSync = message_filters::Synchronizer<ExactPolicy>;
+  using ApproximateSync = message_filters::Synchronizer<ApproximatePolicy>;
+  std::shared_ptr<ExactSync> exact_sync_;
+  std::shared_ptr<ApproximateSync> approximate_sync_;
   // Publications
-  boost::mutex connect_mutex_;
-  ros::Publisher pub_disparity_;
+  // TODO(jacobperron): Uncomment when we can be notified of subscriber status
+  // std::mutex connect_mutex_;
+  std::shared_ptr<rclcpp::Publisher<stereo_msgs::msg::DisparityImage>> pub_disparity_;
 
-  // Dynamic reconfigure
-  boost::recursive_mutex config_mutex_;
-  typedef stereo_image_proc::DisparityConfig Config;
-  typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
-  boost::shared_ptr<ReconfigureServer> reconfigure_server_;
-  
   // Processing state (note: only safe because we're single-threaded!)
   image_geometry::StereoCameraModel model_;
   stereo_image_proc::StereoProcessor block_matcher_; // contains scratch buffers for block matching
@@ -94,31 +92,37 @@ class DisparityNodelet : public nodelet::Nodelet
 
   void connectCb();
 
-  void imageCb(const ImageConstPtr& l_image_msg, const CameraInfoConstPtr& l_info_msg,
-               const ImageConstPtr& r_image_msg, const CameraInfoConstPtr& r_info_msg);
+  void imageCb(
+    const sensor_msgs::msg::Image::ConstSharedPtr& l_image_msg,
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr& l_info_msg,
+    const sensor_msgs::msg::Image::ConstSharedPtr& r_image_msg,
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr& r_info_msg);
 
-  void configCb(Config &config, uint32_t level);
+  // void configCb(Config &config, uint32_t level);
 };
 
-void DisparityNodelet::onInit()
+DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
+  : rclcpp::Node("disparity_node", options)
 {
-  ros::NodeHandle &nh = getNodeHandle();
-  ros::NodeHandle &private_nh = getPrivateNodeHandle();
+  onInit();
+}
 
-  it_.reset(new image_transport::ImageTransport(nh));
+void DisparityNode::onInit()
+{
+  using namespace std::placeholders;
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection
   // callback. Optionally do approximate synchronization.
   int queue_size;
-  private_nh.param("queue_size", queue_size, 5);
+  queue_size = this->declare_parameter("queue_size", 5);
   bool approx;
-  private_nh.param("approximate_sync", approx, false);
+  approx = this->declare_parameter("approximate_sync", false);
   if (approx)
   {
     approximate_sync_.reset( new ApproximateSync(ApproximatePolicy(queue_size),
                                                  sub_l_image_, sub_l_info_,
                                                  sub_r_image_, sub_r_info_) );
-    approximate_sync_->registerCallback(boost::bind(&DisparityNodelet::imageCb,
+    approximate_sync_->registerCallback(std::bind(&DisparityNode::imageCb,
                                                     this, _1, _2, _3, _4));
   }
   else
@@ -126,57 +130,59 @@ void DisparityNodelet::onInit()
     exact_sync_.reset( new ExactSync(ExactPolicy(queue_size),
                                      sub_l_image_, sub_l_info_,
                                      sub_r_image_, sub_r_info_) );
-    exact_sync_->registerCallback(boost::bind(&DisparityNodelet::imageCb,
+    exact_sync_->registerCallback(std::bind(&DisparityNode::imageCb,
                                               this, _1, _2, _3, _4));
   }
 
-  // Set up dynamic reconfiguration
-  ReconfigureServer::CallbackType f = boost::bind(&DisparityNodelet::configCb,
-                                                  this, _1, _2);
-  reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
-  reconfigure_server_->setCallback(f);
+  // TODO(jacobperron): Setup equivalent of dynamic reconfigure with ROS 2 parameters
+  //                    See configCb
+  
+  // TODO(jacobperron): Monitoring subscriber status is currently not possible in ROS 2
+  // std::lock_guard<std::mutex> lock(connect_mutex_);
 
   // Monitor whether anyone is subscribed to the output
-  ros::SubscriberStatusCallback connect_cb = boost::bind(&DisparityNodelet::connectCb, this);
-  // Make sure we don't enter connectCb() between advertising and assigning to pub_disparity_
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  pub_disparity_ = nh.advertise<DisparityImage>("disparity", 1, connect_cb, connect_cb);
+  // ros::SubscriberStatusCallback connect_cb = std::bind(&DisparityNode::connectCb, this);
+
+  pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>("disparity", 1);
+
+  // TODO(jacobperron): Remove when we can be notified of subscriber status
+  connectCb();
 }
 
 // Handles (un)subscribing when clients (un)subscribe
-void DisparityNodelet::connectCb()
+void DisparityNode::connectCb()
 {
-  boost::lock_guard<boost::mutex> lock(connect_mutex_);
-  if (pub_disparity_.getNumSubscribers() == 0)
+  // TODO(jacobperron): Uncomment when we can be notified of subscriber status
+  // std::lock_guard<std::mutex> lock(connect_mutex_);
+  // if (pub_disparity_.getNumSubscribers() == 0)
+  // {
+  //   sub_l_image_.unsubscribe();
+  //   sub_l_info_ .unsubscribe();
+  //   sub_r_image_.unsubscribe();
+  //   sub_r_info_ .unsubscribe();
+  // }
+  // else if (!sub_l_image_.getSubscriber())
+  if (!sub_l_image_.getSubscriber())
   {
-    sub_l_image_.unsubscribe();
-    sub_l_info_ .unsubscribe();
-    sub_r_image_.unsubscribe();
-    sub_r_info_ .unsubscribe();
-  }
-  else if (!sub_l_image_.getSubscriber())
-  {
-    ros::NodeHandle &nh = getNodeHandle();
-    // Queue size 1 should be OK; the one that matters is the synchronizer queue size.
-    /// @todo Allow remapping left, right?
-    image_transport::TransportHints hints("raw", ros::TransportHints(), getPrivateNodeHandle());
-    sub_l_image_.subscribe(*it_, "left/image_rect", 1, hints);
-    sub_l_info_ .subscribe(nh,   "left/camera_info", 1);
-    sub_r_image_.subscribe(*it_, "right/image_rect", 1, hints);
-    sub_r_info_ .subscribe(nh,   "right/camera_info", 1);
+    image_transport::TransportHints hints(this, "raw");
+    sub_l_image_.subscribe(this, "left/image_rect", hints.getTransport());
+    sub_l_info_ .subscribe(this, "left/camera_info");
+    sub_r_image_.subscribe(this, "right/image_rect", hints.getTransport());
+    sub_r_info_ .subscribe(this, "right/camera_info");
   }
 }
 
-void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
-                               const CameraInfoConstPtr& l_info_msg,
-                               const ImageConstPtr& r_image_msg,
-                               const CameraInfoConstPtr& r_info_msg)
+void DisparityNode::imageCb(
+    const sensor_msgs::msg::Image::ConstSharedPtr& l_image_msg,
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr& l_info_msg,
+    const sensor_msgs::msg::Image::ConstSharedPtr& r_image_msg,
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr& r_info_msg) 
 {
   // Update the camera model
   model_.fromCameraInfo(l_info_msg, r_info_msg);
 
   // Allocate new disparity image message
-  DisparityImagePtr disp_msg = boost::make_shared<DisparityImage>();
+  auto disp_msg = std::make_shared<stereo_msgs::msg::DisparityImage>();
   disp_msg->header         = l_info_msg->header;
   disp_msg->image.header   = l_info_msg->header;
 
@@ -209,42 +215,41 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
     cv::subtract(disp_image, cv::Scalar(cx_l - cx_r), disp_image);
   }
 
-  pub_disparity_.publish(disp_msg);
+  pub_disparity_->publish(*disp_msg);
 }
 
-void DisparityNodelet::configCb(Config &config, uint32_t level)
-{
-  // Tweak all settings to be valid
-  config.prefilter_size |= 0x1; // must be odd
-  config.correlation_window_size |= 0x1; // must be odd
-  config.disparity_range = (config.disparity_range / 16) * 16; // must be multiple of 16
-  
-  // check stereo method
-  // Note: With single-threaded NodeHandle, configCb and imageCb can't be called
-  // concurrently, so this is thread-safe.
-  block_matcher_.setPreFilterCap(config.prefilter_cap);
-  block_matcher_.setCorrelationWindowSize(config.correlation_window_size);
-  block_matcher_.setMinDisparity(config.min_disparity);
-  block_matcher_.setDisparityRange(config.disparity_range);
-  block_matcher_.setUniquenessRatio(config.uniqueness_ratio);
-  block_matcher_.setSpeckleSize(config.speckle_size);
-  block_matcher_.setSpeckleRange(config.speckle_range);
-  if (config.stereo_algorithm == stereo_image_proc::Disparity_StereoBM) { // StereoBM
-    block_matcher_.setStereoType(StereoProcessor::BM);
-    block_matcher_.setPreFilterSize(config.prefilter_size);
-    block_matcher_.setTextureThreshold(config.texture_threshold);
-  }
-  else if (config.stereo_algorithm == stereo_image_proc::Disparity_StereoSGBM) { // StereoSGBM
-    block_matcher_.setStereoType(StereoProcessor::SGBM);
-    block_matcher_.setSgbmMode(config.fullDP);
-    block_matcher_.setP1(config.P1);
-    block_matcher_.setP2(config.P2);
-    block_matcher_.setDisp12MaxDiff(config.disp12MaxDiff);
-  }
-}
+// void DisparityNode::configCb(Config &config, uint32_t level)
+// {
+//   // Tweak all settings to be valid
+//   config.prefilter_size |= 0x1; // must be odd
+//   config.correlation_window_size |= 0x1; // must be odd
+//   config.disparity_range = (config.disparity_range / 16) * 16; // must be multiple of 16
+//   
+//   // check stereo method
+//   // Note: With single-threaded NodeHandle, configCb and imageCb can't be called
+//   // concurrently, so this is thread-safe.
+//   block_matcher_.setPreFilterCap(config.prefilter_cap);
+//   block_matcher_.setCorrelationWindowSize(config.correlation_window_size);
+//   block_matcher_.setMinDisparity(config.min_disparity);
+//   block_matcher_.setDisparityRange(config.disparity_range);
+//   block_matcher_.setUniquenessRatio(config.uniqueness_ratio);
+//   block_matcher_.setSpeckleSize(config.speckle_size);
+//   block_matcher_.setSpeckleRange(config.speckle_range);
+//   if (config.stereo_algorithm == stereo_image_proc::Disparity_StereoBM) { // StereoBM
+//     block_matcher_.setStereoType(StereoProcessor::BM);
+//     block_matcher_.setPreFilterSize(config.prefilter_size);
+//     block_matcher_.setTextureThreshold(config.texture_threshold);
+//   }
+//   else if (config.stereo_algorithm == stereo_image_proc::Disparity_StereoSGBM) { // StereoSGBM
+//     block_matcher_.setStereoType(StereoProcessor::SGBM);
+//     block_matcher_.setSgbmMode(config.fullDP);
+//     block_matcher_.setP1(config.P1);
+//     block_matcher_.setP2(config.P2);
+//     block_matcher_.setDisp12MaxDiff(config.disp12MaxDiff);
+//   }
+// }
 
 } // namespace stereo_image_proc
 
-// Register nodelet
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(stereo_image_proc::DisparityNodelet,nodelet::Nodelet)
+// Register component
+RCLCPP_COMPONENTS_REGISTER_NODE(stereo_image_proc::DisparityNode)

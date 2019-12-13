@@ -1,4 +1,4 @@
-<package>
+<package format="2">
   <name>stereo_image_proc</name>
   <version>1.12.23</version>
   <description>Stereo and single image rectification and disparity processing.</description>
@@ -11,32 +11,19 @@
   <license>BSD</license>
   <url>http://www.ros.org/wiki/stereo_image_proc</url>
 
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>cv_bridge</depend>
+  <depend>image_geometry</depend>
+  <depend>image_proc</depend>
+  <depend>image_transport</depend>
+  <depend>message_filters</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>sensor_msgs</depend>
+  <depend>stereo_msgs</depend>
+
   <export>
-    <rosdoc config="rosdoc.yaml" />
-    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
+    <build_type>ament_cmake</build_type>
   </export>
-
-  <buildtool_depend>catkin</buildtool_depend>
-
-  <test_depend>rostest</test_depend>
-  
-  <build_depend>cv_bridge</build_depend>
-  <build_depend>dynamic_reconfigure</build_depend>
-  <build_depend>image_geometry</build_depend>
-  <build_depend>image_proc</build_depend>
-  <build_depend>image_transport</build_depend>
-  <build_depend>message_filters</build_depend>
-  <build_depend>nodelet</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>stereo_msgs</build_depend>
-
-  <run_depend>cv_bridge</run_depend>
-  <run_depend>dynamic_reconfigure</run_depend>
-  <run_depend>image_geometry</run_depend>
-  <run_depend>image_proc</run_depend>
-  <run_depend>image_transport</run_depend>
-  <run_depend>message_filters</run_depend>
-  <run_depend>nodelet</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>stereo_msgs</run_depend>
 </package>
