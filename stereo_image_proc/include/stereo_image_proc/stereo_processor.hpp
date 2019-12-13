@@ -85,66 +85,188 @@ public:
     ALL = LEFT_ALL | RIGHT_ALL | STEREO_ALL
   };
 
-  inline
-  StereoType getStereoType() const
+  inline StereoType getStereoType() const
   {
     return current_stereo_algorithm_;
   }
 
-  inline
-  void setStereoType(StereoType type)
+  inline void setStereoType(StereoType type)
   {
     current_stereo_algorithm_ = type;
   }
 
-  int getInterpolation() const;
-  void setInterpolation(int interp);
+  inline int getInterpolation() const
+  {
+    return mono_processor_.interpolation_;
+  }
 
-  // Disparity pre-filtering parameters
+  inline void setInterpolation(int interp)
+  {
+    mono_processor_.interpolation_ = interp;
+  }
 
-  int getPreFilterSize() const;
-  void setPreFilterSize(int size);
+  inline int getPreFilterCap() const
+  {
+    if (current_stereo_algorithm_ == BM) {
+      return block_matcher_->getPreFilterCap();
+    }
+    return sg_block_matcher_->getPreFilterCap();
+  }
 
-  int getPreFilterCap() const;
-  void setPreFilterCap(int cap);
+  inline void setPreFilterCap(int param)
+  {
+    block_matcher_->setPreFilterCap(param);
+    sg_block_matcher_->setPreFilterCap(param);
+  }
 
-  // Disparity correlation parameters
+  inline int getCorrelationWindowSize() const
+  {
+    if (current_stereo_algorithm_ == BM) {
+      return block_matcher_->getBlockSize();
+    }
+    return sg_block_matcher_->getBlockSize();
+  }
 
-  int getCorrelationWindowSize() const;
-  void setCorrelationWindowSize(int size);
+  inline void setCorrelationWindowSize(int param)
+  {
+    block_matcher_->setBlockSize(param);
+    sg_block_matcher_->setBlockSize(param);
+  }
 
-  int getMinDisparity() const;
-  void setMinDisparity(int min_d);
+  inline int getMinDisparity() const
+  {
+    if (current_stereo_algorithm_ == BM) {
+      return block_matcher_->getMinDisparity();
+    }
+    return sg_block_matcher_->getMinDisparity();
+  }
 
-  int getDisparityRange() const;
-  void setDisparityRange(int range);  // Number of pixels to search
+  inline void setMinDisparity(int param)
+  {
+    block_matcher_->setMinDisparity(param);
+    sg_block_matcher_->setMinDisparity(param);
+  }
 
-  // Disparity post-filtering parameters
+  inline int getDisparityRange() const
+  {
+    if (current_stereo_algorithm_ == BM) {
+      return block_matcher_->getNumDisparities();
+    }
+    return sg_block_matcher_->getNumDisparities();
+  }
 
-  int getTextureThreshold() const;
-  void setTextureThreshold(int threshold);
+  inline void setDisparityRange(int param)
+  {
+    block_matcher_->setNumDisparities(param);
+    sg_block_matcher_->setNumDisparities(param);
+  }
 
-  float getUniquenessRatio() const;
-  void setUniquenessRatio(float ratio);
+  inline float getUniquenessRatio() const
+  {
+    if (current_stereo_algorithm_ == BM) {
+      return block_matcher_->getUniquenessRatio();
+    }
+    return sg_block_matcher_->getUniquenessRatio();
+  }
 
-  int getSpeckleSize() const;
-  void setSpeckleSize(int size);
+  inline void setUniquenessRatio(float param)
+  {
+    block_matcher_->setUniquenessRatio(param);
+    sg_block_matcher_->setUniquenessRatio(param);
+  }
 
-  int getSpeckleRange() const;
-  void setSpeckleRange(int range);
+  inline int getSpeckleSize() const
+  {
+    if (current_stereo_algorithm_ == BM) {
+      return block_matcher_->getBlockSize();
+    }
+    return sg_block_matcher_->getBlockSize();
+  }
 
-  // SGBM only
-  int getSgbmMode() const;
-  void setSgbmMode(int fullDP);
+  inline void setSpeckleSize(int param)
+  {
+    block_matcher_->setBlockSize(param);
+    sg_block_matcher_->setBlockSize(param);
+  }
 
-  int getP1() const;
-  void setP1(int P1);
+  inline int getSpeckleRange() const
+  {
+    if (current_stereo_algorithm_ == BM) {
+      return block_matcher_->getSpeckleRange();
+    }
+    return sg_block_matcher_->getSpeckleRange();
+  }
 
-  int getP2() const;
-  void setP2(int P2);
+  inline void setSpeckleRange(int param)
+  {
+    block_matcher_->setSpeckleRange(param);
+    sg_block_matcher_->setSpeckleRange(param);
+  }
 
-  int getDisp12MaxDiff() const;
-  void setDisp12MaxDiff(int disp12MaxDiff);
+  // BM only
+
+  inline int getPreFilterSize() const
+  {
+    return block_matcher_->getPreFilterSize();
+  }
+
+  inline void setPreFilterSize(int param)
+  {
+    block_matcher_->setPreFilterSize(param);
+  }
+
+  inline int getTextureThreshold() const
+  {
+    return block_matcher_->getTextureThreshold();
+  }
+
+  inline void setTextureThreshold(int param)
+  {
+    block_matcher_->setTextureThreshold(param);
+  }
+
+  // SGBM specific
+
+  // getSgbmMode can return MODE_SGBM = 0, MODE_HH = 1. FullDP == 1 was MODE_HH so we're good
+  inline int getSgbmMode() const
+  {
+    return sg_block_matcher_->getMode();
+  }
+
+  inline void setSgbmMode(int param)
+  {
+    sg_block_matcher_->setMode(param);
+  }
+
+  inline int getP1() const
+  {
+    return sg_block_matcher_->getP1();
+  }
+
+  inline void setP1(int param)
+  {
+    sg_block_matcher_->setP1(param);
+  }
+
+  inline int getP2() const
+  {
+    return sg_block_matcher_->getP2();
+  }
+
+  inline void setP2(int param)
+  {
+    sg_block_matcher_->setP2(param);
+  }
+
+  inline int getDisp12MaxDiff() const
+  {
+    return sg_block_matcher_->getDisp12MaxDiff();
+  }
+
+  inline void setDisp12MaxDiff(int param)
+  {
+    sg_block_matcher_->setDisp12MaxDiff(param);
+  }
 
   // Do all the work!
   bool process(
@@ -186,180 +308,6 @@ private:
   /// Scratch buffer for dense point cloud.
   mutable cv::Mat_<cv::Vec3f> dense_points_;
 };
-
-
-inline int StereoProcessor::getInterpolation() const
-{
-  return mono_processor_.interpolation_;
-}
-
-inline void StereoProcessor::setInterpolation(int interp)
-{
-  mono_processor_.interpolation_ = interp;
-}
-
-inline int StereoProcessor::getPreFilterCap() const
-{
-  if (current_stereo_algorithm_ == BM) {
-    return block_matcher_->getPreFilterCap();
-  }
-  return sg_block_matcher_->getPreFilterCap();
-}
-
-inline void StereoProcessor::setPreFilterCap(int param)
-{
-  block_matcher_->setPreFilterCap(param);
-  sg_block_matcher_->setPreFilterCap(param);
-}
-
-inline int StereoProcessor::getCorrelationWindowSize() const
-{
-  if (current_stereo_algorithm_ == BM) {
-    return block_matcher_->getBlockSize();
-  }
-  return sg_block_matcher_->getBlockSize();
-}
-
-inline void StereoProcessor::setCorrelationWindowSize(int param)
-{
-  block_matcher_->setBlockSize(param);
-  sg_block_matcher_->setBlockSize(param);
-}
-
-inline int StereoProcessor::getMinDisparity() const
-{
-  if (current_stereo_algorithm_ == BM) {
-    return block_matcher_->getMinDisparity();
-  }
-  return sg_block_matcher_->getMinDisparity();
-}
-
-inline void StereoProcessor::setMinDisparity(int param)
-{
-  block_matcher_->setMinDisparity(param);
-  sg_block_matcher_->setMinDisparity(param);
-}
-
-inline int StereoProcessor::getDisparityRange() const
-{
-  if (current_stereo_algorithm_ == BM) {
-    return block_matcher_->getNumDisparities();
-  }
-  return sg_block_matcher_->getNumDisparities();
-}
-
-inline void StereoProcessor::setDisparityRange(int param)
-{
-  block_matcher_->setNumDisparities(param);
-  sg_block_matcher_->setNumDisparities(param);
-}
-
-inline float StereoProcessor::getUniquenessRatio() const
-{
-  if (current_stereo_algorithm_ == BM) {
-    return block_matcher_->getUniquenessRatio();
-  }
-  return sg_block_matcher_->getUniquenessRatio();
-}
-
-inline void StereoProcessor::setUniquenessRatio(float param)
-{
-  block_matcher_->setUniquenessRatio(param);
-  sg_block_matcher_->setUniquenessRatio(param);
-}
-
-inline int StereoProcessor::getSpeckleSize() const
-{
-  if (current_stereo_algorithm_ == BM) {
-    return block_matcher_->getBlockSize();
-  }
-  return sg_block_matcher_->getBlockSize();
-}
-
-inline void StereoProcessor::setSpeckleSize(int param)
-{
-  block_matcher_->setBlockSize(param);
-  sg_block_matcher_->setBlockSize(param);
-}
-
-inline int StereoProcessor::getSpeckleRange() const
-{
-  if (current_stereo_algorithm_ == BM) {
-    return block_matcher_->getSpeckleRange();
-  }
-  return sg_block_matcher_->getSpeckleRange();
-}
-
-inline void StereoProcessor::setSpeckleRange(int param)
-{
-  block_matcher_->setSpeckleRange(param);
-  sg_block_matcher_->setSpeckleRange(param);
-}
-
-// BM only
-
-inline int StereoProcessor::getPreFilterSize() const
-{
-  return block_matcher_->getPreFilterSize();
-}
-
-inline void StereoProcessor::setPreFilterSize(int param)
-{
-  block_matcher_->setPreFilterSize(param);
-}
-
-inline int StereoProcessor::getTextureThreshold() const
-{
-  return block_matcher_->getTextureThreshold();
-}
-
-inline void StereoProcessor::setTextureThreshold(int param)
-{
-  block_matcher_->setTextureThreshold(param);
-}
-
-// SGBM specific
-
-// getSgbmMode can return MODE_SGBM = 0, MODE_HH = 1. FullDP == 1 was MODE_HH so we're good
-inline int StereoProcessor::getSgbmMode() const
-{
-  return sg_block_matcher_->getMode();
-}
-
-inline void StereoProcessor::setSgbmMode(int param)
-{
-  sg_block_matcher_->setMode(param);
-}
-
-inline int StereoProcessor::getP1() const
-{
-  return sg_block_matcher_->getP1();
-}
-
-inline void StereoProcessor::setP1(int param)
-{
-  sg_block_matcher_->setP1(param);
-}
-
-inline int StereoProcessor::getP2() const
-{
-  return sg_block_matcher_->getP2();
-}
-
-inline void StereoProcessor::setP2(int param)
-{
-  sg_block_matcher_->setP2(param);
-}
-
-inline int StereoProcessor::getDisp12MaxDiff() const
-{
-  return sg_block_matcher_->getDisp12MaxDiff();
-}
-
-inline void StereoProcessor::setDisp12MaxDiff(int param)
-{
-  sg_block_matcher_->setDisp12MaxDiff(param);
-}
 
 }  // namespace stereo_image_proc
 
