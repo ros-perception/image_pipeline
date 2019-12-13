@@ -87,6 +87,10 @@ if(BUILD_TESTING)
   ament_add_pytest_test("test_disparity_node" test/test_disparity_node.py
     PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}"
   )
+  # Test PointCloudNode in launch test
+  ament_add_pytest_test("test_point_cloud_node" test/test_point_cloud_node.py
+    PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}"
+  )
 
   set(PYTHON_EXECUTABLE "${_PYTHON_EXECUTABLE}")
 endif()

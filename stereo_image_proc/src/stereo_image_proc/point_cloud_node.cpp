@@ -134,6 +134,9 @@ void PointCloudNode::onInit()
   // Make sure we don't enter connectCb() between advertising and assigning to pub_points2_
   // std::lock_guard<std::mutex> lock(connect_mutex_);
   pub_points2_  = create_publisher<sensor_msgs::msg::PointCloud2>("points2",  1);
+
+  // TODO(jacobperron): Remove this when we can be notified of subscriber status
+  connectCb();
 }
 
 // Handles (un)subscribing when clients (un)subscribe
