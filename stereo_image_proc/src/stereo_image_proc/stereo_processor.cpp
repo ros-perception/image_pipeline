@@ -108,17 +108,10 @@ void StereoProcessor::processDisparity(
 
   // Block matcher produces 16-bit signed (fixed point) disparity image
   if (current_stereo_algorithm_ == BM) {
-#if CV_MAJOR_VERSION == 3
     block_matcher_->compute(left_rect, right_rect, disparity16_);
   } else {
     sg_block_matcher_->compute(left_rect, right_rect, disparity16_);
   }
-#else
-    block_matcher_(left_rect, right_rect, disparity16_);
-  } else {
-    sg_block_matcher_(left_rect, right_rect, disparity16_);
-  }
-#endif
 
   // Fill in DisparityImage image data, converting to 32-bit float
   sensor_msgs::msg::Image & dimage = disparity.image;
