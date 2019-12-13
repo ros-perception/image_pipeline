@@ -85,8 +85,6 @@ private:
   image_geometry::StereoCameraModel model_;
   cv::Mat_<cv::Vec3f> points_mat_;  // scratch buffer
 
-  virtual void onInit();
-
   void connectCb();
 
   void imageCb(
@@ -99,18 +97,13 @@ private:
 PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("point_cloud_node", options)
 {
-  onInit();
-}
-
-void PointCloudNode::onInit()
-{
   using namespace std::placeholders;
-  // Synchronize inputs. Topic subscriptions happen on demand in the connection
-  // callback. Optionally do approximate synchronization.
-  int queue_size;
-  queue_size = this->declare_parameter("queue_size", 5);
-  bool approx;
-  approx = this->declare_parameter("approximate_sync", false);
+
+  // Declare/read parameters
+  int queue_size = this->declare_parameter("queue_size", 5);
+  bool approx = this->declare_parameter("approximate_sync", false);
+
+  // Synchronize callbacks
   if (approx) {
     approximate_sync_.reset(new ApproximateSync(
         ApproximatePolicy(queue_size),

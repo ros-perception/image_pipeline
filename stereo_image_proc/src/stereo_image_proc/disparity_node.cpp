@@ -85,8 +85,6 @@ private:
   // contains scratch buffers for block matching
   stereo_image_proc::StereoProcessor block_matcher_;
 
-  virtual void onInit();
-
   void connectCb();
 
   void imageCb(
@@ -101,19 +99,13 @@ private:
 DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("disparity_node", options)
 {
-  onInit();
-}
-
-void DisparityNode::onInit()
-{
   using namespace std::placeholders;
 
-  // Synchronize inputs. Topic subscriptions happen on demand in the connection
-  // callback. Optionally do approximate synchronization.
-  int queue_size;
-  queue_size = this->declare_parameter("queue_size", 5);
-  bool approx;
-  approx = this->declare_parameter("approximate_sync", false);
+  // Declare/read parameters
+  int queue_size = this->declare_parameter("queue_size", 5);
+  bool approx = this->declare_parameter("approximate_sync", false);
+
+  // Synchronize callbacks
   if (approx) {
     approximate_sync_.reset(new ApproximateSync(
         ApproximatePolicy(queue_size),
