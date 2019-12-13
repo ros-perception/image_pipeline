@@ -66,7 +66,8 @@ public:
     BM, SGBM
   };
 
-  enum {
+  enum
+  {
     LEFT_MONO        = 1 << 0,
     LEFT_RECT        = 1 << 1,
     LEFT_COLOR       = 1 << 2,

@@ -79,8 +79,6 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   find_package(python_cmake_module REQUIRED)
 
-  # Disable uncrustify since it has issues with #ifdef blocks
-  set(ament_cmake_uncrustify_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 
   set(_PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}")
