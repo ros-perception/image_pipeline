@@ -180,6 +180,12 @@ install(
   RUNTIME DESTINATION bin
 )
 
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+ament_export_include_directories(include)
+
 ament_export_interfaces(
   export_crop_decimate HAS_LIBRARY_TARGET
   export_crop_non_zero HAS_LIBRARY_TARGET
