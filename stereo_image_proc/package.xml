@@ -23,6 +23,14 @@
   <depend>sensor_msgs</depend>
   <depend>stereo_msgs</depend>
 
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>launch</test_depend>
+  <test_depend>launch_ros</test_depend>
+  <test_depend>launch_testing</test_depend>
+  <test_depend>python_cmake_executable</test_depend>
+  <test_depend>python3-opencv</test_depend>
+  <test_depend>rclpy</test_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

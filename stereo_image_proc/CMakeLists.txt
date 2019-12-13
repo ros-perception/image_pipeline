@@ -28,7 +28,7 @@ include_directories(
 # See note in image_proc/CMakeLists.txt
 # add_definitions(-DOPENCV_TRAITS_ENABLE_DEPRECATED)
 
-add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME} SHARED
   src/${PROJECT_NAME}/stereo_processor.cpp
   src/${PROJECT_NAME}/disparity_node.cpp
   src/${PROJECT_NAME}/point_cloud_node.cpp
@@ -72,5 +72,23 @@ install(DIRECTORY include/
 )
 
 ament_export_include_directories(include)
+ament_export_libraries(${PROJECT_NAME})
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_pytest REQUIRED)
+  find_package(python_cmake_module REQUIRED)
+
+  set(_PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}")
+  if(WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE_DEBUG}")
+  endif()
+
+  # Test DisparityNode in launch test
+  ament_add_pytest_test("test_disparity_node" test/test_disparity_node.py
+    PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}"
+  )
+
+  set(PYTHON_EXECUTABLE "${_PYTHON_EXECUTABLE}")
+endif()
 
 ament_package()
