@@ -85,17 +85,13 @@ class TestDisparityNode(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.context = rclpy.context.Context()
-        rclpy.init(context=cls.context)
-        cls.node = rclpy.create_node('test_disparity_node', context=cls.context)
-        # rclpy.init()
-        # cls.node = rclpy.create_node('test_disparity_node')
+        rclpy.init()
+        cls.node = rclpy.create_node('test_disparity_node')
 
     @classmethod
     def tearDownClass(cls):
         cls.node.destroy_node()
-        rclpy.shutdown(context=cls.context)
-        # rclpy.shutdown()
+        rclpy.shutdown()
 
     def test_message_received(self):
         # Expect the disparity node to publish on '/diparity' topic
@@ -108,12 +104,9 @@ class TestDisparityNode(unittest.TestCase):
         )
 
         # Wait up to 10 seconds to receive message
-        executor = rclpy.executors.SingleThreadedExecutor(context=self.context)
-        executor.add_node(self.node)
         start_time = time.time()
         while len(msgs_received) == 0 and (time.time() - start_time) < 10:
-            executor.spin_once(timeout_sec=0.1)
-        executor.remove_node(self.node)
+            rclpy.spin_once(self.node, timeout_sec=0.1)
 
         assert len(msgs_received) > 0
 
