@@ -36,18 +36,20 @@ import time
 import unittest
 
 from launch import LaunchDescription
+from launch.actions import ExecuteProcess
+from launch.actions import OpaqueFunction
 
 from launch_ros.actions import Node
 
-import launch_testing
-
 import pytest
+
+import rclpy
 
 from stereo_msgs.msg import DisparityImage
 
 
 @pytest.mark.rostest
-def generate_test_description():
+def generate_test_description(ready_fn):
 
     path_to_stereo_image_publisher_fixture = os.path.join(
         os.path.dirname(__file__), 'fixtures', 'stereo_image_publisher.py')
@@ -57,11 +59,14 @@ def generate_test_description():
 
     return LaunchDescription([
         # Stereo image publisher
-        Node(
-            node_executable=sys.executable,
-            arguments=[
-                path_to_stereo_image_publisher_fixture, path_to_left_image, path_to_right_image],
-            node_name='stereo_image_pub',
+        # TODO(jacobperron): we can use Node in Eloquent
+        ExecuteProcess(
+            cmd=[
+                sys.executable,
+                path_to_stereo_image_publisher_fixture,
+                path_to_left_image,
+                path_to_right_image
+            ],
             output='screen'
         ),
         # DisparityNode
@@ -71,18 +76,31 @@ def generate_test_description():
             node_name='disparity_node',
             output='screen'
         ),
-        launch_testing.actions.ReadyToTest(),
+        # TODO(jacobperron): In Eloquent, use 'launch_testing.actions.ReadyToTest()'
+        OpaqueFunction(function=lambda context: ready_fn()),
     ])
 
 
 class TestDisparityNode(unittest.TestCase):
 
-    def test_message_received(self, launch_service):
-        node = launch_service.context.locals.launch_ros_node
+    @classmethod
+    def setUpClass(cls):
+        cls.context = rclpy.context.Context()
+        rclpy.init(context=cls.context)
+        cls.node = rclpy.create_node('test_disparity_node', context=cls.context)
+        # rclpy.init()
+        # cls.node = rclpy.create_node('test_disparity_node')
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.node.destroy_node()
+        rclpy.shutdown(context=cls.context)
+        # rclpy.shutdown()
+
+    def test_message_received(self):
         # Expect the disparity node to publish on '/diparity' topic
         msgs_received = []
-        node.create_subscription(
+        self.node.create_subscription(
             DisparityImage,
             'disparity',
             lambda msg: msgs_received.append(msg),
@@ -90,9 +108,12 @@ class TestDisparityNode(unittest.TestCase):
         )
 
         # Wait up to 10 seconds to receive message
+        executor = rclpy.executors.SingleThreadedExecutor(context=self.context)
+        executor.add_node(self.node)
         start_time = time.time()
         while len(msgs_received) == 0 and (time.time() - start_time) < 10:
-            time.sleep(0.1)
+            executor.spin_once(timeout_sec=0.1)
+        executor.remove_node(self.node)
 
         assert len(msgs_received) > 0
 

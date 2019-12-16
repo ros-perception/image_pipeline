@@ -76,6 +76,7 @@ ament_export_libraries(${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
+  find_package(launch_testing_ament_cmake REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   find_package(python_cmake_module REQUIRED)
 
@@ -87,13 +88,21 @@ if(BUILD_TESTING)
   endif()
 
   # Test DisparityNode in launch test
-  ament_add_pytest_test("test_disparity_node" test/test_disparity_node.py
+  add_launch_test("test/test_disparity_node.py"
     PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}"
   )
+  # TODO(jacobperron): As of Eloquent, they're just plain pytests
+  # ament_add_pytest_test("test_disparity_node" test/test_disparity_node.py
+  #   PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}"
+  # )
+
   # Test PointCloudNode in launch test
-  ament_add_pytest_test("test_point_cloud_node" test/test_point_cloud_node.py
+  add_launch_test("test/test_point_cloud_node.py"
     PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}"
   )
+  # ament_add_pytest_test("test_point_cloud_node" test/test_point_cloud_node.py
+  #   PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}"
+  # )
 
   set(PYTHON_EXECUTABLE "${_PYTHON_EXECUTABLE}")
 endif()

@@ -36,18 +36,20 @@ import time
 import unittest
 
 from launch import LaunchDescription
+from launch.actions import ExecuteProcess
+from launch.actions import OpaqueFunction
 
 from launch_ros.actions import Node
 
-import launch_testing
-
 import pytest
+
+import rclpy
 
 from sensor_msgs.msg import PointCloud2
 
 
 @pytest.mark.rostest
-def generate_test_description():
+def generate_test_description(ready_fn):
 
     path_to_disparity_image_publisher_fixture = os.path.join(
         os.path.dirname(__file__), 'fixtures', 'disparity_image_publisher.py')
@@ -57,14 +59,14 @@ def generate_test_description():
 
     return LaunchDescription([
         # Disparity image publisher
-        Node(
-            node_executable=sys.executable,
-            arguments=[
+        # TODO(jacobperron): we can use Node in Eloquent
+        ExecuteProcess(
+            cmd=[
+                sys.executable,
                 path_to_disparity_image_publisher_fixture,
                 path_to_left_image,
-                path_to_disparity_image
+                path_to_disparity_image,
             ],
-            node_name='disparity_image_pub',
             output='screen'
         ),
         # PointCloudNode
@@ -74,18 +76,29 @@ def generate_test_description():
             node_name='point_cloud_node',
             output='screen'
         ),
-        launch_testing.actions.ReadyToTest(),
+        # TODO(jacobperron): In Eloquent, use 'launch_testing.actions.ReadyToTest()'
+        OpaqueFunction(function=lambda context: ready_fn()),
     ])
 
 
 class TestPointCloudNode(unittest.TestCase):
 
-    def test_message_received(self, launch_service):
-        node = launch_service.context.locals.launch_ros_node
+    @classmethod
+    def setUpClass(cls):
+        # TODO(jacobperron): Instead of handling the init/shutdown cycle, as of Eloqeunt
+        #                    we can use the node 'launch_service.context.locals.launch_ros_node'
+        rclpy.init()
+        cls.node = rclpy.create_node('test_point_cloud_node')
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.node.destroy_node()
+        rclpy.shutdown()
+
+    def test_message_received(self):
         # Expect the point cloud node to publish on '/points2' topic
         msgs_received = []
-        node.create_subscription(
+        self.node.create_subscription(
             PointCloud2,
             'points2',
             lambda msg: msgs_received.append(msg),
@@ -95,6 +108,6 @@ class TestPointCloudNode(unittest.TestCase):
         # Wait up to 10 seconds to receive message
         start_time = time.time()
         while len(msgs_received) == 0 and (time.time() - start_time) < 10:
-            time.sleep(0.1)
+            rclpy.spin_once(self.node, timeout_sec=(0.1))
 
         assert len(msgs_received) > 0
