@@ -76,8 +76,6 @@ private:
   std::shared_ptr<ExactSync> exact_sync_;
   std::shared_ptr<ApproximateSync> approximate_sync_;
   // Publications
-  // TODO(jacobperron): Uncomment when we can be notified of subscriber status
-  // std::mutex connect_mutex_;
   std::shared_ptr<rclcpp::Publisher<stereo_msgs::msg::DisparityImage>> pub_disparity_;
 
   // Processing state (note: only safe because we're single-threaded!)
@@ -125,38 +123,22 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
   // TODO(jacobperron): Setup equivalent of dynamic reconfigure with ROS 2 parameters
   //                    See configCb
 
-  // TODO(jacobperron): Monitoring subscriber status is currently not possible in ROS 2
-  // std::lock_guard<std::mutex> lock(connect_mutex_);
-
-  // Monitor whether anyone is subscribed to the output
-  // ros::SubscriberStatusCallback connect_cb = std::bind(&DisparityNode::connectCb, this);
-
   pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>("disparity", 1);
 
-  // TODO(jacobperron): Remove when we can be notified of subscriber status
+  // TODO(jacobperron): Replace this with a graph event.
+  //                    Only subscribe if there's a subscription listening to our publisher.
   connectCb();
 }
 
 // Handles (un)subscribing when clients (un)subscribe
 void DisparityNode::connectCb()
 {
-  // TODO(jacobperron): Uncomment when we can be notified of subscriber status
-  // std::lock_guard<std::mutex> lock(connect_mutex_);
-  // if (pub_disparity_.getNumSubscribers() == 0)
-  // {
-  //   sub_l_image_.unsubscribe();
-  //   sub_l_info_ .unsubscribe();
-  //   sub_r_image_.unsubscribe();
-  //   sub_r_info_ .unsubscribe();
-  // }
-  // else if (!sub_l_image_.getSubscriber())
-  if (!sub_l_image_.getSubscriber()) {
-    image_transport::TransportHints hints(this, "raw");
-    sub_l_image_.subscribe(this, "left/image_rect", hints.getTransport());
-    sub_l_info_.subscribe(this, "left/camera_info");
-    sub_r_image_.subscribe(this, "right/image_rect", hints.getTransport());
-    sub_r_info_.subscribe(this, "right/camera_info");
-  }
+  // TODO(jacobperron): Add unsubscribe logic when we use graph events
+  image_transport::TransportHints hints(this, "raw");
+  sub_l_image_.subscribe(this, "left/image_rect", hints.getTransport());
+  sub_l_info_.subscribe(this, "left/camera_info");
+  sub_r_image_.subscribe(this, "right/image_rect", hints.getTransport());
+  sub_r_info_.subscribe(this, "right/camera_info");
 }
 
 void DisparityNode::imageCb(
@@ -165,6 +147,11 @@ void DisparityNode::imageCb(
   const sensor_msgs::msg::Image::ConstSharedPtr & r_image_msg,
   const sensor_msgs::msg::CameraInfo::ConstSharedPtr & r_info_msg)
 {
+  // If there are no subscriptions for the disparity image, do nothing
+  if (pub_disparity_->get_subscription_count() == 0u) {
+    return;
+  }
+
   // Update the camera model
   model_.fromCameraInfo(l_info_msg, r_info_msg);
 

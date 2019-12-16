@@ -77,8 +77,6 @@ private:
   std::shared_ptr<ApproximateSync> approximate_sync_;
 
   // Publications
-  // TODO(jacobperron): Uncomment when we can be notified of subscriber status
-  // std::mutex connect_mutex_;
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pub_points2_;
 
   // Processing state (note: only safe because we're single-threaded!)
@@ -120,37 +118,22 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
       std::bind(&PointCloudNode::imageCb, this, _1, _2, _3, _4));
   }
 
-  // TODO(jacobperron): Monitoring subscriber status is currently not possible in ROS 2
-  // Monitor whether anyone is subscribed to the output
-  // ros::SubscriberStatusCallback connect_cb = std::bind(&PointCloudNode::connectCb, this);
-  // Make sure we don't enter connectCb() between advertising and assigning to pub_points2_
-  // std::lock_guard<std::mutex> lock(connect_mutex_);
   pub_points2_ = create_publisher<sensor_msgs::msg::PointCloud2>("points2", 1);
 
-  // TODO(jacobperron): Remove this when we can be notified of subscriber status
+  // TODO(jacobperron): Replace this with a graph event.
+  //                    Only subscribe if there's a subscription listening to our publisher.
   connectCb();
 }
 
 // Handles (un)subscribing when clients (un)subscribe
 void PointCloudNode::connectCb()
 {
-  // TODO(jacobperron): Uncomment when we can be notified of subscriber status
-  // std::lock_guard<std::mutex> lock(connect_mutex_);
-  // if (pub_points2_.getNumSubscribers() == 0)
-  // {
-  //   sub_l_image_  .unsubscribe();
-  //   sub_l_info_   .unsubscribe();
-  //   sub_r_info_   .unsubscribe();
-  //   sub_disparity_.unsubscribe();
-  // }
-  // else if (!sub_l_image_.getSubscriber())
-  if (!sub_l_image_.getSubscriber()) {
-    image_transport::TransportHints hints(this, "raw");
-    sub_l_image_.subscribe(this, "left/image_rect_color", hints.getTransport());
-    sub_l_info_.subscribe(this, "left/camera_info");
-    sub_r_info_.subscribe(this, "right/camera_info");
-    sub_disparity_.subscribe(this, "disparity");
-  }
+  // TODO(jacobperron): Add unsubscribe logic when we use graph events
+  image_transport::TransportHints hints(this, "raw");
+  sub_l_image_.subscribe(this, "left/image_rect_color", hints.getTransport());
+  sub_l_info_.subscribe(this, "left/camera_info");
+  sub_r_info_.subscribe(this, "right/camera_info");
+  sub_disparity_.subscribe(this, "disparity");
 }
 
 inline bool isValidPoint(const cv::Vec3f & pt)
@@ -166,6 +149,11 @@ void PointCloudNode::imageCb(
   const sensor_msgs::msg::CameraInfo::ConstSharedPtr & r_info_msg,
   const stereo_msgs::msg::DisparityImage::ConstSharedPtr & disp_msg)
 {
+  // If there are no subscriptions for the point cloud, do nothing
+  if (pub_points2_->get_subscription_count() == 0u) {
+    return;
+  }
+
   // Update the camera model
   model_.fromCameraInfo(l_info_msg, r_info_msg);
 
