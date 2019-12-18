@@ -8,7 +8,8 @@ jobs:
       - run:
           name: Set Up Container
           command: |
-            apt update -qq && apt install -y build-essential cmake python3-colcon-common-extensions python3-rosdep
+            apt update -qq && apt install -y build-essential cmake python3-colcon-common-extensions python3-rosdep python3-pip
+            pip3 install --upgrade pytest
             source `find /opt/ros -maxdepth 2 -name local_setup.bash | sort | head -1`
             mkdir -p src/image_pipeline && mv `find -maxdepth 1 -not -name . -not -name src` src/image_pipeline/
             rosdep update
