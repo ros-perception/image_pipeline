@@ -14,6 +14,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(rcutils REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -33,6 +34,18 @@ set(dependencies
   rclcpp
   rclcpp_components
   rcutils
+)
+
+add_library(${PROJECT_NAME}
+  src/${PROJECT_NAME}/processor.cpp
+)
+target_link_libraries(${PROJECT_NAME}
+  ${OpenCV_LIBRARIES}
+)
+ament_target_dependencies(${PROJECT_NAME}
+  image_geometry
+  rcutils
+  sensor_msgs
 )
 
 add_library(rectify SHARED
@@ -89,39 +102,58 @@ ament_target_dependencies(crop_decimate
 
 rclcpp_components_register_nodes(crop_decimate "image_proc::CropDecimateNode")
 set(node_plugins "${node_plugins}image_proc::CropDecimateNode;$<TARGET_FILE:crop_decimate>\n")
+add_library(crop_non_zero SHARED
+  src/crop_non_zero.cpp
+)
 
-add_executable(image_proc
+target_compile_definitions(crop_non_zero
+  PRIVATE "COMPOSITION_BUILDING_DLL")
+
+ament_target_dependencies(crop_non_zero
+  ${dependencies}
+)
+
+rclcpp_components_register_nodes(crop_non_zero "image_proc::CropNonZeroNode")
+set(node_plugins "${node_plugins}image_proc::CropNonZeroNode;$<TARGET_FILE:crop_non_zero>\n")
+
+add_executable(image_proc_exe
   src/image_proc.cpp
 )
 
-target_link_libraries(image_proc
+target_link_libraries(image_proc_exe
   debayer
   rectify
-  ament_index_cpp::ament_index_cpp)
+  ament_index_cpp::ament_index_cpp
+)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   target_link_libraries(image_proc "stdc++fs")
 endif()
 
-ament_target_dependencies(image_proc
+ament_target_dependencies(image_proc_exe
   ${dependencies}
 )
 
+set_target_properties(image_proc_exe PROPERTIES OUTPUT_NAME image_proc)
+
 install(TARGETS
-  image_proc
-  DESTINATION lib/${PROJECT_NAME}
+  ${PROJECT_NAME} image_proc_exe
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
+
 install(
-  TARGETS resize
-  EXPORT export_resize
+  TARGETS crop_decimate
+  EXPORT export_crop_decimate
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 install(
-  TARGETS crop_decimate
-  EXPORT export_crop_decimate
+  TARGETS crop_non_zero
+  EXPORT export_crop_non_zero
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -140,19 +172,34 @@ install(
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
+install(
+  TARGETS resize
+  EXPORT export_resize
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+ament_export_include_directories(include)
 
 ament_export_interfaces(
-  export_resize HAS_LIBRARY_TARGET
+  export_crop_decimate HAS_LIBRARY_TARGET
+  export_crop_non_zero HAS_LIBRARY_TARGET
   export_debayer HAS_LIBRARY_TARGET
   export_rectify HAS_LIBRARY_TARGET
-  export_crop_decimate HAS_LIBRARY_TARGET
+  export_resize HAS_LIBRARY_TARGET
 )
 
 ament_export_libraries(
-  resize
+  crop_decimate
+  crop_non_zero
   debayer
   rectify
-  crop_decimate
+  resize
 )
 
 if(BUILD_TESTING)

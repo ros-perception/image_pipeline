@@ -1,4 +1,4 @@
-// Copyright 2008, 2019 Willow Garage, Inc., Andreas Klintberg, Joshua Whitley
+// Copyright 2008, 2019 Willow Garage, Inc., Steve Macenski, Joshua Whitley
 // All rights reserved.
 //
 // Software License Agreement (BSD License 2.0)
@@ -30,53 +30,42 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IMAGE_PROC__PROCESSOR_HPP_
-#define IMAGE_PROC__PROCESSOR_HPP_
+#ifndef IMAGE_PROC__CROP_NON_ZERO_HPP_
+#define IMAGE_PROC__CROP_NON_ZERO_HPP_
 
-#include <image_geometry/pinhole_camera_model.h>
-#include <sensor_msgs/msg/image.hpp>
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
+#include <rclcpp/rclcpp.hpp>
 
-#include <opencv2/core/core.hpp>
-
+#include <thread>
+#include <memory>
+#include <vector>
 #include <string>
 
 namespace image_proc
 {
 
-struct ImageSet
-{
-  std::string color_encoding;
-  cv::Mat mono;
-  cv::Mat rect;
-  cv::Mat color;
-  cv::Mat rect_color;
-};
-
-class Processor
+class CropNonZeroNode : public rclcpp::Node
 {
 public:
-  Processor()
-  : interpolation_(cv::INTER_LINEAR)
-  {
-  }
+  explicit CropNonZeroNode(const rclcpp::NodeOptions &);
 
-  int interpolation_;
+private:
+  std::string camera_namespace_;
+  std::string image_pub_topic_;
+  std::string image_sub_topic_;
 
-  enum
-  {
-    MONO       = 1 << 0,
-    RECT       = 1 << 1,
-    COLOR      = 1 << 2,
-    RECT_COLOR = 1 << 3,
-    ALL = MONO | RECT | COLOR | RECT_COLOR
-  };
+  // Subscriptions
+  image_transport::Subscriber sub_raw_;
 
-  bool process(
-    const sensor_msgs::msg::Image::ConstSharedPtr & raw_image,
-    const image_geometry::PinholeCameraModel & model,
-    ImageSet & output, int flags = ALL) const;
+  // Publications
+  std::mutex connect_mutex_;
+
+  image_transport::Publisher pub_;
+
+  void connectCb();
+
+  void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg);
 };
-
 }  // namespace image_proc
-
-#endif  // IMAGE_PROC__PROCESSOR_HPP_
+#endif  // IMAGE_PROC__CROP_NON_ZERO_HPP_
