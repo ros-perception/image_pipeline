@@ -55,10 +55,10 @@ class TestMultipleBoards(unittest.TestCase):
         small_board.dim = 0.025
 
         stereo_cal = StereoCalibrator([board, small_board])
-        if not os.path.isfile('multi_board_calibration.tar.gz'):
+        if not os.path.isfile('/tmp/multi_board_calibration.tar.gz'):
             url = 'http://download.ros.org/data/camera_calibration/multi_board_calibration.tar.gz'
             r = requests.get(url, allow_redirects=True)
-            with open('multi_board_calibration.tar.gz', 'wb') as mcf:
+            with open('/tmp/multi_board_calibration.tar.gz', 'wb') as mcf:
                 mcf.write(r.content)
 
         my_archive_name = 'multi_board_calibration.tar.gz'

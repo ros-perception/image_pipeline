@@ -52,10 +52,10 @@ board.dim = 0.108
 
 class TestDirected(unittest.TestCase):
     def setUp(self):
-        if not os.path.isfile('camera_calibration.tar.gz'):
+        if not os.path.isfile('/tmp/camera_calibration.tar.gz'):
             url = 'http://download.ros.org/data/camera_calibration/camera_calibration.tar.gz'
             r = requests.get(url, allow_redirects=True)
-            with open('camera_calibration.tar.gz', 'wb') as cf:
+            with open('/tmp/camera_calibration.tar.gz', 'wb') as cf:
                 cf.write(r.content)
 
         tar_path = 'camera_calibration.tar.gz'
