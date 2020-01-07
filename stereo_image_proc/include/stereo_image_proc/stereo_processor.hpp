@@ -178,15 +178,15 @@ public:
   inline int getSpeckleSize() const
   {
     if (current_stereo_algorithm_ == BM) {
-      return block_matcher_->getBlockSize();
+      return block_matcher_->getSpeckleWindowSize();
     }
-    return sg_block_matcher_->getBlockSize();
+    return sg_block_matcher_->getSpeckleWindowSize();
   }
 
   inline void setSpeckleSize(int param)
   {
-    block_matcher_->setBlockSize(param);
-    sg_block_matcher_->setBlockSize(param);
+    block_matcher_->setSpeckleWindowSize(param);
+    sg_block_matcher_->setSpeckleWindowSize(param);
   }
 
   inline int getSpeckleRange() const
