@@ -47,7 +47,12 @@
 #include <opencv2/calib3d/calib3d.hpp>
 
 #include <algorithm>
+#include <map>
 #include <memory>
+#include <string>
+#include <sstream>
+#include <utility>
+#include <vector>
 
 namespace stereo_image_proc
 {
@@ -58,6 +63,12 @@ public:
   explicit DisparityNode(const rclcpp::NodeOptions & options);
 
 private:
+  enum StereoAlgorithm
+  {
+    BLOCK_MATCHING = 0,
+    SEMI_GLOBAL_BLOCK_MATCHING
+  };
+
   // Subscriptions
   image_transport::SubscriberFilter sub_l_image_, sub_r_image_;
   message_filters::Subscriber<sensor_msgs::msg::CameraInfo> sub_l_info_, sub_r_info_;
@@ -91,8 +102,48 @@ private:
     const sensor_msgs::msg::Image::ConstSharedPtr & r_image_msg,
     const sensor_msgs::msg::CameraInfo::ConstSharedPtr & r_info_msg);
 
-  // void configCb(Config &config, uint32_t level);
+  rcl_interfaces::msg::SetParametersResult parameterSetCb(
+    const std::vector<rclcpp::Parameter> & parameters);
 };
+
+// Some helper functions for adding a parameter to a collection
+static void add_param_to_map(
+  std::map<std::string, std::pair<int, rcl_interfaces::msg::ParameterDescriptor>> & parameters,
+  const std::string & name,
+  const std::string & description,
+  const int default_value,
+  const int from_value,
+  const int to_value,
+  const int step)
+{
+  rcl_interfaces::msg::IntegerRange integer_range;
+  integer_range.from_value = from_value;
+  integer_range.to_value = to_value;
+  integer_range.step = step;
+  rcl_interfaces::msg::ParameterDescriptor descriptor;
+  descriptor.description = description;
+  descriptor.integer_range = {integer_range};
+  parameters[name] = std::make_pair(default_value, descriptor);
+}
+
+static void add_param_to_map(
+  std::map<std::string, std::pair<double, rcl_interfaces::msg::ParameterDescriptor>> & parameters,
+  const std::string & name,
+  const std::string & description,
+  const double default_value,
+  const double from_value,
+  const double to_value,
+  const double step)
+{
+  rcl_interfaces::msg::FloatingPointRange floating_point_range;
+  floating_point_range.from_value = from_value;
+  floating_point_range.to_value = to_value;
+  floating_point_range.step = step;
+  rcl_interfaces::msg::ParameterDescriptor descriptor;
+  descriptor.description = description;
+  descriptor.floating_point_range = {floating_point_range};
+  parameters[name] = std::make_pair(default_value, descriptor);
+}
 
 DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("disparity_node", options)
@@ -120,8 +171,92 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
       std::bind(&DisparityNode::imageCb, this, _1, _2, _3, _4));
   }
 
-  // TODO(jacobperron): Setup equivalent of dynamic reconfigure with ROS 2 parameters
-  //                    See configCb
+  // Register a callback for when parameters are set
+  this->set_on_parameters_set_callback(std::bind(&DisparityNode::parameterSetCb, this, _1));
+
+  // Describe int parameters
+  std::map<std::string, std::pair<int, rcl_interfaces::msg::ParameterDescriptor>> int_params;
+  add_param_to_map(
+    int_params,
+    "stereo_algorithm",
+    "Stereo algorithm: Block Matching (0) or Semi-Global Block Matching (1)",
+    0, 0, 1, 1);  // default, from, to, step
+  add_param_to_map(
+    int_params,
+    "prefilter_size",
+    "Normalization window size in pixels (must be odd)",
+    9, 5, 255, 2);
+  add_param_to_map(
+    int_params,
+    "prefilter_cap",
+    "Bound on normalized pixel values",
+    31, 1, 63, 1);
+  add_param_to_map(
+    int_params,
+    "correlation_window_size",
+    "SAD correlation window width in pixels (must be odd)",
+    15, 5, 255, 2);
+  add_param_to_map(
+    int_params,
+    "min_disparity",
+    "Disparity to begin search at in pixels",
+    0, -128, 128, 1);
+  add_param_to_map(
+    int_params,
+    "disparity_range",
+    "Number of disparities to search in pixels (must be a multiple of 16)",
+    64, 32, 256, 16);
+  add_param_to_map(
+    int_params,
+    "texture_ratio",
+    "Filter out if SAD window response does not exceed texture threshold",
+    10, 0, 10000, 1);
+  add_param_to_map(
+    int_params,
+    "speckle_size",
+    "Reject regions smaller than this size in pixels",
+    100, 0, 1000, 1);
+  add_param_to_map(
+    int_params,
+    "speckle_range",
+    "Maximum allowed difference between detected disparities",
+    4, 0, 31, 1);
+  add_param_to_map(
+    int_params,
+    "disp12_max_diff",
+    "Maximum allowed difference in the left-right disparity check in pixels"
+    " (Semi-Global Block Matching only)",
+    0, 0, 128, 1);
+
+  // Describe double parameters
+  std::map<std::string, std::pair<double, rcl_interfaces::msg::ParameterDescriptor>> double_params;
+  add_param_to_map(
+    double_params,
+    "uniqueness_ratio",
+    "Filter out if best match does not sufficiently exceed the next-best match",
+    15.0, 0.0, 100.0, 0.0);
+  add_param_to_map(
+    double_params,
+    "P1",
+    "The first parameter ccontrolling the disparity smoothness (Semi-Global Block Matching only)",
+    200.0, 0.0, 4000.0, 0.0);
+  add_param_to_map(
+    double_params,
+    "P2",
+    "The second parameter ccontrolling the disparity smoothness (Semi-Global Block Matching only)",
+    400.0, 0.0, 4000.0, 0.0);
+
+  // Describe bool parameters
+  std::map<std::string, std::pair<bool, rcl_interfaces::msg::ParameterDescriptor>> bool_params;
+  rcl_interfaces::msg::ParameterDescriptor full_dp_descriptor;
+  full_dp_descriptor.description =
+    "Run the full variant of the algorithm (Semi-Global Block Matching only)";
+  bool_params["full_dp"] = std::make_pair(false, full_dp_descriptor);
+
+  // Declaring parameters triggers the previously registered callback
+  this->declare_parameters("", int_params);
+  this->declare_parameters("", double_params);
+  this->declare_parameters("", bool_params);
 
   pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>("disparity", 1);
 
@@ -190,36 +325,55 @@ void DisparityNode::imageCb(
   pub_disparity_->publish(*disp_msg);
 }
 
-// void DisparityNode::configCb(Config &config, uint32_t level)
-// {
-//   // Tweak all settings to be valid
-//   config.prefilter_size |= 0x1; // must be odd
-//   config.correlation_window_size |= 0x1; // must be odd
-//   config.disparity_range = (config.disparity_range / 16) * 16; // must be multiple of 16
-//
-//   // check stereo method
-//   // Note: With single-threaded NodeHandle, configCb and imageCb can't be called
-//   // concurrently, so this is thread-safe.
-//   block_matcher_.setPreFilterCap(config.prefilter_cap);
-//   block_matcher_.setCorrelationWindowSize(config.correlation_window_size);
-//   block_matcher_.setMinDisparity(config.min_disparity);
-//   block_matcher_.setDisparityRange(config.disparity_range);
-//   block_matcher_.setUniquenessRatio(config.uniqueness_ratio);
-//   block_matcher_.setSpeckleSize(config.speckle_size);
-//   block_matcher_.setSpeckleRange(config.speckle_range);
-//   if (config.stereo_algorithm == stereo_image_proc::Disparity_StereoBM) { // StereoBM
-//     block_matcher_.setStereoType(StereoProcessor::BM);
-//     block_matcher_.setPreFilterSize(config.prefilter_size);
-//     block_matcher_.setTextureThreshold(config.texture_threshold);
-//   }
-//   else if (config.stereo_algorithm == stereo_image_proc::Disparity_StereoSGBM) { // StereoSGBM
-//     block_matcher_.setStereoType(StereoProcessor::SGBM);
-//     block_matcher_.setSgbmMode(config.fullDP);
-//     block_matcher_.setP1(config.P1);
-//     block_matcher_.setP2(config.P2);
-//     block_matcher_.setDisp12MaxDiff(config.disp12MaxDiff);
-//   }
-// }
+rcl_interfaces::msg::SetParametersResult DisparityNode::parameterSetCb(
+  const std::vector<rclcpp::Parameter> & parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & param : parameters) {
+    const std::string param_name = param.get_name();
+    if ("stereo_algorithm" == param_name) {
+      const int stereo_algorithm_value = param.as_int();
+      if (BLOCK_MATCHING == stereo_algorithm_value) {
+        block_matcher_.setStereoType(StereoProcessor::BM);
+      } else if (SEMI_GLOBAL_BLOCK_MATCHING == stereo_algorithm_value) {
+        block_matcher_.setStereoType(StereoProcessor::SGBM);
+      } else {
+        result.successful = false;
+        std::ostringstream oss;
+        oss << "Unknown stereo algorithm type '" << stereo_algorithm_value << "'";
+        result.reason = oss.str();
+      }
+    } else if ("prefilter_size" == param_name) {
+      block_matcher_.setPreFilterSize(param.as_int());
+    } else if ("prefilter_cap" == param_name) {
+      block_matcher_.setPreFilterCap(param.as_int());
+    } else if ("correlation_window_size" == param_name) {
+      block_matcher_.setCorrelationWindowSize(param.as_int());
+    } else if ("min_disparity" == param_name) {
+      block_matcher_.setMinDisparity(param.as_int());
+    } else if ("disparity_range" == param_name) {
+      block_matcher_.setDisparityRange(param.as_int());
+    } else if ("uniqueness_ratio" == param_name) {
+      block_matcher_.setUniquenessRatio(param.as_double());
+    } else if ("texture_threshold" == param_name) {
+      block_matcher_.setTextureThreshold(param.as_int());
+    } else if ("speckle_size" == param_name) {
+      block_matcher_.setSpeckleSize(param.as_int());
+    } else if ("speckle_range" == param_name) {
+      block_matcher_.setSpeckleRange(param.as_int());
+    } else if ("full_dp" == param_name) {
+      block_matcher_.setSgbmMode(param.as_bool());
+    } else if ("P1" == param_name) {
+      block_matcher_.setP1(param.as_double());
+    } else if ("P2" == param_name) {
+      block_matcher_.setP2(param.as_double());
+    } else if ("disp12_max_diff" == param_name) {
+      block_matcher_.setDisp12MaxDiff(param.as_int());
+    }
+  }
+  return result;
+}
 
 }  // namespace stereo_image_proc
 
