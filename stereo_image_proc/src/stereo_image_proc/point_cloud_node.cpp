@@ -130,9 +130,10 @@ void PointCloudNode::connectCb()
 {
   // TODO(jacobperron): Add unsubscribe logic when we use graph events
   image_transport::TransportHints hints(this, "raw");
-  sub_l_image_.subscribe(this, "left/image_rect_color", hints.getTransport());
-  sub_l_info_.subscribe(this, "left/camera_info");
-  sub_r_info_.subscribe(this, "right/camera_info");
+  const auto image_qos_profile = rclcpp::SensorDataQoS().get_rmw_qos_profile();
+  sub_l_image_.subscribe(this, "left/image_rect_color", hints.getTransport(), image_qos_profile);
+  sub_l_info_.subscribe(this, "left/camera_info", image_qos_profile);
+  sub_r_info_.subscribe(this, "right/camera_info", image_qos_profile);
   sub_disparity_.subscribe(this, "disparity");
 }
 
