@@ -25,7 +25,7 @@ jobs:
           command: |
             source `find /opt/ros -maxdepth 2 -name local_setup.bash | sort | head -1`
             colcon test --parallel-workers 2
-            colcon test-result
+            colcon test-result --verbose
 
 workflows:
   version: 2
