@@ -165,8 +165,8 @@ class TestArtificial(unittest.TestCase):
     def setUp(self):
         # Define some image transforms that will simulate a camera position
         M = []
-        self.K = numpy.array([[500, 0, 250], [0, 500, 250], [0, 0, 1]], numpy.float32)
-        self.D = numpy.array([])
+        self.k = numpy.array([[500, 0, 250], [0, 500, 250], [0, 0, 1]], numpy.float32)
+        self.d = numpy.array([])
         # physical size of the board
         self.board_width_dim = 1
 
@@ -217,7 +217,7 @@ class TestArtificial(unittest.TestCase):
                 R = numpy.array(rvec[i], numpy.float32)
                 T = numpy.array(tvec[i], numpy.float32)
             
-                image_points, _ = cv2.projectPoints(object_points_3d, R, T, self.K, self.D)
+                image_points, _ = cv2.projectPoints(object_points_3d, R, T, self.k, self.d)
 
                 # deduce the perspective transform
                 M.append(cv2.getPerspectiveTransform(object_points_2d, image_points))
@@ -265,10 +265,10 @@ class TestArtificial(unittest.TestCase):
             self.assert_good_mono(mc, self.limages[i], setup.lin_err)
 
             # Make sure the intrinsics are similar
-            err_intrinsics = numpy.linalg.norm(mc.intrinsics - self.K, ord=numpy.inf)
+            err_intrinsics = numpy.linalg.norm(mc.intrinsics - self.k, ord=numpy.inf)
             self.assertTrue(err_intrinsics < setup.K_err,
                          'intrinsics error is %f for resolution i = %d' % (err_intrinsics, i))
-            print('intrinsics error is %f' % numpy.linalg.norm(mc.intrinsics - self.K, ord=numpy.inf))
+            print('intrinsics error is %f' % numpy.linalg.norm(mc.intrinsics - self.k, ord=numpy.inf))
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
