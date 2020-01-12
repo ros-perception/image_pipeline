@@ -22,7 +22,7 @@ setup(
     maintainer='Vincent Rabaud, Steven Macenski',
     maintainer_email='vincent.rabaud@gmail.com, stevenmacenski@gmail.com, software@autonomoustuff.com',
     keywords=['ROS2'],
-    description='Camera_calibration allows easy calibration of monocular or stereo cameras using a checkerboard calibration target.',
+    description='Camera_calibration allows easy calibration of monocular or stereo cameras using a checkerboard calibration target .',
     license='BSD',
     tests_require=[
         'pytest',
