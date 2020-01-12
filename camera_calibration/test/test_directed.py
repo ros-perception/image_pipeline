@@ -58,7 +58,7 @@ class TestDirected(unittest.TestCase):
             with open('/tmp/camera_calibration.tar.gz', 'wb') as cf:
                 cf.write(r.content)
 
-        tar_path = 'camera_calibration.tar.gz'
+        tar_path = '/tmp/camera_calibration.tar.gz'
         self.tar = tarfile.open(tar_path, 'r')
         self.limages = [image_from_archive(self.tar, "wide/left%04d.pgm" % i) for i in range(3, 15)]
         self.rimages = [image_from_archive(self.tar, "wide/right%04d.pgm" % i) for i in range(3, 15)]

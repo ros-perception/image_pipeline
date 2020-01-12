@@ -61,7 +61,7 @@ class TestMultipleBoards(unittest.TestCase):
             with open('/tmp/multi_board_calibration.tar.gz', 'wb') as mcf:
                 mcf.write(r.content)
 
-        my_archive_name = 'multi_board_calibration.tar.gz'
+        my_archive_name = '/tmp/multi_board_calibration.tar.gz'
         stereo_cal.do_tarfile_calibration(my_archive_name)
 
         stereo_cal.report()
