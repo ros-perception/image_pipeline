@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.14.0 (2020-01-12)
+-------------------
 * resize.cpp: fix memory leak (`#489 <https://github.com/ros-perception/image_pipeline/issues/489>`_)
 * Try catch around cvtColor to avoid demosaicing src.empty() error (`#463 <https://github.com/ros-perception/image_pipeline/issues/463>`_)
 * Merge pull request `#436 <https://github.com/ros-perception/image_pipeline/issues/436>`_ from ros-perception/throttle_warnings

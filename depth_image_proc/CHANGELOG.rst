@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.14.0 (2020-01-12)
+-------------------
 * Merge pull request `#478 <https://github.com/ros-perception/image_pipeline/issues/478>`_ from ros-perception/steve_main
   added option to fill the sparse areas with neareast neighbor depth va…
 * Merge pull request `#336 <https://github.com/ros-perception/image_pipeline/issues/336>`_ from madsherlock/indigo

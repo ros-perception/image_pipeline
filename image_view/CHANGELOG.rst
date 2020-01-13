@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.14.0 (2020-01-12)
+-------------------
 * Merge pull request `#481 <https://github.com/ros-perception/image_pipeline/issues/481>`_ from ros-perception/fix/reliably-close-image-view
 * image_view: Making window close reliably shut down node.
 * Removing image_view node and replacing with image_view that loads nodelet. (`#479 <https://github.com/ros-perception/image_pipeline/issues/479>`_)

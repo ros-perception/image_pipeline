@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.14.0 (2020-01-12)
+-------------------
 * Expand range for min_disparity and disparity_range. (`#431 <https://github.com/ros-perception/image_pipeline/issues/431>`_)
 * Contributors: Terry Welsh, Tim Übelhör
 

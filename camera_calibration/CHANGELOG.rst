@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.14.0 (2020-01-12)
+-------------------
 * Add Fisheye calibration tool (`#440 <https://github.com/ros-perception/image_pipeline/issues/440>`_)
   * Add Fisheye calibration tool
   * Restore camera_calib files permisions
