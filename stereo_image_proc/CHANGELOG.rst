@@ -1,3 +1,8 @@
+Forthcoming
+-----------
+* Expand range for min_disparity and disparity_range. (`#431 <https://github.com/ros-perception/image_pipeline/issues/431>`_)
+* Contributors: Terry Welsh, Tim Übelhör
+
 1.13.0 (2019-06-12)
 -------------------
 * Merge pull request `#375 <https://github.com/ros-perception/image_pipeline/issues/375>`_ from fizyr-forks/opencv4

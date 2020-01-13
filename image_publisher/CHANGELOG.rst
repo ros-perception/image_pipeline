@@ -2,6 +2,9 @@
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.13.0 (2019-06-12)
 -------------------
 * Merge pull request `#358 <https://github.com/ros-perception/image_pipeline/issues/358>`_ from lucasw/image_pub_dr_private_namespace

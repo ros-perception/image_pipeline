@@ -1,3 +1,18 @@
+Forthcoming
+-----------
+* Merge pull request `#478 <https://github.com/ros-perception/image_pipeline/issues/478>`_ from ros-perception/steve_main
+  added option to fill the sparse areas with neareast neighbor depth va…
+* Merge pull request `#336 <https://github.com/ros-perception/image_pipeline/issues/336>`_ from madsherlock/indigo
+  depth_image_proc/point_cloud_xyzi_radial Add intensity conversion (copy) for float
+* depth_image_proc: fix support for mono16 intensity encoding in point_cloud_xyzi node (`#352 <https://github.com/ros-perception/image_pipeline/issues/352>`_)
+* added option to fill the sparse areas with neareast neighbor depth values on upsampling operations in depth_image_proc/register
+* point_cloud_xyzi Add intensity conversion for float
+* Add intensity conversion (copy) for float
+  This commit enables the generation of xyzi point clouds from 32-bit floating point intensity images.
+  The destination data type for intensity storage is 32-bit float, so all that is required is a data copy.
+  The change in this commit is simply an extension of the if-else statement to include the TYPE_32FC1 type and apply the usual convert_intensity() method.
+* Contributors: Mikael Westermann, Richard Bormann, Steven Macenski, Stewart Jamieson, Tim Übelhör
+
 1.13.0 (2019-06-12)
 -------------------
 * Merge pull request `#395 <https://github.com/ros-perception/image_pipeline/issues/395>`_ from ros-perception/steve_maintain

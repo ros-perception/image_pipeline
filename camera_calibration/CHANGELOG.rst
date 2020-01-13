@@ -1,3 +1,32 @@
+Forthcoming
+-----------
+* Add Fisheye calibration tool (`#440 <https://github.com/ros-perception/image_pipeline/issues/440>`_)
+  * Add Fisheye calibration tool
+  * Restore camera_calib files permisions
+  * Upgrades to calibrator tool for multi model calibration
+  * Solve fisheye balance selection
+  * Add fisheye calibration flags as user arguments
+  * Add undistortion of points for fisheye
+  * cam_calib: Style formating
+* camera_calibration: Improve YAML formatting, make config dumping methods static (`#438 <https://github.com/ros-perception/image_pipeline/issues/438>`_)
+  * Add `from __future_\_ import print_function`
+  * Improve YAML formatting, make some methods static
+  * Improves matrix formatting in YAML.
+  * Reduced decimal figures for camera and projection matrix values from 8 to 5.
+  * Making the methods static allows them to be used from elsewhere as well to dump calibration info.
+* camera_calibration: Fix all-zero distortion coeffs returned for a rational_polynomial model (`#433 <https://github.com/ros-perception/image_pipeline/issues/433>`_)
+  * Fix empty distortion coeffs returned for a rational_polynomial model
+  * Remove the redundant distCoeffs parameter from cv2.calibrateCamera()
+  * Set the shape of distortion_coefficients correctly in YAML output
+* Merge pull request `#437 <https://github.com/ros-perception/image_pipeline/issues/437>`_ from valgur/enable-calibration-with-empty-queue
+  camera_calibration: Make sure 'calibrate' button works even if not receiving images anymore
+* Make sure 'calibrate' button works even if not receiving images anymore
+* Merge pull request `#432 <https://github.com/ros-perception/image_pipeline/issues/432>`_ from valgur/melodic
+  camera_calibration: Fix excessive CPU usage due to queue synchronization
+* Replace deque with a modified Queue, add --queue-size param
+  Base fork on upstream melodic instead of indigo
+* Contributors: David Torres Ocaña, Joshua Whitley, Martin Valgur, Tim Übelhör
+
 1.13.0 (2019-06-12)
 -------------------
 * Merge pull request `#356 <https://github.com/ros-perception/image_pipeline/issues/356>`_ from sevangelatos/feature/calibrator_rolling_shutter
