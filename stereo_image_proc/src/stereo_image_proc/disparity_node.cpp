@@ -200,12 +200,12 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
     int_params,
     "min_disparity",
     "Disparity to begin search at in pixels",
-    0, -128, 128, 1);
+    0, -2048, 2048, 1);
   add_param_to_map(
     int_params,
     "disparity_range",
     "Number of disparities to search in pixels (must be a multiple of 16)",
-    64, 32, 256, 16);
+    64, 32, 4096, 16);
   add_param_to_map(
     int_params,
     "texture_ratio",
