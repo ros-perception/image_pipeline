@@ -55,7 +55,9 @@ target_link_libraries(image_view ${catkin_LIBRARIES}
                                  ${Boost_LIBRARIES}
 )
 install(TARGETS image_view
-        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
 )
 
 # Image viewers
