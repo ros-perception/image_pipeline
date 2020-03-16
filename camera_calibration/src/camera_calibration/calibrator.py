@@ -855,11 +855,11 @@ class MonoCalibrator(Calibrator):
             print("**** Collecting corners for all images! ****") #DEBUG
             images = [i for (p, i) in self.db]
             self.good_corners = self.collect_corners(images)
+        self.size = (self.db[0][1].shape[1], self.db[0][1].shape[0]) # TODO Needs to be set externally
         # Dump should only occur if user wants it
         if dump:
             pickle.dump((self.is_mono, self.size, self.good_corners),
                         open("/tmp/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
-        self.size = (self.db[0][1].shape[1], self.db[0][1].shape[0]) # TODO Needs to be set externally
         self.cal_fromcorners(self.good_corners)
         self.calibrated = True
         # DEBUG
@@ -1216,11 +1216,11 @@ class StereoCalibrator(Calibrator):
 
     def do_calibration(self, dump = False):
         # TODO MonoCalibrator collects corners if needed here
+        self.size = (self.db[0][1].shape[1], self.db[0][1].shape[0]) # TODO Needs to be set externally
         # Dump should only occur if user wants it
         if dump:
             pickle.dump((self.is_mono, self.size, self.good_corners),
                         open("/tmp/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
-        self.size = (self.db[0][1].shape[1], self.db[0][1].shape[0]) # TODO Needs to be set externally
         self.l.size = self.size
         self.r.size = self.size
         self.cal_fromcorners(self.good_corners)
