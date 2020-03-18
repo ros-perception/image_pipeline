@@ -104,6 +104,8 @@ class ImageNodelet : public nodelet::Nodelet
   boost::format filename_format_;
   int count_;
 
+  ros::Publisher pub_;
+
   dynamic_reconfigure::Server<image_view::ImageViewConfig> srv_;
   bool do_dynamic_scaling_;
   int colormap_;
@@ -178,6 +180,7 @@ void ImageNodelet::onInit()
   image_transport::ImageTransport it(nh);
   image_transport::TransportHints hints(transport, ros::TransportHints(), getPrivateNodeHandle());
   sub_ = it.subscribe(topic, 1, &ImageNodelet::imageCb, this, hints);
+  pub_ = local_nh.advertise<sensor_msgs::Image>("output", 1);
 
   dynamic_reconfigure::Server<image_view::ImageViewConfig>::CallbackType f =
     boost::bind(&ImageNodelet::reconfigureCb, this, _1, _2);
@@ -198,6 +201,7 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
   bool do_dynamic_scaling = do_dynamic_scaling_ & (msg->encoding.find("F") != std::string::npos);
 
   // Convert to OpenCV native BGR color
+  cv_bridge::CvImageConstPtr cv_ptr;
   try {
     cv_bridge::CvtColorForDisplayOptions options;
     options.do_dynamic_scaling = do_dynamic_scaling;
@@ -217,11 +221,15 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
       options.min_image_value = min_image_value_;
       options.max_image_value = max_image_value_;
     }
-    queued_image_.set(cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options)->image);
+    cv_ptr = cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options);
+    queued_image_.set(cv_ptr->image);
   }
   catch (cv_bridge::Exception& e) {
     NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
                              msg->encoding.c_str(), e.what());
+  }
+  if (pub_.getNumSubscribers() > 0) {
+    pub_.publish(cv_ptr);
   }
 }
 
@@ -285,6 +293,8 @@ void ImageNodelet::windowThread()
   }
 
   cv::destroyWindow(window_name_);
+
+  pub_.shutdown();
 
   if (ros::ok())
   {
