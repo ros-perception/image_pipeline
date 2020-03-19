@@ -198,7 +198,12 @@ void ImageNodelet::reconfigureCb(image_view::ImageViewConfig &config, uint32_t l
 void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
   // We want to scale floating point images so that they display nicely
-  bool do_dynamic_scaling = do_dynamic_scaling_ & (msg->encoding.find("F") != std::string::npos);
+  bool do_dynamic_scaling;
+  if (msg->encoding.find("F") != std::string::npos) {
+    do_dynamic_scaling = true;
+  } else {
+    do_dynamic_scaling = do_dynamic_scaling_;
+  }
 
   // Convert to OpenCV native BGR color
   cv_bridge::CvImageConstPtr cv_ptr;
