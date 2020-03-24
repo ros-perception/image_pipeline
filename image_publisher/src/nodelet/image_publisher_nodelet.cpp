@@ -95,7 +95,7 @@ class ImagePublisherNodelet : public nodelet::Nodelet
     {
       if ( cap_.isOpened() ) {
         if ( ! cap_.read(image_) ) {
-          cap_.set(CV_CAP_PROP_POS_FRAMES, 0);
+          cap_.set(cv::CAP_PROP_POS_FRAMES, 0);
         }
       }
       if (flip_image_)
@@ -136,7 +136,7 @@ public:
     nh_.param("filename", filename_, std::string(""));
     NODELET_INFO("File name for publishing image is : %s", filename_.c_str());
     try {
-      image_ = cv::imread(filename_, CV_LOAD_IMAGE_COLOR);
+      image_ = cv::imread(filename_, cv::IMREAD_COLOR);
       if ( image_.empty() ) { // if filename is motion file or device file
         try {  // if filename is number
           int num = boost::lexical_cast<int>(filename_);//num is 1234798797
@@ -146,7 +146,7 @@ public:
         }
         CV_Assert(cap_.isOpened());
         cap_.read(image_);
-        cap_.set(CV_CAP_PROP_POS_FRAMES, 0);
+        cap_.set(cv::CAP_PROP_POS_FRAMES, 0);
       }
       CV_Assert(!image_.empty());
     }
