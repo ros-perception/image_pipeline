@@ -103,6 +103,7 @@ class ImageNodelet : public nodelet::Nodelet
   bool autosize_;
   boost::format filename_format_;
   int count_;
+  bool gui_;
 
   ros::Publisher pub_;
 
@@ -175,7 +176,10 @@ void ImageNodelet::onInit()
   local_nh.param("filename_format", format_string, std::string("frame%04i.jpg"));
   filename_format_.parse(format_string);
 
-  window_thread_ = boost::thread(&ImageNodelet::windowThread, this);
+  local_nh.param("gui", gui_, true);
+  if (gui_) {
+    window_thread_ = boost::thread(&ImageNodelet::windowThread, this);
+  }
 
   image_transport::ImageTransport it(nh);
   image_transport::TransportHints hints(transport, ros::TransportHints(), getPrivateNodeHandle());
