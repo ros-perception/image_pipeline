@@ -22,6 +22,7 @@
   <depend>image_transport</depend>
   <depend>message_filters</depend>
   <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
   <depend>sensor_msgs</depend>
   <depend>std_srvs</depend>
   <depend>stereo_msgs</depend>
