@@ -16,7 +16,6 @@ find_package(image_transport REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(stereo_msgs REQUIRED)
 
