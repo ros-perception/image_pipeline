@@ -32,13 +32,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import roslib
-import rostest
-import rospy
+import rclpy
+import ament_index_python
+import requests
 import unittest
 import tarfile
-import copy
-import os, sys
+import os
 
 from camera_calibration.calibrator import StereoCalibrator, ChessboardInfo, image_from_archive
 
@@ -56,8 +55,13 @@ class TestMultipleBoards(unittest.TestCase):
         small_board.dim = 0.025
 
         stereo_cal = StereoCalibrator([board, small_board])
-        
-        my_archive_name = roslib.packages.find_resource('camera_calibration', 'multi_board_calibration.tar.gz')[0]
+        if not os.path.isfile('/tmp/multi_board_calibration.tar.gz'):
+            url = 'http://download.ros.org/data/camera_calibration/multi_board_calibration.tar.gz'
+            r = requests.get(url, allow_redirects=True)
+            with open('/tmp/multi_board_calibration.tar.gz', 'wb') as mcf:
+                mcf.write(r.content)
+
+        my_archive_name = '/tmp/multi_board_calibration.tar.gz'
         stereo_cal.do_tarfile_calibration(my_archive_name)
 
         stereo_cal.report()
@@ -68,20 +72,15 @@ class TestMultipleBoards(unittest.TestCase):
         l1_big = image_from_archive(archive, "left-0000.png")
         r1_big = image_from_archive(archive, "right-0000.png")
         epi_big = stereo_cal.epipolar_error_from_images(l1_big, r1_big)
-        self.assert_(epi_big < 1.0, "Epipolar error for large checkerboard > 1.0. Error: %.2f" % epi_big)
+        self.assertTrue(epi_big < 1.0, "Epipolar error for large checkerboard > 1.0. Error: %.2f" % epi_big)
 
         # Small checkerboard has larger error threshold for now
         l1_sm = image_from_archive(archive, "left-0012-sm.png")
         r1_sm = image_from_archive(archive, "right-0012-sm.png")
-        epi_sm =  stereo_cal.epipolar_error_from_images(l1_sm, r1_sm)
-        self.assert_(epi_sm < 2.0, "Epipolar error for small checkerboard > 2.0. Error: %.2f" % epi_sm)
+        epi_sm = stereo_cal.epipolar_error_from_images(l1_sm, r1_sm)
+        self.assertTrue(epi_sm < 2.0, "Epipolar error for small checkerboard > 2.0. Error: %.2f" % epi_sm)
 
 
 
 if __name__ == '__main__':
-    if 1:
-        rostest.unitrun('camera_calibration', 'test_multi_board_cal', TestMultipleBoards)
-    else:
-        suite = unittest.TestSuite()
-        suite.addTest(TestMultipleBoards('test_multi_board_cal'))
-        unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main(verbosity=2)

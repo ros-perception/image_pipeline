@@ -37,7 +37,8 @@ import cv_bridge
 import functools
 import message_filters
 import numpy
-import rospy
+import rclpy
+from rclpy.node import Node
 import sensor_msgs.msg
 import sensor_msgs.srv
 import threading
@@ -69,16 +70,16 @@ class ConsumerThread(threading.Thread):
         self.function = function
 
     def run(self):
-        while not rospy.is_shutdown():
-            while not rospy.is_shutdown():
-                m = self.queue.get()
-                if self.queue.empty():
-                    break
-            self.function(m)
+        while rclpy.ok():
+            m = self.queue.get()
+            if self.queue.empty():
+                break
+        self.function(m)
 
-class CameraCheckerNode:
+class CameraCheckerNode(Node):
 
-    def __init__(self, chess_size, dim, approximate=0):
+    def __init__(self, name, chess_size, dim, approximate=0):
+        super().__init__(name)
         self.board = ChessboardInfo()
         self.board.n_cols = chess_size[0]
         self.board.n_rows = chess_size[1]
@@ -88,8 +89,8 @@ class CameraCheckerNode:
         if self.board.n_cols < self.board.n_rows:
             self.board.n_cols, self.board.n_rows = self.board.n_rows, self.board.n_cols
 
-        image_topic = rospy.resolve_name("monocular") + "/image_rect"
-        camera_topic = rospy.resolve_name("monocular") + "/camera_info"
+        image_topic = "monocular/image_rect"
+        camera_topic = "monocular/camera_info"
 
         tosync_mono = [
             (image_topic, sensor_msgs.msg.Image),
@@ -101,13 +102,13 @@ class CameraCheckerNode:
         else:
             sync = functools.partial(ApproximateTimeSynchronizer, slop=approximate)
 
-        tsm = sync([message_filters.Subscriber(topic, type) for (topic, type) in tosync_mono], 10)
+        tsm = sync([message_filters.Subscriber(self, type, topic) for (topic, type) in tosync_mono], 10)
         tsm.registerCallback(self.queue_monocular)
 
-        left_topic = rospy.resolve_name("stereo") + "/left/image_rect"
-        left_camera_topic = rospy.resolve_name("stereo") + "/left/camera_info"
-        right_topic = rospy.resolve_name("stereo") + "/right/image_rect"
-        right_camera_topic = rospy.resolve_name("stereo") + "/right/camera_info"
+        left_topic = "stereo/left/image_rect"
+        left_camera_topic = "stereo/left/camera_info"
+        right_topic = "stereo/right/image_rect"
+        right_camera_topic = "stereo/right/camera_info"
 
         tosync_stereo = [
             (left_topic, sensor_msgs.msg.Image),
@@ -116,7 +117,7 @@ class CameraCheckerNode:
             (right_camera_topic, sensor_msgs.msg.CameraInfo)
         ]
 
-        tss = sync([message_filters.Subscriber(topic, type) for (topic, type) in tosync_stereo], 10)
+        tss = sync([message_filters.Subscriber(self, type, topic) for (topic, type) in tosync_stereo], 10)
         tss.registerCallback(self.queue_stereo)
 
         self.br = cv_bridge.CvBridge()
