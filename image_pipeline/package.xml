@@ -16,7 +16,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <!-- stack contents -->
-  <run_depend>camera_calibration</run_depend>
+  <!-- <run_depend>camera_calibration</run_depend> -->
   <run_depend>depth_image_proc</run_depend>
   <run_depend>image_proc</run_depend>
   <run_depend>image_publisher</run_depend>

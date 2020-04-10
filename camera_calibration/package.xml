@@ -1,35 +1,32 @@
-<?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
-<package format="3">
+<package>
   <name>camera_calibration</name>
   <version>1.12.23</version>
   <description>
      camera_calibration allows easy calibration of monocular or stereo
-     cameras using a checkerboard calibration target. 
+     cameras using a checkerboard calibration target.
   </description>
   <author>James Bowman</author>
   <author>Patrick Mihelich</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
   <maintainer email="software@autonomoustuff.com">Autonomoustuff team</maintainer>
-  
+
+  <buildtool_depend version_gte="0.5.68">catkin</buildtool_depend>
+
+  <test_depend>rostest</test_depend>
+
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>image_geometry</run_depend>
+  <run_depend>message_filters</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>std_srvs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+
   <license>BSD</license>
   <url>http://www.ros.org/wiki/camera_calibration</url>
 
-  <depend>cv_bridge</depend>
-  <depend>image_geometry</depend>
-  <depend>message_filters</depend>
-  <depend>rclpy</depend>
-  <depend>std_srvs</depend>
-  <depend>sensor_msgs</depend>
-
-  <test_depend>ament_copyright</test_depend>
-  <test_depend>ament_flake8</test_depend>
-  <test_depend>ament_pep257</test_depend>
-  <test_depend>python3-pytest</test_depend>
-  <test_depend>python3-requests</test_depend>
-
   <export>
-    <build_type>ament_python</build_type>
+    <rosdoc config="rosdoc.yaml" />
+    <architecture_independent/>
   </export>
 </package>

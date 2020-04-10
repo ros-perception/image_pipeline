@@ -58,7 +58,7 @@ class CalibrationException(Exception):
     pass
 
 # TODO: Make pattern per-board?
-class ChessboardInfo():
+class ChessboardInfo(object):
     def __init__(self, n_cols = 0, n_rows = 0, dim = 0.0):
         self.n_cols = n_cols
         self.n_rows = n_rows
@@ -214,7 +214,7 @@ def _get_circles(img, board, pattern):
 
 
 # TODO self.size needs to come from CameraInfo, full resolution
-class Calibrator():
+class Calibrator(object):
     """
     Base class for calibration system
     """
@@ -335,7 +335,7 @@ class Calibrator():
             num_pts = b.n_cols * b.n_rows
             opts_loc = numpy.zeros((num_pts, 1, 3), numpy.float32)
             for j in range(num_pts):
-                opts_loc[j, 0, 0] = (j // b.n_cols)
+                opts_loc[j, 0, 0] = (j / b.n_cols)
                 if self.pattern == Patterns.ACircles:
                     opts_loc[j, 0, 1] = 2*(j % b.n_cols) + (opts_loc[j, 0, 0] % 2)
                 else:
@@ -435,10 +435,10 @@ class Calibrator():
             msg.distortion_model = "rational_polynomial"
         else:
             msg.distortion_model = "plumb_bob"
-        msg.d = numpy.ravel(d).copy().tolist()
-        msg.k = numpy.ravel(k).copy().tolist()
-        msg.r = numpy.ravel(r).copy().tolist()
-        msg.p = numpy.ravel(p).copy().tolist()
+        msg.D = numpy.ravel(d).copy().tolist()
+        msg.K = numpy.ravel(k).copy().tolist()
+        msg.R = numpy.ravel(r).copy().tolist()
+        msg.P = numpy.ravel(p).copy().tolist()
         return msg
 
     def lrreport(self, d, k, r, p):
@@ -522,11 +522,11 @@ def image_from_archive(archive, name):
     Used for tarfile loading and unit test.
     """
     member = archive.getmember(name)
-    imagefiledata = numpy.frombuffer(archive.extractfile(member).read(), numpy.uint8)
+    imagefiledata = numpy.fromstring(archive.extractfile(member).read(), numpy.uint8)
     imagefiledata.resize((1, imagefiledata.size))
     return cv2.imdecode(imagefiledata, cv2.IMREAD_COLOR)
 
-class ImageDrawable():
+class ImageDrawable(object):
     """
     Passed to CalibrationNode after image handled. Allows plotting of images
     with detected corner points
@@ -668,10 +668,10 @@ class MonoCalibrator(Calibrator):
         """ Initialize the camera calibration from a CameraInfo message """
 
         self.size = (msg.width, msg.height)
-        self.intrinsics = numpy.array(msg.k, dtype=numpy.float64, copy=True).reshape((3, 3))
-        self.distortion = numpy.array(msg.d, dtype=numpy.float64, copy=True).reshape((len(msg.d), 1))
-        self.R = numpy.array(msg.r, dtype=numpy.float64, copy=True).reshape((3, 3))
-        self.P = numpy.array(msg.p, dtype=numpy.float64, copy=True).reshape((3, 4))
+        self.intrinsics = numpy.array(msg.K, dtype=numpy.float64, copy=True).reshape((3, 3))
+        self.distortion = numpy.array(msg.D, dtype=numpy.float64, copy=True).reshape((len(msg.D), 1))
+        self.R = numpy.array(msg.R, dtype=numpy.float64, copy=True).reshape((3, 3))
+        self.P = numpy.array(msg.P, dtype=numpy.float64, copy=True).reshape((3, 4))
 
         self.set_alpha(0.0)
 
@@ -798,8 +798,8 @@ class MonoCalibrator(Calibrator):
         """ Write images and calibration solution to a tarfile object """
 
         def taradd(name, buf):
-            if isinstance(buf, str):
-                s = BytesIO(buf.encode('utf-8'))
+            if isinstance(buf, basestring):
+                s = StringIO(buf)
             else:
                 s = BytesIO(buf)
             ti = tarfile.TarInfo(name)
@@ -1121,7 +1121,7 @@ class StereoCalibrator(Calibrator):
                [("right-%04d.png" % i, im) for i,(_, _, im) in enumerate(self.db)])
 
         def taradd(name, buf):
-            if isinstance(buf, str):
+            if isinstance(buf, basestring):
                 s = StringIO(buf)
             else:
                 s = BytesIO(buf)

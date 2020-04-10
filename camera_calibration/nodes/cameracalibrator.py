@@ -35,7 +35,8 @@
 import cv2
 import functools
 import message_filters
-import rclpy
+import os
+import rospy
 from camera_calibration.camera_calibrator import OpenCVCalibrationNode
 from camera_calibration.calibrator import ChessboardInfo, Patterns
 from message_filters import ApproximateTimeSynchronizer
@@ -140,10 +141,10 @@ def main():
     else:
         checkerboard_flags = cv2.CALIB_CB_FAST_CHECK
 
-    rclpy.init(args=args)
-    node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
+    rospy.init_node('cameracalibrator')
+    node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
                                  checkerboard_flags=checkerboard_flags)
-    node.spin()
+    rospy.spin()
 
 if __name__ == "__main__":
     try:
