@@ -2,30 +2,29 @@ version: 2
 jobs:
   noetic:
     docker:
-      - image: ros:noetic-perception
+      - image: jwhitleywork/ros:noetic-ros-base-focal
     steps:
       - checkout
       - run:
           name: Set Up Container
           command: |
-            apt-get update -qq && apt-get install -y python-catkin-tools
             source `find /opt/ros -name setup.bash | sort | head -1`
+            apt-get update -q
             rosdep update
-            rosdep install --from-paths . --ignore-src
-            cd ..
-            catkin init
-            catkin config --extend /opt/ros/$ROS_DISTRO
+            rosdep install -y --from-paths . --ignore-src
+            catkin_init_workspace
       - run:
           name: Build
           command: |
+            source `find /opt/ros -name setup.bash | sort | head -1`
             cd ..
-            catkin build --no-status -j4
+            catkin_make
       - run:
           name: Run Tests
           command: |
             source `find /opt/ros -name setup.bash | sort | head -1`
             cd ..
-            catkin run_tests -j4
+            catkin_make run_tests
             catkin_test_results
     working_directory: ~/src
 
