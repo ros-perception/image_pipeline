@@ -1,5 +1,7 @@
 find_package(rostest REQUIRED)
+find_package(catkin REQUIRED camera_calibration_parsers image_transport cv_bridge)
 #catkin_add_gtest(image_proc_rostest rostest.cpp)
 #target_link_libraries(image_proc_rostest ${catkin_LIBRARIES}  ${Boost_LIBRARIES})
+include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 add_rostest_gtest(image_proc_test_rectify test_rectify.xml test_rectify.cpp)
 target_link_libraries(image_proc_test_rectify ${catkin_LIBRARIES})
