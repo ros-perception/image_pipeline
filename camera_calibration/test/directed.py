@@ -32,12 +32,10 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-import roslib
-import rosunit
 import cv2
 
 import collections
+import roslib
 import copy
 import numpy
 import tarfile
@@ -68,10 +66,9 @@ class TestDirected(unittest.TestCase):
                 rri = cv2.resize(ri, (dim[0], dim[1]))
                 self.l[dim].append(rli)
                 self.r[dim].append(rri)
-                
+
     def assert_good_mono(self, c, dim, max_err):
-        #c.report()
-        self.assert_(len(c.ost()) > 0)
+        self.assertTrue(len(c.ost()) > 0)
         lin_err = 0
         n = 0
         for img in self.l[dim]:
@@ -81,8 +78,8 @@ class TestDirected(unittest.TestCase):
                 n += 1
         if n > 0:
             lin_err /= n
-        self.assert_(0.0 < lin_err, 'lin_err is %f' % lin_err)
-        self.assert_(lin_err < max_err, 'lin_err is %f' % lin_err)
+        self.assertTrue(0.0 < lin_err, 'lin_err is %f' % lin_err)
+        self.assertTrue(lin_err < max_err, 'lin_err is %f' % lin_err)
 
         flat = c.remap(img)
         self.assertEqual(img.shape, flat.shape)
@@ -122,7 +119,7 @@ class TestDirected(unittest.TestCase):
                     epierror += epierror_local
                     n += 1
             epierror /= n
-            self.assert_(epierror < epierrors[i],
+            self.assertTrue(epierror < epierrors[i],
                          'Epipolar error is %f for resolution i = %d' % (epierror, i))
 
             self.assertAlmostEqual(sc.chessboard_size_from_images(self.l[dim][0], self.r[dim][0]), .108, 2)
@@ -139,7 +136,7 @@ class TestDirected(unittest.TestCase):
             sc2.from_message(sc.as_message())
             # sc2.set_alpha(1.0)
             #sc2.report()
-            self.assert_(len(sc2.ost()) > 0)
+            self.assertTrue(len(sc2.ost()) > 0)
 
     def test_nochecker(self):
         # Run with same images, but looking for an incorrect chessboard size (8, 7).
@@ -161,8 +158,8 @@ class TestArtificial(unittest.TestCase):
     def setUp(self):
         # Define some image transforms that will simulate a camera position
         M = []
-        self.K = numpy.array([[500, 0, 250], [0, 500, 250], [0, 0, 1]], numpy.float32)
-        self.D = numpy.array([])
+        self.k = numpy.array([[500, 0, 250], [0, 500, 250], [0, 0, 1]], numpy.float32)
+        self.d = numpy.array([])
         # physical size of the board
         self.board_width_dim = 1
 
@@ -190,7 +187,7 @@ class TestArtificial(unittest.TestCase):
                 pattern.fill(255)
                 for j in range(1, setup.rows+1):
                     for i in range(1, setup.cols+1):
-                        cv2.circle(pattern, (int(50*i + 25), int(50*j + 25)), 15, (0,0,0), -1)
+                        cv2.circle(pattern, (50*i + 25, 50*j + 25), 15, (0,0,0), -1 )
             elif setup.pattern == Patterns.ACircles:
                 x = 60
                 pattern = numpy.zeros((x*(setup.rows+2), x*(setup.cols+5), 1), numpy.uint8)
@@ -212,8 +209,8 @@ class TestArtificial(unittest.TestCase):
             for i in range(len(rvec)):
                 R = numpy.array(rvec[i], numpy.float32)
                 T = numpy.array(tvec[i], numpy.float32)
-            
-                image_points, _ = cv2.projectPoints(object_points_3d, R, T, self.K, self.D)
+
+                image_points, _ = cv2.projectPoints(object_points_3d, R, T, self.k, self.d)
 
                 # deduce the perspective transform
                 M.append(cv2.getPerspectiveTransform(object_points_2d, image_points))
@@ -224,7 +221,7 @@ class TestArtificial(unittest.TestCase):
 
     def assert_good_mono(self, c, images, max_err):
         #c.report()
-        self.assert_(len(c.ost()) > 0)
+        self.assertTrue(len(c.ost()) > 0)
         lin_err = 0
         n = 0
         for img in images:
@@ -235,8 +232,8 @@ class TestArtificial(unittest.TestCase):
         if n > 0:
             lin_err /= n
         print("linear error is %f" % lin_err)
-        self.assert_(0.0 < lin_err, 'lin_err is %f' % lin_err)
-        self.assert_(lin_err < max_err, 'lin_err is %f' % lin_err)
+        self.assertTrue(0.0 < lin_err, 'lin_err is %f' % lin_err)
+        self.assertTrue(lin_err < max_err, 'lin_err is %f' % lin_err)
 
         flat = c.remap(img)
         self.assertEqual(img.shape, flat.shape)
@@ -261,33 +258,10 @@ class TestArtificial(unittest.TestCase):
             self.assert_good_mono(mc, self.limages[i], setup.lin_err)
 
             # Make sure the intrinsics are similar
-            err_intrinsics = numpy.linalg.norm(mc.intrinsics - self.K, ord=numpy.inf)
-            self.assert_(err_intrinsics < setup.K_err,
+            err_intrinsics = numpy.linalg.norm(mc.intrinsics - self.k, ord=numpy.inf)
+            self.assertTrue(err_intrinsics < setup.K_err,
                          'intrinsics error is %f for resolution i = %d' % (err_intrinsics, i))
-            print('intrinsics error is %f' % numpy.linalg.norm(mc.intrinsics - self.K, ord=numpy.inf))
-
-    def test_rational_polynomial_model(self):
-        """Test that the distortion coefficients returned for a rational_polynomial model are not empty."""
-        for i, setup in enumerate(self.setups):
-            board = ChessboardInfo()
-            board.n_cols = setup.cols
-            board.n_rows = setup.rows
-            board.dim = self.board_width_dim
-
-            mc = MonoCalibrator([ board ], flags=cv2.CALIB_RATIONAL_MODEL, pattern=setup.pattern)
-            mc.cal(self.limages[i])
-            self.assertEqual(len(mc.distortion.flat), 8,
-                             'length of distortion coefficients is %d' % len(mc.distortion.flat))
-            self.assert_(all(mc.distortion.flat != 0),
-                         'some distortion coefficients are zero: %s' % str(mc.distortion.flatten()))
-            self.assertEqual(mc.as_message().distortion_model, 'rational_polynomial')
-            self.assert_good_mono(mc, self.limages[i], setup.lin_err)
-        
-            yaml = mc.yaml()
-            # Issue #278
-            self.assertIn('cols: 8', yaml)
-
+            print('intrinsics error is %f' % numpy.linalg.norm(mc.intrinsics - self.k, ord=numpy.inf))
 
 if __name__ == '__main__':
-    #rosunit.unitrun('camera_calibration', 'directed', TestDirected)
-    rosunit.unitrun('camera_calibration', 'artificial', TestArtificial)
+    unittest.main(verbosity=2)
