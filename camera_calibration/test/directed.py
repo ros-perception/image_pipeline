@@ -190,14 +190,14 @@ class TestArtificial(unittest.TestCase):
                 pattern.fill(255)
                 for j in range(1, setup.rows+1):
                     for i in range(1, setup.cols+1):
-                        cv2.circle(pattern, (50*i + 25, 50*j + 25), 15, (0,0,0), -1 )
+                        cv2.circle(pattern, (int(50*i + 25), int(50*j + 25)), 15, (0,0,0), -1)
             elif setup.pattern == Patterns.ACircles:
                 x = 60
                 pattern = numpy.zeros((x*(setup.rows+2), x*(setup.cols+5), 1), numpy.uint8)
                 pattern.fill(255)
                 for j in range(1, setup.rows+1):
                     for i in range(0, setup.cols):
-                        cv2.circle(pattern, (x*(1 + 2*i + (j%2)) + x/2, x*j + x/2), x/3, (0,0,0), -1)
+                        cv2.circle(pattern, (int(x*(1 + 2*i + (j%2)) + x/2), int(x*j + x/2)), int(x/3), (0,0,0), -1)
 
             rows, cols, _ = pattern.shape
             object_points_2d = numpy.array([[0, 0], [0, cols-1], [rows-1, cols-1], [rows-1, 0]], numpy.float32)
