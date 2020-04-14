@@ -48,7 +48,12 @@ import sensor_msgs.msg
 import tarfile
 import time
 from distutils.version import LooseVersion
+from enum import Enum
 
+# Supported camera models
+class CAMERA_MODEL(Enum):
+    PINHOLE = 0
+    FISHEYE = 1
 
 # Supported calibration patterns
 class Patterns:
@@ -213,6 +218,20 @@ def _get_circles(img, board, pattern):
     return (ok, corners)
 
 
+def _get_dist_model(dist_params, cam_model):
+    # Select dist model
+    if CAMERA_MODEL.PINHOLE == cam_model:
+        if dist_params.size > 5:
+            dist_model = "rational_polynomial"
+        else:
+            dist_model = "plumb_bob"
+    elif CAMERA_MODEL.FISHEYE == cam_model:
+        dist_model = "fisheye"
+    else:
+        dist_model = "unknown"
+    return dist_model
+
+
 # TODO self.size needs to come from CameraInfo, full resolution
 class Calibrator():
     """
@@ -236,6 +255,7 @@ class Calibrator():
         self.checkerboard_flags = checkerboard_flags
         self.pattern = pattern
         self.br = cv_bridge.CvBridge()
+        self.camera_model = CAMERA_MODEL.PINHOLE
 
         # self.db is list of (parameters, image) samples for use in calibration. parameters has form
         # (X, Y, size, skew) all normalized to [0,1], to keep track of what sort of samples we've taken
@@ -288,6 +308,23 @@ class Calibrator():
         skew = _get_skew(corners, board)
         params = [p_x, p_y, p_size, skew]
         return params
+
+    def set_cammodel(self, modeltype):
+        self.camera_model = modeltype
+
+    def is_slow_moving(self, corners, last_frame_corners):
+        """
+        Returns true if the motion of the checkerboard is sufficiently low between
+        this and the previous frame.
+        """
+        # If we don't have previous frame corners, we can't accept the sample
+        if last_frame_corners is None:
+            return False
+        num_corners = len(corners)
+        corner_deltas = (corners - last_frame_corners).reshape(num_corners, 2)
+        # Average distance travelled overall for all corners
+        average_motion = numpy.average(numpy.linalg.norm(corner_deltas, axis = 1))
+        return average_motion <= self.max_chessboard_speed
 
     def is_good_sample(self, params):
         """
@@ -605,19 +642,24 @@ class MonoCalibrator(Calibrator):
         opts = self.mk_object_points(boards)
 
         self.intrinsics = numpy.zeros((3, 3), numpy.float64)
-        if self.calib_flags & cv2.CALIB_RATIONAL_MODEL:
-            self.distortion = numpy.zeros((8, 1), numpy.float64) # rational polynomial
-        else:
-            self.distortion = numpy.zeros((5, 1), numpy.float64) # plumb bob
-        # If FIX_ASPECT_RATIO flag set, enforce focal lengths have 1/1 ratio
-        self.intrinsics[0,0] = 1.0
-        self.intrinsics[1,1] = 1.0
-        cv2.calibrateCamera(
-                   opts, ipts,
-                   self.size, self.intrinsics,
-                   self.distortion,
-                   flags = self.calib_flags)
 
+        if self.camera_model == CAMERA_MODEL.PINHOLE:
+            if self.calib_flags & cv2.CALIB_RATIONAL_MODEL:
+                self.distortion = numpy.zeros((8, 1), numpy.float64) # rational polynomial
+            else:
+                self.distortion = numpy.zeros((5, 1), numpy.float64) # plumb bob
+            # If FIX_ASPECT_RATIO flag set, enforce focal lengths have 1/1 ratio
+            self.intrinsics[0, 0] = 1.0
+            self.intrinsics[1, 1] = 1.0
+            cv2.calibrateCamera(opts, ipts,
+                                self.size, self.intrinsics,
+                                self.distortion,
+                                flags=self.calib_flags)
+        elif self.camera_model == CAMERA_MODEL.FISHEYE:
+            cv2.fisheye.calibrateCamera(opts, ipts,
+                                        self.size, self.intrinsics,
+                                        self.distortion,
+                                        flags=self.calib_flags)
         # R is identity matrix for monocular calibration
         self.R = numpy.eye(3, dtype=numpy.float64)
         self.P = numpy.zeros((3, 4), dtype=numpy.float64)
@@ -632,14 +674,21 @@ class MonoCalibrator(Calibrator):
         original image are in calibrated image).
         """
 
-        # NOTE: Prior to Electric, this code was broken such that we never actually saved the new
-        # camera matrix. In effect, this enforced P = [K|0] for monocular cameras.
-        # TODO: Verify that OpenCV #1199 gets applied (improved GetOptimalNewCameraMatrix)
-        ncm, _ = cv2.getOptimalNewCameraMatrix(self.intrinsics, self.distortion, self.size, a)
-        for j in range(3):
+        if self.camera_model == CAMERA_MODEL.PINHOLE:
+          # NOTE: Prior to Electric, this code was broken such that we never actually saved the new
+          # camera matrix. In effect, this enforced P = [K|0] for monocular cameras.
+          # TODO: Verify that OpenCV #1199 gets applied (improved GetOptimalNewCameraMatrix)
+          ncm, _ = cv2.getOptimalNewCameraMatrix(self.intrinsics, self.distortion, self.size, a)
+          for j in range(3):
             for i in range(3):
-                self.P[j,i] = ncm[j, i]
-        self.mapx, self.mapy = cv2.initUndistortRectifyMap(self.intrinsics, self.distortion, self.R, ncm, self.size, cv2.CV_32FC1)
+              self.P[j,i] = ncm[j, i]
+          self.mapx, self.mapy = cv2.initUndistortRectifyMap(self.intrinsics, self.distortion, self.R, ncm, self.size, cv2.CV_32FC1)
+        elif self.camera_model == CAMERA_MODEL.FISHEYE:
+            # NOTE: estimateNewCameraMatrixForUndistortRectify not producing proper results, using a naive approach instead:
+            self.P[:3,:3] = self.intrinsics[:3,:3]
+            self.P[0,0] /= (1. + a)
+            self.P[1,1] /= (1. + a)
+            self.mapx, self.mapy = cv2.fisheye.initUndistortRectifyMap(self.intrinsics, self.distortion, self.R, self.P, self.size, cv2.CV_32FC1)
 
     def remap(self, src):
         """
@@ -658,7 +707,10 @@ class MonoCalibrator(Calibrator):
         Apply the post-calibration undistortion to the source points
         """
 
-        return cv2.undistortPoints(src, self.intrinsics, self.distortion, R = self.R, P = self.P)
+        if self.camera_model == CAMERA_MODEL.PINHOLE:
+            return cv2.undistortPoints(src, self.intrinsics, self.distortion, R = self.R, P = self.P)
+        elif self.camera_model == CAMERA_MODEL.FISHEYE:
+            return cv2.fisheye.undistortPoints(src, self.intrinsics, self.distortion, R = self.R, P = self.P)
 
     def as_message(self):
         """ Return the camera calibration as a CameraInfo message """
@@ -893,8 +945,26 @@ class StereoCalibrator(Calibrator):
 
         self.T = numpy.zeros((3, 1), dtype=numpy.float64)
         self.R = numpy.eye(3, dtype=numpy.float64)
-        if LooseVersion(cv2.__version__).version[0] == 2:
+        if self.camera_model == CAMERA_MODEL.PINHOLE:
+          if LooseVersion(cv2.__version__).version[0] == 2:
             cv2.stereoCalibrate(opts, lipts, ripts, self.size,
+                                self.l.intrinsics, self.l.distortion,
+                                self.r.intrinsics, self.r.distortion,
+                                self.R,                            # R
+                                self.T,                            # T
+                                criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
+                                flags = flags)
+          else:
+            cv2.stereoCalibrate(opts, lipts, ripts,
+                                self.l.intrinsics, self.l.distortion,
+                                self.r.intrinsics, self.r.distortion,
+                                self.size,
+                                self.R,                            # R
+                                self.T,                            # T
+                                criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
+                                flags = flags)
+        elif self.camera_model == CAMERA_MODEL.FISHEYE:
+           cv2.stereoCalibrate(opts, lipts, ripts, self.size,
                                self.l.intrinsics, self.l.distortion,
                                self.r.intrinsics, self.r.distortion,
                                self.R,                            # R
@@ -902,7 +972,7 @@ class StereoCalibrator(Calibrator):
                                criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
                                flags = flags)
         else:
-            cv2.stereoCalibrate(opts, lipts, ripts,
+           cv2.stereoCalibrate(opts, lipts, ripts,
                                self.l.intrinsics, self.l.distortion,
                                self.r.intrinsics, self.r.distortion,
                                self.size,
@@ -921,20 +991,47 @@ class StereoCalibrator(Calibrator):
         original image are in calibrated image).
         """
 
-        cv2.stereoRectify(self.l.intrinsics,
-                         self.l.distortion,
-                         self.r.intrinsics,
-                         self.r.distortion,
-                         self.size,
-                         self.R,
-                         self.T,
-                         self.l.R, self.r.R, self.l.P, self.r.P,
-                         alpha = a)
+        if self.camera_model == CAMERA_MODEL.PINHOLE:
+            cv2.stereoRectify(self.l.intrinsics,
+                              self.l.distortion,
+                              self.r.intrinsics,
+                              self.r.distortion,
+                              self.size,
+                              self.R,
+                              self.T,
+                              self.l.R, self.r.R, self.l.P, self.r.P,
+                              alpha = a)
 
-        cv2.initUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.l.R, self.l.P, self.size, cv2.CV_32FC1,
-                                   self.l.mapx, self.l.mapy)
-        cv2.initUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.r.R, self.r.P, self.size, cv2.CV_32FC1,
-                                   self.r.mapx, self.r.mapy)
+            cv2.initUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.l.R, self.l.P, self.size, cv2.CV_32FC1,
+                                       self.l.mapx, self.l.mapy)
+            cv2.initUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.r.R, self.r.P, self.size, cv2.CV_32FC1,
+                                       self.r.mapx, self.r.mapy)
+
+        elif self.camera_model == CAMERA_MODEL.FISHEYE:
+            self.Q = numpy.zeros((4,4), dtype=numpy.float64)
+
+            flags = cv2.CALIB_ZERO_DISPARITY   # Operation flags that may be zero or CALIB_ZERO_DISPARITY .
+                            # If the flag is set, the function makes the principal points of each camera have the same pixel coordinates in the rectified views.
+                            # And if the flag is not set, the function may still shift the images in the horizontal or vertical direction
+                            # (depending on the orientation of epipolar lines) to maximize the useful image area.
+
+            cv2.fisheye.stereoRectify(self.l.intrinsics, self.l.distortion,
+                                      self.r.intrinsics, self.r.distortion,
+                                      self.size,
+                                      self.R, self.T,
+                                      flags,
+                                      self.l.R, self.r.R,
+                                      self.l.P, self.r.P,
+                                      self.Q,
+                                      self.size,
+                                      a,
+                                      1.0)
+            self.l.P[:3,:3] = numpy.dot(self.l.intrinsics,self.l.R)
+            self.r.P[:3,:3] = numpy.dot(self.r.intrinsics,self.r.R)
+            cv2.fisheye.initUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.l.R, self.l.intrinsics, self.size, cv2.CV_32FC1,
+                                       self.l.mapx, self.l.mapy)
+            cv2.fisheye.initUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.r.R, self.r.intrinsics, self.size, cv2.CV_32FC1,
+                                       self.r.mapx, self.r.mapy)
 
     def as_message(self):
         """
