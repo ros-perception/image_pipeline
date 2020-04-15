@@ -124,7 +124,7 @@ void ImagePublisher::doWork()
   try {
     if (cap_.isOpened()) {
       if (!cap_.read(image_)) {
-        cap_.set(CV_CAP_PROP_POS_FRAMES, 0);
+        cap_.set(CAP_PROP_POS_FRAMES , 0);
       }
     }
     if (flip_image_) {
@@ -159,7 +159,7 @@ void ImagePublisher::onInit()
       }
       CV_Assert(cap_.isOpened());
       cap_.read(image_);
-      cap_.set(CV_CAP_PROP_POS_FRAMES, 0);
+      cap_.set(CAP_PROP_POS_FRAMES , 0);
     }
     CV_Assert(!image_.empty());
   } catch (cv::Exception & e) {
