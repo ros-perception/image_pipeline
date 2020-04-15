@@ -20,6 +20,17 @@ find_package(sensor_msgs REQUIRED)
 find_package(OpenCV 4 REQUIRED)
 find_package(image_geometry REQUIRED)
 
+set(dependencies
+        image_geometry
+        sensor_msgs
+        cv_bridge
+        class_loader
+        image_transport
+        rclcpp
+        rclcpp_components
+        rcutils
+        )
+
 include_directories(include)
 
 add_library(rectify SHARED
@@ -28,13 +39,7 @@ target_compile_definitions(rectify
         PRIVATE "COMPOSITION_BUILDING_DLL")
 
 ament_target_dependencies(rectify
-        "image_geometry"
-        "sensor_msgs"
-        "cv_bridge"
-        "class_loader"
-        "image_transport"
-        "rclcpp"
-        "rclcpp_components"
+        ${dependencies}
         )
 
 rclcpp_components_register_nodes(rectify "image_proc::RectifyNode")
@@ -49,12 +54,7 @@ target_compile_definitions(debayer
         PRIVATE "COMPOSITION_BUILDING_DLL")
 
 ament_target_dependencies(debayer
-        "sensor_msgs"
-        "cv_bridge"
-        "class_loader"
-        "image_transport"
-        "rclcpp"
-        "rclcpp_components"
+        ${dependencies}
         )
 
 rclcpp_components_register_nodes(debayer "image_proc::DebayerNode")
@@ -73,18 +73,11 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 ament_target_dependencies(image_proc
-        "image_geometry"
-        "sensor_msgs"
-        "cv_bridge"
-        "class_loader"
-        "image_transport"
-        "rclcpp"
-        "rclcpp_components"
-        "rcutils"
+        ${dependencies}
         )
 
 install(DIRECTORY launch/
-        DESTINATION share/${PROJECT_NAME}/launch)
+        DESTINATION share/${PROJECT_NAME})
 
 ament_export_include_directories(include)
 
