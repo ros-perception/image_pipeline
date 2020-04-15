@@ -1,1 +1,6 @@
 *pyc
+cmake-build-debug/
+.idea/
+build/
+install/
+log/

@@ -86,6 +86,11 @@ ament_target_dependencies(image_proc
 install(DIRECTORY launch/
         DESTINATION share/${PROJECT_NAME}/launch)
 
+ament_export_include_directories(include)
+
+install(DIRECTORY include/
+        DESTINATION include)
+
 install(TARGETS
         debayer
         rectify
