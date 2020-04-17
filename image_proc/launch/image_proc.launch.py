@@ -30,8 +30,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-""" A simple launch file for the nmea_serial_driver node. """
-
 import os
 import sys
 
@@ -42,6 +40,7 @@ from launch_ros import actions, get_default_launch_description
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
+# Set namespace for all nodes
 NAMESPACE = "/camera"
 
 def generate_launch_description():
@@ -50,6 +49,7 @@ def generate_launch_description():
     """
     ld = LaunchDescription()
 
+    # Load composable container
     image_processing = actions.ComposableNodeContainer(
         node_name="image_proc_container",
         node_namespace=NAMESPACE,
@@ -65,6 +65,7 @@ def generate_launch_description():
                     {"camera_namespace": NAMESPACE}
                 ]
             ),
+            # Example of rectifying a mono image
             ComposableNode(
                 package='image_proc',
                 node_plugin='image_proc::RectifyNode',
@@ -75,6 +76,7 @@ def generate_launch_description():
                     {"image_mono": "/image_mono"}
                 ]
             ),
+            # Example of rectifying a color image
             ComposableNode(
                 package='image_proc',
                 node_plugin='image_proc::RectifyNode',
