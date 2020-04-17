@@ -63,7 +63,7 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
         }
       }
 
-      image_topic_ = camera_namespace_ + "/image";
+      image_topic_ = camera_namespace_ + "/camera";
       camera_info_topic_ = camera_namespace_ + "/camera_info";
       connectCb();
 
@@ -107,9 +107,6 @@ void ResizeNode::imageCb(
   sensor_msgs::msg::Image::ConstSharedPtr image_msg,
   sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg)
 {
-  if (pub_image_.getNumSubscribers() < 1) {
-    return;
-  }
 
   cv_bridge::CvImagePtr cv_ptr;
 
