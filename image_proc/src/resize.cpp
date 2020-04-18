@@ -63,7 +63,7 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
         }
       }
 
-      image_topic_ = camera_namespace_ + "/camera";
+      image_topic_ = camera_namespace_ + "/image";
       camera_info_topic_ = camera_namespace_ + "/camera_info";
       connectCb();
 

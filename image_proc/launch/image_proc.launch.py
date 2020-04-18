@@ -40,7 +40,7 @@ from launch_ros import actions, get_default_launch_description
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
-# Set namespace for all nodes
+# Set namespace for all nodes to /camera (for readability purposes)
 NAMESPACE = "/camera"
 
 def generate_launch_description():
@@ -83,8 +83,11 @@ def generate_launch_description():
                 node_name='rectify_color_node',
                 node_namespace=NAMESPACE,
                 parameters=[
+                    # Set the camera namespace
+                    # Namespace is where the camera_info is pulled and what the input and outputs are set relative too
                     {"camera_namespace": NAMESPACE},
-                    {"image_color": "/image_color"}
+                    # Where the raw image is coming from relative to the namespace
+                    {"image_color": "/image_color"},
                 ]
             )],
         output='screen'
