@@ -38,7 +38,6 @@
 #include <message_filters/sync_policies/exact_time.h>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
-#include <rcl_interfaces/msg/parameter_descriptor.hpp>
 #include <rcutils/logging_macros.h>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -77,9 +76,6 @@ private:
   std::shared_ptr<ExactSync> exact_sync_;
   std::shared_ptr<ApproximateSync> approximate_sync_;
 
-  // QoS for image and camera info subscriptions
-  rclcpp::QoS image_sub_qos_;
-
   // Publications
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pub_points2_;
 
@@ -97,36 +93,14 @@ private:
 };
 
 PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
-: rclcpp::Node("point_cloud_node", options),
-  image_sub_qos_(rclcpp::SensorDataQoS())
+: rclcpp::Node("point_cloud_node", options)
 {
   using namespace std::placeholders;
 
   // Declare/read parameters
   int queue_size = this->declare_parameter("queue_size", 5);
   bool approx = this->declare_parameter("approximate_sync", false);
-  rcl_interfaces::msg::ParameterDescriptor image_sub_reliability_description;
-  image_sub_reliability_description.description =
-    "Reliability QoS for the image and camera info subscriptions. "
-    "Must be 'best_effort' or 'reliable'.";
-  image_sub_reliability_description.read_only = true;
-  std::string reliability = this->declare_parameter(
-    "image_sub_reliability",
-    "best_effort",
-    image_sub_reliability_description
-  );
-
-  // Validate reliability parameter and initialize QoS profile
-  if ("best_effort" == reliability) {
-    this->image_sub_qos_.best_effort();
-  } else if ("reliable" == reliability) {
-    this->image_sub_qos_.reliable();
-  } else {
-    throw std::runtime_error(
-            "Invalid value for parameter 'image_sub_reliability'. "
-            "Got '" + reliability + "', but must be 'best_effort' or 'reliable'."
-    );
-  }
+  bool use_system_default_qos = this->declare_parameter("use_system_default_qos", false);
 
   // Synchronize callbacks
   if (approx) {
@@ -145,7 +119,8 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
       std::bind(&PointCloudNode::imageCb, this, _1, _2, _3, _4));
   }
 
-  pub_points2_ = create_publisher<sensor_msgs::msg::PointCloud2>("points2", 1);
+  const auto pub_qos = use_system_default_qos ? rclcpp::SystemDefaultsQoS() : rclcpp::QoS(1);
+  pub_points2_ = create_publisher<sensor_msgs::msg::PointCloud2>("points2", pub_qos);
 
   // TODO(jacobperron): Replace this with a graph event.
   //                    Only subscribe if there's a subscription listening to our publisher.
@@ -157,11 +132,19 @@ void PointCloudNode::connectCb()
 {
   // TODO(jacobperron): Add unsubscribe logic when we use graph events
   image_transport::TransportHints hints(this, "raw");
-  const auto image_sub_rmw_qos = this->image_sub_qos_.get_rmw_qos_profile();
+  const bool use_system_default_qos = this->get_parameter("use_system_default_qos").as_bool();
+  rclcpp::QoS image_sub_qos = rclcpp::SensorDataQoS();
+  if (use_system_default_qos) {
+    image_sub_qos = rclcpp::SystemDefaultsQoS();
+  }
+  const auto image_sub_rmw_qos = image_sub_qos.get_rmw_qos_profile();
   sub_l_image_.subscribe(this, "left/image_rect_color", hints.getTransport(), image_sub_rmw_qos);
   sub_l_info_.subscribe(this, "left/camera_info", image_sub_rmw_qos);
   sub_r_info_.subscribe(this, "right/camera_info", image_sub_rmw_qos);
-  sub_disparity_.subscribe(this, "disparity");
+
+  const auto disparity_sub_qos = use_system_default_qos ?
+    rclcpp::SystemDefaultsQoS() : rclcpp::QoS(1);
+  sub_disparity_.subscribe(this, "disparity", disparity_sub_qos.get_rmw_qos_profile());
 }
 
 inline bool isValidPoint(const cv::Vec3f & pt)
