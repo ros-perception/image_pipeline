@@ -45,6 +45,11 @@ def generate_launch_description():
             description='Whether to use approximate synchronization of topics. Set to true if '
                         'the left and right cameras do not produce exactly synced timestamps.'
         ),
+        DeclareLaunchArgument(
+            name='image_sub_reliability', default_value='best_effort',
+            description='Reliability QoS for the stereo image subscriptions in the disparity '
+                        "and point cloud nodes. Can be 'best_effort' or 'reliable'."
+        ),
         ComposableNodeContainer(
             package='rclcpp_components', node_executable='component_container',
             node_name='stereo_image_proc_container', node_namespace='',
@@ -52,12 +57,18 @@ def generate_launch_description():
                 ComposableNode(
                     package='stereo_image_proc',
                     node_plugin='stereo_image_proc::DisparityNode',
-                    parameters=[{'approximate_sync': LaunchConfiguration('approximate_sync')}]
+                    parameters=[{
+                        'approximate_sync': LaunchConfiguration('approximate_sync'),
+                        'image_sub_reliability': LaunchConfiguration('image_sub_reliability'),
+                    }]
                 ),
                 ComposableNode(
                     package='stereo_image_proc',
                     node_plugin='stereo_image_proc::PointCloudNode',
-                    parameters=[{'approximate_sync': LaunchConfiguration('approximate_sync')}]
+                    parameters=[{
+                        'approximate_sync': LaunchConfiguration('approximate_sync'),
+                        'image_sub_reliability': LaunchConfiguration('image_sub_reliability'),
+                    }]
                 ),
             ],
         ),
