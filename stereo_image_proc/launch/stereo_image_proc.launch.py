@@ -47,7 +47,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             name='use_system_default_qos', default_value='False',
-            description='Use the RMW QoS settings for the publishers and subscriptions.'
+            description='Use the RMW QoS settings for the image and camera info subscriptions.'
         ),
         ComposableNodeContainer(
             package='rclcpp_components', node_executable='component_container',

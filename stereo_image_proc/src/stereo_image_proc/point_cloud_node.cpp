@@ -100,7 +100,7 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
   // Declare/read parameters
   int queue_size = this->declare_parameter("queue_size", 5);
   bool approx = this->declare_parameter("approximate_sync", false);
-  bool use_system_default_qos = this->declare_parameter("use_system_default_qos", false);
+  this->declare_parameter("use_system_default_qos", false);
 
   // Synchronize callbacks
   if (approx) {
@@ -119,8 +119,7 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
       std::bind(&PointCloudNode::imageCb, this, _1, _2, _3, _4));
   }
 
-  const auto pub_qos = use_system_default_qos ? rclcpp::SystemDefaultsQoS() : rclcpp::QoS(1);
-  pub_points2_ = create_publisher<sensor_msgs::msg::PointCloud2>("points2", pub_qos);
+  pub_points2_ = create_publisher<sensor_msgs::msg::PointCloud2>("points2", 1);
 
   // TODO(jacobperron): Replace this with a graph event.
   //                    Only subscribe if there's a subscription listening to our publisher.
@@ -141,10 +140,7 @@ void PointCloudNode::connectCb()
   sub_l_image_.subscribe(this, "left/image_rect_color", hints.getTransport(), image_sub_rmw_qos);
   sub_l_info_.subscribe(this, "left/camera_info", image_sub_rmw_qos);
   sub_r_info_.subscribe(this, "right/camera_info", image_sub_rmw_qos);
-
-  const auto disparity_sub_qos = use_system_default_qos ?
-    rclcpp::SystemDefaultsQoS() : rclcpp::QoS(1);
-  sub_disparity_.subscribe(this, "disparity", disparity_sub_qos.get_rmw_qos_profile());
+  sub_disparity_.subscribe(this, "disparity", image_sub_rmw_qos);
 }
 
 inline bool isValidPoint(const cv::Vec3f & pt)

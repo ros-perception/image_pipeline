@@ -153,7 +153,7 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
   // Declare/read parameters
   int queue_size = this->declare_parameter("queue_size", 5);
   bool approx = this->declare_parameter("approximate_sync", false);
-  bool use_system_default_qos = this->declare_parameter("use_system_default_qos", false);
+  this->declare_parameter("use_system_default_qos", false);
 
   // Synchronize callbacks
   if (approx) {
@@ -259,10 +259,7 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
   this->declare_parameters("", double_params);
   this->declare_parameters("", bool_params);
 
-  const auto disparity_pub_qos = use_system_default_qos ?
-    rclcpp::SystemDefaultsQoS() : rclcpp::QoS(1);
-  pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>(
-    "disparity", disparity_pub_qos);
+  pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>("disparity", 1);
 
   // TODO(jacobperron): Replace this with a graph event.
   //                    Only subscribe if there's a subscription listening to our publisher.
