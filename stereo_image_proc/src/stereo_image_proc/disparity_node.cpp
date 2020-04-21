@@ -153,6 +153,7 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
   // Declare/read parameters
   int queue_size = this->declare_parameter("queue_size", 5);
   bool approx = this->declare_parameter("approximate_sync", false);
+  this->declare_parameter("use_system_default_qos", false);
 
   // Synchronize callbacks
   if (approx) {
@@ -270,11 +271,16 @@ void DisparityNode::connectCb()
 {
   // TODO(jacobperron): Add unsubscribe logic when we use graph events
   image_transport::TransportHints hints(this, "raw");
-  const auto image_qos_profile = rclcpp::SensorDataQoS().get_rmw_qos_profile();
-  sub_l_image_.subscribe(this, "left/image_rect", hints.getTransport(), image_qos_profile);
-  sub_l_info_.subscribe(this, "left/camera_info", image_qos_profile);
-  sub_r_image_.subscribe(this, "right/image_rect", hints.getTransport(), image_qos_profile);
-  sub_r_info_.subscribe(this, "right/camera_info", image_qos_profile);
+  const bool use_system_default_qos = this->get_parameter("use_system_default_qos").as_bool();
+  rclcpp::QoS image_sub_qos = rclcpp::SensorDataQoS();
+  if (use_system_default_qos) {
+    image_sub_qos = rclcpp::SystemDefaultsQoS();
+  }
+  const auto image_sub_rmw_qos = image_sub_qos.get_rmw_qos_profile();
+  sub_l_image_.subscribe(this, "left/image_rect", hints.getTransport(), image_sub_rmw_qos);
+  sub_l_info_.subscribe(this, "left/camera_info", image_sub_rmw_qos);
+  sub_r_image_.subscribe(this, "right/image_rect", hints.getTransport(), image_sub_rmw_qos);
+  sub_r_info_.subscribe(this, "right/camera_info", image_sub_rmw_qos);
 }
 
 void DisparityNode::imageCb(
