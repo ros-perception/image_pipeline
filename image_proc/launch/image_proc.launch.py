@@ -30,18 +30,16 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import os
 import sys
 
-import launch
 from launch import LaunchDescription, LaunchIntrospector, LaunchService
 from launch_ros import actions, get_default_launch_description
 
-from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
 # Set namespace for all nodes to /camera (for readability purposes)
 NAMESPACE = "/camera"
+
 
 def generate_launch_description():
     """
@@ -61,34 +59,21 @@ def generate_launch_description():
                 node_plugin='image_proc::DebayerNode',
                 node_name='debayer_node',
                 node_namespace=NAMESPACE,
-                parameters=[
-                    {"camera_namespace": NAMESPACE}
-                ]
             ),
-            # Example of rectifying a mono image
+            # Example of rectifying an image
             ComposableNode(
                 package='image_proc',
                 node_plugin='image_proc::RectifyNode',
                 node_name='rectify_mono_node',
                 node_namespace=NAMESPACE,
-                parameters=[
-                    {"camera_namespace": NAMESPACE},
-                    {"image_mono": "/image_mono"}
-                ]
-            ),
-            # Example of rectifying a color image
-            ComposableNode(
-                package='image_proc',
-                node_plugin='image_proc::RectifyNode',
-                node_name='rectify_color_node',
-                node_namespace=NAMESPACE,
-                parameters=[
-                    # Set the camera namespace
-                    # Namespace is where the camera_info is pulled and what the input and outputs are set relative too
-                    {"camera_namespace": NAMESPACE},
-                    # Where the raw image is coming from relative to the namespace
-                    {"image_color": "/image_color"},
-                ]
+                # Remap subscribers and publishers
+                remappings=[
+                    # Subscriber remap
+                    ('/image', NAMESPACE + '/image'),
+                    ('/camera_info', NAMESPACE + '/camera_info'),
+                    # Publisher remap
+                    ('/image_rect', NAMESPACE + '/image_rect')
+                ],
             )],
         output='screen'
     )
