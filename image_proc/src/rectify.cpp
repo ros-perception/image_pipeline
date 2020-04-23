@@ -50,7 +50,7 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions & options)
 
   queue_size_ = this->declare_parameter("queue_size", 5);
   interpolation = this->declare_parameter("interpolation", 1);
-  this->pub_rect_ = image_transport::create_publisher(this, "/image_rect");
+  pub_rect_ = image_transport::create_publisher(this, "/image_rect");
   subscribeToCamera();
 }
 
