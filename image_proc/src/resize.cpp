@@ -107,9 +107,11 @@ void ResizeNode::imageCb(
   sensor_msgs::msg::Image::ConstSharedPtr image_msg,
   sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg)
 {
-  if (pub_image_.getNumSubscribers() < 1) {
-    return;
-  }
+  // getNumSubscribers has a bug/doesn't work
+  // TODO Revisit and figure out how to make this work
+  // if (pub_image_.getNumSubscribers() < 1) {
+  //  return;
+  //}
 
   cv_bridge::CvImagePtr cv_ptr;
 
