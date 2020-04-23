@@ -49,31 +49,12 @@ namespace image_proc
 ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("ResizeNode", options)
 {
-  auto parameter_change_cb =
-    [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
-    {
-      auto result = rcl_interfaces::msg::SetParametersResult();
-      result.successful = true;
-
-      for (auto parameter : parameters) {
-        if (parameter.get_name() == "camera_namespace") {
-          camera_namespace_ = parameter.as_string();
-          RCLCPP_INFO(get_logger(), "camera_namespace: %s ", camera_namespace_.c_str());
-          break;
-        }
-      }
-
-      image_topic_ = camera_namespace_ + "/image";
-      camera_info_topic_ = camera_namespace_ + "/camera_info";
-      connectCb();
-
-      std::lock_guard<std::mutex> lock(connect_mutex_);
-      pub_image_ = image_transport::create_camera_publisher(this, image_topic_ + "/resize");
-
-      return result;
-    };
-
-  this->declare_parameter("camera_namespace");
+  // Create image pub
+  pub_image_ = image_transport::create_camera_publisher(this,"/resize");
+  // Create image sub
+  sub_image_ = image_transport::create_camera_subscription(
+          this, "/image", std::bind(&ResizeNode::imageCb, this,
+                                    std::placeholders::_1, std::placeholders::_2), "raw");
 
   interpolation_ = this->declare_parameter("interpolation", 1);
   use_scale_ = this->declare_parameter("use_scale", true);
@@ -82,25 +63,6 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
   height_ = this->declare_parameter("height", -1);
   width_ = this->declare_parameter("width", -1);
 
-  rclcpp::Parameter parameter;
-
-  if (rclcpp::PARAMETER_NOT_SET != this->get_parameter("camera_namespace", parameter)) {
-    parameter_change_cb(this->get_parameters({"camera_namespace"}));
-  }
-
-  this->set_on_parameters_set_callback(parameter_change_cb);
-}
-
-// Handles (un)subscribing when clients (un)subscribe
-void ResizeNode::connectCb()
-{
-  std::lock_guard<std::mutex> lock(connect_mutex_);
-
-  if (!sub_image_) {
-    sub_image_ = image_transport::create_camera_subscription(
-      this, image_topic_, std::bind(&ResizeNode::imageCb, this,
-      std::placeholders::_1, std::placeholders::_2), "raw");
-  }
 }
 
 void ResizeNode::imageCb(

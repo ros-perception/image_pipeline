@@ -57,11 +57,6 @@ protected:
   image_transport::CameraPublisher pub_image_;
   image_transport::CameraSubscriber sub_image_;
 
-  std::string image_topic_;
-  std::string camera_info_topic_;
-
-  // Configuration
-  std::string camera_namespace_;
   int interpolation_;
   bool use_scale_;
   double scale_height_;
