@@ -56,15 +56,12 @@ public:
 private:
   image_transport::Subscriber sub_raw_;
 
-  std::string camera_namespace_;
   int debayer_;
 
   int debayer_bilinear_ = 0;
   int debayer_edgeaware_ = 1;
   int debayer_edgeaware_weighted_ = 2;
   int debayer_vng_ = 3;
-
-  std::mutex connect_mutex_;
 
   image_transport::Publisher pub_mono_;
   image_transport::Publisher pub_color_;
