@@ -90,7 +90,7 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions & options)
     };
 
   queue_size_ = this->declare_parameter("queue_size", 5);
-  interpolation = this->declare_parameter("interpolation", 0);
+  interpolation = this->declare_parameter("interpolation", 1);
   this->set_on_parameters_set_callback(parameter_change_cb);
 }
 

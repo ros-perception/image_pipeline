@@ -45,6 +45,10 @@ def generate_launch_description():
             description='Whether to use approximate synchronization of topics. Set to true if '
                         'the left and right cameras do not produce exactly synced timestamps.'
         ),
+        DeclareLaunchArgument(
+            name='use_system_default_qos', default_value='False',
+            description='Use the RMW QoS settings for the image and camera info subscriptions.'
+        ),
         ComposableNodeContainer(
             package='rclcpp_components', node_executable='component_container',
             node_name='stereo_image_proc_container', node_namespace='',
@@ -52,12 +56,18 @@ def generate_launch_description():
                 ComposableNode(
                     package='stereo_image_proc',
                     node_plugin='stereo_image_proc::DisparityNode',
-                    parameters=[{'approximate_sync': LaunchConfiguration('approximate_sync')}]
+                    parameters=[{
+                        'approximate_sync': LaunchConfiguration('approximate_sync'),
+                        'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
+                    }]
                 ),
                 ComposableNode(
                     package='stereo_image_proc',
                     node_plugin='stereo_image_proc::PointCloudNode',
-                    parameters=[{'approximate_sync': LaunchConfiguration('approximate_sync')}]
+                    parameters=[{
+                        'approximate_sync': LaunchConfiguration('approximate_sync'),
+                        'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
+                    }]
                 ),
             ],
         ),
