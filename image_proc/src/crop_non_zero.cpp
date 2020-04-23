@@ -44,44 +44,10 @@ namespace enc = sensor_msgs::image_encodings;
 CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions & options)
 : Node("CropNonZeroNode", options)
 {
-  auto parameter_change_cb =
-    [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult {
-      auto result = rcl_interfaces::msg::SetParametersResult();
-      result.successful = true;
-      for (auto parameter : parameters) {
-        if (parameter.get_name() == "camera_namespace") {
-          camera_namespace_ = parameter.as_string();
-          RCLCPP_INFO(get_logger(), "camera_namespace: %s ", camera_namespace_.c_str());
-          break;
-        }
-      }
-      image_pub_topic_ = camera_namespace_ + "/image";
-
-      std::lock_guard<std::mutex> lock(connect_mutex_);
-      connectCb();
-      // Make sure we don't enter connectCb() between advertising and assigning to pub_depth_
-      RCLCPP_INFO(this->get_logger(), "publish: %s", image_pub_topic_.c_str());
-      pub_ = image_transport::create_publisher(this, image_pub_topic_);
-      return result;
-    };
-  this->declare_parameter("camera_namespace");
-
-  rclcpp::Parameter parameter;
-  if (rclcpp::PARAMETER_NOT_SET != this->get_parameter("camera_namespace", parameter)) {
-    parameter_change_cb(this->get_parameters({"camera_namespace"}));
-  }
-
-  this->set_on_parameters_set_callback(parameter_change_cb);
-}
-
-// Handles (un)subscribing when clients (un)subscribe
-void CropNonZeroNode::connectCb()
-{
-  image_sub_topic_ = camera_namespace_ + "/image_raw";
-
-  RCLCPP_INFO(this->get_logger(), "subscribe: %s", image_sub_topic_.c_str());
-  sub_raw_ = image_transport::create_subscription(this, image_sub_topic_,
-      std::bind(&CropNonZeroNode::imageCb, this, std::placeholders::_1), "raw");
+  pub_ = image_transport::create_publisher(this, "/image");
+  RCLCPP_INFO(this->get_logger(), "subscribe: %s", "/image_raw");
+  sub_raw_ = image_transport::create_subscription(this, "/image_raw",
+                                                  std::bind(&CropNonZeroNode::imageCb, this, std::placeholders::_1), "raw");
 }
 
 void CropNonZeroNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)
