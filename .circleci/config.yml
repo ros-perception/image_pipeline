@@ -19,12 +19,12 @@ jobs:
           name: Build
           command: |
             source `find /opt/ros -maxdepth 2 -name local_setup.bash | sort | head -1`
-            colcon build --parallel-workers 2
+            colcon build
       - run:
           name: Run Tests
           command: |
             source `find /opt/ros -maxdepth 2 -name local_setup.bash | sort | head -1`
-            colcon test --parallel-workers 2
+            colcon test
             colcon test-result --verbose
 
 workflows:
