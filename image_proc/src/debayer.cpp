@@ -53,8 +53,8 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
 : Node("DebayerNode", options)
 {
   sub_raw_ = image_transport::create_subscription(this, "/image_raw",
-    std::bind(&DebayerNode::imageCb, this,
-    std::placeholders::_1), "raw");
+        std::bind(&DebayerNode::imageCb, this,
+        std::placeholders::_1), "raw");
 
   pub_mono_ = image_transport::create_publisher(this, "/image_mono");
   pub_color_ = image_transport::create_publisher(this, "/image_color");
