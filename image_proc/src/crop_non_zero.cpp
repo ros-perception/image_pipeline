@@ -47,7 +47,8 @@ CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions & options)
   pub_ = image_transport::create_publisher(this, "/image");
   RCLCPP_INFO(this->get_logger(), "subscribe: %s", "/image_raw");
   sub_raw_ = image_transport::create_subscription(this, "/image_raw",
-                std::bind(&CropNonZeroNode::imageCb, this, std::placeholders::_1), "raw");
+                                                std::bind(&CropNonZeroNode::imageCb,
+                                                    this, std::placeholders::_1), "raw");
 }
 
 void CropNonZeroNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)
