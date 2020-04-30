@@ -42,9 +42,6 @@ NAMESPACE = "/camera"
 
 
 def generate_launch_description():
-    """
-    Generate a launch description for image processing nodes.
-    """
     ld = LaunchDescription()
 
     # Load composable container

@@ -47,7 +47,6 @@ namespace image_proc
 RectifyNode::RectifyNode(const rclcpp::NodeOptions & options)
 : Node("RectifyNode", options)
 {
-
   queue_size_ = this->declare_parameter("queue_size", 5);
   interpolation = this->declare_parameter("interpolation", 1);
   pub_rect_ = image_transport::create_publisher(this, "/image_rect");

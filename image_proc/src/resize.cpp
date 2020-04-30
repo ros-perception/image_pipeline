@@ -50,11 +50,11 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("ResizeNode", options)
 {
   // Create image pub
-  pub_image_ = image_transport::create_camera_publisher(this,"/resize");
+  pub_image_ = image_transport::create_camera_publisher(this, "/resize");
   // Create image sub
   sub_image_ = image_transport::create_camera_subscription(
-          this, "/image", std::bind(&ResizeNode::imageCb, this,
-                                    std::placeholders::_1, std::placeholders::_2), "raw");
+            this, "/image", std::bind(&ResizeNode::imageCb, this,
+                  std::placeholders::_1, std::placeholders::_2), "raw");
 
   interpolation_ = this->declare_parameter("interpolation", 1);
   use_scale_ = this->declare_parameter("use_scale", true);
@@ -62,7 +62,6 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
   scale_width_ = this->declare_parameter("scale_width", 1.0);
   height_ = this->declare_parameter("height", -1);
   width_ = this->declare_parameter("width", -1);
-
 }
 
 void ResizeNode::imageCb(
@@ -70,7 +69,7 @@ void ResizeNode::imageCb(
   sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg)
 {
   // getNumSubscribers has a bug/doesn't work
-  // TODO Revisit and figure out how to make this work
+  // Eventually revisit and figure out how to make this work
   // if (pub_image_.getNumSubscribers() < 1) {
   //  return;
   //}
