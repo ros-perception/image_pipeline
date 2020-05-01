@@ -44,9 +44,9 @@ namespace enc = sensor_msgs::image_encodings;
 CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions & options)
 : Node("CropNonZeroNode", options)
 {
-  pub_ = image_transport::create_publisher(this, "/image");
-  RCLCPP_INFO(this->get_logger(), "subscribe: %s", "/image_raw");
-  sub_raw_ = image_transport::create_subscription(this, "/image_raw",
+  pub_ = image_transport::create_publisher(this, "image");
+  RCLCPP_INFO(this->get_logger(), "subscribe: %s", "image_raw");
+  sub_raw_ = image_transport::create_subscription(this, "image_raw",
       std::bind(&CropNonZeroNode::imageCb,
       this, std::placeholders::_1), "raw");
 }

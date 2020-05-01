@@ -60,10 +60,24 @@ def generate_launch_description():
                 # Remap subscribers and publishers
                 remappings=[
                     # Subscriber remap
-                    ('image', '/image_raw'),
+                    ('image', 'image_mono'),
                     ('camera_info', 'camera_info'),
                     # Publisher remap
-                    ('/image_rect', '/image_rect_color')
+                    ('image_rect', 'imgage_rect')
+                ],
+            ),
+            # Example of rectifying an image
+            ComposableNode(
+                package='image_proc',
+                node_plugin='image_proc::RectifyNode',
+                node_name='rectify_color_node',
+                # Remap subscribers and publishers
+                remappings=[
+                    # Subscriber remap
+                    ('image', 'image_color'),
+                    ('camera_info', 'camera_info'),
+                    # Publisher remap
+                    ('image_rect', 'image_rect_color')
                 ],
             )],
         output='screen'
