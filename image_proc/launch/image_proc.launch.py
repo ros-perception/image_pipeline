@@ -63,7 +63,7 @@ def generate_launch_description():
                     ('image', 'image_mono'),
                     ('camera_info', 'camera_info'),
                     # Publisher remap
-                    ('image_rect', 'imgage_rect')
+                    ('image_rect', 'image_rect')
                 ],
             ),
             # Example of rectifying an image
