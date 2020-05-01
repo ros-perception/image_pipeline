@@ -37,9 +37,6 @@ from launch_ros import actions, get_default_launch_description
 
 from launch_ros.descriptions import ComposableNode
 
-# Set namespace for all nodes to /camera (for readability purposes)
-NAMESPACE = "/camera"
-
 
 def generate_launch_description():
     ld = LaunchDescription()
@@ -55,21 +52,21 @@ def generate_launch_description():
                 package='image_proc',
                 node_plugin='image_proc::DebayerNode',
                 node_name='debayer_node',
-                node_namespace=NAMESPACE,
+                node_namespace='/camera',
             ),
             # Example of rectifying an image
             ComposableNode(
                 package='image_proc',
                 node_plugin='image_proc::RectifyNode',
                 node_name='rectify_mono_node',
-                node_namespace=NAMESPACE,
+                node_namespace='/camera',
                 # Remap subscribers and publishers
                 remappings=[
                     # Subscriber remap
-                    ('/image', NAMESPACE + '/image'),
-                    ('/camera_info', NAMESPACE + '/camera_info'),
+                    ('image', '/image_raw'),
+                    ('camera_info', 'camera_info'),
                     # Publisher remap
-                    ('/image_rect', NAMESPACE + '/image_rect')
+                    ('/image_rect', '/image_rect_color')
                 ],
             )],
         output='screen'
