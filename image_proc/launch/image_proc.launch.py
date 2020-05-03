@@ -61,9 +61,6 @@ def generate_launch_description():
                 remappings=[
                     # Subscriber remap
                     ('image', 'image_mono'),
-                    ('camera_info', 'camera_info'),
-                    # Publisher remap
-                    ('image_rect', 'image_rect')
                 ],
             ),
             # Example of rectifying an image
@@ -75,7 +72,6 @@ def generate_launch_description():
                 remappings=[
                     # Subscriber remap
                     ('image', 'image_color'),
-                    ('camera_info', 'camera_info'),
                     # Publisher remap
                     ('image_rect', 'image_rect_color')
                 ],
@@ -86,26 +82,3 @@ def generate_launch_description():
     ld.add_action(image_processing)
 
     return ld
-
-
-def main(argv):
-    ld = generate_launch_description()
-
-    print('Starting introspection of launch description...')
-    print('')
-
-    print(LaunchIntrospector().format_launch_description(ld))
-
-    print('')
-    print('Starting launch of launch description...')
-    print('')
-
-    ls = LaunchService()
-    ls.include_launch_description(get_default_launch_description())
-    ls.include_launch_description(ld)
-
-    return ls.run()
-
-
-if __name__ == '__main__':
-    main(sys.argv)
