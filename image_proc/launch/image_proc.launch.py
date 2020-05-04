@@ -30,10 +30,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import sys
-
-from launch import LaunchDescription, LaunchIntrospector, LaunchService
-from launch_ros import actions, get_default_launch_description
+from launch import LaunchDescription
+from launch_ros import actions
 
 from launch_ros.descriptions import ComposableNode
 
@@ -61,6 +59,8 @@ def generate_launch_description():
                 remappings=[
                     # Subscriber remap
                     ('image', 'image_mono'),
+                    ('camera_info', 'camera_info'),
+                    ('image_rect', 'image_rect')
                 ],
             ),
             # Example of rectifying an image
