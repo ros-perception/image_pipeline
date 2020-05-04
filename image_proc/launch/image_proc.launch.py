@@ -31,35 +31,54 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from launch import LaunchDescription
-from launch_ros.actions import ComposableNodeContainer
+from launch_ros import actions
+
 from launch_ros.descriptions import ComposableNode
 
 
 def generate_launch_description():
-    return LaunchDescription([
-        ComposableNodeContainer(
-            package='rclcpp_components', node_executable='component_container',
-            node_name='image_proc_container', node_namespace='',
-            composable_node_descriptions=[
-                ComposableNode(
-                    package='image_proc',
-                    node_plugin='image_proc::DebayerNode',
-                    node_name='debayer'
-                ),
-                ComposableNode(
-                    package='image_proc',
-                    node_plugin='image_proc::RectifyNode',
-                    node_name='rectify_mono'
-                ),
-                ComposableNode(
-                    package='image_proc',
-                    node_plugin='image_proc::RectifyNode',
-                    node_name='rectify_color',
-                    remappings=[
-                        ('image_mono', 'image_color'),
-                        ('image_rect', 'image_rect_color')
-                    ]
-                ),
-            ],
-        ),
-    ])
+    ld = LaunchDescription()
+
+    # Load composable container
+    image_processing = actions.ComposableNodeContainer(
+        node_name="image_proc_container",
+        package='rclcpp_components',
+        node_executable='component_container',
+        composable_node_descriptions=[
+            ComposableNode(
+                package='image_proc',
+                node_plugin='image_proc::DebayerNode',
+                node_name='debayer_node',
+            ),
+            # Example of rectifying an image
+            ComposableNode(
+                package='image_proc',
+                node_plugin='image_proc::RectifyNode',
+                node_name='rectify_mono_node',
+                # Remap subscribers and publishers
+                remappings=[
+                    # Subscriber remap
+                    ('image', 'image_mono'),
+                    ('camera_info', 'camera_info'),
+                    ('image_rect', 'image_rect')
+                ],
+            ),
+            # Example of rectifying an image
+            ComposableNode(
+                package='image_proc',
+                node_plugin='image_proc::RectifyNode',
+                node_name='rectify_color_node',
+                # Remap subscribers and publishers
+                remappings=[
+                    # Subscriber remap
+                    ('image', 'image_color'),
+                    # Publisher remap
+                    ('image_rect', 'image_rect_color')
+                ],
+            )],
+        output='screen'
+    )
+
+    ld.add_action(image_processing)
+
+    return ld

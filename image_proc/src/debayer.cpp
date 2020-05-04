@@ -52,59 +52,13 @@ namespace enc = sensor_msgs::image_encodings;
 DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
 : Node("DebayerNode", options)
 {
-  auto parameter_change_cb =
-    [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
-    {
-      auto result = rcl_interfaces::msg::SetParametersResult();
-      result.successful = true;
+  sub_raw_ = image_transport::create_subscription(this, "image_raw",
+      std::bind(&DebayerNode::imageCb, this,
+      std::placeholders::_1), "raw");
 
-      for (auto parameter : parameters) {
-        if (parameter.get_name() == "camera_namespace") {
-          camera_namespace_ = parameter.as_string();
-          RCLCPP_INFO(get_logger(), "reset camera_namespace to %s! ", camera_namespace_.c_str());
-        }
-
-        std::string image_mono = camera_namespace_ + "/image_mono";
-        std::string image_color = camera_namespace_ + "/image_color";
-        connectCb();
-
-        std::lock_guard<std::mutex> lock(connect_mutex_);
-
-        RCLCPP_INFO(
-          this->get_logger(), "mono: %s, color: %s",
-          image_mono.c_str(), image_color.c_str());
-
-        pub_mono_ = image_transport::create_publisher(this, image_mono);
-        pub_color_ = image_transport::create_publisher(this, image_color);
-      }
-
-      return result;
-    };
-
+  pub_mono_ = image_transport::create_publisher(this, "image_mono");
+  pub_color_ = image_transport::create_publisher(this, "image_color");
   debayer_ = this->declare_parameter("debayer", 3);
-  this->set_on_parameters_set_callback(parameter_change_cb);
-}
-
-// Handles (un)subscribing when clients (un)subscribe
-void DebayerNode::connectCb()
-{
-  std::lock_guard<std::mutex> lock(connect_mutex_);
-  std::string topic = camera_namespace_ + "/image_raw";
-  RCLCPP_INFO(this->get_logger(), "topic: %s", topic.c_str());
-  /*
-  *  SubscriberStatusCallback not yet implemented
-  *
-  if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0)
-  {
-    sub_raw_.shutdown();
-  }
-  else
-  {
-  */
-  sub_raw_ = image_transport::create_subscription(
-    this, topic,
-    std::bind(&DebayerNode::imageCb, this, std::placeholders::_1), "raw");
-  // }
 }
 
 void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)

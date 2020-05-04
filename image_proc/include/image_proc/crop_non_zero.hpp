@@ -51,10 +51,6 @@ public:
   explicit CropNonZeroNode(const rclcpp::NodeOptions &);
 
 private:
-  std::string camera_namespace_;
-  std::string image_pub_topic_;
-  std::string image_sub_topic_;
-
   // Subscriptions
   image_transport::Subscriber sub_raw_;
 
@@ -63,7 +59,6 @@ private:
 
   image_transport::Publisher pub_;
 
-  void connectCb();
 
   void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg);
 };
