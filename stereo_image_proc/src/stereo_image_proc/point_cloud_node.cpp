@@ -101,6 +101,13 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
   int queue_size = this->declare_parameter("queue_size", 5);
   bool approx = this->declare_parameter("approximate_sync", false);
   this->declare_parameter("use_system_default_qos", false);
+  rcl_interfaces::msg::ParameterDescriptor descriptor;
+  // TODO(ivanpauno): Confirm if using point cloud padding in `sensor_msgs::msg::PointCloud2`
+  // can improve performance in some cases or not.
+  descriptor.description =
+    "This parameter avoids using alignment padding in the generated point cloud."
+    "That allows reducing bandwidth requirements."
+    "Using point clouds without alignment padding might degrade performance for some algorithms.";
   this->declare_parameter("avoid_point_cloud_padding", false);
 
   // Synchronize callbacks
