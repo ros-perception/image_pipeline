@@ -106,7 +106,7 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
   // can improve performance in some cases or not.
   descriptor.description =
     "This parameter avoids using alignment padding in the generated point cloud."
-    "That allows reducing bandwidth requirements, as the point cloud size is halved."
+    "This reduces bandwidth requirements, as the point cloud size is halved."
     "Using point clouds without alignment padding might degrade performance for some algorithms.";
   this->declare_parameter("avoid_point_cloud_padding", false);
 
