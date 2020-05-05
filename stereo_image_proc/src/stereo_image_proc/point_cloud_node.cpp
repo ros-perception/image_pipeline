@@ -101,6 +101,14 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
   int queue_size = this->declare_parameter("queue_size", 5);
   bool approx = this->declare_parameter("approximate_sync", false);
   this->declare_parameter("use_system_default_qos", false);
+  rcl_interfaces::msg::ParameterDescriptor descriptor;
+  // TODO(ivanpauno): Confirm if using point cloud padding in `sensor_msgs::msg::PointCloud2`
+  // can improve performance in some cases or not.
+  descriptor.description =
+    "This parameter avoids using alignment padding in the generated point cloud."
+    "This reduces bandwidth requirements, as the point cloud size is halved."
+    "Using point clouds without alignment padding might degrade performance for some algorithms.";
+  this->declare_parameter("avoid_point_cloud_padding", false, descriptor);
 
   // Synchronize callbacks
   if (approx) {
@@ -184,7 +192,23 @@ void PointCloudNode::imageCb(
   points_msg->is_dense = false;  // there may be invalid points
 
   sensor_msgs::PointCloud2Modifier pcd_modifier(*points_msg);
-  pcd_modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
+
+  if (!this->get_parameter("avoid_point_cloud_padding").as_bool()) {
+    // Data will be packed as (DC=don't care, each item is a float):
+    //   x, y, z, DC, rgb, DC, DC, DC
+    // Resulting step size: 32 bytes
+    pcd_modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
+  } else {
+    // Data will be packed as:
+    //   x, y, z, rgb
+    // Resulting step size: 16 bytes
+    pcd_modifier.setPointCloud2Fields(
+      4,
+      "x", 1, sensor_msgs::msg::PointField::FLOAT32,
+      "y", 1, sensor_msgs::msg::PointField::FLOAT32,
+      "z", 1, sensor_msgs::msg::PointField::FLOAT32,
+      "rgb", 1, sensor_msgs::msg::PointField::FLOAT32);
+  }
 
   sensor_msgs::PointCloud2Iterator<float> iter_x(*points_msg, "x");
   sensor_msgs::PointCloud2Iterator<float> iter_y(*points_msg, "y");
