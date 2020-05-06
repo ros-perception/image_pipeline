@@ -227,7 +227,7 @@ void ImageNodelet::imageCb(const sensor_msgs::ImageConstPtr& msg)
       options.max_image_value = max_image_value_;
     }
     cv_ptr = cvtColorForDisplay(cv_bridge::toCvShare(msg), "", options);
-    queued_image_.set(cv_ptr->image);
+    queued_image_.set(cv_ptr->image.clone());
   }
   catch (cv_bridge::Exception& e) {
     NODELET_ERROR_THROTTLE(30, "Unable to convert '%s' image for display: '%s'",
