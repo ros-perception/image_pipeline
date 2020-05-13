@@ -47,7 +47,7 @@ try:
     from queue import Queue
 except ImportError:
     from Queue import Queue
-from calibrator import CAMERA_MODEL
+from camera_calibration.calibrator import CAMERA_MODEL
 
 class BufferQueue(Queue):
     """Slight modification of the standard Queue that discards the oldest item
