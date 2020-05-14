@@ -38,19 +38,17 @@ if(ANDROID)
   return()
 endif()
 
-find_package(GTK2)
-add_definitions(-DHAVE_GTK)
-include_directories(${GTK2_INCLUDE_DIRS})
-
 find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+include_directories(${GTK3_INCLUDE_DIRS})
+
 pkg_check_modules(PC_HB REQUIRED harfbuzz)
 include_directories(${PC_HB_INCLUDE_DIRS})
 
 # Nodelet library
 add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
 target_link_libraries(image_view ${catkin_LIBRARIES}
-                                 ${GTK_LIBRARIES}
-                                 ${GTK2_LIBRARIES}
+                                 ${GTK3_LIBRARIES}
                                  ${OpenCV_LIBRARIES}
                                  ${Boost_LIBRARIES}
 )
@@ -77,8 +75,7 @@ target_link_libraries(disparity_view ${catkin_LIBRARIES}
 add_executable(stereo_view src/nodes/stereo_view.cpp)
 target_link_libraries(stereo_view ${Boost_LIBRARIES}
                                   ${catkin_LIBRARIES}
-                                  ${GTK_LIBRARIES}
-                                  ${GTK2_LIBRARIES}
+                                  ${GTK3_LIBRARIES}
                                   ${OpenCV_LIBRARIES}
 )
 
