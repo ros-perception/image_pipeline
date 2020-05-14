@@ -18,13 +18,13 @@ jobs:
           command: |
             source `find /opt/ros -name setup.bash | sort | head -1`
             cd ..
-            catkin_make
+            catkin_make -j1
       - run:
           name: Run Tests
           command: |
             source `find /opt/ros -name setup.bash | sort | head -1`
             cd ..
-            catkin_make run_tests
+            catkin_make run_tests -j1
             catkin_test_results
     working_directory: ~/src
 
