@@ -32,7 +32,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -65,7 +64,7 @@ class CalibrationException(Exception):
     pass
 
 # TODO: Make pattern per-board?
-class ChessboardInfo(object):
+class ChessboardInfo():
     def __init__(self, n_cols = 0, n_rows = 0, dim = 0.0):
         self.n_cols = n_cols
         self.n_rows = n_rows
@@ -233,7 +232,7 @@ def _get_dist_model(dist_params, cam_model):
     return dist_model
 
 # TODO self.size needs to come from CameraInfo, full resolution
-class Calibrator(object):
+class Calibrator():
     """
     Base class for calibration system
     """
@@ -590,7 +589,7 @@ def image_from_archive(archive, name):
     imagefiledata.resize((1, imagefiledata.size))
     return cv2.imdecode(imagefiledata, cv2.IMREAD_COLOR)
 
-class ImageDrawable(object):
+class ImageDrawable():
     """
     Passed to CalibrationNode after image handled. Allows plotting of images
     with detected corner points
