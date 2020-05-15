@@ -52,6 +52,7 @@ target_link_libraries(image_view ${catkin_LIBRARIES}
                                  ${OpenCV_LIBRARIES}
                                  ${Boost_LIBRARIES}
 )
+add_dependencies(image_view ${PROJECT_NAME}_gencfg)
 install(TARGETS image_view
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
