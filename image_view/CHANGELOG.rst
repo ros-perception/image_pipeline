@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.15.1 (2020-05-18)
+-------------------
 * image_view: add missing dependency to gencfg header (`#531 <https://github.com/ros-perception/image_pipeline/issues/531>`_)
 * Contributors: Atsushi Watanabe
 
