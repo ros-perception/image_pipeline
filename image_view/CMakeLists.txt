@@ -56,7 +56,6 @@ ament_target_dependencies(image_view_nodes
   stereo_msgs
 )
 target_link_libraries(image_view_nodes
-  ${GTK_LIBRARIES}
   ${GTK2_LIBRARIES}
   ${OpenCV_LIBRARIES}
   ${Boost_LIBRARIES}
