@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.15.0 (2020-05-18)
+-------------------
 * image_view: add missing dependency to gencfg header (`#532 <https://github.com/ros-perception/image_pipeline/issues/532>`_)
 * clone cv_ptr->image before set queued_image (`#526 <https://github.com/ros-perception/image_pipeline/issues/526>`_)
 * [image_view] Add dynamic reconfigure to image_nodelet.cpp in melodic (`#504 <https://github.com/ros-perception/image_pipeline/issues/504>`_)
