@@ -1,18 +1,9 @@
-1.15.2 (2020-05-19)
--------------------
-
-1.15.1 (2020-05-18)
--------------------
-
-1.15.0 (2020-05-14)
--------------------
-* Python 3 compatibility (`#530 <https://github.com/ros-perception/image_pipeline/issues/530>`_)
-* cmake_minimum_required to 3.0.2
-* Adapted to OpenCV4
-* import setup from setuptools instead of distutils-core
-* Apply `#509 <https://github.com/ros-perception/image_pipeline/issues/509>`_ and `#526 <https://github.com/ros-perception/image_pipeline/issues/526>`_ to Noetic Branch (`#528 <https://github.com/ros-perception/image_pipeline/issues/528>`_)
+Forthcoming
+-----------
+* Fix import path on camera_calibrator.py (`#509 <https://github.com/ros-perception/image_pipeline/issues/509>`_)
 * Fixes `#501 <https://github.com/ros-perception/image_pipeline/issues/501>`_: self.size is set before dumping calibration parameters in calibrator.py do_calibration(self, dump) (`#502 <https://github.com/ros-perception/image_pipeline/issues/502>`_)
-* Contributors: Joshua Whitley, Stewart Jamieson
+  Not sure how this one made it through. Thanks for the fix!
+* Contributors: Gonçalo Camelo Neves Pereira, Stewart Jamieson
 
 1.14.0 (2020-01-12)
 -------------------
