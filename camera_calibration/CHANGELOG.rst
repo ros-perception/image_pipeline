@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.15.0 (2020-05-18)
+-------------------
 * Fix import path on camera_calibrator.py (`#509 <https://github.com/ros-perception/image_pipeline/issues/509>`_)
 * Fixes `#501 <https://github.com/ros-perception/image_pipeline/issues/501>`_: self.size is set before dumping calibration parameters in calibrator.py do_calibration(self, dump) (`#502 <https://github.com/ros-perception/image_pipeline/issues/502>`_)
   Not sure how this one made it through. Thanks for the fix!
