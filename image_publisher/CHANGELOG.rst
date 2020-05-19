@@ -2,6 +2,11 @@
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* updated install locations for better portability. (`#500 <https://github.com/ros-perception/image_pipeline/issues/500>`_)
+* Contributors: Sean Yen
+
 1.14.0 (2020-01-12)
 -------------------
 

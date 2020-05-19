@@ -1,3 +1,10 @@
+Forthcoming
+-----------
+* Fix import path on camera_calibrator.py (`#509 <https://github.com/ros-perception/image_pipeline/issues/509>`_)
+* Fixes `#501 <https://github.com/ros-perception/image_pipeline/issues/501>`_: self.size is set before dumping calibration parameters in calibrator.py do_calibration(self, dump) (`#502 <https://github.com/ros-perception/image_pipeline/issues/502>`_)
+  Not sure how this one made it through. Thanks for the fix!
+* Contributors: Gonçalo Camelo Neves Pereira, Stewart Jamieson
+
 1.14.0 (2020-01-12)
 -------------------
 * Add Fisheye calibration tool (`#440 <https://github.com/ros-perception/image_pipeline/issues/440>`_)
