@@ -8,7 +8,7 @@ jobs:
       - run:
           name: Set Up Container
           command: |
-            apt update -qq && apt install -y build-essential cmake python3-colcon-common-extensions python3-rosdep python3-pip libgtk2.0-dev
+            apt update -qq && apt install -y build-essential cmake python3-colcon-common-extensions python3-rosdep python3-pip
             pip3 install --upgrade pytest
             apt upgrade -y
             source `find /opt/ros -maxdepth 2 -name local_setup.bash | sort | head -1`
