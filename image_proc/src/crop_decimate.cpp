@@ -116,8 +116,9 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
 
   pub_ = image_transport::create_camera_publisher(this, "image_raw");
   sub_ = image_transport::create_camera_subscription(
-    this, "image_raw", std::bind(&CropDecimateNode::imageCb, this,
-    std::placeholders::_1, std::placeholders::_2), "raw");
+    this, "image_raw", std::bind(
+      &CropDecimateNode::imageCb, this,
+      std::placeholders::_1, std::placeholders::_2), "raw");
 }
 
 void CropDecimateNode::imageCb(
@@ -148,7 +149,8 @@ void CropDecimateNode::imageCb(
   int max_width = image_msg->width - offset_x_;
 
   if (max_width <= 0) {
-    RCLCPP_WARN(get_logger(),
+    RCLCPP_WARN(
+      get_logger(),
       "x offset is outside the input image width: "
       "%i, x offset: %i.", image_msg->width, offset_x_);
     return;
@@ -157,7 +159,8 @@ void CropDecimateNode::imageCb(
   int max_height = image_msg->height - offset_y_;
 
   if (max_height <= 0) {
-    RCLCPP_WARN(get_logger(),
+    RCLCPP_WARN(
+      get_logger(),
       "y offset is outside the input image height: "
       "%i, y offset: %i", image_msg->height, offset_y_);
     return;
@@ -196,7 +199,8 @@ void CropDecimateNode::imageCb(
   // Special case: when decimating Bayer images, we first do a 2x2 decimation to BGR
   if (is_bayer && (decimation_x > 1 || decimation_y > 1)) {
     if (decimation_x % 2 != 0 || decimation_y % 2 != 0) {
-      RCLCPP_ERROR(get_logger(),
+      RCLCPP_ERROR(
+        get_logger(),
         "Odd decimation not supported for Bayer images");
       return;
     }
@@ -220,7 +224,8 @@ void CropDecimateNode::imageCb(
     } else if (image_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG16) {
       debayer2x2toBGR<uint16_t>(output.image, bgr, 1, 0, step + 1, step);
     } else {
-      RCLCPP_ERROR(get_logger(), "Unrecognized Bayer encoding '%s'",
+      RCLCPP_ERROR(
+        get_logger(), "Unrecognized Bayer encoding '%s'",
         image_msg->encoding.c_str());
       return;
     }
@@ -267,7 +272,8 @@ void CropDecimateNode::imageCb(
           decimate<16>(output.image, decimated, decimation_x, decimation_y);
           break;
         default:
-          RCLCPP_ERROR(get_logger(),
+          RCLCPP_ERROR(
+            get_logger(),
             "Unsupported pixel size, %d bytes", pixel_size);
           return;
       }

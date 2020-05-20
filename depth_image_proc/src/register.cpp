@@ -157,8 +157,9 @@ void RegisterNode::imageCb(
   Eigen::Affine3d depth_to_rgb;
   try {
     tf2::TimePoint tf2_time(std::chrono::nanoseconds(depth_info_msg->header.stamp.nanosec) +
-      std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds(
-        depth_info_msg->header.stamp.sec)));
+      std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::seconds(
+          depth_info_msg->header.stamp.sec)));
     geometry_msgs::msg::TransformStamped transform = tf_buffer_->lookupTransform(
       rgb_info_msg->header.frame_id, depth_info_msg->header.frame_id,
       tf2_time);
@@ -186,7 +187,8 @@ void RegisterNode::imageCb(
   } else if (depth_image_msg->encoding == enc::TYPE_32FC1) {
     convert<float>(depth_image_msg, registered_msg, depth_to_rgb);
   } else {
-    RCLCPP_ERROR(logger_, "Depth image has unsupported encoding [%s]",
+    RCLCPP_ERROR(
+      logger_, "Depth image has unsupported encoding [%s]",
       depth_image_msg->encoding.c_str());
     return;
   }

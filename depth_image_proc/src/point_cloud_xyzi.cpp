@@ -151,7 +151,8 @@ void PointCloudXyziNode::imageCb(
 {
   // Check for bad inputs
   if (depth_msg->header.frame_id != intensity_msg_in->header.frame_id) {
-    RCLCPP_ERROR(logger_, "Depth image frame id [%s] doesn't match image frame id [%s]",
+    RCLCPP_ERROR(
+      logger_, "Depth image frame id [%s] doesn't match image frame id [%s]",
       depth_msg->header.frame_id.c_str(), intensity_msg_in->header.frame_id.c_str());
     return;
   }
@@ -186,7 +187,8 @@ void PointCloudXyziNode::imageCb(
     cv_bridge::CvImage cv_rsz;
     cv_rsz.header = cv_ptr->header;
     cv_rsz.encoding = cv_ptr->encoding;
-    cv::resize(cv_ptr->image.rowRange(0, depth_msg->height / ratio), cv_rsz.image,
+    cv::resize(
+      cv_ptr->image.rowRange(0, depth_msg->height / ratio), cv_rsz.image,
       cv::Size(depth_msg->width, depth_msg->height));
     if ((intensity_msg->encoding == enc::MONO8) || (intensity_msg->encoding == enc::MONO16)) {
       intensity_msg = cv_rsz.toImageMsg();
@@ -206,7 +208,8 @@ void PointCloudXyziNode::imageCb(
     try {
       intensity_msg = cv_bridge::toCvCopy(intensity_msg, enc::MONO8)->toImageMsg();
     } catch (cv_bridge::Exception & e) {
-      RCLCPP_ERROR(logger_, "Unsupported encoding [%s]: %s",
+      RCLCPP_ERROR(
+        logger_, "Unsupported encoding [%s]: %s",
         intensity_msg->encoding.c_str(), e.what());
       return;
     }
@@ -221,7 +224,8 @@ void PointCloudXyziNode::imageCb(
 
   sensor_msgs::PointCloud2Modifier pcd_modifier(*cloud_msg);
   // pcd_modifier.setPointCloud2FieldsByString(2, "xyz", "i");
-  pcd_modifier.setPointCloud2Fields(4,
+  pcd_modifier.setPointCloud2Fields(
+    4,
     "x", 1, sensor_msgs::msg::PointField::FLOAT32,
     "y", 1, sensor_msgs::msg::PointField::FLOAT32,
     "z", 1, sensor_msgs::msg::PointField::FLOAT32,

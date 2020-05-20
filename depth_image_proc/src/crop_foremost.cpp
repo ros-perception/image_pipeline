@@ -90,9 +90,10 @@ void CropForemostNode::connectCb()
     sub_raw_.shutdown();
   } else if (!sub_raw_) {
     image_transport::TransportHints hints(this, "raw");
-    sub_raw_ = image_transport::create_subscription(this, "image_raw",
-        std::bind(&CropForemostNode::depthCb, this, std::placeholders::_1),
-        hints.getTransport());
+    sub_raw_ = image_transport::create_subscription(
+      this, "image_raw",
+      std::bind(&CropForemostNode::depthCb, this, std::placeholders::_1),
+      hints.getTransport());
   }
 }
 
@@ -108,7 +109,8 @@ void CropForemostNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & r
 
   // Check the number of channels
   if (sensor_msgs::image_encodings::numChannels(raw_msg->encoding) != 1) {
-    RCLCPP_ERROR(logger_, "Only grayscale image is acceptable, got [%s]",
+    RCLCPP_ERROR(
+      logger_, "Only grayscale image is acceptable, got [%s]",
       raw_msg->encoding.c_str());
     return;
   }

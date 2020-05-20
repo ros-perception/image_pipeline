@@ -88,9 +88,10 @@ void ConvertMetricNode::connectCb()
     sub_raw_.shutdown();
   } else if (!sub_raw_) {
     image_transport::TransportHints hints(this, "raw");
-    sub_raw_ = image_transport::create_subscription(this, "image_raw",
-        std::bind(&ConvertMetricNode::depthCb, this, std::placeholders::_1),
-        hints.getTransport());
+    sub_raw_ = image_transport::create_subscription(
+      this, "image_raw",
+      std::bind(&ConvertMetricNode::depthCb, this, std::placeholders::_1),
+      hints.getTransport());
   }
 }
 

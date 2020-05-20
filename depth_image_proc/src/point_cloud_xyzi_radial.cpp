@@ -141,7 +141,8 @@ cv::Mat PointCloudXyziRadialNode::initMatrix(
 
   if (radial) {
     for (i = 0; i < totalsize; i++) {
-      normalize(pixelVectors.at<cv::Vec3f>(i),
+      normalize(
+        pixelVectors.at<cv::Vec3f>(i),
         dst.at<cv::Vec3f>(i));
     }
     pixelVectors = dst;
@@ -217,7 +218,8 @@ void PointCloudXyziRadialNode::imageCb(
   cloud_msg->is_bigendian = false;
 
   sensor_msgs::PointCloud2Modifier pcd_modifier(*cloud_msg);
-  pcd_modifier.setPointCloud2Fields(4,
+  pcd_modifier.setPointCloud2Fields(
+    4,
     "x", 1, sensor_msgs::msg::PointField::FLOAT32,
     "y", 1, sensor_msgs::msg::PointField::FLOAT32,
     "z", 1, sensor_msgs::msg::PointField::FLOAT32,
@@ -249,7 +251,8 @@ void PointCloudXyziRadialNode::imageCb(
   } else if (intensity_msg->encoding == enc::MONO8) {
     convert_intensity<uint8_t>(intensity_msg, cloud_msg);
   } else {
-    RCLCPP_ERROR(logger_, "Intensity image has unsupported encoding [%s]",
+    RCLCPP_ERROR(
+      logger_, "Intensity image has unsupported encoding [%s]",
       intensity_msg->encoding.c_str());
     return;
   }

@@ -110,7 +110,8 @@ void ImagePublisher::reconfigureCallback()
       c.loadCameraInfo(camera_info_url_);
       camera_info_ = c.getCameraInfo();
     } catch (cv::Exception & e) {
-      RCLCPP_ERROR(this->get_logger(), "camera calibration failed to load: %s %s %s %i",
+      RCLCPP_ERROR(
+        this->get_logger(), "camera calibration failed to load: %s %s %s %i",
         e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
     }
   } else {
@@ -140,7 +141,8 @@ void ImagePublisher::doWork()
 
     pub_.publish(*out_img, camera_info_);
   } catch (cv::Exception & e) {
-    RCLCPP_ERROR(this->get_logger(), "Image processing error: %s %s %s %i",
+    RCLCPP_ERROR(
+      this->get_logger(), "Image processing error: %s %s %s %i",
       e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
   }
 }
@@ -163,14 +165,17 @@ void ImagePublisher::onInit()
     }
     CV_Assert(!image_.empty());
   } catch (cv::Exception & e) {
-    RCLCPP_ERROR(this->get_logger(), "Failed to load image (%s): %s %s %s %i",
+    RCLCPP_ERROR(
+      this->get_logger(), "Failed to load image (%s): %s %s %s %i",
       filename_.c_str(), e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
     return;
   }
 
-  RCLCPP_INFO(this->get_logger(),
+  RCLCPP_INFO(
+    this->get_logger(),
     "Flip horizontal image is : %s", ((flip_horizontal_) ? "true" : "false"));
-  RCLCPP_INFO(this->get_logger(),
+  RCLCPP_INFO(
+    this->get_logger(),
     "Flip flip_vertical image is : %s", ((flip_vertical_) ? "true" : "false"));
 
   // From http://docs.opencv.org/modules/core/doc/operations_on_arrays.html

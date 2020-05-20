@@ -151,8 +151,9 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
       std::bind(&StereoViewNode::imageCb, this, _1, _2, _3));
   } else {
     exact_sync_.reset(
-      new ExactSync(ExactPolicy(queue_size_),
-      left_sub_, right_sub_, disparity_sub_));
+      new ExactSync(
+        ExactPolicy(queue_size_),
+        left_sub_, right_sub_, disparity_sub_));
     exact_sync_->registerCallback(
       std::bind(&StereoViewNode::imageCb, this, _1, _2, _3));
   }

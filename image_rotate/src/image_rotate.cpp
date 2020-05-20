@@ -39,7 +39,8 @@ int main(int argc, char ** argv)
   setvbuf(stdout, NULL, _IONBF, BUFSIZ);
 
   if (argc <= 1) {
-    RCUTILS_LOG_WARN("Topic 'image' has not been remapped! Typical command-line usage:\n"
+    RCUTILS_LOG_WARN(
+      "Topic 'image' has not been remapped! Typical command-line usage:\n"
       "\t$ ros2 run image_rotate image_rotate image:=<image topic>");
     return 1;
   }

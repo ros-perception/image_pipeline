@@ -41,7 +41,8 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
 
   if (argc <= 1) {
-    RCUTILS_LOG_ERROR("image_publisher requires filename. Typical command-line usage:\n"
+    RCUTILS_LOG_ERROR(
+      "image_publisher requires filename. Typical command-line usage:\n"
       "\t$ ros2 run image_publisher image_publisher <filename>");
     return 1;
   }
