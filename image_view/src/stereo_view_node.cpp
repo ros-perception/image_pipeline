@@ -63,12 +63,6 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <stereo_msgs/msg/disparity_image.hpp>
 
-#ifdef HAVE_GTK
-
-#include <gtk/gtk.h>
-
-#endif
-
 #include <algorithm>
 #include <chrono>
 #include <memory>
