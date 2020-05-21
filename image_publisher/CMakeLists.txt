@@ -3,15 +3,7 @@ project(image_publisher)
 
 find_package(catkin REQUIRED COMPONENTS cv_bridge dynamic_reconfigure camera_info_manager sensor_msgs image_transport nodelet roscpp)
 
-set(opencv_2_components core highgui)
-set(opencv_3_components core imgcodecs videoio)
-find_package(OpenCV REQUIRED COMPONENTS core)
-message(STATUS "opencv version ${OpenCV_VERSION}")
-if(OpenCV_VERSION VERSION_LESS "3.0.0")
-  find_package(OpenCV 2 REQUIRED COMPONENTS ${opencv_2_components})  
-else()
-  find_package(OpenCV 3 REQUIRED COMPONENTS ${opencv_3_components})  
-endif()
+find_package(OpenCV REQUIRED COMPONENTS core imgcodecs videoio)
 
 # generate the dynamic_reconfigure config file
 generate_dynamic_reconfigure_options(cfg/ImagePublisher.cfg)
