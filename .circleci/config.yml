@@ -26,7 +26,7 @@ jobs:
           name: Run Tests
           command: |
             source `find /opt/ros -maxdepth 2 -name local_setup.bash | sort | head -1`
-            colcon test --parallel-workers 1
+            colcon test --packages-select camera_calibration depth_image_proc image_proc image_pipeline image_publisher image_rotate image_view stereo_image_proc --parallel-workers 1
             colcon test-result --verbose
 
 workflows:
