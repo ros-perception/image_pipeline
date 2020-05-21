@@ -64,10 +64,12 @@ ImageRotateNode::ImageRotateNode()
   config_.output_frame_id = this->declare_parameter("output_frame_id", std::string(""));
   config_.input_frame_id = this->declare_parameter("input_frame_id", std::string(""));
   config_.use_camera_info = this->declare_parameter("use_camera_info", true);
-  config_.max_angular_rate = this->declare_parameter("max_angular_rate",
-      static_cast<double>(10));
-  config_.output_image_size = this->declare_parameter("output_image_size",
-      static_cast<double>(2));
+  config_.max_angular_rate = this->declare_parameter(
+    "max_angular_rate",
+    static_cast<double>(10));
+  config_.output_image_size = this->declare_parameter(
+    "output_image_size",
+    static_cast<double>(2));
 
   auto reconfigureCallback =
     [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
@@ -258,7 +260,8 @@ void ImageRotateNode::do_work(
     out_img->header.frame_id = transform.child_frame_id;
     img_pub_.publish(out_img);
   } catch (cv::Exception & e) {
-    RCUTILS_LOG_ERROR("Image processing error: %s %s %s %i",
+    RCUTILS_LOG_ERROR(
+      "Image processing error: %s %s %s %i",
       e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
   }
 
@@ -275,8 +278,9 @@ void ImageRotateNode::subscribe()
     cam_sub_ = image_transport::create_camera_subscription(
       this,
       "image",
-      std::bind(&ImageRotateNode::imageCallbackWithInfo, this,
-      std::placeholders::_1, std::placeholders::_2),
+      std::bind(
+        &ImageRotateNode::imageCallbackWithInfo, this,
+        std::placeholders::_1, std::placeholders::_2),
       "raw",
       custom_qos);
   } else {

@@ -88,7 +88,8 @@ cv_bridge::CvImageConstPtr ThreadSafeImage::pop()
   {
     std::unique_lock<std::mutex> lock(mutex_);
 
-    condition_.wait_for(lock, std::chrono::milliseconds(100),
+    condition_.wait_for(
+      lock, std::chrono::milliseconds(100),
       [this] {
         return !image_;
       });

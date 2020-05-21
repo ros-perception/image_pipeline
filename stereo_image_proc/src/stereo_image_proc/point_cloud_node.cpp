@@ -112,14 +112,16 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
 
   // Synchronize callbacks
   if (approx) {
-    approximate_sync_.reset(new ApproximateSync(
+    approximate_sync_.reset(
+      new ApproximateSync(
         ApproximatePolicy(queue_size),
         sub_l_image_, sub_l_info_,
         sub_r_info_, sub_disparity_));
     approximate_sync_->registerCallback(
       std::bind(&PointCloudNode::imageCb, this, _1, _2, _3, _4));
   } else {
-    exact_sync_.reset(new ExactSync(
+    exact_sync_.reset(
+      new ExactSync(
         ExactPolicy(queue_size),
         sub_l_image_, sub_l_info_,
         sub_r_info_, sub_disparity_));
@@ -273,7 +275,8 @@ void PointCloudNode::imageCb(
     }
   } else {
     // Throttle duration in milliseconds
-    RCUTILS_LOG_WARN_THROTTLE(RCUTILS_STEADY_TIME, 30000,
+    RCUTILS_LOG_WARN_THROTTLE(
+      RCUTILS_STEADY_TIME, 30000,
       "Could not fill color channel of the point cloud, "
       "unsupported encoding '%s'", encoding.c_str());
   }

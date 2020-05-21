@@ -168,7 +168,8 @@ void PointCloudXyzrgbNode::imageCb(
 {
   // Check for bad inputs
   if (depth_msg->header.frame_id != rgb_msg_in->header.frame_id) {
-    RCLCPP_ERROR(logger_, "Depth image frame id [%s] doesn't match RGB image frame id [%s]",
+    RCLCPP_ERROR(
+      logger_, "Depth image frame id [%s] doesn't match RGB image frame id [%s]",
       depth_msg->header.frame_id.c_str(), rgb_msg_in->header.frame_id.c_str());
     return;
   }
@@ -203,7 +204,8 @@ void PointCloudXyzrgbNode::imageCb(
     cv_bridge::CvImage cv_rsz;
     cv_rsz.header = cv_ptr->header;
     cv_rsz.encoding = cv_ptr->encoding;
-    cv::resize(cv_ptr->image.rowRange(0, depth_msg->height / ratio), cv_rsz.image,
+    cv::resize(
+      cv_ptr->image.rowRange(0, depth_msg->height / ratio), cv_rsz.image,
       cv::Size(depth_msg->width, depth_msg->height));
     if ((rgb_msg->encoding == enc::RGB8) || (rgb_msg->encoding == enc::BGR8) ||
       (rgb_msg->encoding == enc::MONO8))
@@ -213,7 +215,8 @@ void PointCloudXyzrgbNode::imageCb(
       rgb_msg = cv_bridge::toCvCopy(cv_rsz.toImageMsg(), enc::RGB8)->toImageMsg();
     }
 
-    RCLCPP_ERROR(logger_, "Depth resolution (%ux%u) does not match RGB resolution (%ux%u)",
+    RCLCPP_ERROR(
+      logger_, "Depth resolution (%ux%u) does not match RGB resolution (%ux%u)",
       depth_msg->width, depth_msg->height, rgb_msg->width, rgb_msg->height);
     return;
   } else {
@@ -261,10 +264,12 @@ void PointCloudXyzrgbNode::imageCb(
   pcd_modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
 
   if (depth_msg->encoding == enc::TYPE_16UC1) {
-    convert<uint16_t>(depth_msg, rgb_msg, cloud_msg, red_offset, green_offset, blue_offset,
+    convert<uint16_t>(
+      depth_msg, rgb_msg, cloud_msg, red_offset, green_offset, blue_offset,
       color_step);
   } else if (depth_msg->encoding == enc::TYPE_32FC1) {
-    convert<float>(depth_msg, rgb_msg, cloud_msg, red_offset, green_offset, blue_offset,
+    convert<float>(
+      depth_msg, rgb_msg, cloud_msg, red_offset, green_offset, blue_offset,
       color_step);
   } else {
     RCLCPP_ERROR(logger_, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());

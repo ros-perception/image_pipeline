@@ -1,8 +1,8 @@
 version: 2
 jobs:
-  dashing:
+  foxy:
     docker:
-      - image: ros:dashing-ros-base
+      - image: jwhitleywork/ros:foxy-ros-base-focal
     steps:
       - checkout
       - run:
@@ -13,8 +13,10 @@ jobs:
             apt upgrade -y
             source `find /opt/ros -maxdepth 2 -name local_setup.bash | sort | head -1`
             mkdir -p src/image_pipeline && mv `find -maxdepth 1 -not -name . -not -name src` src/image_pipeline/
+            vcs import src \
+              < src/image_pipeline/tools/ros2_dependencies.repos
             rosdep update
-            rosdep install -y --from-paths . --ignore-src
+            rosdep install -y --ignore-src --from-paths src
       - run:
           name: Build
           command: |
@@ -24,11 +26,11 @@ jobs:
           name: Run Tests
           command: |
             source `find /opt/ros -maxdepth 2 -name local_setup.bash | sort | head -1`
-            colcon test --parallel-workers 1
+            colcon test --packages-select camera_calibration depth_image_proc image_proc image_pipeline image_publisher image_rotate image_view stereo_image_proc --parallel-workers 1
             colcon test-result --verbose
 
 workflows:
   version: 2
   ros_build:
     jobs:
-      - dashing
+      - foxy

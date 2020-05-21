@@ -157,14 +157,16 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
 
   // Synchronize callbacks
   if (approx) {
-    approximate_sync_.reset(new ApproximateSync(
+    approximate_sync_.reset(
+      new ApproximateSync(
         ApproximatePolicy(queue_size),
         sub_l_image_, sub_l_info_,
         sub_r_image_, sub_r_info_));
     approximate_sync_->registerCallback(
       std::bind(&DisparityNode::imageCb, this, _1, _2, _3, _4));
   } else {
-    exact_sync_.reset(new ExactSync(
+    exact_sync_.reset(
+      new ExactSync(
         ExactPolicy(queue_size),
         sub_l_image_, sub_l_info_,
         sub_r_image_, sub_r_info_));

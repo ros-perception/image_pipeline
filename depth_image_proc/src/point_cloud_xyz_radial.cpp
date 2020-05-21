@@ -113,7 +113,8 @@ cv::Mat initMatrix(cv::Mat cameraMatrix, cv::Mat distCoeffs, int width, int heig
 
   if (radial) {
     for (i = 0; i < totalsize; i++) {
-      normalize(pixelVectors.at<cv::Vec3f>(i),
+      normalize(
+        pixelVectors.at<cv::Vec3f>(i),
         dst.at<cv::Vec3f>(i));
     }
     pixelVectors = dst;
@@ -156,8 +157,9 @@ void PointCloudXyzRadialNode::connectCb()
     sub_depth_ = image_transport::create_camera_subscription(
       this,
       "image_raw",
-      std::bind(&PointCloudXyzRadialNode::depthCb, this, std::placeholders::_1,
-      std::placeholders::_2),
+      std::bind(
+        &PointCloudXyzRadialNode::depthCb, this, std::placeholders::_1,
+        std::placeholders::_2),
       "raw",
       custom_qos);
   }

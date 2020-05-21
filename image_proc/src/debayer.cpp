@@ -52,8 +52,10 @@ namespace enc = sensor_msgs::image_encodings;
 DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
 : Node("DebayerNode", options)
 {
-  sub_raw_ = image_transport::create_subscription(this, "image_raw",
-      std::bind(&DebayerNode::imageCb, this,
+  sub_raw_ = image_transport::create_subscription(
+    this, "image_raw",
+    std::bind(
+      &DebayerNode::imageCb, this,
       std::placeholders::_1), "raw");
 
   pub_mono_ = image_transport::create_publisher(this, "image_mono");
@@ -143,7 +145,8 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
     {
       // These algorithms are not in OpenCV yet
       if (raw_msg->encoding != enc::BAYER_GRBG8) {
-        RCLCPP_WARN(this->get_logger(), "Edge aware algorithms currently only support GRBG8 Bayer. "
+        RCLCPP_WARN(
+          this->get_logger(), "Edge aware algorithms currently only support GRBG8 Bayer. "
           "Falling back to bilinear interpolation.");
         algorithm = debayer_bilinear_;
       } else {
