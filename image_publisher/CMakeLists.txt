@@ -1,15 +1,9 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 2.8)
 project(image_publisher)
 
 find_package(catkin REQUIRED COMPONENTS cv_bridge dynamic_reconfigure camera_info_manager sensor_msgs image_transport nodelet roscpp)
 
-find_package(OpenCV REQUIRED COMPONENTS core)
-message(STATUS "opencv version ${OpenCV_VERSION}")
-if(OpenCV_VERSION VERSION_LESS "4.0.0")
-  find_package(OpenCV 3 REQUIRED COMPONENTS core imgcodecs videoio)
-else()
-  find_package(OpenCV 4 REQUIRED COMPONENTS core imgcodecs videoio)
-endif()
+find_package(OpenCV REQUIRED COMPONENTS core imgcodecs videoio)
 
 # generate the dynamic_reconfigure config file
 generate_dynamic_reconfigure_options(cfg/ImagePublisher.cfg)
