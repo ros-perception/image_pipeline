@@ -2,7 +2,7 @@ version: 2
 jobs:
   noetic:
     docker:
-      - image: jwhitleywork/ros:noetic-ros-base-focal
+      - image: ros:noetic
     steps:
       - checkout
       - run:
