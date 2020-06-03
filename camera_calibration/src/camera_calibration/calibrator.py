@@ -915,6 +915,8 @@ class StereoCalibrator(Calibrator):
     def __init__(self, *args, **kwargs):
         if 'name' not in kwargs:
             kwargs['name'] = 'narrow_stereo'
+        self.lcal = kwargs.pop('lcal', None)
+        self.rcal = kwargs.pop('rcal', None)
         super(StereoCalibrator, self).__init__(*args, **kwargs)
         self.l = MonoCalibrator(*args, **kwargs)
         self.r = MonoCalibrator(*args, **kwargs)
@@ -955,10 +957,26 @@ class StereoCalibrator(Calibrator):
 
     def cal_fromcorners(self, good):
         # Perform monocular calibrations
-        lcorners = [(l, b) for (l, r, b) in good]
-        rcorners = [(r, b) for (l, r, b) in good]
-        self.l.cal_fromcorners(lcorners)
-        self.r.cal_fromcorners(rcorners)
+        if self.lcal and self.rcal:
+            self.lcal.do_calibration()
+            self.rcal.do_calibration()
+            self.l.intrinsics = self.lcal.intrinsics
+            self.l.distortion = self.lcal.distortion
+            self.r.intrinsics = self.rcal.intrinsics
+            self.r.distortion = self.rcal.distortion
+            self.l.R = self.lcal.R
+            self.r.R = self.rcal.R
+            self.l.P = self.lcal.P
+            self.r.P = self.rcal.P
+            self.l.mapx = self.lcal.mapx
+            self.l.mapy = self.lcal.mapy
+            self.r.mapx = self.rcal.mapx
+            self.r.mapy = self.rcal.mapy
+        else:
+            lcorners = [(l, b) for (l, r, b) in good]
+            rcorners = [(r, b) for (l, r, b) in good]
+            self.l.cal_fromcorners(lcorners)
+            self.r.cal_fromcorners(rcorners)
 
         lipts = [ l for (l, _, _) in good ]
         ripts = [ r for (_, r, _) in good ]

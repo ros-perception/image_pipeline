@@ -111,7 +111,7 @@ class ConsumerThread(threading.Thread):
 class CalibrationNode:
     def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
                 fisheye_flags = 0, pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0,
-                max_chessboard_speed = -1, queue_size = 1):
+                max_chessboard_speed = -1, queue_size = 1, mono_before_stereo=False):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -133,6 +133,7 @@ class CalibrationNode:
         self._pattern = pattern
         self._camera_name = camera_name
         self._max_chessboard_speed = max_chessboard_speed
+        self._mono_before_stereo = mono_before_stereo
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = synchronizer([lsub, rsub], 4)
@@ -154,6 +155,9 @@ class CalibrationNode:
         self.c = None
         
         self._last_display = None
+        self.lcal = None
+        self.rcal = None
+        self.lock = threading.Lock()
 
         mth = ConsumerThread(self.q_mono, self.handle_monocular)
         mth.setDaemon(True)
@@ -172,19 +176,43 @@ class CalibrationNode:
         self.q_mono.put(msg)
 
     def queue_stereo(self, lmsg, rmsg):
-        self.q_stereo.put((lmsg, rmsg))
+        if self._mono_before_stereo:
+            if self.lcal == None:
+                self.q_mono.put(lmsg)
+            elif self.rcal == None:
+                self.q_mono.put(rmsg)
+            else:
+                self.q_stereo.put((lmsg, rmsg))
+        else:
+            self.q_stereo.put((lmsg, rmsg))
+
+    def init_monocular(self):
+        if self._camera_name:
+            c = MonoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern, name=self._camera_name,
+                               checkerboard_flags=self._checkerboard_flags,
+                               max_chessboard_speed = self._max_chessboard_speed)
+        else:
+            c = MonoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern,
+                               checkerboard_flags=self.checkerboard_flags,
+                               max_chessboard_speed = self._max_chessboard_speed)
+        return c
+
+    def init_stereo(self):
+        if self._camera_name:
+            c = StereoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern, name=self._camera_name,
+                                 checkerboard_flags=self._checkerboard_flags,
+                                 max_chessboard_speed = self._max_chessboard_speed,
+                                 lcal=self.lcal, rcal=self.rcal)
+        else:
+            c = StereoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern,
+                                 checkerboard_flags=self._checkerboard_flags,
+                                 max_chessboard_speed = self._max_chessboard_speed,
+                                 lcal=self.lcal, rcal=self.rcal)
+        return c
 
     def handle_monocular(self, msg):
         if self.c == None:
-            if self._camera_name:
-                self.c = MonoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern, name=self._camera_name,
-                                        checkerboard_flags=self._checkerboard_flags,
-                                        max_chessboard_speed = self._max_chessboard_speed)
-            else:
-                self.c = MonoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern,
-                                        checkerboard_flags=self.checkerboard_flags,
-                                        max_chessboard_speed = self._max_chessboard_speed)
-
+            self.c = self.init_monocular()
         # This should just call the MonoCalibrator
         drawable = self.c.handle_msg(msg)
         self.displaywidth = drawable.scrib.shape[1]
@@ -192,15 +220,7 @@ class CalibrationNode:
 
     def handle_stereo(self, msg):
         if self.c == None:
-            if self._camera_name:
-                self.c = StereoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern, name=self._camera_name,
-                                          checkerboard_flags=self._checkerboard_flags,
-                                          max_chessboard_speed = self._max_chessboard_speed)
-            else:
-                self.c = StereoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern,
-                                          checkerboard_flags=self._checkerboard_flags,
-                                          max_chessboard_speed = self._max_chessboard_speed)
-
+            self.c = self.init_stereo()
         drawable = self.c.handle_msg(msg)
         self.displaywidth = drawable.lscrib.shape[1] + drawable.rscrib.shape[1]
         self.redraw_stereo(drawable)
@@ -265,10 +285,29 @@ class OpenCVCalibrationNode(CalibrationNode):
         if event == cv2.EVENT_LBUTTONDOWN and self.displaywidth < x:
             if self.c.goodenough:
                 if 180 <= y < 280:
-                    print("**** Calibrating ****")
-                    self.c.do_calibration()
-                    self.buttons(self._last_display)
-                    self.queue_display.put(self._last_display)
+                    if self._mono_before_stereo:
+                        if self.lcal == None:
+                            self.lcal = self.c
+                            self.q_mono.clear()
+                            self.q_stereo.clear()
+                            self.c = self.init_monocular()
+                        elif self.rcal == None:
+                            self.lock.acquire()
+                            self.rcal = self.c
+                            self.q_mono.clear()
+                            self.q_stereo.clear()
+                            self.c = self.init_stereo()
+                            self.lock.release()
+                        else:
+                            print("**** Calibrating ****")
+                            self.c.do_calibration()
+                            self.buttons(self._last_display)
+                            self.queue_display.put(self._last_display)
+                    else:
+                        print("**** Calibrating ****")
+                        self.c.do_calibration()
+                        self.buttons(self._last_display)
+                        self.queue_display.put(self._last_display)
             if self.c.calibrated:
                 if 280 <= y < 380:
                     self.c.do_save()
