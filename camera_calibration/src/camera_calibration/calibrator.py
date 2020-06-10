@@ -167,7 +167,7 @@ def _get_corners(img, board, refine = True, checkerboard_flags=0):
             corners = numpy.copy(numpy.flipud(corners))
     else:
         direction_corners=(corners[-1]-corners[0])>=numpy.array([[0.0,0.0]])
-    
+
         if not numpy.all(direction_corners):
             if not numpy.any(direction_corners):
                 corners = numpy.copy(numpy.flipud(corners))
@@ -237,7 +237,7 @@ class Calibrator(object):
     """
     Base class for calibration system
     """
-    def __init__(self, boards, flags=0, fisheye_flags = 0, pattern=Patterns.Chessboard, name='', 
+    def __init__(self, boards, flags=0, fisheye_flags = 0, pattern=Patterns.Chessboard, name='',
     checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, max_chessboard_speed = -1.0):
         # Ordering the dimensions for the different detectors is actually a minefield...
         if pattern == Patterns.Chessboard:
@@ -311,8 +311,10 @@ class Calibrator(object):
         skew = _get_skew(corners, board)
         params = [p_x, p_y, p_size, skew]
         return params
+
     def set_cammodel(self, modeltype):
         self.camera_model = modeltype
+        #print("cam model set: " + str(self.camera_model))
 
     def is_slow_moving(self, corners, last_frame_corners):
         """
@@ -581,7 +583,7 @@ class Calibrator(object):
 
 def image_from_archive(archive, name):
     """
-    Load image PGM file from tar archive. 
+    Load image PGM file from tar archive.
 
     Used for tarfile loading and unit test.
     """
@@ -657,10 +659,8 @@ class MonoCalibrator(Calibrator):
 
     def cal_fromcorners(self, good):
         """
-        :param good: Good corner positions and boards 
+        :param good: Good corner positions and boards
         :type good: [(corners, ChessboardInfo)]
-
-        
         """
         boards = [ b for (_, b) in good ]
 
@@ -670,6 +670,7 @@ class MonoCalibrator(Calibrator):
         intrinsics_in = numpy.eye(3, dtype=numpy.float64)
 
         if self.camera_model == CAMERA_MODEL.PINHOLE:
+            print("mono pinhole calibration...")
             reproj_err, self.intrinsics, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(
                        opts, ipts,
                        self.size,
@@ -680,6 +681,12 @@ class MonoCalibrator(Calibrator):
             # The extra ones include e.g. thin prism coefficients, which we are not interested in.
             self.distortion = dist_coeffs.flat[:8].reshape(-1, 1)
         elif self.camera_model == CAMERA_MODEL.FISHEYE:
+            print("mono fisheye calibration...")
+            # WARNING: cv2.fisheye.calibrate wants float64 points
+            ipts64 = numpy.asarray(ipts, dtype=numpy.float64)
+            ipts = ipts64
+            opts64 = numpy.asarray(opts, dtype=numpy.float64)
+            opts = opts64
             reproj_err, self.intrinsics, self.distortion, rvecs, tvecs = cv2.fisheye.calibrate(
                 opts, ipts, self.size,
                 intrinsics_in, None, flags = self.fisheye_calib_flags)
@@ -922,6 +929,12 @@ class StereoCalibrator(Calibrator):
         # full X range in the left camera.
         self.param_ranges[0] = 0.4
 
+    #override
+    def set_cammodel(self, modeltype):
+        super(StereoCalibrator, self).set_cammodel(modeltype)
+        self.l.set_cammodel(modeltype)
+        self.r.set_cammodel(modeltype)
+
     def cal(self, limages, rimages):
         """
         :param limages: source left images containing chessboards
@@ -963,7 +976,7 @@ class StereoCalibrator(Calibrator):
         lipts = [ l for (l, _, _) in good ]
         ripts = [ r for (_, r, _) in good ]
         boards = [ b for (_, _, b) in good ]
-        
+
         opts = self.mk_object_points(boards, True)
 
         flags = cv2.CALIB_FIX_INTRINSIC
@@ -972,6 +985,7 @@ class StereoCalibrator(Calibrator):
         self.R = numpy.eye(3, dtype=numpy.float64)
 
         if self.camera_model == CAMERA_MODEL.PINHOLE:
+            print("stereo pinhole calibration...")
             if LooseVersion(cv2.__version__).version[0] == 2:
                 cv2.stereoCalibrate(opts, lipts, ripts, self.size,
                                    self.l.intrinsics, self.l.distortion,
@@ -990,10 +1004,19 @@ class StereoCalibrator(Calibrator):
                                    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
                                    flags = flags)
         elif self.camera_model == CAMERA_MODEL.FISHEYE:
+            print("stereo fisheye calibration...")
             if LooseVersion(cv2.__version__).version[0] == 2:
                 print("ERROR: You need OpenCV >3 to use fisheye camera model")
                 sys.exit()
             else:
+                # WARNING: cv2.fisheye.stereoCalibrate wants float64 points
+                lipts64 = numpy.asarray(lipts, dtype=numpy.float64)
+                lipts = lipts64
+                ripts64 = numpy.asarray(ripts, dtype=numpy.float64)
+                ripts = ripts64
+                opts64 = numpy.asarray(opts, dtype=numpy.float64)
+                opts = opts64
+
                 cv2.fisheye.stereoCalibrate(opts, lipts, ripts,
                                    self.l.intrinsics, self.l.distortion,
                                    self.r.intrinsics, self.r.distortion,
