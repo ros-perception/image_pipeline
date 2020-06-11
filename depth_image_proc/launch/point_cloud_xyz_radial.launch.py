@@ -36,6 +36,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 
 import launch_ros.actions
+import launch_ros.descriptions
 
 
 def generate_launch_description():
@@ -47,17 +48,25 @@ def generate_launch_description():
             package='realsense_ros2_camera', node_executable='realsense_ros2_camera',
             output='screen'),
 
-        # composition api_composition, remap the topic
-        launch_ros.actions.Node(
-            package='composition', node_executable='api_composition', output='screen',
-            remappings=[('image_raw', '/camera/depth/image_rect_raw'),
-                        ('camera_info', '/camera/depth/camera_info'),
-                        ('points', '/camera/depth/points')]),
-
-        # depth_image_proc::PointCloudXyzRadialNode
-        launch_ros.actions.Node(
-            package='composition', node_executable='api_composition_cli', output='screen',
-            arguments=['depth_image_proc', 'depth_image_proc::PointCloudXyzRadialNode']),
+        # launch plugin through rclcpp_components container
+        launch_ros.actions.ComposableNodeContainer(
+            name='container',
+            namespace='',
+            package='rclcpp_components',
+            executable='component_container',
+            composable_node_descriptions=[
+                # Driver itself
+                launch_ros.descriptions.ComposableNode(
+                    package='depth_image_proc',
+                    plugin='depth_image_proc::PointCloudXyzRadialNode',
+                    name='point_cloud_xyz_radial_node',
+                    remappings=[('image_raw', '/camera/depth/image_rect_raw'),
+                                ('camera_info', '/camera/depth/camera_info'),
+                                ('image', '/camera/depth/converted_image')]
+                ),
+            ],
+            output='screen',
+        ),
 
         # rviz
         launch_ros.actions.Node(
