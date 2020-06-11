@@ -65,7 +65,8 @@ def generate_launch_description():
                                 ('rgb/camera_info', '/camera/color/camera_info'),
                                 ('depth_registered/image_rect',
                                  '/camera/depth_registered/image_rect'),
-                                ('depth_registered/camera_info', '/camera/depth_registered/camera_info')]
+                                ('depth_registered/camera_info',
+                                 '/camera/depth_registered/camera_info')]
                 ),
             ],
             output='screen',

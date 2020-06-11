@@ -64,7 +64,7 @@ def generate_launch_description():
                                 ('rgb/image_rect_color', '/camera/color/image_raw'),
                                 ('depth_registered/image_rect',
                                  '/camera/aligned_depth_to_color/image_raw'),
-                                 ('points', '/camera/depth_registered/points')]
+                                ('points', '/camera/depth_registered/points')]
                 ),
             ],
             output='screen',
