@@ -45,7 +45,7 @@ namespace enc = sensor_msgs::image_encodings;
 class ConvertMetricNode : public rclcpp::Node
 {
 public:
-  DEPTH_IMAGE_PROC_PUBLIC ConvertMetricNode();
+  DEPTH_IMAGE_PROC_PUBLIC ConvertMetricNode(const rclcpp::NodeOptions & options);
 
 private:
   // Subscriptions
@@ -62,8 +62,8 @@ private:
   rclcpp::Logger logger_ = rclcpp::get_logger("ConvertMetricNode");
 };
 
-ConvertMetricNode::ConvertMetricNode()
-: Node("ConvertMetricNode")
+ConvertMetricNode::ConvertMetricNode(const rclcpp::NodeOptions & options)
+: Node("ConvertMetricNode", options)
 {
   // Monitor whether anyone is subscribed to the output
   // TODO(ros2) Implement when SubscriberStatusCallback is available
@@ -137,7 +137,7 @@ void ConvertMetricNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & 
 
 }  // namespace depth_image_proc
 
-#include "class_loader/register_macro.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
 
 // Register the component with class_loader.
-CLASS_LOADER_REGISTER_CLASS(depth_image_proc::ConvertMetricNode, rclcpp::Node)
+RCLCPP_COMPONENTS_REGISTER_NODE(depth_image_proc::ConvertMetricNode)
