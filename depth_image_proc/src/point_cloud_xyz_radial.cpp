@@ -127,7 +127,7 @@ PointCloudXyzRadialNode::PointCloudXyzRadialNode(const rclcpp::NodeOptions & opt
 : Node("PointCloudXyzRadialNode", options)
 {
   // Read parameters
-  this->get_parameter_or("queue_size", queue_size_, 5);
+  queue_size_ = this->declare_parameter<int>("queue_size", 5);
 
   // Monitor whether anyone is subscribed to the output
   // TODO(ros2) Implement when SubscriberStatusCallback is available

@@ -155,7 +155,7 @@ PointCloudXyziRadialNode::PointCloudXyziRadialNode(const rclcpp::NodeOptions & o
 : Node("PointCloudXyziRadialNode", options)
 {
   // Read parameters
-  this->get_parameter_or("queue_size", queue_size_, 5);
+  queue_size_ = this->declare_parameter<int>("queue_size", 5);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   sync_ = std::make_shared<Synchronizer>(
