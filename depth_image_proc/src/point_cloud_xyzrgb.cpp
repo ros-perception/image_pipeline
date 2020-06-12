@@ -58,7 +58,7 @@ namespace enc = sensor_msgs::image_encodings;
 class PointCloudXyzrgbNode : public rclcpp::Node
 {
 public:
-  DEPTH_IMAGE_PROC_PUBLIC PointCloudXyzrgbNode();
+  DEPTH_IMAGE_PROC_PUBLIC PointCloudXyzrgbNode(const rclcpp::NodeOptions & options);
 
 private:
   using PointCloud2 = sensor_msgs::msg::PointCloud2;
@@ -100,8 +100,8 @@ private:
   rclcpp::Logger logger_ = rclcpp::get_logger("PointCloudXyzrgbNode");
 };
 
-PointCloudXyzrgbNode::PointCloudXyzrgbNode()
-: Node("PointCloudXyzrgbNode")
+PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
+: Node("PointCloudXyzrgbNode", options)
 {
   // Read parameters
   int queue_size;
@@ -338,7 +338,7 @@ void PointCloudXyzrgbNode::convert(
 
 }  // namespace depth_image_proc
 
-#include "class_loader/register_macro.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
 
 // Register the component with class_loader.
-CLASS_LOADER_REGISTER_CLASS(depth_image_proc::PointCloudXyzrgbNode, rclcpp::Node)
+RCLCPP_COMPONENTS_REGISTER_NODE(depth_image_proc::PointCloudXyzrgbNode)

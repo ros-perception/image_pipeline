@@ -36,6 +36,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 
 import launch_ros.actions
+import launch_ros.descriptions
 
 
 def generate_launch_description():
@@ -47,20 +48,27 @@ def generate_launch_description():
             package='realsense_ros2_camera', node_executable='realsense_ros2_camera',
             output='screen'),
 
-        # composition api_composition, remap the topic
         # TODO: Realsense camera do not support intensity message
         # use color image instead of intensity only for interface test
-        launch_ros.actions.Node(
-            package='composition', node_executable='api_composition', output='screen',
-            remappings=[('depth/image_rect', '/camera/aligned_depth_to_color/image_raw'),
-                        ('intensity/image_rect', '/camera/color/image_raw'),
-                        ('intensity/camera_info', '/camera/color/camera_info'),
-                        ('points', '/camera/depth/points')]),
-
-        # depth_image_proc::PointCloudXyziNode
-        launch_ros.actions.Node(
-            package='composition', node_executable='api_composition_cli', output='screen',
-            arguments=['depth_image_proc', 'depth_image_proc::PointCloudXyziNode']),
+        launch_ros.actions.ComposableNodeContainer(
+            name='container',
+            namespace='',
+            package='rclcpp_components',
+            executable='component_container',
+            composable_node_descriptions=[
+                # Driver itself
+                launch_ros.descriptions.ComposableNode(
+                    package='depth_image_proc',
+                    plugin='depth_image_proc::PointCloudXyziNode',
+                    name='point_cloud_xyzi',
+                    remappings=[('depth/image_rect', '/camera/aligned_depth_to_color/image_raw'),
+                                ('intensity/image_rect', '/camera/color/image_raw'),
+                                ('intensity/camera_info', '/camera/color/camera_info'),
+                                ('points', '/camera/depth/points')]
+                ),
+            ],
+            output='screen',
+        ),
 
         # rviz
         launch_ros.actions.Node(

@@ -36,6 +36,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 
 import launch_ros.actions
+import launch_ros.descriptions
 
 
 def generate_launch_description():
@@ -47,19 +48,26 @@ def generate_launch_description():
             package='realsense_ros2_camera', node_executable='realsense_ros2_camera',
             output='screen'),
 
-        # composition api_composition, remap the topic
         # we use realsense camera for test, realsense not support left and right topic
         # so we remap to depth image only for interface test.
-        launch_ros.actions.Node(
-            package='composition', node_executable='api_composition', output='screen',
-            remappings=[('left/image_rect', '/camera/depth/image_rect_raw'),
-                        ('right/camera_info', '/camera/depth/camera_info'),
-                        ('left/disparity', '/camera/left/disparity')]),
-
-        # depth_image_proc::DisparityNode
-        launch_ros.actions.Node(
-            package='composition', node_executable='api_composition_cli', output='screen',
-            arguments=['depth_image_proc', 'depth_image_proc::DisparityNode']),
+        launch_ros.actions.ComposableNodeContainer(
+            name='container',
+            namespace='',
+            package='rclcpp_components',
+            executable='component_container',
+            composable_node_descriptions=[
+                # Driver itself
+                launch_ros.descriptions.ComposableNode(
+                    package='depth_image_proc',
+                    plugin='depth_image_proc::DisparityNode',
+                    name='disparity_node',
+                    remappings=[('left/image_rect', '/camera/depth/image_rect_raw'),
+                                ('right/camera_info', '/camera/depth/camera_info'),
+                                ('left/disparity', '/camera/left/disparity')]
+                ),
+            ],
+            output='screen',
+        ),
 
         # TODO: rviz could not display disparity(stereo_msgs)
         # run stereo_view for display after image_view be ported

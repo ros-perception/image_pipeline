@@ -50,7 +50,7 @@ namespace enc = sensor_msgs::image_encodings;
 class DisparityNode : public rclcpp::Node
 {
 public:
-  DEPTH_IMAGE_PROC_PUBLIC DisparityNode();
+  DEPTH_IMAGE_PROC_PUBLIC DisparityNode(const rclcpp::NodeOptions & options);
 
 private:
   image_transport::SubscriberFilter sub_depth_image_;
@@ -80,8 +80,8 @@ private:
   rclcpp::Logger logger_ = rclcpp::get_logger("DisparityNode");
 };
 
-DisparityNode::DisparityNode()
-: Node("DisparityNode")
+DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
+: Node("DisparityNode", options)
 {
   // Read parameters
   int queue_size;
@@ -183,7 +183,7 @@ void DisparityNode::convert(
 
 }  // namespace depth_image_proc
 
-#include "class_loader/register_macro.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
 
 // Register the component with class_loader.
-CLASS_LOADER_REGISTER_CLASS(depth_image_proc::DisparityNode, rclcpp::Node)
+RCLCPP_COMPONENTS_REGISTER_NODE(depth_image_proc::DisparityNode)
