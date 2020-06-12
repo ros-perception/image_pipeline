@@ -156,7 +156,7 @@ def _get_corners(img, board, refine = True, checkerboard_flags=0):
             corners = numpy.copy(numpy.flipud(corners))
     else:
         direction_corners=(corners[-1]-corners[0])>=numpy.array([[0.0,0.0]])
-    
+
         if not numpy.all(direction_corners):
             if not numpy.any(direction_corners):
                 corners = numpy.copy(numpy.flipud(corners))
@@ -513,7 +513,7 @@ class Calibrator():
 
 def image_from_archive(archive, name):
     """
-    Load image PGM file from tar archive. 
+    Load image PGM file from tar archive.
 
     Used for tarfile loading and unit test.
     """
@@ -535,7 +535,7 @@ class MonoDrawable(ImageDrawable):
         ImageDrawable.__init__(self)
         self.scrib = None
         self.linear_error = -1.0
-                
+
 
 class StereoDrawable(ImageDrawable):
     def __init__(self):
@@ -590,10 +590,10 @@ class MonoCalibrator(Calibrator):
 
     def cal_fromcorners(self, good):
         """
-        :param good: Good corner positions and boards 
+        :param good: Good corner positions and boards
         :type good: [(corners, ChessboardInfo)]
 
-        
+
         """
         boards = [ b for (_, b) in good ]
 
@@ -882,7 +882,7 @@ class StereoCalibrator(Calibrator):
         lipts = [ l for (l, _, _) in good ]
         ripts = [ r for (_, r, _) in good ]
         boards = [ b for (_, _, b) in good ]
-        
+
         opts = self.mk_object_points(boards, True)
 
         flags = cv2.CALIB_FIX_INTRINSIC
@@ -926,7 +926,7 @@ class StereoCalibrator(Calibrator):
                          self.T,
                          self.l.R, self.r.R, self.l.P, self.r.P,
                          alpha = a)
-        
+
         cv2.initUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.l.R, self.l.P, self.size, cv2.CV_32FC1,
                                    self.l.mapx, self.l.mapy)
         cv2.initUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.r.R, self.r.P, self.size, cv2.CV_32FC1,
@@ -1140,7 +1140,7 @@ class StereoCalibrator(Calibrator):
 
         if not len(limages) == len(rimages):
             raise CalibrationException("Left, right images don't match. %d left images, %d right" % (len(limages), len(rimages)))
-        
+
         ##\todo Check that the filenames match and stuff
 
         self.cal(limages, rimages)

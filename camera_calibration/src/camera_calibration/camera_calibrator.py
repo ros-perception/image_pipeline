@@ -59,7 +59,7 @@ class SpinThread(threading.Thread):
 
     def run(self):
         rclpy.spin(self.node)
-        
+
 
 class ConsumerThread(threading.Thread):
     def __init__(self, queue, function):
