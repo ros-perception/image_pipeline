@@ -13,6 +13,8 @@ jobs:
             apt upgrade -y
             source `find /opt/ros -maxdepth 2 -name local_setup.bash | sort | head -1`
             mkdir -p src/image_pipeline && mv `find -maxdepth 1 -not -name . -not -name src` src/image_pipeline/
+            vcs import src \
+              < src/image_pipeline/tools/ros2_dependencies.repos
             rosdep update
             rosdep install -y --ignore-src --from-paths src
       - run:
