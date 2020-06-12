@@ -14,6 +14,9 @@ Changelog for package image_publisher
 * Initial ROS2 commit.
 * Contributors: Chris Ye, Michael Carroll
 
+Forthcoming
+-----------
+
 1.12.23 (2018-05-10)
 --------------------
 * fix 'VideoCapture' undefined symbol error (`#318 <https://github.com/ros-perception/image_pipeline/issues/318>`_)

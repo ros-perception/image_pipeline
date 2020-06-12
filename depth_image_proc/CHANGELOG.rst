@@ -39,6 +39,20 @@
 * Initial ROS2 commit.
 * Contributors: Chris Ye, Michael Carroll
 
+Forthcoming
+-----------
+* make parameters work in depth_image_proc (`#544 <https://github.com/ros-perception/image_pipeline/issues/544>`_)
+* update depth_image_proc components (`#543 <https://github.com/ros-perception/image_pipeline/issues/543>`_)
+  * update depth_image_proc components
+  This makes them loadable with the rclcpp_components
+  interface. I've fully tested PointCloudXYZRGB and
+  ConvertMetric, my use case doesn't use the others.
+  I also lack a setup to test the launch files fully,
+  but ran them with the realsense commented out and
+  they appear to be OK.
+  * fix linting
+* Contributors: Michael Ferguson
+
 1.12.23 (2018-05-10)
 --------------------
 
