@@ -314,7 +314,6 @@ class Calibrator(object):
 
     def set_cammodel(self, modeltype):
         self.camera_model = modeltype
-        #print("cam model set: " + str(self.camera_model))
 
     def is_slow_moving(self, corners, last_frame_corners):
         """
@@ -854,7 +853,7 @@ class MonoCalibrator(Calibrator):
                     self.db.append((params, gray))
                     self.good_corners.append((corners, board))
                     print(("*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)))
-        
+
         self.last_frame_corners = corners
         rv = MonoDrawable()
         rv.scrib = scrib
@@ -1053,12 +1052,12 @@ class StereoCalibrator(Calibrator):
 
         elif self.camera_model == CAMERA_MODEL.FISHEYE:
             self.Q = numpy.zeros((4,4), dtype=numpy.float64)
-            
+
             flags = cv2.CALIB_ZERO_DISPARITY   # Operation flags that may be zero or CALIB_ZERO_DISPARITY .
                             # If the flag is set, the function makes the principal points of each camera have the same pixel coordinates in the rectified views.
-                            # And if the flag is not set, the function may still shift the images in the horizontal or vertical direction 
+                            # And if the flag is not set, the function may still shift the images in the horizontal or vertical direction
                             # (depending on the orientation of epipolar lines) to maximize the useful image area.
-            
+
             cv2.fisheye.stereoRectify(self.l.intrinsics, self.l.distortion,
                              self.r.intrinsics, self.r.distortion,
                              self.size,
@@ -1233,7 +1232,7 @@ class StereoCalibrator(Calibrator):
                     self.db.append( (params, lgray, rgray) )
                     self.good_corners.append( (lcorners, rcorners, lboard) )
                     print(("*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)))
-        
+
         self.last_frame_corners = lcorners
         rv = StereoDrawable()
         rv.lscrib = lscrib
@@ -1286,7 +1285,7 @@ class StereoCalibrator(Calibrator):
 
         if not len(limages) == len(rimages):
             raise CalibrationException("Left, right images don't match. %d left images, %d right" % (len(limages), len(rimages)))
-        
+
         ##\todo Check that the filenames match and stuff
 
         self.cal(limages, rimages)
