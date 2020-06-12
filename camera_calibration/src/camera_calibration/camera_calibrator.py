@@ -83,7 +83,7 @@ class DisplayThread(threading.Thread):
         cv2.setMouseCallback("display", self.opencv_calibration_node.on_mouse)
         cv2.createTrackbar("Camera type: \n 0 : pinhole \n 1 : fisheye", "display", 0,1, self.opencv_calibration_node.on_model_change)
         cv2.createTrackbar("scale", "display", 0, 100, self.opencv_calibration_node.on_scale)
-        
+
         while True:
             if self.queue.qsize() > 0:
                 self.image = self.queue.get()
@@ -152,7 +152,7 @@ class CalibrationNode:
         self.q_stereo = BufferQueue(queue_size)
 
         self.c = None
-        
+
         self._last_display = None
 
         mth = ConsumerThread(self.q_mono, self.handle_monocular)
