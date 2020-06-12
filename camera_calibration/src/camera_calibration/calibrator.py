@@ -307,6 +307,7 @@ class Calibrator():
         skew = _get_skew(corners, board)
         params = [p_x, p_y, p_size, skew]
         return params
+
     def set_cammodel(self, modeltype):
         self.camera_model = modeltype
 
@@ -687,12 +688,9 @@ class MonoCalibrator(Calibrator):
             ipts = ipts64
             opts64 = numpy.asarray(opts, dtype=numpy.float64)
             opts = opts64
-            reproj_err, self.intrinsics, dist_coeffs, rvecs, tvecs = cv2.fisheye.calibrate(
-                    opts, ipts, self.size,
-                    intrinsics_in,
-                    None,
-                    flags = self.fisheye_calib_flags)
-            self.distortion = dist_coeffs.flat[:4].reshape(-1, 1) # Kannala-Brandt
+            reproj_err, self.intrinsics, self.distortion, rvecs, tvecs = cv2.fisheye.calibrate(
+                opts, ipts, self.size,
+                intrinsics_in, None, flags = self.fisheye_calib_flags)
 
         # R is identity matrix for monocular calibration
         self.R = numpy.eye(3, dtype=numpy.float64)

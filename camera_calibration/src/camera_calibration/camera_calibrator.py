@@ -136,7 +136,7 @@ class CalibrationNode(Node):
         self.q_stereo = BufferQueue(queue_size)
 
         self.c = None
-        
+
         self._last_display = None
 
         mth = ConsumerThread(self.q_mono, self.handle_monocular)
