@@ -66,6 +66,7 @@ private:
 CropForemostNode::CropForemostNode(const rclcpp::NodeOptions & options)
 : Node("CropForemostNode", options)
 {
+  this->declare_parameter("distance");
   this->get_parameter("distance", distance_);
 
   // Monitor whether anyone is subscribed to the output

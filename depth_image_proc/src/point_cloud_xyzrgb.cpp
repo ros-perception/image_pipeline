@@ -104,10 +104,8 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
 : Node("PointCloudXyzrgbNode", options)
 {
   // Read parameters
-  int queue_size;
-  this->get_parameter_or("queue_size", queue_size, 5);
-  bool use_exact_sync;
-  this->get_parameter_or("exact_sync", use_exact_sync, false);
+  int queue_size = this->declare_parameter<int>("queue_size", 5);
+  bool use_exact_sync = this->declare_parameter<bool>("exact_sync", false);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   if (use_exact_sync) {
