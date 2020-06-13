@@ -59,7 +59,7 @@ class CAMERA_MODEL(Enum):
 
 # Supported calibration patterns
 class Patterns:
-    Chessboard, Circles, ACircles = list(range(3))
+    Chessboard, Circles, ACircles, ChaRuCo = list(range(4))
 
 class CalibrationException(Exception):
     pass
@@ -95,7 +95,7 @@ def _get_outside_corners(corners, board):
 
     if corners.shape[1] * corners.shape[0] != xdim * ydim:
         raise Exception("Invalid number of corners! %d corners. X: %d, Y: %d" % (corners.shape[1] * corners.shape[0],
-                                                                                 xdim, ydim))
+                                                                                xdim, ydim))
 
     up_left    = corners[0,0]
     up_right   = corners[xdim - 1,0]
@@ -240,7 +240,7 @@ class Calibrator(object):
     def __init__(self, boards, flags=0, fisheye_flags = 0, pattern=Patterns.Chessboard, name='',
     checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, max_chessboard_speed = -1.0):
         # Ordering the dimensions for the different detectors is actually a minefield...
-        if pattern == Patterns.Chessboard:
+        if pattern == Patterns.Chessboard or pattern == Patterns.ChArUco:
             # Make sure n_cols > n_rows to agree with OpenCV CB detector output
             self._boards = [ChessboardInfo(max(i.n_cols, i.n_rows), min(i.n_cols, i.n_rows), i.dim) for i in boards]
         elif pattern == Patterns.ACircles:
@@ -407,6 +407,9 @@ class Calibrator(object):
         for b in self._boards:
             if self.pattern == Patterns.Chessboard:
                 (ok, corners) = _get_corners(img, b, refine, self.checkerboard_flags)
+            elif self.pattern = Patterns.ChArUco:
+                # TODO: ChArUco
+                ok = False
             else:
                 (ok, corners) = _get_circles(img, b, self.pattern)
             if ok:

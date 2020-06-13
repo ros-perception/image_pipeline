@@ -53,7 +53,7 @@ def main():
                         "You must specify one or more chessboards as pairs of --size and --square options.")
     group.add_option("-p", "--pattern",
                      type="string", default="chessboard",
-                     help="calibration pattern to detect - 'chessboard', 'circles', 'acircles'")
+                     help="calibration pattern to detect - 'chessboard', 'circles', 'acircles', 'charuco'")
     group.add_option("-s", "--size",
                      action="append", default=[],
                      help="chessboard size as NxM, counting interior corners (e.g. a standard chessboard is 7x7)")
@@ -98,7 +98,7 @@ def main():
     group.add_option("--fisheye-k-coefficients",
                      type="int", default=4, metavar="NUM_COEFFS",
                      help="for fisheye, number of radial distortion coefficients to use fixing to zero the rest (up to 4, default %default)")
-    
+
     group.add_option("--fisheye-check-conditions",
                      action="store_true", default=False,
                      help="for fisheye, the functions will check validity of condition number")
@@ -180,6 +180,8 @@ def main():
         pattern = Patterns.Circles
     elif options.pattern == 'acircles':
         pattern = Patterns.ACircles
+    elif options.pattern == 'charuco':
+        pattern = Patterns.ChArUco
     elif options.pattern != 'chessboard':
         print('Unrecognized pattern %s, defaulting to chessboard' % options.pattern)
 
