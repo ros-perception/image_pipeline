@@ -59,17 +59,19 @@ class CAMERA_MODEL(Enum):
 
 # Supported calibration patterns
 class Patterns:
-    Chessboard, Circles, ACircles, ChaRuCo = list(range(4))
+    Chessboard, Circles, ACircles, ChArUco = list(range(4))
 
 class CalibrationException(Exception):
     pass
 
 # TODO: Make pattern per-board?
 class ChessboardInfo(object):
-    def __init__(self, n_cols = 0, n_rows = 0, dim = 0.0):
+    def __init__(self, n_cols = 0, n_rows = 0, dim = 0.0, marker_size = 0.0, aruco_dict = ""):
         self.n_cols = n_cols
         self.n_rows = n_rows
         self.dim = dim
+        self.marker_size = marker_size
+        self.aruco_dict = aruco_dict
 
 # Make all private!!!!!
 def lmin(seq1, seq2):
@@ -194,6 +196,34 @@ def _get_corners(img, board, refine = True, checkerboard_flags=0):
 
     return (ok, corners)
 
+def _get_charuco_corners(img, board, refine):
+    """
+    Get chessboard corners from image of ChArUco board
+    """
+    h = img.shape[0]
+    w = img.shape[1]
+
+    if len(img.shape) == 3 and img.shape[2] == 3:
+        mono = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    else:
+        mono = img
+
+    aruco_dict = cv2.aruco.getPredefinedDictionary({
+        "aruco_orig" : cv2.aruco.DICT_ARUCO_ORIGINAL,
+        "4x4_250"    : cv2.aruco.DICT_4X4_250,
+        "5x5_250"    : cv2.aruco.DICT_5X5_250,
+        "6x6_250"    : cv2.aruco.DICT_6X6_250,
+        "7x7_250"    : cv2.aruco.DICT_7X7_250}[board.aruco_dict])
+    charuco_board = cv2.aruco.CharucoBoard_create(board.n_cols, board.n_rows, board.dim, board.marker_size, aruco_dict)
+    marker_corners, marker_ids, _ = cv2.aruco.detectMarkers(img, aruco_dict)
+    if len(marker_corners) == 0:
+        return (False, [])
+    _, square_corners, _ = cv2.aruco.interpolateCornersCharuco(marker_corners, marker_ids, img, charuco_board)
+    print(marker_corners)
+    print(marker_ids)
+    print(square_corners)
+    return ((square_corners is not None) and (len(square_corners) > 5), square_corners)
+
 def _get_circles(img, board, pattern):
     """
     Get circle centers for a symmetric or asymmetric grid
@@ -240,9 +270,11 @@ class Calibrator(object):
     def __init__(self, boards, flags=0, fisheye_flags = 0, pattern=Patterns.Chessboard, name='',
     checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, max_chessboard_speed = -1.0):
         # Ordering the dimensions for the different detectors is actually a minefield...
-        if pattern == Patterns.Chessboard or pattern == Patterns.ChArUco:
+        if pattern == Patterns.Chessboard:
             # Make sure n_cols > n_rows to agree with OpenCV CB detector output
             self._boards = [ChessboardInfo(max(i.n_cols, i.n_rows), min(i.n_cols, i.n_rows), i.dim) for i in boards]
+        if pattern == Patterns.ChArUco:
+            self._boards = boards
         elif pattern == Patterns.ACircles:
             # 7x4 and 4x7 are actually different patterns. Assume square-ish pattern, so n_rows > n_cols.
             self._boards = [ChessboardInfo(min(i.n_cols, i.n_rows), max(i.n_cols, i.n_rows), i.dim) for i in boards]
@@ -407,9 +439,8 @@ class Calibrator(object):
         for b in self._boards:
             if self.pattern == Patterns.Chessboard:
                 (ok, corners) = _get_corners(img, b, refine, self.checkerboard_flags)
-            elif self.pattern = Patterns.ChArUco:
-                # TODO: ChArUco
-                ok = False
+            elif self.pattern == Patterns.ChArUco:
+                (ok, corners) = _get_charuco_corners(img, b, refine)
             else:
                 (ok, corners) = _get_circles(img, b, self.pattern)
             if ok:
