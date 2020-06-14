@@ -52,13 +52,22 @@ def main():
                         "You must specify one or more chessboards as pairs of --size and --square options.")
     group.add_option("-p", "--pattern",
                      type="string", default="chessboard",
-                     help="calibration pattern to detect - 'chessboard', 'circles', 'acircles', 'charuco'")
+                     help="calibration pattern to detect - 'chessboard', 'circles', 'acircles', 'charuco'\n" +
+                     "  if 'charuco' is used, a --marker_size and --aruco_dict argument must be supplied\n" +
+                     "  with each --size and --square argument")
     group.add_option("-s", "--size",
                      action="append", default=[],
                      help="chessboard size as NxM, counting interior corners (e.g. a standard chessboard is 7x7)")
     group.add_option("-q", "--square",
                      action="append", default=[],
                      help="chessboard square size in meters")
+    group.add_option("-m", "--marker_size",
+                     action="append", default=[],
+                     help="ArUco marker size (meters); only valid with `-p charuco`")
+    group.add_option("-d", "--aruco_dict",
+                     action="append", default=[],
+                     help="ArUco marker dictionary; only valid with `-p charuco`; one of 'aruco_orig', '4x4_250', " +
+                     "'5x5_250', '6x6_250', '7x7_250'")
     parser.add_option_group(group)
     group = OptionGroup(parser, "ROS Communication Options")
     group.add_option("--approximate",
@@ -112,7 +121,9 @@ def main():
 
     options, args = parser.parse_args()
 
-    if len(options.size) != len(options.square):
+    if (len(options.size) != len(options.square)) or (options.pattern == "charuco" and (
+        (len(options.size) != len(options.marker_size)) or
+        (len(options.size) != len(options.aruco_dict)))):
         parser.error("Number of size and square inputs must be the same!")
 
     if not options.square:
@@ -120,9 +131,14 @@ def main():
         options.size.append("8x6")
 
     boards = []
-    for (sz, sq) in zip(options.size, options.square):
-        size = tuple([int(c) for c in sz.split('x')])
-        boards.append(ChessboardInfo(size[0], size[1], float(sq)))
+    if options.pattern == "charuco":
+        for (sz, sq, ms, ad) in zip(options.size, options.square, options.marker_size, options.aruco_dict):
+            size = tuple([int(c) for c in sz.split('x')])
+            boards.append(ChessboardInfo(size[0], size[1], float(sq), float(ms), ad))
+    else:
+        for (sz, sq) in zip(options.size, options.square):
+            size = tuple([int(c) for c in sz.split('x')])
+            boards.append(ChessboardInfo(size[0], size[1], float(sq)))
 
     if options.approximate == 0.0:
         sync = message_filters.TimeSynchronizer
