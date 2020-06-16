@@ -134,11 +134,11 @@ def main():
     if options.pattern == "charuco":
         for (sz, sq, ms, ad) in zip(options.size, options.square, options.marker_size, options.aruco_dict):
             size = tuple([int(c) for c in sz.split('x')])
-            boards.append(ChessboardInfo(size[0], size[1], float(sq), float(ms), ad))
+            boards.append(ChessboardInfo('charuco', size[0], size[1], float(sq), float(ms), ad))
     else:
         for (sz, sq) in zip(options.size, options.square):
             size = tuple([int(c) for c in sz.split('x')])
-            boards.append(ChessboardInfo(size[0], size[1], float(sq)))
+            boards.append(ChessboardInfo(options.pattern, size[0], size[1], float(sq)))
 
     if options.approximate == 0.0:
         sync = message_filters.TimeSynchronizer
