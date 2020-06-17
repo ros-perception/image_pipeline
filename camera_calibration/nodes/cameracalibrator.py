@@ -41,6 +41,22 @@ from camera_calibration.camera_calibrator import OpenCVCalibrationNode
 from camera_calibration.calibrator import ChessboardInfo, Patterns
 from message_filters import ApproximateTimeSynchronizer
 
+def optionsValidCharuco(options, parser):
+    """
+    Validates the provided options when the pattern type is 'charuco'
+    """
+    if options.pattern != 'charuco': return False
+
+    n_boards = len(options.size)
+    if (n_boards != len(options.square) or n_boards != len(options.charuco_marker_size) or n_boards !=
+            len(options.aruco_dict)):
+        parser.error("When using ChArUco boards, --size, --square, --charuco_marker_size, and --aruco_dict " +
+        "must be specified for each board")
+        return False
+
+    # TODO: check for fisheye and stereo (not implemented with ChArUco)
+    return True
+
 
 def main():
     from optparse import OptionParser, OptionGroup
@@ -54,7 +70,7 @@ def main():
     group.add_option("-p", "--pattern",
                      type="string", default="chessboard",
                      help="calibration pattern to detect - 'chessboard', 'circles', 'acircles', 'charuco'\n" +
-                     "  if 'charuco' is used, a --marker_size and --aruco_dict argument must be supplied\n" +
+                     "  if 'charuco' is used, a --charuco_marker_size and --aruco_dict argument must be supplied\n" +
                      "  with each --size and --square argument")
     group.add_option("-s", "--size",
                      action="append", default=[],
@@ -62,7 +78,7 @@ def main():
     group.add_option("-q", "--square",
                      action="append", default=[],
                      help="chessboard square size in meters")
-    group.add_option("-m", "--marker_size",
+    group.add_option("-m", "--charuco_marker_size",
                      action="append", default=[],
                      help="ArUco marker size (meters); only valid with `-p charuco`")
     group.add_option("-d", "--aruco_dict",
@@ -122,9 +138,7 @@ def main():
 
     options, args = parser.parse_args()
 
-    if (len(options.size) != len(options.square)) or (options.pattern == "charuco" and (
-        (len(options.size) != len(options.marker_size)) or
-        (len(options.size) != len(options.aruco_dict)))):
+    if (len(options.size) != len(options.square)):
         parser.error("Number of size and square inputs must be the same!")
 
     if not options.square:
@@ -132,8 +146,8 @@ def main():
         options.size.append("8x6")
 
     boards = []
-    if options.pattern == "charuco":
-        for (sz, sq, ms, ad) in zip(options.size, options.square, options.marker_size, options.aruco_dict):
+    if options.pattern == "charuco" and optionsValidCharuco(options, parser):
+        for (sz, sq, ms, ad) in zip(options.size, options.square, options.charuco_marker_size, options.aruco_dict):
             size = tuple([int(c) for c in sz.split('x')])
             boards.append(ChessboardInfo('charuco', size[0], size[1], float(sq), float(ms), ad))
     else:
