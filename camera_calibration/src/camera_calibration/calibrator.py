@@ -872,15 +872,15 @@ class MonoCalibrator(Calibrator):
         Detect the checkerboard and compute the linear error.
         Mainly for use in tests.
         """
-        _, corners, _, _, board, _ = self.downsample_and_detect(image)
+        _, corners, _, ids, board, _ = self.downsample_and_detect(image)
         if corners is None:
             return None
 
         undistorted = self.undistort_points(corners)
-        return self.linear_error(undistorted, board)
+        return self.linear_error(undistorted, ids, board)
 
     @staticmethod
-    def linear_error(corners, b):
+    def linear_error(corners, ids, b):
 
         """
         Returns the linear error for a set of corners detected in the unrectified image.
@@ -889,19 +889,46 @@ class MonoCalibrator(Calibrator):
         if corners is None:
             return None
 
+        corners = numpy.squeeze(corners)
+
         def pt2line(x0, y0, x1, y1, x2, y2):
             """ point is (x0, y0), line is (x1, y1, x2, y2) """
             return abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) / math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
-        cc = b.n_cols
-        cr = b.n_rows
+        n_cols = b.n_cols
+        n_rows = b.n_rows
+        if b.pattern == 'charuco':
+            n_cols -= 1
+            n_rows -= 1
+        n_pts = n_cols * n_rows
+
+        if ids is None:
+            ids = numpy.arange(n_pts).reshape((n_pts, 1))
+
+        ids_to_idx = dict((ids[i, 0], i) for i in range(len(ids)))
+
         errors = []
-        for r in range(cr):
-            (x1, y1) = corners[(cc * r) + 0, 0]
-            (x2, y2) = corners[(cc * r) + cc - 1, 0]
-            for i in range(1, cc - 1):
-                (x0, y0) = corners[(cc * r) + i, 0]
-                errors.append(pt2line(x0, y0, x1, y1, x2, y2))
+        for row in range(n_rows):
+            row_min = row * n_cols
+            row_max = (row+1) * n_cols
+            pts_in_row = filter(lambda x: row_min <= x < row_max, ids)
+
+            # not enough points to calculate error
+            if len(pts_in_row) <= 2: continue
+
+            left_pt = min(pts_in_row)[0]
+            right_pt = max(pts_in_row)[0]
+            x_left = corners[ids_to_idx[left_pt], 0]
+            y_left = corners[ids_to_idx[left_pt], 1]
+            x_right = corners[ids_to_idx[right_pt], 0]
+            y_right = corners[ids_to_idx[right_pt], 1]
+
+            for pt in pts_in_row:
+                if pt[0] in (left_pt, right_pt): continue
+                x = corners[ids_to_idx[pt[0]], 0]
+                y = corners[ids_to_idx[pt[0]], 1]
+                errors.append(pt2line(x, y, x_left, y_left, x_right, y_right))
+
         if errors:
             return math.sqrt(sum([e**2 for e in errors]) / len(errors))
         else:
@@ -934,7 +961,7 @@ class MonoCalibrator(Calibrator):
             if corners is not None:
                 # Report linear error
                 undistorted = self.undistort_points(corners)
-                linear_error = self.linear_error(undistorted, board)
+                linear_error = self.linear_error(undistorted, ids, board)
 
                 # Draw rectified corners
                 scrib_src = undistorted.copy()
