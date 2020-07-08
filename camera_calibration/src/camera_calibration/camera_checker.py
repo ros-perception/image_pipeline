@@ -145,7 +145,7 @@ class CameraCheckerNode:
         return self.mc.mkgray(msg)
 
     def image_corners(self, im):
-        (ok, corners, b) = self.mc.get_corners(im)
+        (ok, corners, ids, b) = self.mc.get_corners(im)
         if ok:
             return corners, ids
         else:
