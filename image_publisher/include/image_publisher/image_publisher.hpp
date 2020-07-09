@@ -59,6 +59,8 @@ private:
   cv::Mat image_;
   rclcpp::TimerBase::SharedPtr timer_;
 
+  rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
+
   std::string filename_;
   bool flip_horizontal_;
   bool flip_vertical_;

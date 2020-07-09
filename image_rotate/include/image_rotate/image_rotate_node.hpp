@@ -86,6 +86,8 @@ private:
   void disconnectCb();
   void onInit();
 
+  rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
+
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_sub_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_pub_;

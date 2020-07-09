@@ -142,7 +142,7 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
     window_thread_ = std::thread(&ImageViewNode::windowThread, this);
   }
 
-  this->set_on_parameters_set_callback(
+  on_set_parameters_callback_handle_ = this->add_on_set_parameters_callback(
     std::bind(&ImageViewNode::paramCallback, this, std::placeholders::_1));
 }
 
