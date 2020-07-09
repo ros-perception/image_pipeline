@@ -89,6 +89,9 @@ private:
   // Publications
   std::shared_ptr<rclcpp::Publisher<stereo_msgs::msg::DisparityImage>> pub_disparity_;
 
+  // Handle to parameters callback
+  rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
+
   // Processing state (note: only safe because we're single-threaded!)
   image_geometry::StereoCameraModel model_;
   // contains scratch buffers for block matching
@@ -175,7 +178,8 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
   }
 
   // Register a callback for when parameters are set
-  this->set_on_parameters_set_callback(std::bind(&DisparityNode::parameterSetCb, this, _1));
+  on_set_parameters_callback_handle_ = this->add_on_set_parameters_callback(
+    std::bind(&DisparityNode::parameterSetCb, this, _1));
 
   // Describe int parameters
   std::map<std::string, std::pair<int, rcl_interfaces::msg::ParameterDescriptor>> int_params;
