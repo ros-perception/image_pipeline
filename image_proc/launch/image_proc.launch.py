@@ -41,7 +41,7 @@ def generate_launch_description():
 
     # Load composable container
     image_processing = actions.ComposableNodeContainer(
-        node_name="image_proc_container",
+        node_name='image_proc_container',
         package='rclcpp_components',
         node_executable='component_container',
         composable_node_descriptions=[
