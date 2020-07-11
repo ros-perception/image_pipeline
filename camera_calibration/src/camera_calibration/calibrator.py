@@ -914,7 +914,7 @@ class MonoCalibrator(Calibrator):
         for row in range(n_rows):
             row_min = row * n_cols
             row_max = (row+1) * n_cols
-            pts_in_row = filter(lambda x: row_min <= x < row_max, ids)
+            pts_in_row = [x for x in ids if row_min <= x < row_max]
 
             # not enough points to calculate error
             if len(pts_in_row) <= 2: continue
