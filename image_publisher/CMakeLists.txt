@@ -29,15 +29,8 @@ set( DEPENDENCIES
   cv_bridge
 )
 
-set(opencv_2_components core highgui)
-set(opencv_3_components core imgcodecs videoio)
-find_package(OpenCV REQUIRED COMPONENTS core)
+find_package(OpenCV REQUIRED COMPONENTS core imgcodecs videoio)
 message(STATUS "opencv version ${OpenCV_VERSION}")
-if(OpenCV_VERSION VERSION_LESS "3.0.0")
-  find_package(OpenCV 2 REQUIRED COMPONENTS ${opencv_2_components})
-else()
-  find_package(OpenCV 3 REQUIRED COMPONENTS ${opencv_3_components})
-endif()
 
 include_directories(include)
 
