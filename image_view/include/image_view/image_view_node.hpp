@@ -69,6 +69,7 @@ private:
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> pub_;
   std::string window_name_;
   std::thread window_thread_;
+  rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
 
   void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
   static void mouseCb(int event, int x, int y, int flags, void * param);

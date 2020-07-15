@@ -44,7 +44,7 @@ namespace enc = sensor_msgs::image_encodings;
 class CropForemostNode : public rclcpp::Node
 {
 public:
-  DEPTH_IMAGE_PROC_PUBLIC CropForemostNode();
+  DEPTH_IMAGE_PROC_PUBLIC CropForemostNode(const rclcpp::NodeOptions & options);
 
 private:
   // Subscriptions
@@ -63,9 +63,10 @@ private:
   rclcpp::Logger logger_ = rclcpp::get_logger("CropForemostNode");
 };
 
-CropForemostNode::CropForemostNode()
-: Node("CropForemostNode")
+CropForemostNode::CropForemostNode(const rclcpp::NodeOptions & options)
+: Node("CropForemostNode", options)
 {
+  this->declare_parameter("distance");
   this->get_parameter("distance", distance_);
 
   // Monitor whether anyone is subscribed to the output
@@ -143,7 +144,7 @@ void CropForemostNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & r
 
 }  // namespace depth_image_proc
 
-#include "class_loader/register_macro.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
 
 // Register the component with class_loader.
-CLASS_LOADER_REGISTER_CLASS(depth_image_proc::CropForemostNode, rclcpp::Node)
+RCLCPP_COMPONENTS_REGISTER_NODE(depth_image_proc::CropForemostNode)

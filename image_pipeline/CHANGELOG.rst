@@ -4,6 +4,7 @@ Changelog for package image_pipeline
 
 Forthcoming
 -----------
+
 * Initial ROS2 commit.
 * Contributors: Michael Carroll
 

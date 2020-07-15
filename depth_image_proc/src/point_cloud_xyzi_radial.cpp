@@ -59,7 +59,7 @@ using SyncPolicy =
 class PointCloudXyziRadialNode : public rclcpp::Node
 {
 public:
-  DEPTH_IMAGE_PROC_PUBLIC PointCloudXyziRadialNode();
+  DEPTH_IMAGE_PROC_PUBLIC PointCloudXyziRadialNode(const rclcpp::NodeOptions & options);
 
 private:
   using PointCloud = sensor_msgs::msg::PointCloud2;
@@ -151,11 +151,11 @@ cv::Mat PointCloudXyziRadialNode::initMatrix(
 }
 
 
-PointCloudXyziRadialNode::PointCloudXyziRadialNode()
-: Node("PointCloudXyziRadialNode")
+PointCloudXyziRadialNode::PointCloudXyziRadialNode(const rclcpp::NodeOptions & options)
+: Node("PointCloudXyziRadialNode", options)
 {
   // Read parameters
-  this->get_parameter_or("queue_size", queue_size_, 5);
+  queue_size_ = this->declare_parameter<int>("queue_size", 5);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   sync_ = std::make_shared<Synchronizer>(
@@ -310,7 +310,7 @@ void PointCloudXyziRadialNode::convert_intensity(
 
 }  // namespace depth_image_proc
 
-#include "class_loader/register_macro.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
 
 // Register the component with class_loader.
-CLASS_LOADER_REGISTER_CLASS(depth_image_proc::PointCloudXyziRadialNode, rclcpp::Node)
+RCLCPP_COMPONENTS_REGISTER_NODE(depth_image_proc::PointCloudXyziRadialNode)

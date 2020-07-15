@@ -36,6 +36,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 
 import launch_ros.actions
+import launch_ros.descriptions
 
 
 def generate_launch_description():
@@ -47,20 +48,28 @@ def generate_launch_description():
             package='realsense_ros2_camera', node_executable='realsense_ros2_camera',
             output='screen'),
 
-        # composition api_composition, remap the topic
         # TODO: Realsense camera do not support intensity message,
         # use depth instead of intensity only for interface test
-        launch_ros.actions.Node(
-            package='composition', node_executable='api_composition', output='screen',
-            remappings=[('depth/image_raw', '/camera/depth/image_rect_raw'),
-                        ('intensity/image_raw', '/camera/depth/image_rect_raw'),
-                        ('intensity/camera_info', '/camera/depth/camera_info'),
-                        ('points', '/camera/depth/points')]),
+        launch_ros.actions.ComposableNodeContainer(
+            name='container',
+            namespace='',
+            package='rclcpp_components',
+            executable='component_container',
+            composable_node_descriptions=[
+                # Driver itself
+                launch_ros.descriptions.ComposableNode(
+                    package='depth_image_proc',
+                    plugin='depth_image_proc::PointCloudXyziRadialNode',
+                    name='point_cloud_xyzi_radial_node',
+                    remappings=[('depth/image_raw', '/camera/depth/image_rect_raw'),
+                                ('intensity/image_raw', '/camera/depth/image_rect_raw'),
+                                ('intensity/camera_info', '/camera/depth/camera_info'),
+                                ('points', '/camera/depth/points')]
+                ),
+            ],
+            output='screen',
+        ),
 
-        # depth_image_proc::PointCloudXyziRadialNode
-        launch_ros.actions.Node(
-            package='composition', node_executable='api_composition_cli', output='screen',
-            arguments=['depth_image_proc', 'depth_image_proc::PointCloudXyziRadialNode']),
         # rviz
         launch_ros.actions.Node(
             package='rviz2', node_executable='rviz2', output='screen',

@@ -93,7 +93,7 @@ ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options)
       ImagePublisher::reconfigureCallback();
       return result;
     };
-  this->set_on_parameters_set_callback(param_change_callback);
+  on_set_parameters_callback_handle_ = this->add_on_set_parameters_callback(param_change_callback);
 }
 
 void ImagePublisher::reconfigureCallback()

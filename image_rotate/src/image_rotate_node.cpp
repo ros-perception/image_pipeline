@@ -113,7 +113,7 @@ ImageRotateNode::ImageRotateNode()
       }
       return result;
     };
-  this->set_on_parameters_set_callback(reconfigureCallback);
+  on_set_parameters_callback_handle_ = this->add_on_set_parameters_callback(reconfigureCallback);
   onInit();
 }
 

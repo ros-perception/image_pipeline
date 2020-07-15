@@ -1,5 +1,11 @@
 Forthcoming
 -----------
+* Patch boost failure in image_view (`#541 <https://github.com/ros-perception/image_pipeline/issues/541>`_)
+  * Patch boost failure in image_view
+  * remove ros2_deps from circle with new releases
+  * readd deps
+* Contributors: Steve Macenski
+
 * Initial ROS2 commit.
 * Contributors: Michael Carroll
 
