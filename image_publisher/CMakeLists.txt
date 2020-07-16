@@ -29,9 +29,8 @@ set( DEPENDENCIES
   cv_bridge
 )
 
-find_package(OpenCV REQUIRED COMPONENTS core)
+find_package(OpenCV REQUIRED COMPONENTS core imgcodecs videoio)
 message(STATUS "opencv version ${OpenCV_VERSION}")
-find_package(OpenCV 4 REQUIRED COMPONENTS ${opencv_4_components})
 
 include_directories(include)
 

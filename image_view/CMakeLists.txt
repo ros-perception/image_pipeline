@@ -33,10 +33,6 @@ if(ANDROID)
   return()
 endif()
 
-find_package(GTK3)
-add_definitions(-DHAVE_GTK)
-include_directories(${GTK3_INCLUDE_DIRS})
-
 add_library(image_view_nodes SHARED
   src/disparity_view_node.cpp
   src/extract_images_node.cpp
@@ -56,7 +52,6 @@ ament_target_dependencies(image_view_nodes
   stereo_msgs
 )
 target_link_libraries(image_view_nodes
-  ${GTK3_LIBRARIES}
   ${OpenCV_LIBRARIES}
   ${Boost_LIBRARIES}
 )
