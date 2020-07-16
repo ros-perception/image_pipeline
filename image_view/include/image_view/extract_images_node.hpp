@@ -50,7 +50,7 @@
 #define IMAGE_VIEW__EXTRACT_IMAGES_NODE_HPP_
 
 #include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
 #include <boost/format.hpp>

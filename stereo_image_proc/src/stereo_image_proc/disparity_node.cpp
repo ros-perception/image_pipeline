@@ -32,9 +32,9 @@
 #include <stereo_image_proc/stereo_processor.hpp>
 
 #include <cv_bridge/cv_bridge.h>
-#include <image_geometry/stereo_camera_model.h>
-#include <image_transport/image_transport.h>
-#include <image_transport/subscriber_filter.h>
+#include <image_geometry/stereo_camera_model.hpp>
+#include <image_transport/image_transport.hpp>
+#include <image_transport/subscriber_filter.hpp>
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
