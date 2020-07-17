@@ -52,7 +52,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <rclcpp/rclcpp.hpp>
-#include <image_transport/subscriber_filter.h>
+#include <image_transport/subscriber_filter.hpp>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/sync_policies/exact_time.h>

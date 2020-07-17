@@ -16,7 +16,7 @@
 #define IMAGE_VIEW__VIDEO_RECORDER_NODE_HPP_
 
 #include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 
 #include <opencv2/highgui/highgui.hpp>
 

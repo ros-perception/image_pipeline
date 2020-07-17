@@ -52,7 +52,7 @@
 #include <boost/format.hpp>
 
 #include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 #include <std_srvs/srv/empty.hpp>
 #include <std_srvs/srv/trigger.hpp>
 

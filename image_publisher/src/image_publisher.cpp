@@ -31,7 +31,7 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <camera_info_manager/camera_info_manager.h>
+#include <camera_info_manager/camera_info_manager.hpp>
 
 #include <chrono>
 #include <memory>

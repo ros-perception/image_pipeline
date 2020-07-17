@@ -34,7 +34,7 @@
 #define IMAGE_PROC__CROP_NON_ZERO_HPP_
 
 #include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <thread>

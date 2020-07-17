@@ -34,7 +34,7 @@
 #define IMAGE_PROC__CROP_DECIMATE_HPP_
 
 #include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.hpp>
 

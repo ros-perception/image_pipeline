@@ -32,10 +32,10 @@
 
 #include <ros/ros.h>
 #include <gtest/gtest.h>
-#include <camera_calibration_parsers/parse.h>
+#include <camera_calibration_parsers/parse.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 
 #include <boost/foreach.hpp>
 
