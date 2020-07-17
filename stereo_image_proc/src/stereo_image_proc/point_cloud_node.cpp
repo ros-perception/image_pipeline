@@ -29,7 +29,7 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <image_geometry/stereo_camera_model.hpp>
+#include <image_geometry/stereo_camera_model.h>
 #include <image_transport/image_transport.hpp>
 #include <image_transport/subscriber_filter.hpp>
 #include <message_filters/subscriber.h>
