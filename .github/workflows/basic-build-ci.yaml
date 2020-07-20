@@ -1,0 +1,38 @@
+name: Basic Build Workflow
+
+on:
+  - pull_request
+  - push
+
+jobs:
+  build-foxy:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    container:
+      image: rostooling/setup-ros-docker:ubuntu-focal-ros-foxy-ros-base-testing-latest
+    steps:
+    - name: Fix Bugs in ros-tooling/action-ros-ci
+      run: |
+        sudo chown -R rosbuild:rosbuild "$HOME" .
+        sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y keyboard-configuration
+    - name: Run Tests
+      uses: ros-tooling/action-ros-ci@0.0.17
+      with:
+        package-name: |
+          camera_calibration
+          depth_image_proc
+          image_pipeline
+          image_proc
+          image_publisher
+          image_rotate
+          image_view
+          stereo_image_proc
+        source-ros-binary-installation: foxy
+        vcs-repo-file-url: ""
+    - name: Upload logs
+      uses: actions/upload-artifact@v1
+      with:
+        name: colcon-logs
+        path: ros_ws/log
+      if: always()
