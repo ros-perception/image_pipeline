@@ -5,12 +5,12 @@ on:
   - push
 
 jobs:
-  build-noetic:
+  build-melodic:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
     container:
-      image: ros:noetic-perception
+      image: ros:melodic-perception
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
