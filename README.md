@@ -1,7 +1,7 @@
 image_pipeline
 ==============
 
-[![](https://github.com/ros-perception/image_pipeline/workflows/Basic%20Build%20Workflow/badge.svg?branch=noetic)](https://github.com/ros-perception/image_pipeline/actions)
+[![](https://github.com/ros-perception/image_pipeline/workflows/Basic%20Build%20Workflow/badge.svg?branch=melodic)](https://github.com/ros-perception/image_pipeline/actions)
 
 This package fills the gap between getting raw images from a camera driver and higher-level vision processing.
 
