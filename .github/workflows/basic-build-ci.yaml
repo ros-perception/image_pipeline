@@ -1,0 +1,38 @@
+name: Basic Build Workflow
+
+on:
+  - pull_request
+  - push
+
+jobs:
+  build-noetic:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    container:
+      image: ros:noetic-perception
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: Create Workspace
+      run: |
+        mkdir src_tmp
+        mv `find -maxdepth 1 -not -name . -not -name src_tmp` src_tmp/
+        mv src_tmp/ src/
+        cd src
+        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        catkin_init_workspace'
+    - name: Install Prerequisites
+      run: |
+        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        apt-get update && rosdep update; \
+        rosdep install --from-paths src --ignore-src -y'
+    - name: Build Workspace
+      run: |
+        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        catkin_make'
+    - name: Run Tests
+      run: |
+        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        catkin_make run_tests; \
+        catkin_test_results --verbose'
