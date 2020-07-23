@@ -146,9 +146,9 @@ class CameraCheckerNode:
         return self.mc.mkgray(msg)
 
     def image_corners(self, im):
-        (ok, corners, b) = self.mc.get_corners(im)
+        (ok, corners, ids, b) = self.mc.get_corners(im)
         if ok:
-            return corners
+            return corners, ids
         else:
             return None
 
@@ -156,9 +156,9 @@ class CameraCheckerNode:
 
         (image, camera) = msg
         gray = self.mkgray(image)
-        C = self.image_corners(gray)
+        C, ids = self.image_corners(gray)
         if C is not None:
-            linearity_rms = self.mc.linear_error(C, self.board)
+            linearity_rms = self.mc.linear_error(C, ids, self.board)
 
             # Add in reprojection check
             image_points = C
@@ -189,8 +189,8 @@ class CameraCheckerNode:
         lgray = self.mkgray(lmsg)
         rgray = self.mkgray(rmsg)
 
-        L = self.image_corners(lgray)
-        R = self.image_corners(rgray)
+        L, _ = self.image_corners(lgray)
+        R, _ = self.image_corners(rgray)
         if L is not None and R is not None:
             epipolar = self.sc.epipolar_error(L, R)
 
