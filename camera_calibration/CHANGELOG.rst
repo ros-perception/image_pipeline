@@ -1,7 +1,9 @@
 Forthcoming
 -----------
+* ROS2 Dashing Image calibration (`#447 <https://github.com/ros-perception/image_pipeline/issues/447>`_)
+  Co-authored-by: Luca Della Vedova <luca@openrobotics.org>
 * Initial ROS2 commit.
-* Contributors: Michael Carroll
+* Contributors: Andreas Klintberg, Joshua Whitley, Kei Okada, Michael Carroll, Philipp, Yoshito Okada, stevemacenski
 
 1.12.23 (2018-05-10)
 --------------------

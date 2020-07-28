@@ -1,7 +1,26 @@
 Forthcoming
 -----------
+* Add parameter to avoid points2 padding (`#524 <https://github.com/ros-perception/image_pipeline/issues/524>`_)
+  * Add parameter to allow avoiding padding in the generated pointcloud message
+  Co-authored-by: Jacob Perron <jacob@openrobotics.org>
+  * Actually use the created parameter descriptor
+  Co-authored-by: Jacob Perron <jacob@openrobotics.org>
+* Add parameter to use system default QoS for image subscriptions in stereo_image_proc (`#521 <https://github.com/ros-perception/image_pipeline/issues/521>`_)
+  * Add parameter for image subscription reliability QoS to point cloud node
+  * Add parameter for image subscription reliability QoS to disparity node
+  * Add argument for setting reliability QoS to stereo_image_proc launch file
+  * Change parameter to use_system_default_qos
+  * Only use system default QoS for subscriptions
+* Use sensor data QoS profile (`#494 <https://github.com/ros-perception/image_pipeline/issues/494>`_)
+* Expand range for min_disparity and disparity_range (`#495 <https://github.com/ros-perception/image_pipeline/issues/495>`_)
+  Forward port of `#431 <https://github.com/ros-perception/image_pipeline/issues/431>`_
+* Add reconfigurable parameters to disparity node (`#490 <https://github.com/ros-perception/image_pipeline/issues/490>`_)
+  * Add reconfigurable parameters to disparity node
+  * Remove old dynamic reconfigure config file
+* Fix get/set speckle size methods (`#491 <https://github.com/ros-perception/image_pipeline/issues/491>`_)
+* Port stereo_image_proc to ROS 2 (`#486 <https://github.com/ros-perception/image_pipeline/issues/486>`_)
 * Initial ROS2 commit.
-* Contributors: Michael Carroll
+* Contributors: Ivan Santiago Paunovic, Jacob Perron, Joshua Whitley, Kei Okada, Michael Carroll, Steven Macenski, Yoshito Okada, bknight-i3drobotics, stevemacenski
 
 1.12.23 (2018-05-10)
 --------------------

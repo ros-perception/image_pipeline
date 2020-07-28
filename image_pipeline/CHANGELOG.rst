@@ -4,8 +4,14 @@ Changelog for package image_pipeline
 
 Forthcoming
 -----------
+* ROS2 Dashing Image calibration (`#447 <https://github.com/ros-perception/image_pipeline/issues/447>`_)
+  Co-authored-by: Luca Della Vedova <luca@openrobotics.org>
+* Merge pull request `#470 <https://github.com/ros-perception/image_pipeline/issues/470>`_ from ros-perception/crop_ros2
+* add default compiler flags for image pipeline metapackage
+* reactivate ros2 image pipeline metapackage
+* Changelogs.
 * Initial ROS2 commit.
-* Contributors: Michael Carroll
+* Contributors: Andreas Klintberg, Joshua Whitley, Michael Carroll, Steven Macenski, Yoshito Okada, stevemacenski
 
 1.12.23 (2018-05-10)
 --------------------

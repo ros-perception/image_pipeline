@@ -1,7 +1,23 @@
 Forthcoming
 -----------
+* cleanup any last reference to nodelets & register image publisher as a component (`#473 <https://github.com/ros-perception/image_pipeline/issues/473>`_)
+* Merge pull request `#470 <https://github.com/ros-perception/image_pipeline/issues/470>`_ from ros-perception/crop_ros2
+* fix linter and adding components dependencies to packages requiring them
+* Fixed double free crash, removed deprecation warnings. (`#453 <https://github.com/ros-perception/image_pipeline/issues/453>`_)
+  * Fixed double free crash, removed deprecation warnings.
+  Also removed deprecation warnings by changing to the new ROS2 API functions.
+* Merge pull request `#426 <https://github.com/ros-perception/image_pipeline/issues/426>`_ from klintan/image-proc-dashing
+* Merge pull request `#425 <https://github.com/ros-perception/image_pipeline/issues/425>`_ from klintan/ros2
+  Dashing: Adapted for Dashing
+* Merge pull request `#385 <https://github.com/ros-perception/image_pipeline/issues/385>`_ from yechun1/ros2_image_rotate
+  port image_rotate on ros2
+* rename filename and strings from nodelet to node
+  Nodelet is probably not the correct designation for this anymore since there is no longer a concept of a "nodelet" in ROS2, use "_node" instead.
+* update package.xml and cmakelist for readable
+* modify code to follow ros2 coding style
+* port image_rotate on ros2
 * Initial ROS2 commit.
-* Contributors: Michael Carroll
+* Contributors: Andreas Klintberg, Chris Ye, Joshua Whitley, Luca Della Vedova, Michael Carroll, Ryohei Ueda, Steven Macenski, Yoshito Okada, stevemacenski
 
 1.12.23 (2018-05-10)
 --------------------

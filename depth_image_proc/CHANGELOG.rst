@@ -1,3 +1,14 @@
+Forthcoming
+-----------
+* cleanup any last reference to nodelets & register image publisher as a component (`#473 <https://github.com/ros-perception/image_pipeline/issues/473>`_)
+* Merge pull request `#470 <https://github.com/ros-perception/image_pipeline/issues/470>`_ from ros-perception/crop_ros2
+* fix linter and adding components dependencies to packages requiring them
+* patch API changes for depth image pipeline
+* Merge pull request `#425 <https://github.com/ros-perception/image_pipeline/issues/425>`_ from klintan/ros2
+  Dashing: Adapted for Dashing
+* Fixed CMakeLists.txt for Dashing
+* Contributors: Andreas Klintberg, Chris Ye, Joshua Whitley, Michael Carroll, Steven Macenski, Yoshito Okada, stevemacenski
+
 2.0.0 (2018-12-09)
 ------------------
 * enable rclcpp_register_node_plugins (`#368 <https://github.com/ros-perception/image_pipeline/issues/368>`_)
@@ -22,16 +33,6 @@
   * update maintainer in package.xml
   Signed-off-by: Chris Ye <chris.ye@intel.com>
   * added all example launchers for demo test
-  pass test:
-  ros2 launch depth_image_proc point_cloud_xyzrgb.launch.py
-  ros2 launch depth_image_proc point_cloud_xyz.launch.py
-  ros2 launch depth_image_proc convert_metric.launch.py
-  ros2 launch depth_image_proc crop_foremost.launch.py
-  ros2 launch depth_image_proc point_cloud_xyz_radial.launch.py
-  ros2 launch depth_image_proc disparity.launch.py
-  ros2 launch depth_image_proc register.launch.py
-  ros2 launch depth_image_proc point_cloud_xyzi.launch.py
-  ros2 launch depth_image_proc point_cloud_xyzi_radial.launch.py
   Signed-off-by: Chris Ye <chris.ye@intel.com>
   * @wip update to use raw pointers.
   * continue to update to use raw pointer
