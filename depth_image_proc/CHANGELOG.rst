@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.1.0 (2020-07-27)
+------------------
 * cleanup any last reference to nodelets & register image publisher as a component (`#473 <https://github.com/ros-perception/image_pipeline/issues/473>`_)
 * Merge pull request `#470 <https://github.com/ros-perception/image_pipeline/issues/470>`_ from ros-perception/crop_ros2
 * fix linter and adding components dependencies to packages requiring them

@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.1.0 (2020-07-27)
+------------------
 * Add parameter to avoid points2 padding (`#524 <https://github.com/ros-perception/image_pipeline/issues/524>`_)
   * Add parameter to allow avoiding padding in the generated pointcloud message
   Co-authored-by: Jacob Perron <jacob@openrobotics.org>

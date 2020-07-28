@@ -8,8 +8,8 @@ Changelog for package image_publisher
 * Initial ROS2 commit.
 * Contributors: Chris Ye, Michael Carroll
 
-Forthcoming
------------
+2.1.0 (2020-07-27)
+------------------
 * Opencv 3 compatibility (`#564 <https://github.com/ros-perception/image_pipeline/issues/564>`_) (`#565 <https://github.com/ros-perception/image_pipeline/issues/565>`_)
   * Remove GTK from image_view.
   It is no longer used at all in image_view.

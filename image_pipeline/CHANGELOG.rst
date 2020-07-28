@@ -2,8 +2,8 @@
 Changelog for package image_pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.0 (2020-07-27)
+------------------
 * ROS2 Dashing Image calibration (`#447 <https://github.com/ros-perception/image_pipeline/issues/447>`_)
   Co-authored-by: Luca Della Vedova <luca@openrobotics.org>
 * Merge pull request `#470 <https://github.com/ros-perception/image_pipeline/issues/470>`_ from ros-perception/crop_ros2

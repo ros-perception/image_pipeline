@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.1.0 (2020-07-27)
+------------------
 * Fixing flake8 error in image_proc.
 * Opencv 3 compatibility (`#564 <https://github.com/ros-perception/image_pipeline/issues/564>`_) (`#565 <https://github.com/ros-perception/image_pipeline/issues/565>`_)
   * Remove GTK from image_view.
