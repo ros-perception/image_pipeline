@@ -27,8 +27,8 @@
 * Initial ROS2 commit.
 * Contributors: Chris Ye, Michael Carroll
 
-Forthcoming
------------
+2.2.0 (2020-07-27)
+------------------
 * Replacing deprecated header includes with new HPP versions. (`#566 <https://github.com/ros-perception/image_pipeline/issues/566>`_)
   * Replacing deprecated header includes with new HPP versions.
   * CI: Switching to official Foxy Docker container.

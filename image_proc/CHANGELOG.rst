@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.2.0 (2020-07-27)
+------------------
 * Replacing deprecated header includes with new HPP versions. (`#566 <https://github.com/ros-perception/image_pipeline/issues/566>`_)
 * Opencv 3 compatibility (`#564 <https://github.com/ros-perception/image_pipeline/issues/564>`_)
   * Remove GTK from image_view.
