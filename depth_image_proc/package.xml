@@ -17,7 +17,7 @@
   <maintainer email="whitleysoftwareservices@gmail.com">Joshua Whitley</maintainer>
   <maintainer email="chris.ye@intel.com">Chris Ye</maintainer>
   <license>BSD</license>
-  <url type="website">http://ros.org/wiki/depth_image_proc</url>
+  <url type="website">https://index.ros.org/p/depth_image_proc/github-ros-perception-image_pipeline/</url>
   <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>
   <url type="repository">https://github.com/ros-perception/image_pipeline</url>
   <author>Patrick Mihelich</author>

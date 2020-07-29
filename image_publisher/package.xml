@@ -15,7 +15,7 @@
   <maintainer email="whitleysoftwareservices@gmail.com">Joshua Whitley</maintainer>
   <maintainer email="chris.ye@intel.com">Chris Ye</maintainer>
   <license>BSD</license>
-  <url type="website">http://ros.org/wiki/image_publisher</url>
+  <url type="website">https://index.ros.org/p/image_publisher/github-ros-perception-image_pipeline/</url>
   <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>
   <url type="repository">https://github.com/ros-perception/image_pipeline</url>
   <author>Kei Okada</author>
