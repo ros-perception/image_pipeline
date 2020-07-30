@@ -111,7 +111,7 @@ void ExtractImagesNode::image_cb(const sensor_msgs::msg::Image::ConstSharedPtr &
   cv::Mat image;
   try {
     image = cv_bridge::toCvShare(msg, "bgr8")->image;
-  } catch (cv_bridge::Exception) {
+  } catch (const cv_bridge::Exception &) {
     RCLCPP_ERROR(this->get_logger(), "Unable to convert %s image to bgr8", msg->encoding.c_str());
   }
 

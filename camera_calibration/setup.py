@@ -5,7 +5,7 @@ PACKAGE_NAME = "camera_calibration"
 
 setup(
     name=PACKAGE_NAME,
-    version='1.12.23',
+    version='2.2.0',
     packages=["camera_calibration", "camera_calibration.nodes"],
     data_files=[
     ('share/ament_index/resource_index/packages',
@@ -19,8 +19,8 @@ setup(
     ],
     zip_safe=True,
     author='James Bowman, Patrick Mihelich',
-    maintainer='Vincent Rabaud, Steven Macenski',
-    maintainer_email='vincent.rabaud@gmail.com, stevenmacenski@gmail.com, software@autonomoustuff.com',
+    maintainer='Vincent Rabaud, Steven Macenski, Joshua Whitley',
+    maintainer_email='vincent.rabaud@gmail.com, stevenmacenski@gmail.com, whitleysoftwareservices@gmail.com',
     keywords=['ROS2'],
     description='Camera_calibration allows easy calibration of monocular or stereo cameras using a checkerboard calibration target .',
     license='BSD',

@@ -1,4 +1,6 @@
-<package format="2">
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>depth_image_proc</name>
   <version>2.2.0</version>
   <description>
@@ -9,41 +11,35 @@
      a depth image into another camera frame.
 
   </description>
-  <author>Patrick Mihelich</author>
+
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
-  <maintainer email="software@autonomoustuff.com">Autonomoustuff team</maintainer>
+  <maintainer email="whitleysoftwareservices@gmail.com">Joshua Whitley</maintainer>
   <maintainer email="chris.ye@intel.com">Chris Ye</maintainer>
   <license>BSD</license>
-  <url>http://ros.org/wiki/depth_image_proc</url>
+  <url type="website">https://index.ros.org/p/depth_image_proc/github-ros-perception-image_pipeline/</url>
+  <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>
+  <url type="repository">https://github.com/ros-perception/image_pipeline</url>
+  <author>Patrick Mihelich</author>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
-  <test_depend>ament_cmake_gtest</test_depend>
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
-
-  <build_depend>cv_bridge</build_depend>
-  <build_depend>tf2_eigen</build_depend>
-  <build_depend>image_geometry</build_depend>
-  <build_depend>image_transport</build_depend>
   <build_depend>message_filters</build_depend>
   <build_depend>class_loader</build_depend>
-  <build_depend>rclcpp</build_depend>
-  <build_depend>rclcpp_components</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>stereo_msgs</build_depend>
-  <build_depend>tf2</build_depend>
-  <build_depend>tf2_ros</build_depend>
 
-  <exec_depend>cv_bridge</exec_depend>
-  <exec_depend>tf2_eigen</exec_depend>
-  <exec_depend>image_geometry</exec_depend>
-  <exec_depend>image_transport</exec_depend>
-  <exec_depend>rclcpp</exec_depend>
-  <exec_depend>rclcpp_components</exec_depend>
-  <exec_depend>tf2</exec_depend>
-  <exec_depend>tf2_ros</exec_depend>
+  <depend>cv_bridge</depend>
+  <depend>image_geometry</depend>
+  <depend>image_transport</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>sensor_msgs</depend>
+  <depend>stereo_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_ros</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

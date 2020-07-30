@@ -52,7 +52,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <rclcpp/rclcpp.hpp>
-#include <camera_calibration_parsers/parse.h>
+#include <camera_calibration_parsers/parse.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
@@ -109,7 +109,7 @@ bool ImageSaverNode::saveImage(
   cv::Mat image;
   try {
     image = cv_bridge::toCvShare(image_msg, encoding)->image;
-  } catch (cv_bridge::Exception) {
+  } catch (const cv_bridge::Exception &) {
     RCLCPP_ERROR(
       this->get_logger(), "Unable to convert %s image to %s",
       image_msg->encoding.c_str(), encoding.c_str());
