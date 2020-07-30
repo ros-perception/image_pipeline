@@ -7,18 +7,22 @@
   A simple viewer for ROS image topics. Includes a specialized viewer
   for stereo + disparity images.
   </description>
+
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
-  <maintainer email="software@autonomoustuff.com">Autonomoustuff team</maintainer>
+  <maintainer email="whitleysoftwareservices@gmail.com">Joshua Whitley</maintainer>
   <license>BSD</license>
-  <url>http://www.ros.org/wiki/image_view</url>
+  <url type="website">https://index.ros.org/p/image_view/github-ros-perception-image_pipeline/</url>
+  <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>
+  <url type="repository">https://github.com/ros-perception/image_pipeline</url>
   <author>Patrick Mihelich</author>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
   <depend>camera_calibration_parsers</depend>
   <depend>cv_bridge</depend>
   <depend>image_transport</depend>
+  <depend>libboost-dev</depend>
   <depend>message_filters</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>

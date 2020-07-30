@@ -109,7 +109,7 @@ bool ImageSaverNode::saveImage(
   cv::Mat image;
   try {
     image = cv_bridge::toCvShare(image_msg, encoding)->image;
-  } catch (cv_bridge::Exception) {
+  } catch (const cv_bridge::Exception &) {
     RCLCPP_ERROR(
       this->get_logger(), "Unable to convert %s image to %s",
       image_msg->encoding.c_str(), encoding.c_str());

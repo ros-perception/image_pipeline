@@ -7,14 +7,16 @@
      camera_calibration allows easy calibration of monocular or stereo
      cameras using a checkerboard calibration target. 
   </description>
-  <author>James Bowman</author>
-  <author>Patrick Mihelich</author>
+
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
-  <maintainer email="software@autonomoustuff.com">Autonomoustuff team</maintainer>
-  
+  <maintainer email="whitleysoftwareservices@gmail.com">Joshua Whitley</maintainer>
   <license>BSD</license>
-  <url>http://www.ros.org/wiki/camera_calibration</url>
+  <url type="website">https://index.ros.org/p/camera_calibration/github-ros-perception-image_pipeline/</url>
+  <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>
+  <url type="repository">https://github.com/ros-perception/image_pipeline</url>
+  <author>James Bowman</author>
+  <author>Patrick Mihelich</author>
 
   <depend>cv_bridge</depend>
   <depend>image_geometry</depend>

@@ -134,7 +134,7 @@ void VideoRecorderNode::callback(const sensor_msgs::msg::Image::ConstSharedPtr &
     } else {
       RCLCPP_WARN(this->get_logger(), "Frame skipped, no data!");
     }
-  } catch (cv_bridge::Exception) {
+  } catch (const cv_bridge::Exception &) {
     RCLCPP_ERROR(
       this->get_logger(),
       "Unable to convert %s image to %s",
