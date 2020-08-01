@@ -175,7 +175,6 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
       cv::cvtColor(bayer, color, code);
     }
 
-    RCLCPP_INFO(this->get_logger(), "Publish color!");
     pub_color_.publish(color_msg);
   } else if (raw_msg->encoding == enc::YUV422) {
     // Use cv_bridge to convert to BGR8
@@ -184,7 +183,6 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
     try {
       color_msg = cv_bridge::toCvCopy(raw_msg, enc::BGR8)->toImageMsg();
       pub_color_.publish(color_msg);
-      RCLCPP_INFO(this->get_logger(), "Publish color!");
     } catch (cv_bridge::Exception & e) {
       RCLCPP_WARN(this->get_logger(), "cv_bridge conversion error: '%s'", e.what());
     }
