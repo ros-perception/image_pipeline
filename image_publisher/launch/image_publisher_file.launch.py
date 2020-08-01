@@ -43,7 +43,7 @@ def generate_launch_description():
     return LaunchDescription([
 
         launch_ros.actions.Node(
-            package='image_publisher', node_executable='image_publisher', output='screen',
+            package='image_publisher', executable='image_publisher_node', output='screen',
             arguments=[filename],
             remappings=[('image_raw', '/camera/image_raw'),
                         ('camera_info', '/camera/camera_info')]),
