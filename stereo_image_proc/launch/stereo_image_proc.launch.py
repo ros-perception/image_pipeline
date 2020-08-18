@@ -34,13 +34,11 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.actions import GroupAction
 from launch.actions import IncludeLaunchDescription
-from launch.actions import LogInfo
 from launch.actions import SetLaunchConfiguration
 from launch.conditions import LaunchConfigurationEquals
 from launch.conditions import LaunchConfigurationNotEquals
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch.substitutions import PythonExpression
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.actions import LoadComposableNodes
 from launch_ros.actions import PushRosNamespace
@@ -104,7 +102,8 @@ def generate_launch_description():
             composable_node_descriptions=composable_nodes,
             target_container=LaunchConfiguration('container'),
         ),
-        # If a container name is not provided, set the name of the container launched above for image_proc nodes
+        # If a container name is not provided,
+        # set the name of the container launched above for image_proc nodes
         SetLaunchConfiguration(
             condition=LaunchConfigurationEquals('container', ''),
             name='container',
