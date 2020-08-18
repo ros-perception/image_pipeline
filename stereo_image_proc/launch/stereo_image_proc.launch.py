@@ -104,13 +104,12 @@ def generate_launch_description():
             composable_node_descriptions=composable_nodes,
             target_container=LaunchConfiguration('container'),
         ),
-        # Set the name of the container for included image_proc containers if one is not provided
+        # If a container name is not provided, set the name of the container launched above for image_proc nodes
         SetLaunchConfiguration(
             condition=LaunchConfigurationEquals('container', ''),
             name='container',
             value='stereo_image_proc_container'
         ),
-        LogInfo(msg=LaunchConfiguration('container')),
         GroupAction([
             PushRosNamespace(LaunchConfiguration('left')),
             IncludeLaunchDescription(
