@@ -41,7 +41,7 @@ def generate_launch_description():
 
         # image_publisher stereo left
         launch_ros.actions.Node(
-            package='image_publisher', node_executable='image_publisher', output='screen',
+            package='image_publisher', executable='image_publisher_node', output='screen',
             arguments=[device_0],
             node_name='image_publisher_left',
             remappings=[('image_raw', '/left/image_raw'),
@@ -49,7 +49,7 @@ def generate_launch_description():
 
         # image_publisher stereo right
         launch_ros.actions.Node(
-            package='image_publisher', node_executable='image_publisher', output='screen',
+            package='image_publisher', executable='image_publisher_node', output='screen',
             arguments=[device_1],
             node_name='image_publisher_right',
             remappings=[('image_raw', '/right/image_raw'),

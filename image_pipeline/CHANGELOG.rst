@@ -2,8 +2,8 @@
 Changelog for package image_pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.2.0 (2020-07-27)
+------------------
 
 * Initial ROS2 commit.
 * Contributors: Michael Carroll

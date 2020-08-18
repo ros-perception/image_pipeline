@@ -1,8 +1,6 @@
 2.0.0 (2018-12-09)
 ------------------
 * enable rclcpp_register_node_plugins (`#368 <https://github.com/ros-perception/image_pipeline/issues/368>`_)
-  this may be remarked while code debugging, should be enabled to build node plugin file
-  and added points remap in point_cloud_xyzrgb.launch.py
 * Port depth image proc on ROS2 (`#362 <https://github.com/ros-perception/image_pipeline/issues/362>`_)
   * Port depth_image_proc on ROS2
   * Port depth_image_proc of image_pipeline on ROS2
@@ -22,16 +20,6 @@
   * update maintainer in package.xml
   Signed-off-by: Chris Ye <chris.ye@intel.com>
   * added all example launchers for demo test
-  pass test:
-  ros2 launch depth_image_proc point_cloud_xyzrgb.launch.py
-  ros2 launch depth_image_proc point_cloud_xyz.launch.py
-  ros2 launch depth_image_proc convert_metric.launch.py
-  ros2 launch depth_image_proc crop_foremost.launch.py
-  ros2 launch depth_image_proc point_cloud_xyz_radial.launch.py
-  ros2 launch depth_image_proc disparity.launch.py
-  ros2 launch depth_image_proc register.launch.py
-  ros2 launch depth_image_proc point_cloud_xyzi.launch.py
-  ros2 launch depth_image_proc point_cloud_xyzi_radial.launch.py
   Signed-off-by: Chris Ye <chris.ye@intel.com>
   * @wip update to use raw pointers.
   * continue to update to use raw pointer
@@ -39,8 +27,14 @@
 * Initial ROS2 commit.
 * Contributors: Chris Ye, Michael Carroll
 
-Forthcoming
------------
+2.2.0 (2020-07-27)
+------------------
+* Replacing deprecated header includes with new HPP versions. (`#566 <https://github.com/ros-perception/image_pipeline/issues/566>`_)
+  * Replacing deprecated header includes with new HPP versions.
+  * CI: Switching to official Foxy Docker container.
+  * Fixing headers which don't work correctly.
+* Contributors: Joshua Whitley
+
 * make parameters work in depth_image_proc (`#544 <https://github.com/ros-perception/image_pipeline/issues/544>`_)
 * update depth_image_proc components (`#543 <https://github.com/ros-perception/image_pipeline/issues/543>`_)
   * update depth_image_proc components

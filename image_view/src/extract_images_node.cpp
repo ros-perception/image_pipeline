@@ -50,7 +50,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
@@ -111,7 +111,7 @@ void ExtractImagesNode::image_cb(const sensor_msgs::msg::Image::ConstSharedPtr &
   cv::Mat image;
   try {
     image = cv_bridge::toCvShare(msg, "bgr8")->image;
-  } catch (cv_bridge::Exception) {
+  } catch (const cv_bridge::Exception &) {
     RCLCPP_ERROR(this->get_logger(), "Unable to convert %s image to bgr8", msg->encoding.c_str());
   }
 

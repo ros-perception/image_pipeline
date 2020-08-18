@@ -1,8 +1,9 @@
-Forthcoming
------------
-
+2.2.0 (2020-07-27)
+------------------
+* Removed basestring (no longer exists in new python 3 version). (`#554 <https://github.com/ros-perception/image_pipeline/issues/554>`_)
+  Fixes `#551 <https://github.com/ros-perception/image_pipeline/issues/551>`_
 * Initial ROS2 commit.
-* Contributors: Michael Carroll
+* Contributors: Michael Carroll, PfeifferMicha
 
 1.12.23 (2018-05-10)
 --------------------

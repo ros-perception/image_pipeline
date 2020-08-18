@@ -14,8 +14,26 @@ Changelog for package image_publisher
 * Initial ROS2 commit.
 * Contributors: Chris Ye, Michael Carroll
 
-Forthcoming
------------
+2.2.0 (2020-07-27)
+------------------
+* Replacing deprecated header includes with new HPP versions. (`#566 <https://github.com/ros-perception/image_pipeline/issues/566>`_)
+  * Replacing deprecated header includes with new HPP versions.
+  * CI: Switching to official Foxy Docker container.
+  * Fixing headers which don't work correctly.
+* Opencv 3 compatibility (`#564 <https://github.com/ros-perception/image_pipeline/issues/564>`_)
+  * Remove GTK from image_view.
+  It is no longer used at all in image_view.
+  * Reinstate OpenCV 3 compatibility.
+  While Foxy only supports Ubuntu 20.04 (and hence OpenCV 4),
+  we still strive to maintain Ubuntu 18.04 (which has OpenCV 3).
+  In this case, it is trivial to keep keep image_pipeline working
+  with OpenCV 3, so reintroduce compatibility with it.
+  * Fixes from review.
+  * One more fix.
+* Use newer 'add_on_set_parameters_callback' API (`#562 <https://github.com/ros-perception/image_pipeline/issues/562>`_)
+  The old API was deprecated in Foxy and since removed in https://github.com/ros2/rclcpp/pull/1199.
+* Remove redundant install call in CMakeLists.txt (`#555 <https://github.com/ros-perception/image_pipeline/issues/555>`_)
+* Contributors: Chris Lalancette, Jacob Perron, Joshua Whitley, sgvandijk
 
 1.12.23 (2018-05-10)
 --------------------

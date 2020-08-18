@@ -1,7 +1,7 @@
 image_pipeline
 ==============
 
-[![CircleCI](https://circleci.com/gh/ros-perception/image_pipeline.svg?style=svg)](https://circleci.com/gh/ros-perception/image_pipeline)
+[![](https://github.com/ros-perception/image_pipeline/workflows/Basic%20Build%20Workflow/badge.svg?branch=ros2)](https://github.com/ros-perception/image_pipeline/actions)
 
 This package fills the gap between getting raw images from a camera driver and higher-level vision processing.
 

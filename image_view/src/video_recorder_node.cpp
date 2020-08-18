@@ -18,9 +18,9 @@
 #include <opencv2/videoio.hpp>
 
 #include <rclcpp/rclcpp.hpp>
-#include <camera_calibration_parsers/parse.h>
+#include <camera_calibration_parsers/parse.hpp>
 #include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 
@@ -134,7 +134,7 @@ void VideoRecorderNode::callback(const sensor_msgs::msg::Image::ConstSharedPtr &
     } else {
       RCLCPP_WARN(this->get_logger(), "Frame skipped, no data!");
     }
-  } catch (cv_bridge::Exception) {
+  } catch (const cv_bridge::Exception &) {
     RCLCPP_ERROR(
       this->get_logger(),
       "Unable to convert %s image to %s",
