@@ -32,13 +32,42 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.actions import GroupAction
+from launch.actions import IncludeLaunchDescription
+from launch.actions import LogInfo
+from launch.actions import SetLaunchConfiguration
+from launch.conditions import LaunchConfigurationEquals
+from launch.conditions import LaunchConfigurationNotEquals
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
+from launch.substitutions import PythonExpression
 from launch_ros.actions import ComposableNodeContainer
+from launch_ros.actions import LoadComposableNodes
+from launch_ros.actions import PushRosNamespace
 from launch_ros.descriptions import ComposableNode
+from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    # TODO(jacobperron): Include image_proc launch file when it exists
+    composable_nodes = [
+        ComposableNode(
+            package='stereo_image_proc',
+            plugin='stereo_image_proc::DisparityNode',
+            parameters=[{
+                'approximate_sync': LaunchConfiguration('approximate_sync'),
+                'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
+            }]
+        ),
+        ComposableNode(
+            package='stereo_image_proc',
+            plugin='stereo_image_proc::PointCloudNode',
+            parameters=[{
+                'approximate_sync': LaunchConfiguration('approximate_sync'),
+                'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
+            }]
+        ),
+    ]
+
     return LaunchDescription([
         DeclareLaunchArgument(
             name='approximate_sync', default_value='False',
@@ -49,26 +78,55 @@ def generate_launch_description():
             name='use_system_default_qos', default_value='False',
             description='Use the RMW QoS settings for the image and camera info subscriptions.'
         ),
-        ComposableNodeContainer(
-            package='rclcpp_components', node_executable='component_container',
-            node_name='stereo_image_proc_container', node_namespace='',
-            composable_node_descriptions=[
-                ComposableNode(
-                    package='stereo_image_proc',
-                    node_plugin='stereo_image_proc::DisparityNode',
-                    parameters=[{
-                        'approximate_sync': LaunchConfiguration('approximate_sync'),
-                        'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
-                    }]
-                ),
-                ComposableNode(
-                    package='stereo_image_proc',
-                    node_plugin='stereo_image_proc::PointCloudNode',
-                    parameters=[{
-                        'approximate_sync': LaunchConfiguration('approximate_sync'),
-                        'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
-                    }]
-                ),
-            ],
+        DeclareLaunchArgument(
+            name='left', default_value='left', description='Namespace for the left camera'
         ),
+        DeclareLaunchArgument(
+            name='right', default_value='right', description='Namespace for the right camera'
+        ),
+        DeclareLaunchArgument(
+            name='container', default_value='',
+            description=(
+                'Name of an existing node container to load launched nodes into. '
+                'If unset, a new container will be created.'
+            )
+        ),
+        ComposableNodeContainer(
+            condition=LaunchConfigurationEquals('container', ''),
+            package='rclcpp_components',
+            executable='component_container',
+            name='stereo_image_proc_container',
+            namespace='',
+            composable_node_descriptions=composable_nodes,
+        ),
+        LoadComposableNodes(
+            condition=LaunchConfigurationNotEquals('container', ''),
+            composable_node_descriptions=composable_nodes,
+            target_container=LaunchConfiguration('container'),
+        ),
+        # Set the name of the container for included image_proc containers if one is not provided
+        SetLaunchConfiguration(
+            condition=LaunchConfigurationEquals('container', ''),
+            name='container',
+            value='stereo_image_proc_container'
+        ),
+        LogInfo(msg=LaunchConfiguration('container')),
+        GroupAction([
+            PushRosNamespace(LaunchConfiguration('left')),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([
+                    FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
+                ]),
+                launch_arguments={'container': LaunchConfiguration('container')}.items()
+            ),
+        ]),
+        GroupAction([
+            PushRosNamespace(LaunchConfiguration('right')),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([
+                    FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
+                ]),
+                launch_arguments={'container': LaunchConfiguration('container')}.items()
+            ),
+        ])
     ])
