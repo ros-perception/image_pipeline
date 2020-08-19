@@ -41,6 +41,8 @@ from launch.actions import OpaqueFunction
 
 from launch_ros.actions import Node
 
+import launch_testing
+
 import pytest
 
 import rclpy
@@ -49,7 +51,7 @@ from sensor_msgs.msg import PointCloud2
 
 
 @pytest.mark.rostest
-def generate_test_description(ready_fn):
+def generate_test_description():
 
     path_to_disparity_image_publisher_fixture = os.path.join(
         os.path.dirname(__file__), 'fixtures', 'disparity_image_publisher.py')
@@ -72,12 +74,11 @@ def generate_test_description(ready_fn):
         # PointCloudNode
         Node(
             package='stereo_image_proc',
-            node_executable='point_cloud_node',
-            node_name='point_cloud_node',
+            executable='point_cloud_node',
+            name='point_cloud_node',
             output='screen'
         ),
-        # TODO(jacobperron): In Eloquent, use 'launch_testing.actions.ReadyToTest()'
-        OpaqueFunction(function=lambda context: ready_fn()),
+        launch_testing.actions.ReadyToTest(),
     ])
 
 

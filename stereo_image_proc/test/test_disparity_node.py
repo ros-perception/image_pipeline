@@ -41,6 +41,8 @@ from launch.actions import OpaqueFunction
 
 from launch_ros.actions import Node
 
+import launch_testing
+
 import pytest
 
 import rclpy
@@ -49,7 +51,7 @@ from stereo_msgs.msg import DisparityImage
 
 
 @pytest.mark.rostest
-def generate_test_description(ready_fn):
+def generate_test_description():
 
     path_to_stereo_image_publisher_fixture = os.path.join(
         os.path.dirname(__file__), 'fixtures', 'stereo_image_publisher.py')
@@ -72,12 +74,11 @@ def generate_test_description(ready_fn):
         # DisparityNode
         Node(
             package='stereo_image_proc',
-            node_executable='disparity_node',
-            node_name='disparity_node',
+            executable='disparity_node',
+            name='disparity_node',
             output='screen'
         ),
-        # TODO(jacobperron): In Eloquent, use 'launch_testing.actions.ReadyToTest()'
-        OpaqueFunction(function=lambda context: ready_fn()),
+        launch_testing.actions.ReadyToTest(),
     ])
 
 
@@ -94,7 +95,7 @@ class TestDisparityNode(unittest.TestCase):
         rclpy.shutdown()
 
     def test_message_received(self):
-        # Expect the disparity node to publish on '/diparity' topic
+        # Expect the disparity node to publish on '/disparity' topic
         msgs_received = []
         self.node.create_subscription(
             DisparityImage,
