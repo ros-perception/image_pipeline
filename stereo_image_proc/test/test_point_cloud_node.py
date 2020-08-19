@@ -36,8 +36,6 @@ import time
 import unittest
 
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess
-from launch.actions import OpaqueFunction
 
 from launch_ros.actions import Node
 
@@ -61,10 +59,9 @@ def generate_test_description():
 
     return LaunchDescription([
         # Disparity image publisher
-        # TODO(jacobperron): we can use Node in Eloquent
-        ExecuteProcess(
-            cmd=[
-                sys.executable,
+        Node(
+            executable=sys.executable,
+            arguments=[
                 path_to_disparity_image_publisher_fixture,
                 path_to_left_image,
                 path_to_disparity_image,
@@ -86,8 +83,6 @@ class TestPointCloudNode(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # TODO(jacobperron): Instead of handling the init/shutdown cycle, as of Eloqeunt
-        #                    we can use the node 'launch_service.context.locals.launch_ros_node'
         rclpy.init()
         cls.node = rclpy.create_node('test_point_cloud_node')
 
