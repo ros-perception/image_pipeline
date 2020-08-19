@@ -260,7 +260,16 @@ void ImageNodelet::mouseCb(int event, int x, int y, int flags, void* param)
     return;
   }
 
-  std::string filename = (this_->filename_format_ % this_->count_).str();
+  std::string filename;
+  try
+  {
+    filename = (this_->filename_format_ % this_->count_).str();
+  }
+  catch (const boost::io::too_many_args&)
+  {
+    NODELET_WARN_ONCE("Couldn't save image, filename_format is invalid.");
+    return;
+  }
   if (cv::imwrite(filename, image))
   {
     NODELET_INFO("Saved image %s", filename.c_str());
