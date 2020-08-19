@@ -43,6 +43,7 @@ import random
 import sensor_msgs.msg
 import tarfile
 import time
+import sys
 from distutils.version import LooseVersion
 from enum import Enum
 
