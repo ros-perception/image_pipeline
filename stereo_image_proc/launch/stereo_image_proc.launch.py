@@ -77,10 +77,12 @@ def generate_launch_description():
             description='Use the RMW QoS settings for the image and camera info subscriptions.'
         ),
         DeclareLaunchArgument(
-            name='left', default_value='left', description='Namespace for the left camera'
+            name='left_namespace', default_value='left',
+            description='Namespace for the left camera'
         ),
         DeclareLaunchArgument(
-            name='right', default_value='right', description='Namespace for the right camera'
+            name='right_namespace', default_value='right',
+            description='Namespace for the right camera'
         ),
         DeclareLaunchArgument(
             name='container', default_value='',
@@ -110,7 +112,7 @@ def generate_launch_description():
             value='stereo_image_proc_container'
         ),
         GroupAction([
-            PushRosNamespace(LaunchConfiguration('left')),
+            PushRosNamespace(LaunchConfiguration('left_namespace')),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource([
                     FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
@@ -119,7 +121,7 @@ def generate_launch_description():
             ),
         ]),
         GroupAction([
-            PushRosNamespace(LaunchConfiguration('right')),
+            PushRosNamespace(LaunchConfiguration('right_namespace')),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource([
                     FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
