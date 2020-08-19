@@ -650,7 +650,7 @@ class Calibrator():
             "  rows: 3",
             "  cols: 3",
             "  data: " + format_mat(k, 5),
-            "camera_model: " + dist_model,
+            "distortion_model: " + dist_model,
             "distortion_coefficients:",
             "  rows: 1",
             "  cols: %d" % d.size,
