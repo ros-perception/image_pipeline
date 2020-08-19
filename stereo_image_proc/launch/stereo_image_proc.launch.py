@@ -35,6 +35,7 @@ from launch.actions import DeclareLaunchArgument
 from launch.actions import GroupAction
 from launch.actions import IncludeLaunchDescription
 from launch.actions import SetLaunchConfiguration
+from launch.conditions import IfCondition
 from launch.conditions import LaunchConfigurationEquals
 from launch.conditions import LaunchConfigurationNotEquals
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -77,6 +78,10 @@ def generate_launch_description():
             description='Use the RMW QoS settings for the image and camera info subscriptions.'
         ),
         DeclareLaunchArgument(
+            name='launch_image_proc', default_value='True',
+            description='Whether to launch debayer and rectify nodes from image_proc.'
+        ),
+        DeclareLaunchArgument(
             name='left_namespace', default_value='left',
             description='Namespace for the left camera'
         ),
@@ -111,22 +116,28 @@ def generate_launch_description():
             name='container',
             value='stereo_image_proc_container'
         ),
-        GroupAction([
-            PushRosNamespace(LaunchConfiguration('left_namespace')),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([
-                    FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
-                ]),
-                launch_arguments={'container': LaunchConfiguration('container')}.items()
-            ),
-        ]),
-        GroupAction([
-            PushRosNamespace(LaunchConfiguration('right_namespace')),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([
-                    FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
-                ]),
-                launch_arguments={'container': LaunchConfiguration('container')}.items()
-            ),
-        ])
+        GroupAction(
+            [
+                PushRosNamespace(LaunchConfiguration('left_namespace')),
+                IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource([
+                        FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
+                    ]),
+                    launch_arguments={'container': LaunchConfiguration('container')}.items()
+                ),
+            ],
+            condition=IfCondition(LaunchConfiguration('launch_image_proc')),
+        ),
+        GroupAction(
+            [
+                PushRosNamespace(LaunchConfiguration('right_namespace')),
+                IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource([
+                        FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
+                    ]),
+                    launch_arguments={'container': LaunchConfiguration('container')}.items()
+                ),
+            ],
+            condition=IfCondition(LaunchConfiguration('launch_image_proc')),
+        )
     ])
