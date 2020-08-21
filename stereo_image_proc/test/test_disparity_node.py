@@ -36,10 +36,10 @@ import time
 import unittest
 
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess
-from launch.actions import OpaqueFunction
 
 from launch_ros.actions import Node
+
+import launch_testing
 
 import pytest
 
@@ -49,7 +49,7 @@ from stereo_msgs.msg import DisparityImage
 
 
 @pytest.mark.rostest
-def generate_test_description(ready_fn):
+def generate_test_description():
 
     path_to_stereo_image_publisher_fixture = os.path.join(
         os.path.dirname(__file__), 'fixtures', 'stereo_image_publisher.py')
@@ -59,10 +59,9 @@ def generate_test_description(ready_fn):
 
     return LaunchDescription([
         # Stereo image publisher
-        # TODO(jacobperron): we can use Node in Eloquent
-        ExecuteProcess(
-            cmd=[
-                sys.executable,
+        Node(
+            executable=sys.executable,
+            arguments=[
                 path_to_stereo_image_publisher_fixture,
                 path_to_left_image,
                 path_to_right_image
@@ -72,12 +71,11 @@ def generate_test_description(ready_fn):
         # DisparityNode
         Node(
             package='stereo_image_proc',
-            node_executable='disparity_node',
-            node_name='disparity_node',
+            executable='disparity_node',
+            name='disparity_node',
             output='screen'
         ),
-        # TODO(jacobperron): In Eloquent, use 'launch_testing.actions.ReadyToTest()'
-        OpaqueFunction(function=lambda context: ready_fn()),
+        launch_testing.actions.ReadyToTest(),
     ])
 
 
@@ -94,7 +92,7 @@ class TestDisparityNode(unittest.TestCase):
         rclpy.shutdown()
 
     def test_message_received(self):
-        # Expect the disparity node to publish on '/diparity' topic
+        # Expect the disparity node to publish on '/disparity' topic
         msgs_received = []
         self.node.create_subscription(
             DisparityImage,
@@ -103,9 +101,9 @@ class TestDisparityNode(unittest.TestCase):
             1
         )
 
-        # Wait up to 10 seconds to receive message
+        # Wait up to 60 seconds to receive message
         start_time = time.time()
-        while len(msgs_received) == 0 and (time.time() - start_time) < 10:
+        while len(msgs_received) == 0 and (time.time() - start_time) < 60:
             rclpy.spin_once(self.node, timeout_sec=0.1)
 
         assert len(msgs_received) > 0
