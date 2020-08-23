@@ -295,7 +295,7 @@ def _get_dist_model(dist_params, cam_model):
         else:
             dist_model = "plumb_bob"
     elif CAMERA_MODEL.FISHEYE == cam_model:
-        dist_model = "fisheye"
+        dist_model = "equidistant"
     else:
         dist_model = "unknown"
     return dist_model
