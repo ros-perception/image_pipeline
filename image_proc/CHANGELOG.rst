@@ -1,3 +1,40 @@
+1.15.2 (2020-05-19)
+-------------------
+
+1.15.1 (2020-05-18)
+-------------------
+
+1.15.0 (2020-05-14)
+-------------------
+* Python 3 compatibility (`#530 <https://github.com/ros-perception/image_pipeline/issues/530>`_)
+* cmake_minimum_required to 3.0.2
+* Adapted to OpenCV4
+* import setup from setuptools instead of distutils-core
+* updated install locations for better portability. (`#500 <https://github.com/ros-perception/image_pipeline/issues/500>`_)
+* Contributors: Joshua Whitley, Sean Yen
+
+1.14.0 (2020-01-12)
+-------------------
+* resize.cpp: fix memory leak (`#489 <https://github.com/ros-perception/image_pipeline/issues/489>`_)
+* Try catch around cvtColor to avoid demosaicing src.empty() error (`#463 <https://github.com/ros-perception/image_pipeline/issues/463>`_)
+* Merge pull request `#436 <https://github.com/ros-perception/image_pipeline/issues/436>`_ from ros-perception/throttle_warnings
+* adding throttled warnings to not blast the users
+* Merge pull request `#423 <https://github.com/ros-perception/image_pipeline/issues/423>`_ from lucasw/crop_decimate_resolution_change
+  Avoid crashing when the x or y offset is too large
+* Merge pull request `#435 <https://github.com/ros-perception/image_pipeline/issues/435>`_ from ros-perception/patch_resize_copy
+* patch extra copy for nodelet users of resize
+* Merge pull request `#411 <https://github.com/ros-perception/image_pipeline/issues/411>`_ from Tuebel/fix_409
+  Fix 409 based on melodic branch
+* Need to look at x and y offset
+* Simplified copying of the camera_info message.
+* Independent resize of image and camera_info
+* removed unused infoCb
+* Rename infoCb to cameraCb matching subscribeCamera
+* replaced boost mutex & shared_ptr with std
+* Removed hard coded image encoding.
+  Using toCvCopy instead of toCvShared (copy is needed anyway).
+* Contributors: Joshua Whitley, Lucas Walter, Tim Übelhör, Yuki Furuta, stevemacenski
+
 1.13.0 (2019-06-12)
 -------------------
 * Merge pull request `#395 <https://github.com/ros-perception/image_pipeline/issues/395>`_ from ros-perception/steve_maintain

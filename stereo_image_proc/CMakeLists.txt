@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0.2)
 project(stereo_image_proc)
 
 find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_geometry image_proc image_transport message_filters nodelet sensor_msgs stereo_msgs)
@@ -32,7 +32,9 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}
 )
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 install(TARGETS ${PROJECT_NAME}
-        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
 )
 install(FILES nodelet_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}

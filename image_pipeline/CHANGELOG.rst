@@ -2,6 +2,23 @@
 Changelog for package image_pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.15.2 (2020-05-19)
+-------------------
+
+1.15.1 (2020-05-18)
+-------------------
+
+1.15.0 (2020-05-14)
+-------------------
+* Python 3 compatibility (`#530 <https://github.com/ros-perception/image_pipeline/issues/530>`_)
+* cmake_minimum_required to 3.0.2
+* Adapted to OpenCV4
+* import setup from setuptools instead of distutils-core
+* Contributors: Joshua Whitley
+
+1.14.0 (2020-01-12)
+-------------------
+
 1.13.0 (2019-06-12)
 -------------------
 * Merge pull request `#395 <https://github.com/ros-perception/image_pipeline/issues/395>`_ from ros-perception/steve_maintain

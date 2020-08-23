@@ -1,3 +1,23 @@
+1.15.2 (2020-05-19)
+-------------------
+
+1.15.1 (2020-05-18)
+-------------------
+
+1.15.0 (2020-05-14)
+-------------------
+* Python 3 compatibility (`#530 <https://github.com/ros-perception/image_pipeline/issues/530>`_)
+* cmake_minimum_required to 3.0.2
+* Adapted to OpenCV4
+* import setup from setuptools instead of distutils-core
+* updated install locations for better portability. (`#500 <https://github.com/ros-perception/image_pipeline/issues/500>`_)
+* Contributors: Joshua Whitley, Sean Yen
+
+1.14.0 (2020-01-12)
+-------------------
+* Expand range for min_disparity and disparity_range. (`#431 <https://github.com/ros-perception/image_pipeline/issues/431>`_)
+* Contributors: Terry Welsh, Tim Übelhör
+
 1.13.0 (2019-06-12)
 -------------------
 * Merge pull request `#375 <https://github.com/ros-perception/image_pipeline/issues/375>`_ from fizyr-forks/opencv4

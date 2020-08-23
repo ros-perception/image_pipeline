@@ -239,6 +239,11 @@ void PointCloudXyziNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_msg,
   {
     convert<uint16_t, uint16_t>(depth_msg, intensity_msg, cloud_msg);
   }
+  else if (depth_msg->encoding == enc::TYPE_16UC1 &&
+      intensity_msg->encoding == enc::TYPE_32FC1)
+  {
+    convert<uint16_t,float>(depth_msg, intensity_msg, cloud_msg);
+  }
   else if (depth_msg->encoding == enc::TYPE_32FC1 &&
       intensity_msg->encoding == enc::MONO8)
   {
@@ -248,6 +253,11 @@ void PointCloudXyziNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_msg,
       intensity_msg->encoding == enc::MONO16)
   {
     convert<float, uint16_t>(depth_msg, intensity_msg, cloud_msg);
+  }
+  else if (depth_msg->encoding == enc::TYPE_32FC1 &&
+      intensity_msg->encoding == enc::TYPE_32FC1)
+  {
+    convert<float,float>(depth_msg, intensity_msg, cloud_msg);
   }
   else
   {

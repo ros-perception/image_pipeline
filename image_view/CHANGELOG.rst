@@ -1,3 +1,30 @@
+1.15.2 (2020-05-19)
+-------------------
+
+1.15.1 (2020-05-18)
+-------------------
+* image_view: add missing dependency to gencfg header (`#531 <https://github.com/ros-perception/image_pipeline/issues/531>`_)
+* Contributors: Atsushi Watanabe
+
+1.15.0 (2020-05-14)
+-------------------
+* Python 3 compatibility (`#530 <https://github.com/ros-perception/image_pipeline/issues/530>`_)
+* cmake_minimum_required to 3.0.2
+* Adapted to OpenCV4
+* import setup from setuptools instead of distutils-core
+* Apply `#509 <https://github.com/ros-perception/image_pipeline/issues/509>`_ and `#526 <https://github.com/ros-perception/image_pipeline/issues/526>`_ to Noetic Branch (`#528 <https://github.com/ros-perception/image_pipeline/issues/528>`_)
+* [image_view] Add dynamic reconfigure to image_nodelet.cpp in melodic (`#504 <https://github.com/ros-perception/image_pipeline/issues/504>`_)
+* updated install locations for better portability. (`#500 <https://github.com/ros-perception/image_pipeline/issues/500>`_)
+* Contributors: Joshua Whitley, Naoya Yamaguchi, Sean Yen
+
+1.14.0 (2020-01-12)
+-------------------
+* Merge pull request `#481 <https://github.com/ros-perception/image_pipeline/issues/481>`_ from ros-perception/fix/reliably-close-image-view
+* image_view: Making window close reliably shut down node.
+* Removing image_view node and replacing with image_view that loads nodelet. (`#479 <https://github.com/ros-perception/image_pipeline/issues/479>`_)
+* Fix build issue re: missing hb.h (`#458 <https://github.com/ros-perception/image_pipeline/issues/458>`_)
+* Contributors: Joshua Whitley, Steven Macenski, Tim Übelhör, acxz
+
 1.13.0 (2019-06-12)
 -------------------
 * Implemented extracting raw image data (`#329 <https://github.com/ros-perception/image_pipeline/issues/329>`_)
