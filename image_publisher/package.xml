@@ -9,7 +9,6 @@
   </description>
   <author>Kei Okada</author>
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
-  <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
   <maintainer email="software@autonomoustuff.com">Autonomoustuff team</maintainer>
   <license>BSD</license>
   <url>http://ros.org/wiki/image_publisher</url>
