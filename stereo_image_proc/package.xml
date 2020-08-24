@@ -6,7 +6,6 @@
   <description>Stereo and single image rectification and disparity processing.</description>
 
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
-  <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
   <maintainer email="whitleysoftwareservices@gmail.com">Joshua Whitley</maintainer>
   <license>BSD</license>
   <url type="website">https://index.ros.org/p/stereo_image_proc/github-ros-perception-image_pipeline/</url>
