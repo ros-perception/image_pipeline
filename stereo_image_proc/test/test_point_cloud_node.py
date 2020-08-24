@@ -105,9 +105,9 @@ class TestPointCloudNode(unittest.TestCase):
             1
         )
 
-        # Wait up to 10 seconds to receive message
+        # Wait up to 60 seconds to receive message
         start_time = time.time()
-        while len(msgs_received) == 0 and (time.time() - start_time) < 10:
+        while len(msgs_received) == 0 and (time.time() - start_time) < 60:
             rclpy.spin_once(self.node, timeout_sec=(0.1))
 
         assert len(msgs_received) > 0
