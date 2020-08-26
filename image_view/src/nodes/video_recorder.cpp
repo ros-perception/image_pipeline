@@ -28,6 +28,7 @@
 #endif
 #include <stdio.h>
 #include "boost/date_time/posix_time/posix_time.hpp"
+#include <queue>
 
 cv::VideoWriter outputVideo;
 
@@ -46,7 +47,7 @@ bool rolling_buffer;
 ros::Duration rb_video_length;
 int rb_n_videos;
 ros::Time video_creation_stamp;
-std::vector<std::string> filenames;
+std::queue<std::string> filenames;
 std::string video_topic;
 bool use_posix;
 
@@ -67,11 +68,11 @@ void generateStampedFilename(std::string &filename) {
   ROS_INFO("Video recording to %s", filename.c_str());
   // If rolling_buffer mode, store filenames in a vector
   if (rolling_buffer) {
-    filenames.push_back(filename);
+    filenames.push(filename);
     // Delete oldest video
     if (filenames.size() > rb_n_videos) {
       remove(filenames.front().c_str());
-      filenames.erase(filenames.begin());
+      filenames.pop();
     }
   }
 }
