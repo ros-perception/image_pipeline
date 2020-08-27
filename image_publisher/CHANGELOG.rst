@@ -1,12 +1,7 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package image_publisher
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-2.0.0 (2018-12-09)
-------------------
-* port image_publisher on ROS2 (`#366 <https://github.com/ros-perception/image_pipeline/issues/366>`_)
-* Initial ROS2 commit.
-* Contributors: Chris Ye, Michael Carroll
+Forthcoming
+-----------
+* [Dashing] Use ament_auto Macros (`#573 <https://github.com/ros-perception/image_pipeline/issues/573>`_) (`#575 <https://github.com/ros-perception/image_pipeline/issues/575>`_)
+* Contributors: Joshua Whitley
 
 2.1.0 (2020-07-27)
 ------------------
@@ -76,6 +71,12 @@ Changelog for package image_publisher
 * adding autonomoustuff mainainer
 * adding stevemacenski as maintainer to get emails
 * Contributors: Andreas Klintberg, Chris Ye, Joshua Whitley, Luca Della Vedova, Lucas Walter, Michael Carroll, Steven Macenski, Yoshito Okada, stevemacenski
+
+2.0.0 (2018-12-09)
+------------------
+* port image_publisher on ROS2 (`#366 <https://github.com/ros-perception/image_pipeline/issues/366>`_)
+* Initial ROS2 commit.
+* Contributors: Chris Ye, Michael Carroll
 
 1.12.23 (2018-05-10)
 --------------------
