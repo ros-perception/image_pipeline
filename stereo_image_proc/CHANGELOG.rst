@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.1.1 (2020-08-27)
+------------------
 * Bump test timeouts to 60 seconds (`#594 <https://github.com/ros-perception/image_pipeline/issues/594>`_)
 * [Dashing] Use ament_auto Macros (`#573 <https://github.com/ros-perception/image_pipeline/issues/573>`_) (`#575 <https://github.com/ros-perception/image_pipeline/issues/575>`_)
 * Contributors: Jacob Perron, Joshua Whitley
