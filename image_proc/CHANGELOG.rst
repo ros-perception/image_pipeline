@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.2.1 (2020-08-27)
+------------------
 * make crop_decimate work (`#593 <https://github.com/ros-perception/image_pipeline/issues/593>`_)
 * remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)
 * Disable "Publish Color!" debug_info (`#577 <https://github.com/ros-perception/image_pipeline/issues/577>`_)

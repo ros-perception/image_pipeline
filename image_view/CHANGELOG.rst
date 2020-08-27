@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.2.1 (2020-08-27)
+------------------
 * remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)
 * [Foxy] Use ament_auto Macros (`#573 <https://github.com/ros-perception/image_pipeline/issues/573>`_)
 * Contributors: Joshua Whitley, Steve Macenski

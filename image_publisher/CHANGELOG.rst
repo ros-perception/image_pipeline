@@ -8,8 +8,8 @@ Changelog for package image_publisher
 * Initial ROS2 commit.
 * Contributors: Chris Ye, Michael Carroll
 
-Forthcoming
------------
+2.2.1 (2020-08-27)
+------------------
 * remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)
 * [Foxy][Image Publisher] Update launch file (`#579 <https://github.com/ros-perception/image_pipeline/issues/579>`_)
   Co-authored-by: louis <louis.tran@otsaw.com>
