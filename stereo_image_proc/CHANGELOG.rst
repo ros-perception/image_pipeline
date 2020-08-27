@@ -1,3 +1,10 @@
+Forthcoming
+-----------
+* remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)
+* Refactor stereo_image_proc tests (`#588 <https://github.com/ros-perception/image_pipeline/issues/588>`_)
+* [Foxy] Use ament_auto Macros (`#573 <https://github.com/ros-perception/image_pipeline/issues/573>`_)
+* Contributors: Jacob Perron, Joshua Whitley, Steve Macenski
+
 2.2.0 (2020-07-27)
 ------------------
 * Replacing deprecated header includes with new HPP versions. (`#566 <https://github.com/ros-perception/image_pipeline/issues/566>`_)
