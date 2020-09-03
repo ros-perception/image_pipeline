@@ -45,8 +45,8 @@ def main():
                       type="float", default=0.0,
                       help="allow specified slop (in seconds) when pairing images from unsynchronized stereo cameras")
 
-    options, args = parser.parse_args()
-    rclpy.init(args=args)
+    options, _ = parser.parse_args(rclpy.utilities.remove_ros_args())
+    rclpy.init()
 
     size = tuple([int(c) for c in options.size.split('x')])
     dim = float(options.square)

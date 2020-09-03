@@ -84,7 +84,7 @@ def main():
     group.add_option("--disable_calib_cb_fast_check", action='store_true', default=False,
                      help="uses the CALIB_CB_FAST_CHECK flag for findChessboardCorners")
     parser.add_option_group(group)
-    options, args = parser.parse_args()
+    options, _ = parser.parse_args(rclpy.utilities.remove_ros_args())
 
     if len(options.size) != len(options.square):
         parser.error("Number of size and square inputs must be the same!")
@@ -140,7 +140,7 @@ def main():
     else:
         checkerboard_flags = cv2.CALIB_CB_FAST_CHECK
 
-    rclpy.init(args=args)
+    rclpy.init()
     node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
                                  checkerboard_flags=checkerboard_flags)
     node.spin()
