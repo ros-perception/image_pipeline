@@ -68,6 +68,7 @@ def generate_launch_description():
             plugin='stereo_image_proc::PointCloudNode',
             parameters=[{
                 'approximate_sync': LaunchConfiguration('approximate_sync'),
+                'avoid_point_cloud_padding': LaunchConfiguration('avoid_point_cloud_padding'),
                 'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
             }],
             remappings=[
@@ -86,6 +87,13 @@ def generate_launch_description():
             name='approximate_sync', default_value='False',
             description='Whether to use approximate synchronization of topics. Set to true if '
                         'the left and right cameras do not produce exactly synced timestamps.'
+        ),
+        DeclareLaunchArgument(
+            name='avoid_point_cloud_padding', default_value='False',
+            description='Avoid alignment padding in the generated point cloud.'
+                        'This reduces bandwidth requirements, as the point cloud size is halved.'
+                        'Using point clouds without alignment padding might degrade performance '
+                        'for some algorithms.'
         ),
         DeclareLaunchArgument(
             name='use_system_default_qos', default_value='False',
