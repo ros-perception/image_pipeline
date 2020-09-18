@@ -39,6 +39,8 @@ double min_depth_range;
 double max_depth_range;
 bool use_dynamic_range;
 int colormap;
+cv::Mat image;
+ros::Time stamp;
 
 
 void callback(const sensor_msgs::ImageConstPtr& image_msg)
@@ -47,7 +49,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
 
         cv::Size size(image_msg->width, image_msg->height);
 
-        outputVideo.open(filename, 
+        outputVideo.open(filename,
 #if CV_MAJOR_VERSION >= 3
                 cv::VideoWriter::fourcc(codec.c_str()[0],
 #else
@@ -55,7 +57,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
 #endif
                           codec.c_str()[1],
                           codec.c_str()[2],
-                          codec.c_str()[3]), 
+                          codec.c_str()[3]),
                 fps,
                 size,
                 true);
@@ -70,7 +72,8 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
 
     }
 
-    if ((image_msg->header.stamp - g_last_wrote_time) < ros::Duration(1.0 / fps))
+    stamp = image_msg->header.stamp;
+    if ((stamp - g_last_wrote_time) < ros::Duration(1.0 / fps))
     {
       // Skip to get video with correct fps
       return;
@@ -83,19 +86,23 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
       options.min_image_value = min_depth_range;
       options.max_image_value = max_depth_range;
       options.colormap = colormap;
-      const cv::Mat image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image;
-      if (!image.empty()) {
-        outputVideo << image;
-        ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[1F");
-        g_count++;
-        g_last_wrote_time = image_msg->header.stamp;
-      } else {
-          ROS_WARN("Frame skipped, no data!");
-      }
+      image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image;
     } catch(cv_bridge::Exception)
     {
         ROS_ERROR("Unable to convert %s image to %s", image_msg->encoding.c_str(), encoding.c_str());
         return;
+    }
+}
+
+void timercallback(const ros::TimerEvent&)
+{
+    if (!image.empty()) {
+      outputVideo << image;
+      ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[1F");
+      g_count++;
+      g_last_wrote_time = stamp;
+    } else {
+      ROS_WARN("Frame skipped, no data!");
     }
 }
 
@@ -134,6 +141,7 @@ int main(int argc, char** argv)
     image_transport::ImageTransport it(nh);
     std::string topic = nh.resolveName("image");
     image_transport::Subscriber sub_image = it.subscribe(topic, 1, callback);
+    ros::Timer timer = nh.createTimer(ros::Duration(1.0 / fps), timercallback);
 
     ROS_INFO_STREAM("Waiting for topic " << topic << "...");
     ros::spin();
