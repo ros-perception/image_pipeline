@@ -49,7 +49,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
 
         cv::Size size(image_msg->width, image_msg->height);
 
-        outputVideo.open(filename,
+        outputVideo.open(filename, 
 #if CV_MAJOR_VERSION >= 3
                 cv::VideoWriter::fourcc(codec.c_str()[0],
 #else
@@ -57,7 +57,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
 #endif
                           codec.c_str()[1],
                           codec.c_str()[2],
-                          codec.c_str()[3]),
+                          codec.c_str()[3]), 
                 fps,
                 size,
                 true);
