@@ -93,11 +93,11 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
           const cv::Mat image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image;
           if (!image.empty()) {
             outputVideo << image;
-            ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[1F");
+            ROS_DEBUG("Recording frame " << g_count << "\x1b[1F");
             g_count++;
             g_last_wrote_time = image_msg->header.stamp;
           } else {
-              ROS_WARN("Frame skipped, no data!");
+              ROS_WARN_ONCE("Frame skipped, no data!");
           }
         } catch(cv_bridge::Exception)
         {
@@ -123,7 +123,7 @@ bool start_cb(std_srvs::Trigger::Request  &req,
          std_srvs::Trigger::Response &res)
 {
     filename = stamp_filename(filename_orig);
-    ROS_INFO("STARTING");
+    ROS_INFO("Starting recording");
     recording = true;
     return true;
 }
@@ -131,7 +131,7 @@ bool start_cb(std_srvs::Trigger::Request  &req,
 bool stop_cb(std_srvs::Trigger::Request  &req,
          std_srvs::Trigger::Response &res)
 {
-    ROS_INFO("Stoping");
+    ROS_INFO("Stopping recording");
     recording = false;
     outputVideo.release();
     return true;
