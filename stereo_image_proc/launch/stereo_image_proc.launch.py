@@ -55,6 +55,20 @@ def generate_launch_description():
             parameters=[{
                 'approximate_sync': LaunchConfiguration('approximate_sync'),
                 'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
+                'stereo_algorithm': LaunchConfiguration('stereo_algorithm'),
+                'prefilter_size': LaunchConfiguration('prefilter_size'),
+                'prefilter_cap': LaunchConfiguration('prefilter_cap'),
+                'correlation_window_size': LaunchConfiguration('correlation_window_size'),
+                'min_disparity': LaunchConfiguration('min_disparity'),
+                'disparity_range': LaunchConfiguration('disparity_range'),
+                'texture_threshold': LaunchConfiguration('texture_threshold'),
+                'speckle_size': LaunchConfiguration('speckle_size'),
+                'speckle_range': LaunchConfiguration('speckle_range'),
+                'disp12_max_diff': LaunchConfiguration('disp12_max_diff'),
+                'uniqueness_ratio': LaunchConfiguration('uniqueness_ratio'),
+                'P1': LaunchConfiguration('P1'),
+                'P2': LaunchConfiguration('P2'),
+                'full_dp': LaunchConfiguration('full_dp'),
             }],
             remappings=[
                 ('left/image_rect', [LaunchConfiguration('left_namespace'), '/image_rect']),
@@ -117,6 +131,66 @@ def generate_launch_description():
                 'Name of an existing node container to load launched nodes into. '
                 'If unset, a new container will be created.'
             )
+        ),
+        # Stereo algorithm parameters
+        DeclareLaunchArgument(
+            name='stereo_algorithm', default_value='0',
+            description='Stereo algorithm: Block Matching (0) or Semi-Global Block Matching (1)'
+        ),
+        DeclareLaunchArgument(
+            name='prefilter_size', default_value='9',
+            description='Normalization window size in pixels (must be odd)'
+        ),
+        DeclareLaunchArgument(
+            name='prefilter_cap', default_value='31',
+            description='Bound on normalized pixel values'
+        ),
+        DeclareLaunchArgument(
+            name='correlation_window_size', default_value='15',
+            description='SAD correlation window width in pixels (must be odd)'
+        ),
+        DeclareLaunchArgument(
+            name='min_disparity', default_value='0',
+            description='Disparity to begin search at in pixels'
+        ),
+        DeclareLaunchArgument(
+            name='disparity_range', default_value='64',
+            description='Number of disparities to search in pixels (must be a multiple of 16)'
+        ),
+        DeclareLaunchArgument(
+            name='texture_threshold', default_value='10',
+            description='Filter out if SAD window response does not exceed texture threshold'
+        ),
+        DeclareLaunchArgument(
+            name='speckle_size', default_value='100',
+            description='Reject regions smaller than this size in pixels'
+        ),
+        DeclareLaunchArgument(
+            name='speckle_range', default_value='4',
+            description='Maximum allowed difference between detected disparities'
+        ),
+        DeclareLaunchArgument(
+            name='disp12_max_diff', default_value='0',
+            description='Maximum allowed difference in the left-right disparity check in pixels '
+                        '(Semi-Global Block Matching only)'
+        ),
+        DeclareLaunchArgument(
+            name='uniqueness_ratio', default_value='15.0',
+            description='Filter out if best match does not sufficiently exceed the next-best match'
+        ),
+        DeclareLaunchArgument(
+            name='P1', default_value='200.0',
+            description='The first parameter ccontrolling the disparity smoothness '
+                        '(Semi-Global Block Matching only)'
+        ),
+        DeclareLaunchArgument(
+            name='P2', default_value='400.0',
+            description='The second parameter ccontrolling the disparity smoothness '
+                        '(Semi-Global Block Matching only)'
+        ),
+        DeclareLaunchArgument(
+            name='full_dp', default_value='False',
+            description='Run the full variant of the algorithm (Semi-Global Block Matching only)'
         ),
         ComposableNodeContainer(
             condition=LaunchConfigurationEquals('container', ''),
