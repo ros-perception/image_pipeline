@@ -40,10 +40,11 @@ endif()
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK3 gtk+-3.0)
-if(NOT GTK3_FOUND)
+if(GTK3_FOUND)
+  include_directories(${GTK3_INCLUDE_DIRS})
+else()
   message(STATUS "GTK3 is not found. Some features are disabled.")
 endif()
-include_directories(${GTK3_INCLUDE_DIRS})
 
 pkg_check_modules(PC_HB harfbuzz)
 if(PC_HB_FOUND)
