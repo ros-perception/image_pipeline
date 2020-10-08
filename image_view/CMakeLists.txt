@@ -46,10 +46,11 @@ endif()
 include_directories(${GTK3_INCLUDE_DIRS})
 
 pkg_check_modules(PC_HB harfbuzz)
-if(NOT PC_HB_FOUND)
+if(PC_HB_FOUND)
+  include_directories(${PC_HB_INCLUDE_DIRS})
+else()
   message(STATUS "harfbuzz is not found. Some features are disabled.")
 endif()
-include_directories(${PC_HB_INCLUDE_DIRS})
 
 # Nodelet library
 add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
