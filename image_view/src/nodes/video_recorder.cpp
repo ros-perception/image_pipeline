@@ -40,7 +40,6 @@ double max_depth_range;
 bool use_dynamic_range;
 int colormap;
 cv::Mat image;
-ros::Time stamp;
 
 
 void callback(const sensor_msgs::ImageConstPtr& image_msg)
@@ -72,8 +71,7 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
 
     }
 
-    stamp = image_msg->header.stamp;
-    if ((stamp - g_last_wrote_time) < ros::Duration(1.0 / fps))
+    if ((image_msg->header.stamp - g_last_wrote_time) < ros::Duration(1.0 / fps))
     {
       // Skip to get video with correct fps
       return;
@@ -100,7 +98,7 @@ void timercallback(const ros::TimerEvent&)
       outputVideo << image;
       ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[1F");
       g_count++;
-      g_last_wrote_time = stamp;
+      g_last_wrote_time = ros::Time::now();
     } else {
       ROS_WARN("Frame skipped, no data!");
     }
