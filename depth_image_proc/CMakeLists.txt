@@ -21,6 +21,7 @@ endif()
 
 catkin_package(
     INCLUDE_DIRS include
+    CATKIN_DEPENDS image_geometry sensor_msgs
     LIBRARIES ${PROJECT_NAME})
 
 find_package(Boost REQUIRED)
