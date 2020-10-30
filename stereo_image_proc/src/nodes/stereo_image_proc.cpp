@@ -106,6 +106,10 @@ int main(int argc, char **argv)
   if (private_nh.getParam("queue_size", queue_size))
     shared_params["queue_size"] = queue_size;
 
+  int downsampling_factor;
+  if (private_nh.getParam("downsampling_factor", downsampling_factor))
+    shared_params["downsampling_factor"] = downsampling_factor;
+
   nodelet::Loader manager(false); // Don't bring up the manager ROS API
   nodelet::M_string remappings;
   nodelet::V_string my_argv;
