@@ -65,6 +65,9 @@ def main():
     parser.add_option("-c", "--camera_name",
                      type="string", default='narrow_stereo',
                      help="name of the camera to appear in the calibration file")
+    parser.add_option("--compressed",
+                     action="store_true", default=False,
+                     help="Flag needed for compressed images")
     group = OptionGroup(parser, "Chessboard Options",
                         "You must specify one or more chessboards as pairs of --size and --square options.")
     group.add_option("-p", "--pattern",
@@ -222,7 +225,7 @@ def main():
 
     rospy.init_node('cameracalibrator')
     node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, fisheye_calib_flags, pattern, options.camera_name,
-                                 checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed,
+                                 checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed, compressed=options.compressed,
                                  queue_size=options.queue_size)
     rospy.spin()
 

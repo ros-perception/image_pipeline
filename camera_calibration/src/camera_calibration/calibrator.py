@@ -42,7 +42,7 @@ import cv2
 import cv_bridge
 import image_geometry
 import math
-import numpy.linalg
+import numpy
 import pickle
 import random
 import sensor_msgs.msg
@@ -346,6 +346,17 @@ class Calibrator(object):
         self.last_frame_corners = None
         self.last_frame_ids = None
         self.max_chessboard_speed = max_chessboard_speed
+
+    def decompress(self, msg):
+        if isinstance(msg, sensor_msgs.msg.CompressedImage):
+            np_arr = numpy.fromstring(msg.data, numpy.uint8)
+            decoded_msg = self.br.cv2_to_imgmsg(
+                cv2.imdecode(np_arr, cv2.IMREAD_COLOR),
+                    encoding="bgr8")
+            decoded_msg.header = msg.header
+            return decoded_msg
+        else:
+            return msg
 
     def mkgray(self, msg):
         """
@@ -945,6 +956,9 @@ class MonoCalibrator(Calibrator):
 
         Returns a MonoDrawable message with the display image and progress info.
         """
+        # Decompress image if needed
+        msg = self.decompress(msg)
+
         gray = self.mkgray(msg)
         linear_error = -1
 
@@ -1321,8 +1335,8 @@ class StereoCalibrator(Calibrator):
     def handle_msg(self, msg):
         # TODO Various asserts that images have same dimension, same board detected...
         (lmsg, rmsg) = msg
-        lgray = self.mkgray(lmsg)
-        rgray = self.mkgray(rmsg)
+        lgray = self.mkgray(self.decompress(lmsg))
+        rgray = self.mkgray(self.decompress(rmsg))
         epierror = -1
 
         # Get display-images-to-be and detections of the calibration target

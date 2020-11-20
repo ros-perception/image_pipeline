@@ -111,7 +111,7 @@ class ConsumerThread(threading.Thread):
 class CalibrationNode:
     def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
                 fisheye_flags = 0, pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0,
-                max_chessboard_speed = -1, queue_size = 1):
+                max_chessboard_speed = -1, compressed=False, queue_size = 1):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -133,12 +133,20 @@ class CalibrationNode:
         self._pattern = pattern
         self._camera_name = camera_name
         self._max_chessboard_speed = max_chessboard_speed
-        lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
-        rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
+        self._compressed = compressed
+
+        # Check if compressed image is used
+        if self._compressed:
+            self._img_type = sensor_msgs.msg.CompressedImage
+        else:
+            self._img_type = sensor_msgs.msg.Image
+
+        lsub = message_filters.Subscriber('left', self._img_type)
+        rsub = message_filters.Subscriber('right', self._img_type)
         ts = synchronizer([lsub, rsub], 4)
         ts.registerCallback(self.queue_stereo)
 
-        msub = message_filters.Subscriber('image', sensor_msgs.msg.Image)
+        msub = message_filters.Subscriber('image', self._img_type)
         msub.registerCallback(self.queue_monocular)
 
         self.set_camera_info_service = rospy.ServiceProxy("%s/set_camera_info" % rospy.remap_name("camera"),
