@@ -1,3 +1,9 @@
+Forthcoming
+-----------
+* remove email blasts from steve macenski (`#595 <https://github.com/ros-perception/image_pipeline/issues/595>`_)
+* [image_view] Warn when filename_format is invalid (`#587 <https://github.com/ros-perception/image_pipeline/issues/587>`_)
+* Contributors: Naoya Yamaguchi, Steve Macenski
+
 1.15.2 (2020-05-19)
 -------------------
 
