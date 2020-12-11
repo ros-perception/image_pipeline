@@ -1,3 +1,8 @@
+Forthcoming
+-----------
+* [image_view] Warn when filename_format is invalid (`#586 <https://github.com/ros-perception/image_pipeline/issues/586>`_)
+* Contributors: Naoya Yamaguchi
+
 1.15.0 (2020-05-18)
 -------------------
 * image_view: add missing dependency to gencfg header (`#532 <https://github.com/ros-perception/image_pipeline/issues/532>`_)

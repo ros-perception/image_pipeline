@@ -1,8 +1,26 @@
+Forthcoming
+-----------
+* Fix calibration yaml formatting (`#580 <https://github.com/ros-perception/image_pipeline/issues/580>`_)
+* updated linear_error function to handle partial board views (`#560 <https://github.com/ros-perception/image_pipeline/issues/560>`_)
+  * updated linear_error function to handle partial board views
+  * more charuco fixes
+  * filter len fix
+* Fix missing detected checkerboard points (`#556 <https://github.com/ros-perception/image_pipeline/issues/556>`_)
+  Variables are swapped
+* Add ChArUco board target (`#548 <https://github.com/ros-perception/image_pipeline/issues/548>`_)
+  * detecting ChArUco board
+  * successful ChArUco calibration
+  * updated with review comments
+* fixes for fisheye calibration (`#542 <https://github.com/ros-perception/image_pipeline/issues/542>`_)
+  * fix `#503 <https://github.com/ros-perception/image_pipeline/issues/503>`_:
+  set_cammodel of StereoCalibrator need to override the method of parent class
+  fix related to https://github.com/opencv/opencv/issues/11085
+* Contributors: David Torres Ocaña, Gonçalo Camelo Neves Pereira, John Stechschulte, Joshua Whitley, Photon, Stewart Jamieson, soeroesg
+
 1.15.0 (2020-05-18)
 -------------------
 * Fix import path on camera_calibrator.py (`#509 <https://github.com/ros-perception/image_pipeline/issues/509>`_)
 * Fixes `#501 <https://github.com/ros-perception/image_pipeline/issues/501>`_: self.size is set before dumping calibration parameters in calibrator.py do_calibration(self, dump) (`#502 <https://github.com/ros-perception/image_pipeline/issues/502>`_)
-  Not sure how this one made it through. Thanks for the fix!
 * Contributors: Gonçalo Camelo Neves Pereira, Stewart Jamieson
 
 1.14.0 (2020-01-12)
