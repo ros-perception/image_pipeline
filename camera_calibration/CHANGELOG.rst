@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.15.3 (2020-12-11)
+-------------------
 * Update fisheye distortion model definition
 * remove email blasts from steve macenski (`#595 <https://github.com/ros-perception/image_pipeline/issues/595>`_)
 * Fix calibration yaml formatting (`#580 <https://github.com/ros-perception/image_pipeline/issues/580>`_) (`#585 <https://github.com/ros-perception/image_pipeline/issues/585>`_)
