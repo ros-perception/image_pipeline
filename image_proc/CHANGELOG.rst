@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.15.1 (2020-12-11)
+-------------------
 * Fix error in DebayerNodelet
 * Support MONO16 and 32FC1 depth in rectification
 * Contributors: Joshua Whitley, Sean Yen, Shuntaro Yamazaki

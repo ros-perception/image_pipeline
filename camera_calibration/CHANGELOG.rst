@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.15.1 (2020-12-11)
+-------------------
 * Fix calibration yaml formatting (`#580 <https://github.com/ros-perception/image_pipeline/issues/580>`_)
 * updated linear_error function to handle partial board views (`#560 <https://github.com/ros-perception/image_pipeline/issues/560>`_)
   * updated linear_error function to handle partial board views
