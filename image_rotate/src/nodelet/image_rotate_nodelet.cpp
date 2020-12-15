@@ -267,12 +267,12 @@ public:
     angle_ = 0;
     prev_stamp_ = ros::Time::now();
     tf_sub_.reset(new tf2_ros::TransformListener(tf_buffer_));
-    image_transport::SubscriberStatusCallback connect_cb    = boost::bind(&ImageRotateNodelet::connectCb, this, _1);
-    image_transport::SubscriberStatusCallback disconnect_cb = boost::bind(&ImageRotateNodelet::disconnectCb, this, _1);
+    image_transport::SubscriberStatusCallback connect_cb    = boost::bind(&ImageRotateNodelet::connectCb, this, boost::placeholders::_1);
+    image_transport::SubscriberStatusCallback disconnect_cb = boost::bind(&ImageRotateNodelet::disconnectCb, this, boost::placeholders::_1);
     img_pub_ = image_transport::ImageTransport(ros::NodeHandle(nh_, "rotated")).advertise("image", 1, connect_cb, disconnect_cb);
 
     dynamic_reconfigure::Server<image_rotate::ImageRotateConfig>::CallbackType f =
-      boost::bind(&ImageRotateNodelet::reconfigureCallback, this, _1, _2);
+      boost::bind(&ImageRotateNodelet::reconfigureCallback, this, boost::placeholders::_1, boost::placeholders::_2);
     srv.setCallback(f);
   }
 };

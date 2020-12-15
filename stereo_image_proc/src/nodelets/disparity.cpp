@@ -121,7 +121,7 @@ void DisparityNodelet::onInit()
                                                  sub_l_image_, sub_l_info_,
                                                  sub_r_image_, sub_r_info_) );
     approximate_sync_->registerCallback(boost::bind(&DisparityNodelet::imageCb,
-                                                    this, _1, _2, _3, _4));
+                                                    this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4));
   }
   else
   {
@@ -129,12 +129,12 @@ void DisparityNodelet::onInit()
                                      sub_l_image_, sub_l_info_,
                                      sub_r_image_, sub_r_info_) );
     exact_sync_->registerCallback(boost::bind(&DisparityNodelet::imageCb,
-                                              this, _1, _2, _3, _4));
+                                              this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4));
   }
 
   // Set up dynamic reconfiguration
   ReconfigureServer::CallbackType f = boost::bind(&DisparityNodelet::configCb,
-                                                  this, _1, _2);
+                                                  this, boost::placeholders::_1, boost::placeholders::_2);
   reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
   reconfigure_server_->setCallback(f);
 

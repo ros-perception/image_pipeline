@@ -108,7 +108,7 @@ void PointCloud2Nodelet::onInit()
                                                  sub_l_image_, sub_l_info_,
                                                  sub_r_info_, sub_disparity_) );
     approximate_sync_->registerCallback(boost::bind(&PointCloud2Nodelet::imageCb,
-                                                    this, _1, _2, _3, _4));
+                                                    this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4));
   }
   else
   {
@@ -116,7 +116,7 @@ void PointCloud2Nodelet::onInit()
                                      sub_l_image_, sub_l_info_,
                                      sub_r_info_, sub_disparity_) );
     exact_sync_->registerCallback(boost::bind(&PointCloud2Nodelet::imageCb,
-                                              this, _1, _2, _3, _4));
+                                              this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4));
   }
 
   // Monitor whether anyone is subscribed to the output

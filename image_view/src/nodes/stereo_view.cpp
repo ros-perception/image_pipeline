@@ -402,13 +402,13 @@ public:
     {
       approximate_sync_.reset( new ApproximateSync(ApproximatePolicy(queue_size_),
                                                    left_sub_, right_sub_, disparity_sub_) );
-      approximate_sync_->registerCallback(boost::bind(&StereoView::imageCb, this, _1, _2, _3));
+      approximate_sync_->registerCallback(boost::bind(&StereoView::imageCb, this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3));
     }
     else
     {
       exact_sync_.reset( new ExactSync(ExactPolicy(queue_size_),
                                        left_sub_, right_sub_, disparity_sub_) );
-      exact_sync_->registerCallback(boost::bind(&StereoView::imageCb, this, _1, _2, _3));
+      exact_sync_->registerCallback(boost::bind(&StereoView::imageCb, this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3));
     }
   }
 
