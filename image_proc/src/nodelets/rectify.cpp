@@ -87,7 +87,7 @@ void RectifyNodelet::onInit()
 
   // Set up dynamic reconfigure
   reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
-  ReconfigureServer::CallbackType f = boost::bind(&RectifyNodelet::configCb, this, _1, _2);
+  ReconfigureServer::CallbackType f = boost::bind(&RectifyNodelet::configCb, this, boost::placeholders::_1, boost::placeholders::_2);
   reconfigure_server_->setCallback(f);
 
   // Monitor whether anyone is subscribed to the output

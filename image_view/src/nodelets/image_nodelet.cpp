@@ -42,7 +42,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "window_thread.h"
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 
@@ -183,7 +183,7 @@ void ImageNodelet::onInit()
   pub_ = local_nh.advertise<sensor_msgs::Image>("output", 1);
 
   dynamic_reconfigure::Server<image_view::ImageViewConfig>::CallbackType f =
-    boost::bind(&ImageNodelet::reconfigureCb, this, _1, _2);
+    boost::bind(&ImageNodelet::reconfigureCb, this, boost::placeholders::_1, boost::placeholders::_2);
   srv_.setCallback(f);
 }
 

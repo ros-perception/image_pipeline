@@ -200,7 +200,7 @@ int main(int argc, char** argv)
                                                                               &callbacks);
   // Useful when CameraInfo is not being published
   image_transport::Subscriber sub_image = it.subscribe(
-      topic, 1, boost::bind(&Callbacks::callbackWithoutCameraInfo, &callbacks, _1));
+      topic, 1, boost::bind(&Callbacks::callbackWithoutCameraInfo, &callbacks, boost::placeholders::_1));
 
   ros::NodeHandle local_nh("~");
   std::string format_string;

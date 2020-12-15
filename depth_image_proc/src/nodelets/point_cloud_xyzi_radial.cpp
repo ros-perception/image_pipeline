@@ -156,7 +156,7 @@ namespace depth_image_proc {
 
 	// Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
 	sync_.reset( new Synchronizer(SyncPolicy(queue_size_), sub_depth_, sub_intensity_, sub_info_) );
-	sync_->registerCallback(boost::bind(&PointCloudXyziRadialNodelet::imageCb, this, _1, _2, _3));
+	sync_->registerCallback(boost::bind(&PointCloudXyziRadialNodelet::imageCb, this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3));
     
 	// Monitor whether anyone is subscribed to the output
 	ros::SubscriberStatusCallback connect_cb = 
