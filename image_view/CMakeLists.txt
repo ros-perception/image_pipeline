@@ -6,10 +6,12 @@ generate_dynamic_reconfigure_options(cfg/ImageView.cfg)
 
 catkin_package(CATKIN_DEPENDS dynamic_reconfigure)
 find_package(Boost REQUIRED COMPONENTS thread)
+find_package(GTK2 REQUIRED)
 find_package(OpenCV REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS}
                     ${catkin_INCLUDE_DIRS}
+                    ${GTK2_INCLUDE_DIRS}
                     ${OpenCV_INCLUDE_DIRS}
 )
 
@@ -37,12 +39,6 @@ install(TARGETS extract_images image_saver video_recorder
 if(ANDROID)
   return()
 endif()
-
-find_package(GTK2)
-if(GTK2_FOUND)
-add_definitions(-DHAVE_GTK)
-include_directories(${GTK2_INCLUDE_DIRS})
-endif(GTK2_FOUND)
 
 # Nodelet library
 add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
