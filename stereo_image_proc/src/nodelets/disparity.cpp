@@ -113,6 +113,8 @@ void DisparityNodelet::onInit()
   private_nh.param("queue_size", queue_size, 5);
   bool approx;
   private_nh.param("approximate_sync", approx, false);
+  int downsampling_factor;
+  private_nh.param("downsampling_factor", downsampling_factor, 1);
   if (approx)
   {
     approximate_sync_.reset( new ApproximateSync(ApproximatePolicy(queue_size),
@@ -242,9 +244,6 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   const cv::Mat_<uint8_t> l_image = cv_bridge::toCvShare(l_image_msg, sensor_msgs::image_encodings::MONO8)->image;
   const cv::Mat_<uint8_t> r_image = cv_bridge::toCvShare(r_image_msg, sensor_msgs::image_encodings::MONO8)->image;
 
-  // Downsampling
-  int downsampling_factor;
-  getPrivateNodeHandle().param("downsampling_factor", downsampling_factor, 1);
   cv::Mat_<uint8_t> l_sub_image;
   cv::Mat_<uint8_t> r_sub_image;
 
