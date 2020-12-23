@@ -5,6 +5,7 @@
   <arg name="respawn" default="false" />
   <arg name="left" default="left" />
   <arg name="right" default="right" />
+  <arg name="downsampling_factor" value="1" />
   <arg name="approximate_sync" default="false" />
 
   <arg     if="$(arg respawn)" name="bond" value="" />
