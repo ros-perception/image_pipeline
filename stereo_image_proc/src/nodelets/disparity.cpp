@@ -85,7 +85,8 @@ class DisparityNodelet : public nodelet::Nodelet
   typedef stereo_image_proc::DisparityConfig Config;
   typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
   boost::shared_ptr<ReconfigureServer> reconfigure_server_;
-  
+  int downsampling_factor_;
+
   // Processing state (note: only safe because we're single-threaded!)
   image_geometry::StereoCameraModel model_;
   stereo_image_proc::StereoProcessor block_matcher_; // contains scratch buffers for block matching
@@ -113,8 +114,7 @@ void DisparityNodelet::onInit()
   private_nh.param("queue_size", queue_size, 5);
   bool approx;
   private_nh.param("approximate_sync", approx, false);
-  int downsampling_factor;
-  private_nh.param("downsampling_factor", downsampling_factor, 1);
+  private_nh.param("downsampling_factor", downsampling_factor_, 1);
   if (approx)
   {
     approximate_sync_.reset( new ApproximateSync(ApproximatePolicy(queue_size),
@@ -247,9 +247,9 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   cv::Mat_<uint8_t> l_sub_image;
   cv::Mat_<uint8_t> r_sub_image;
 
-  if (downsampling_factor != 1) {
-    l_sub_image = subsampleTheImage(l_image, downsampling_factor);
-    r_sub_image = subsampleTheImage(r_image, downsampling_factor);
+  if (downsampling_factor_ != 1) {
+    l_sub_image = subsampleTheImage(l_image, downsampling_factor_);
+    r_sub_image = subsampleTheImage(r_image, downsampling_factor_);
   }
   else {
     l_sub_image = l_image;
@@ -260,9 +260,11 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   block_matcher_.processDisparity(l_sub_image, r_sub_image, model_, *disp_msg);
 
   // Upsampling
-  if (downsampling_factor != 1) {
+  if (downsampling_factor_ != 1) {
     const cv::Mat disp_subsampled_image = cv_bridge::toCvShare(disp_msg->image, disp_msg, sensor_msgs::image_encodings::TYPE_32FC1)->image;
-    const cv::Mat disp_upsampled_image = upsampleTheDisparityImageWithoutInterpolation(disp_subsampled_image, l_image.size(), downsampling_factor);
+    const cv::Mat disp_upsampled_image =
+        upsampleTheDisparityImageWithoutInterpolation(
+            disp_subsampled_image, l_image.size(), downsampling_factor_);
     const cv_bridge::CvImage disp_image_container =
             cv_bridge::CvImage(disp_msg->header, sensor_msgs::image_encodings::TYPE_32FC1, disp_upsampled_image);
     disp_image_container.toImageMsg(disp_msg->image);
