@@ -1,3 +1,24 @@
+1.15.3 (2020-12-11)
+-------------------
+* Update fisheye distortion model definition
+* remove email blasts from steve macenski (`#595 <https://github.com/ros-perception/image_pipeline/issues/595>`_)
+* Fix calibration yaml formatting (`#580 <https://github.com/ros-perception/image_pipeline/issues/580>`_) (`#585 <https://github.com/ros-perception/image_pipeline/issues/585>`_)
+  Co-authored-by: David Torres Ocaña <david.torres.ocana@gmail.com>
+* updated linear_error function to handle partial board views (`#561 <https://github.com/ros-perception/image_pipeline/issues/561>`_)
+  * updated linear_error function to handle partial board views
+  * more charuco fixes
+  * filter len fix
+* Fix missing detected checkerboard points (`#558 <https://github.com/ros-perception/image_pipeline/issues/558>`_)
+  Variables are swapped
+* Removed basestring (no longer exists in new python 3 version). (`#552 <https://github.com/ros-perception/image_pipeline/issues/552>`_)
+  Fixes `#551 <https://github.com/ros-perception/image_pipeline/issues/551>`_
+* ChArUco board, Noetic (`#549 <https://github.com/ros-perception/image_pipeline/issues/549>`_)
+* fix `#503 <https://github.com/ros-perception/image_pipeline/issues/503>`_: (`#545 <https://github.com/ros-perception/image_pipeline/issues/545>`_)
+  set_cammodel of StereoCalibrator need to override the method of parent class
+  fix related to `opencv/opencv#11085 <https://github.com/opencv/opencv/issues/11085>`_:
+  unlike cv2.calibrate, the cv2.fisheye.calibrate method expects float64 points and in an array with an extra dimension. The same for cv2.stereoCalibrate vs cv2.fisheye.stereoCalibrate
+* Contributors: DavidTorresOcana, John Stechschulte, Joshua Whitley, PfeifferMicha, Photon, Steve Macenski, soeroesg
+
 1.15.2 (2020-05-19)
 -------------------
 
