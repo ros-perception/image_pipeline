@@ -111,7 +111,7 @@ void VideoRecorderNode::callback(const sensor_msgs::msg::Image::ConstSharedPtr &
       codec.c_str(), size.height, size.width, fps);
   }
 
-  if ((rclcpp::Time(image_msg->header.stamp) - g_last_wrote_time) < rclcpp::Duration(1.0 / fps)) {
+  if ((rclcpp::Time(image_msg->header.stamp) - g_last_wrote_time) < rclcpp::Duration::from_seconds(1.0 / fps)) {
     // Skip to get video with correct fps
     return;
   }
