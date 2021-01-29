@@ -38,25 +38,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "window_thread.h"
 
-#ifdef HAVE_GTK
-#include <gtk/gtk.h>
-
-// Platform-specific workaround for #3026: image_view doesn't close when
-// closing image window. On platforms using GTK+ we connect this to the
-// window's "destroy" event so that image_view exits.
-static void destroyNode(GtkWidget *widget, gpointer data)
-{
-  exit(0);
-}
-
-static void destroyNodelet(GtkWidget *widget, gpointer data)
-{
-  // We can't actually unload the nodelet from here, but we can at least
-  // unsubscribe from the image topic.
-  reinterpret_cast<ros::Subscriber*>(data)->shutdown();
-}
-#endif
-
 
 namespace image_view {
 
@@ -103,14 +84,6 @@ void DisparityNodelet::onInit()
 
   //cv::namedWindow(window_name_, autosize ? cv::WND_PROP_AUTOSIZE : 0);
 #if CV_MAJOR_VERSION ==2
-#ifdef HAVE_GTK
-  // Register appropriate handler for when user closes the display window
-  GtkWidget *widget = GTK_WIDGET( cvGetWindowHandle(window_name_.c_str()) );
-  if (shutdown_on_close)
-    g_signal_connect(widget, "destroy", G_CALLBACK(destroyNode), NULL);
-  else
-    g_signal_connect(widget, "destroy", G_CALLBACK(destroyNodelet), &sub_);
-#endif
   // Start the OpenCV window thread so we don't have to waitKey() somewhere
   startWindowThread();
 #endif
