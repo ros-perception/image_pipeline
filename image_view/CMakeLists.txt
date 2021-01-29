@@ -46,13 +46,6 @@ else()
   message(STATUS "GTK3 is not found. Some features are disabled.")
 endif()
 
-pkg_check_modules(PC_HB harfbuzz)
-if(PC_HB_FOUND)
-  include_directories(${PC_HB_INCLUDE_DIRS})
-else()
-  message(STATUS "harfbuzz is not found. Some features are disabled.")
-endif()
-
 # Nodelet library
 add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
 target_link_libraries(image_view ${catkin_LIBRARIES}
