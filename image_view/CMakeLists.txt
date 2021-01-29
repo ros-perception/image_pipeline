@@ -38,18 +38,9 @@ if(ANDROID)
   return()
 endif()
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GTK3 gtk+-3.0)
-if(GTK3_FOUND)
-  include_directories(${GTK3_INCLUDE_DIRS})
-else()
-  message(STATUS "GTK3 is not found. Some features are disabled.")
-endif()
-
 # Nodelet library
 add_library(image_view src/nodelets/image_nodelet.cpp src/nodelets/disparity_nodelet.cpp src/nodelets/window_thread.cpp)
 target_link_libraries(image_view ${catkin_LIBRARIES}
-                                 ${GTK3_LIBRARIES}
                                  ${OpenCV_LIBRARIES}
                                  ${Boost_LIBRARIES}
 )
@@ -77,7 +68,6 @@ target_link_libraries(disparity_view ${catkin_LIBRARIES}
 add_executable(stereo_view src/nodes/stereo_view.cpp)
 target_link_libraries(stereo_view ${Boost_LIBRARIES}
                                   ${catkin_LIBRARIES}
-                                  ${GTK3_LIBRARIES}
                                   ${OpenCV_LIBRARIES}
 )
 
