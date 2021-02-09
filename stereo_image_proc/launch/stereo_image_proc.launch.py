@@ -55,6 +55,7 @@ def generate_launch_description():
             parameters=[{
                 'approximate_sync': LaunchConfiguration('approximate_sync'),
                 'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
+                'use_reliable_subscribers': LaunchConfiguration('use_reliable_subscribers'),
                 'stereo_algorithm': LaunchConfiguration('stereo_algorithm'),
                 'prefilter_size': LaunchConfiguration('prefilter_size'),
                 'prefilter_cap': LaunchConfiguration('prefilter_cap'),
@@ -84,6 +85,7 @@ def generate_launch_description():
                 'approximate_sync': LaunchConfiguration('approximate_sync'),
                 'avoid_point_cloud_padding': LaunchConfiguration('avoid_point_cloud_padding'),
                 'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
+                'use_reliable_subscribers': LaunchConfiguration('use_reliable_subscribers'),
             }],
             remappings=[
                 ('left/camera_info', [LaunchConfiguration('left_namespace'), '/camera_info']),
@@ -112,6 +114,10 @@ def generate_launch_description():
         DeclareLaunchArgument(
             name='use_system_default_qos', default_value='False',
             description='Use the RMW QoS settings for the image and camera info subscriptions.'
+        ),
+        DeclareLaunchArgument(
+            name='use_reliable_subscribers', default_value='False',
+            description='Use reliable QoS for the disparity and point cloud subscriptions.'
         ),
         DeclareLaunchArgument(
             name='launch_image_proc', default_value='True',

@@ -101,6 +101,7 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
   int queue_size = this->declare_parameter("queue_size", 5);
   bool approx = this->declare_parameter("approximate_sync", false);
   this->declare_parameter("use_system_default_qos", false);
+  this->declare_parameter("use_reliable_subscribers", false);
   rcl_interfaces::msg::ParameterDescriptor descriptor;
   // TODO(ivanpauno): Confirm if using point cloud padding in `sensor_msgs::msg::PointCloud2`
   // can improve performance in some cases or not.
@@ -145,6 +146,10 @@ void PointCloudNode::connectCb()
   rclcpp::QoS image_sub_qos = rclcpp::SensorDataQoS();
   if (use_system_default_qos) {
     image_sub_qos = rclcpp::SystemDefaultsQoS();
+  }
+  const bool use_reliable_subscribers = this->get_parameter("use_reliable_subscribers").as_bool();
+  if (use_reliable_subscribers) {
+    image_sub_qos.reliable();
   }
   const auto image_sub_rmw_qos = image_sub_qos.get_rmw_qos_profile();
   sub_l_image_.subscribe(this, "left/image_rect_color", hints.getTransport(), image_sub_rmw_qos);

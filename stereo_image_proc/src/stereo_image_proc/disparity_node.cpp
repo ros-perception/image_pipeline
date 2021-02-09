@@ -157,6 +157,7 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
   int queue_size = this->declare_parameter("queue_size", 5);
   bool approx = this->declare_parameter("approximate_sync", false);
   this->declare_parameter("use_system_default_qos", false);
+  this->declare_parameter("use_reliable_subscribers", false);
 
   // Synchronize callbacks
   if (approx) {
@@ -281,6 +282,10 @@ void DisparityNode::connectCb()
   rclcpp::QoS image_sub_qos = rclcpp::SensorDataQoS();
   if (use_system_default_qos) {
     image_sub_qos = rclcpp::SystemDefaultsQoS();
+  }
+  const bool use_reliable_subscribers = this->get_parameter("use_reliable_subscribers").as_bool();
+  if (use_reliable_subscribers) {
+    image_sub_qos.reliable();
   }
   const auto image_sub_rmw_qos = image_sub_qos.get_rmw_qos_profile();
   sub_l_image_.subscribe(this, "left/image_rect", hints.getTransport(), image_sub_rmw_qos);
