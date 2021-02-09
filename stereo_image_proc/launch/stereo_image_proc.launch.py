@@ -52,6 +52,7 @@ def generate_launch_description():
         ComposableNode(
             package='stereo_image_proc',
             plugin='stereo_image_proc::DisparityNode',
+            extra_arguments=[{'use_intra_process_comms': LaunchConfiguration('use_intra_process_comms')}],
             parameters=[{
                 'approximate_sync': LaunchConfiguration('approximate_sync'),
                 'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
@@ -80,6 +81,7 @@ def generate_launch_description():
         ComposableNode(
             package='stereo_image_proc',
             plugin='stereo_image_proc::PointCloudNode',
+            extra_arguments=[{'use_intra_process_comms': LaunchConfiguration('use_intra_process_comms')}],
             parameters=[{
                 'approximate_sync': LaunchConfiguration('approximate_sync'),
                 'avoid_point_cloud_padding': LaunchConfiguration('avoid_point_cloud_padding'),
@@ -191,6 +193,11 @@ def generate_launch_description():
         DeclareLaunchArgument(
             name='full_dp', default_value='False',
             description='Run the full variant of the algorithm (Semi-Global Block Matching only)'
+        ),
+        DeclareLaunchArgument(
+            name='use_intra_process_comms', default_value='True',
+            description='Whether to use intra-process communications for the composable nodes '
+                        'defined in this launch script.'
         ),
         ComposableNodeContainer(
             condition=LaunchConfigurationEquals('container', ''),
