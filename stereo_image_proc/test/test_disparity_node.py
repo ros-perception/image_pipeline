@@ -73,7 +73,9 @@ def generate_test_description():
             package='stereo_image_proc',
             executable='disparity_node',
             name='disparity_node',
-            output='screen'
+            output='screen',
+            parameters=[{'use_reliable_subscribers': True}]
+
         ),
         launch_testing.actions.ReadyToTest(),
     ])

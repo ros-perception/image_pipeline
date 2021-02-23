@@ -73,7 +73,8 @@ def generate_test_description():
             package='stereo_image_proc',
             executable='point_cloud_node',
             name='point_cloud_node',
-            output='screen'
+            output='screen',
+            parameters=[{'use_reliable_subscribers': True}]
         ),
         launch_testing.actions.ReadyToTest(),
     ])
