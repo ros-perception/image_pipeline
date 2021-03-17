@@ -55,6 +55,8 @@ ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options)
   frame_id_ = this->declare_parameter("frame_id", std::string("camera"));
   publish_rate_ = this->declare_parameter("publish_rate", static_cast<double>(10));
   camera_info_url_ = this->declare_parameter("camera_info_url", std::string(""));
+  retry_ = this->declare_parameter("retry", false);
+  timeout_ = this->declare_parameter("timeout", 2000);
 
   auto param_change_callback =
     [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
@@ -121,6 +123,10 @@ void ImagePublisher::reconfigureCallback()
 
 void ImagePublisher::doWork()
 {
+  // If the image is empty retry loading the image from the filename
+  if (image_.empty() && retry_) {
+    ImagePublisher::onInit();
+  }
   // Transform the image.
   try {
     if (cap_.isOpened()) {
@@ -168,6 +174,11 @@ void ImagePublisher::onInit()
     RCLCPP_ERROR(
       this->get_logger(), "Failed to load image (%s): %s %s %s %i",
       filename_.c_str(), e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
+    if (retry_) {
+      RCLCPP_INFO(get_logger(), "Retrying in %i millisecs", timeout_);
+      std::this_thread::sleep_for(std::chrono::milliseconds(timeout_));
+      ImagePublisher::onInit();
+    }
     return;
   }
 
