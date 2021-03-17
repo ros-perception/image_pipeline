@@ -64,6 +64,8 @@ private:
   std::string filename_;
   bool flip_horizontal_;
   bool flip_vertical_;
+  bool retry_;  // If enabled will retry loading image from the filename_
+  int timeout_;  // Time after which retrying starts
 
   std::string frame_id_;
   double publish_rate_;
