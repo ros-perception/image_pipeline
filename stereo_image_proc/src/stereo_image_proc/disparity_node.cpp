@@ -265,7 +265,21 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
   this->declare_parameters("", double_params);
   this->declare_parameters("", bool_params);
 
-  pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>("disparity", 1);
+  // Update the publisher options to allow reconfigurable qos settings.
+  rclcpp::PublisherOptions pub_opts;
+  pub_opts.qos_overriding_options = rclcpp::QosOverridingOptions {{
+    rclcpp::QosPolicyKind::AvoidRosNamespaceConventions,
+    rclcpp::QosPolicyKind::Deadline,
+    rclcpp::QosPolicyKind::Depth,
+    rclcpp::QosPolicyKind::Durability,
+    rclcpp::QosPolicyKind::History,
+    rclcpp::QosPolicyKind::Lifespan,
+    rclcpp::QosPolicyKind::Liveliness,
+    rclcpp::QosPolicyKind::LivelinessLeaseDuration,
+    rclcpp::QosPolicyKind::Reliability,
+    rclcpp::QosPolicyKind::Invalid,
+  }};
+  pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>("disparity", 1, pub_opts);
 
   // TODO(jacobperron): Replace this with a graph event.
   //                    Only subscribe if there's a subscription listening to our publisher.
