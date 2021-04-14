@@ -130,7 +130,21 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
       std::bind(&PointCloudNode::imageCb, this, _1, _2, _3, _4));
   }
 
-  pub_points2_ = create_publisher<sensor_msgs::msg::PointCloud2>("points2", 1);
+  // Update the publisher options to allow reconfigurable qos settings.
+  rclcpp::PublisherOptions pub_opts;
+  pub_opts.qos_overriding_options = rclcpp::QosOverridingOptions {{
+    rclcpp::QosPolicyKind::AvoidRosNamespaceConventions,
+    rclcpp::QosPolicyKind::Deadline,
+    rclcpp::QosPolicyKind::Depth,
+    rclcpp::QosPolicyKind::Durability,
+    rclcpp::QosPolicyKind::History,
+    rclcpp::QosPolicyKind::Lifespan,
+    rclcpp::QosPolicyKind::Liveliness,
+    rclcpp::QosPolicyKind::LivelinessLeaseDuration,
+    rclcpp::QosPolicyKind::Reliability,
+    rclcpp::QosPolicyKind::Invalid,
+  }};
+  pub_points2_ = create_publisher<sensor_msgs::msg::PointCloud2>("points2", 1, pub_opts);
 
   // TODO(jacobperron): Replace this with a graph event.
   //                    Only subscribe if there's a subscription listening to our publisher.
