@@ -142,7 +142,6 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
     rclcpp::QosPolicyKind::Liveliness,
     rclcpp::QosPolicyKind::LivelinessLeaseDuration,
     rclcpp::QosPolicyKind::Reliability,
-    rclcpp::QosPolicyKind::Invalid,
   }};
   pub_points2_ = create_publisher<sensor_msgs::msg::PointCloud2>("points2", 1, pub_opts);
 
