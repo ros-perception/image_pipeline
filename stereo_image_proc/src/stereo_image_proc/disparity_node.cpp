@@ -277,7 +277,6 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
     rclcpp::QosPolicyKind::Liveliness,
     rclcpp::QosPolicyKind::LivelinessLeaseDuration,
     rclcpp::QosPolicyKind::Reliability,
-    rclcpp::QosPolicyKind::Invalid,
   }};
   pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>("disparity", 1, pub_opts);
 
