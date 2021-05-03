@@ -288,6 +288,10 @@ class OpenCVCalibrationNode(CalibrationNode):
                     if self.do_upload():
                         rclpy.shutdown()
     def on_model_change(self, model_select_val):
+        if self.c == None:
+            print("Cannot change camera model until the first image has been received")
+            return
+
         self.c.set_cammodel( CAMERA_MODEL.PINHOLE if model_select_val < 0.5 else CAMERA_MODEL.FISHEYE)
 
     def on_model_change(self, model_select_val):
