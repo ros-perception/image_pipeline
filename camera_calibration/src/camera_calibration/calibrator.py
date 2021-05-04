@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Software License Agreement (BSD License)
 #
@@ -301,7 +301,7 @@ def _get_dist_model(dist_params, cam_model):
     return dist_model
 
 # TODO self.size needs to come from CameraInfo, full resolution
-class Calibrator():
+class Calibrator(object):
     """
     Base class for calibration system
     """
