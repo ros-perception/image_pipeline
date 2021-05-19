@@ -132,17 +132,7 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
 
   // Update the publisher options to allow reconfigurable qos settings.
   rclcpp::PublisherOptions pub_opts;
-  pub_opts.qos_overriding_options = rclcpp::QosOverridingOptions {{
-    rclcpp::QosPolicyKind::AvoidRosNamespaceConventions,
-    rclcpp::QosPolicyKind::Deadline,
-    rclcpp::QosPolicyKind::Depth,
-    rclcpp::QosPolicyKind::Durability,
-    rclcpp::QosPolicyKind::History,
-    rclcpp::QosPolicyKind::Lifespan,
-    rclcpp::QosPolicyKind::Liveliness,
-    rclcpp::QosPolicyKind::LivelinessLeaseDuration,
-    rclcpp::QosPolicyKind::Reliability,
-  }};
+  pub_opts.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   pub_points2_ = create_publisher<sensor_msgs::msg::PointCloud2>("points2", 1, pub_opts);
 
   // TODO(jacobperron): Replace this with a graph event.
@@ -162,17 +152,7 @@ void PointCloudNode::connectCb()
   }
   const auto image_sub_rmw_qos = image_sub_qos.get_rmw_qos_profile();
   auto sub_opts = rclcpp::SubscriptionOptions();
-  sub_opts.qos_overriding_options = rclcpp::QosOverridingOptions {{
-    rclcpp::QosPolicyKind::AvoidRosNamespaceConventions,
-    rclcpp::QosPolicyKind::Deadline,
-    rclcpp::QosPolicyKind::Depth,
-    rclcpp::QosPolicyKind::Durability,
-    rclcpp::QosPolicyKind::History,
-    rclcpp::QosPolicyKind::Lifespan,
-    rclcpp::QosPolicyKind::Liveliness,
-    rclcpp::QosPolicyKind::LivelinessLeaseDuration,
-    rclcpp::QosPolicyKind::Reliability,
-  }};
+  sub_opts.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   sub_l_image_.subscribe(
     this, "left/image_rect_color", hints.getTransport(), image_sub_rmw_qos, sub_opts);
   sub_l_info_.subscribe(this, "left/camera_info", image_sub_rmw_qos, sub_opts);
