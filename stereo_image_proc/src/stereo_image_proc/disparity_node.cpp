@@ -309,12 +309,10 @@ void DisparityNode::connectCb()
     rclcpp::QosPolicyKind::Reliability,
   }};
   sub_l_image_.subscribe(
-    this, "left/image_rect", hints.getTransport(), image_sub_rmw_qos,
-    sub_opts);
+    this, "left/image_rect", hints.getTransport(), image_sub_rmw_qos, sub_opts);
   sub_l_info_.subscribe(this, "left/camera_info", image_sub_rmw_qos, sub_opts);
   sub_r_image_.subscribe(
-    this, "right/image_rect", hints.getTransport(), image_sub_rmw_qos,
-    sub_opts);
+    this, "right/image_rect", hints.getTransport(), image_sub_rmw_qos, sub_opts);
   sub_r_info_.subscribe(this, "right/camera_info", image_sub_rmw_qos, sub_opts);
 }
 
