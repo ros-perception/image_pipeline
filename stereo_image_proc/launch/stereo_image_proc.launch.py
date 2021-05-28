@@ -83,6 +83,7 @@ def generate_launch_description():
             parameters=[{
                 'approximate_sync': LaunchConfiguration('approximate_sync'),
                 'avoid_point_cloud_padding': LaunchConfiguration('avoid_point_cloud_padding'),
+                'use_color': LaunchConfiguration('use_color'),
                 'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
             }],
             remappings=[
@@ -108,6 +109,10 @@ def generate_launch_description():
                         'This reduces bandwidth requirements, as the point cloud size is halved.'
                         'Using point clouds without alignment padding might degrade performance '
                         'for some algorithms.'
+        ),
+        DeclareLaunchArgument(
+            name='use_color', default_value='True',
+            description='Generate point cloud with rgb data.'
         ),
         DeclareLaunchArgument(
             name='use_system_default_qos', default_value='False',
