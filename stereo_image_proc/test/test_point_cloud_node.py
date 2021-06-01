@@ -127,12 +127,14 @@ class TestPointCloudNode(unittest.TestCase):
 
         # Wait up to 60 seconds to receive message
         start_time = time.time()
-        while len(msgs_received_rgb) == 0 or len(msgs_received_xyz) == 0 and (time.time() - start_time) < 60:
+        while (len(msgs_received_rgb) == 0 or len(msgs_received_xyz) == 0
+               and (time.time() - start_time) < 60):
             rclpy.spin_once(self.node, timeout_sec=(0.1))
 
         assert len(msgs_received_rgb) > 0
         assert len(msgs_received_xyz) > 0
 
-        # point_step is length of point in bytes. Expect 32 bytes if color is enabled, 16 if disabled
+        # point_step is length of point in bytes
+        # Expect 32 bytes if color is enabled, 16 if disabled
         assert msgs_received_rgb[0].point_step == 32
         assert msgs_received_xyz[0].point_step == 16

@@ -189,7 +189,7 @@ void PointCloudNode::imageCb(
   // Fill in new PointCloud2 message (2D image-like layout)
   auto points_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
   points_msg->header = disp_msg->header;
-  points_msg->height = mat.rows; 
+  points_msg->height = mat.rows;
   points_msg->width = mat.cols;
   points_msg->is_bigendian = false;
   points_msg->is_dense = false;  // there may be invalid points
