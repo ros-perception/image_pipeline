@@ -82,7 +82,7 @@ def generate_test_description():
         Node(
             package='stereo_image_proc',
             executable='point_cloud_node',
-            name='point_cloud_node',
+            name='point_cloud_node_xyz',
             output='screen',
             parameters=[
                 {'use_color': False}
