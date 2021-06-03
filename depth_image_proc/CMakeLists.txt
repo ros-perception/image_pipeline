@@ -1,7 +1,19 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(depth_image_proc)
 
-find_package(catkin REQUIRED cmake_modules cv_bridge eigen_conversions image_geometry image_transport message_filters nodelet sensor_msgs stereo_msgs tf2 tf2_ros)
+find_package(catkin REQUIRED
+  cmake_modules
+  cv_bridge
+  eigen_conversions
+  image_geometry
+  image_transport
+  message_filters
+  nodelet
+  sensor_msgs
+  stereo_msgs
+  tf2
+  tf2_ros
+)
 
 if(cv_bridge_VERSION VERSION_GREATER "1.12.0")
   add_compile_options(-std=c++11)
@@ -28,6 +40,7 @@ add_library(${PROJECT_NAME} src/nodelets/convert_metric.cpp
                              src/nodelets/point_cloud_xyzi.cpp
                              src/nodelets/point_cloud_xyz_radial.cpp
                              src/nodelets/point_cloud_xyzi_radial.cpp
+                             src/nodelets/point_cloud_xyzrgb_radial.cpp
                              src/nodelets/register.cpp
 )
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
