@@ -42,52 +42,33 @@
 namespace depth_image_proc
 {
 
-using PointCloud = sensor_msgs::msg::PointCloud2;
+// Handles float or uint16 depths
+template<typename T>
+void convertDepth(
+  const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
+  sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
+  const image_geometry::PinholeCameraModel & model,
+  double range_max = 0.0);
 
 // Handles float or uint16 depths
 template<typename T>
-void convert(
+void convertDepthRadial(
   const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-  PointCloud::SharedPtr & cloud_msg,
-  const image_geometry::PinholeCameraModel & model,
-  double range_max = 0.0)
-{
-  // Use correct principal point from calibration
-  float center_x = model.cx();
-  float center_y = model.cy();
+  sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
+  cv::Mat & transform);
 
-  // Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
-  double unit_scaling = DepthTraits<T>::toMeters(T(1) );
-  float constant_x = unit_scaling / model.fx();
-  float constant_y = unit_scaling / model.fy();
-  float bad_point = std::numeric_limits<float>::quiet_NaN();
+// Handles float or uint16 depths
+template<typename T>
+void convertIntensity(
+  const sensor_msgs::msg::Image::ConstSharedPtr & intensity_msg,
+  sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg);
 
-  sensor_msgs::PointCloud2Iterator<float> iter_x(*cloud_msg, "x");
-  sensor_msgs::PointCloud2Iterator<float> iter_y(*cloud_msg, "y");
-  sensor_msgs::PointCloud2Iterator<float> iter_z(*cloud_msg, "z");
-  const T * depth_row = reinterpret_cast<const T *>(&depth_msg->data[0]);
-  int row_step = depth_msg->step / sizeof(T);
-  for (int v = 0; v < static_cast<int>(cloud_msg->height); ++v, depth_row += row_step) {
-    for (int u = 0; u < static_cast<int>(cloud_msg->width); ++u, ++iter_x, ++iter_y, ++iter_z) {
-      T depth = depth_row[u];
+void convertRgb(
+  const sensor_msgs::msg::Image::ConstSharedPtr & rgb_msg,
+  sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
+  int red_offset, int green_offset, int blue_offset, int color_step);
 
-      // Missing points denoted by NaNs
-      if (!DepthTraits<T>::valid(depth)) {
-        if (range_max != 0.0) {
-          depth = DepthTraits<T>::fromMeters(range_max);
-        } else {
-          *iter_x = *iter_y = *iter_z = bad_point;
-          continue;
-        }
-      }
-
-      // Fill in XYZ
-      *iter_x = (u - center_x) * depth * constant_x;
-      *iter_y = (v - center_y) * depth * constant_y;
-      *iter_z = DepthTraits<T>::toMeters(depth);
-    }
-  }
-}
+cv::Mat initMatrix(cv::Mat cameraMatrix, cv::Mat distCoeffs, int width, int height, bool radial);
 
 }  // namespace depth_image_proc
 

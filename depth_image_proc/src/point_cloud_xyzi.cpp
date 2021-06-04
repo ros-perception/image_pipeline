@@ -29,69 +29,11 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.hpp>
-#include <image_transport/subscriber_filter.hpp>
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <sensor_msgs/image_encodings.hpp>
-#include <sensor_msgs/point_cloud2_iterator.hpp>
-#include <sensor_msgs/msg/point_cloud2.hpp>
-#include <image_geometry/pinhole_camera_model.h>
-#include <depth_image_proc/depth_traits.hpp>
-#include <depth_image_proc/visibility.h>
-#include <cv_bridge/cv_bridge.h>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <memory>
-#include <string>
-#include <limits>
+#include "depth_image_proc/point_cloud_xyzi.hpp"
 
 namespace depth_image_proc
 {
 
-using namespace std::placeholders;
-namespace enc = sensor_msgs::image_encodings;
-
-class PointCloudXyziNode : public rclcpp::Node
-{
-public:
-  DEPTH_IMAGE_PROC_PUBLIC PointCloudXyziNode(const rclcpp::NodeOptions & options);
-
-private:
-  using Image = sensor_msgs::msg::Image;
-  using CameraInfo = sensor_msgs::msg::CameraInfo;
-  using PointCloud = sensor_msgs::msg::PointCloud2;
-
-  // Subscriptions
-  image_transport::SubscriberFilter sub_depth_, sub_intensity_;
-  message_filters::Subscriber<CameraInfo> sub_info_;
-  using SyncPolicy =
-    message_filters::sync_policies::ApproximateTime<Image, Image, CameraInfo>;
-  using Synchronizer = message_filters::Synchronizer<SyncPolicy>;
-  std::shared_ptr<Synchronizer> sync_;
-
-  // Publications
-  std::mutex connect_mutex_;
-  rclcpp::Publisher<PointCloud>::SharedPtr pub_point_cloud_;
-
-  image_geometry::PinholeCameraModel model_;
-
-  void connectCb();
-
-  void imageCb(
-    const Image::ConstSharedPtr & depth_msg,
-    const Image::ConstSharedPtr & intensity_msg,
-    const CameraInfo::ConstSharedPtr & info_msg);
-
-  template<typename T, typename T2>
-  void convert(
-    const Image::ConstSharedPtr & depth_msg,
-    const Image::ConstSharedPtr & intensity_msg,
-    const PointCloud::SharedPtr & cloud_msg);
-
-  rclcpp::Logger logger_ = rclcpp::get_logger("PointCloudXyziNode");
-};
 
 PointCloudXyziNode::PointCloudXyziNode(const rclcpp::NodeOptions & options)
 : Node("PointCloudXyziNode", options)
@@ -230,74 +172,30 @@ void PointCloudXyziNode::imageCb(
     "z", 1, sensor_msgs::msg::PointField::FLOAT32,
     "intensity", 1, sensor_msgs::msg::PointField::FLOAT32);
 
-  if (depth_msg->encoding == enc::TYPE_16UC1 &&
-    intensity_msg->encoding == enc::MONO8)
-  {
-    convert<uint16_t, uint8_t>(depth_msg, intensity_msg, cloud_msg);
-  } else if (depth_msg->encoding == enc::TYPE_16UC1 && intensity_msg->encoding == enc::MONO16) {
-    convert<uint16_t, uint16_t>(depth_msg, intensity_msg, cloud_msg);
-  } else if (depth_msg->encoding == enc::TYPE_32FC1 && intensity_msg->encoding == enc::MONO8) {
-    convert<float, uint8_t>(depth_msg, intensity_msg, cloud_msg);
-  } else if (depth_msg->encoding == enc::TYPE_32FC1 && intensity_msg->encoding == enc::MONO16) {
-    convert<float, uint16_t>(depth_msg, intensity_msg, cloud_msg);
+  // Convert Depth Image to Pointcloud
+  if (depth_msg->encoding == enc::TYPE_16UC1) {
+    convertDepth<uint16_t>(depth_msg, cloud_msg, model_);
+  } else if (depth_msg->encoding == enc::TYPE_32FC1) {
+    convertDepth<float>(depth_msg, cloud_msg, model_);
   } else {
     RCLCPP_ERROR(logger_, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
+    return;
+  }
+  
+  // Convert Intensity Image to Pointcloud
+  if (intensity_msg->encoding == enc::MONO8) {
+    convertIntensity<uint8_t>(intensity_msg, cloud_msg);
+  } else if (intensity_msg->encoding == enc::MONO16 ||
+    intensity_msg->encoding == enc::TYPE_16UC1) {
+    convertIntensity<uint16_t>(intensity_msg, cloud_msg);
+  } else {
+    RCLCPP_ERROR(logger_, "Intensity image has unsupported encoding [%s]", intensity_msg->encoding.c_str());
     return;
   }
 
   pub_point_cloud_->publish(*cloud_msg);
 }
 
-template<typename T, typename T2>
-void PointCloudXyziNode::convert(
-  const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-  const sensor_msgs::msg::Image::ConstSharedPtr & intensity_msg,
-  const PointCloud::SharedPtr & cloud_msg)
-{
-  // Use correct principal point from calibration
-  float center_x = model_.cx();
-  float center_y = model_.cy();
-
-  // Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
-  double unit_scaling = DepthTraits<T>::toMeters(T(1) );
-  float constant_x = unit_scaling / model_.fx();
-  float constant_y = unit_scaling / model_.fy();
-  float bad_point = std::numeric_limits<float>::quiet_NaN();
-
-  const T * depth_row = reinterpret_cast<const T *>(&depth_msg->data[0]);
-  int row_step = depth_msg->step / sizeof(T);
-
-  const T2 * inten_row = reinterpret_cast<const T2 *>(&intensity_msg->data[0]);
-  int inten_row_step = intensity_msg->step / sizeof(T2);
-
-  sensor_msgs::PointCloud2Iterator<float> iter_x(*cloud_msg, "x");
-  sensor_msgs::PointCloud2Iterator<float> iter_y(*cloud_msg, "y");
-  sensor_msgs::PointCloud2Iterator<float> iter_z(*cloud_msg, "z");
-  sensor_msgs::PointCloud2Iterator<float> iter_i(*cloud_msg, "intensity");
-
-  for (int v = 0; v < static_cast<int>(cloud_msg->height);
-    ++v, depth_row += row_step, inten_row += inten_row_step)
-  {
-    for (int u = 0; u < static_cast<int>(cloud_msg->width);
-      ++u, ++iter_x, ++iter_y, ++iter_z, ++iter_i)
-    {
-      T depth = depth_row[u];
-      T2 inten = inten_row[u];
-      // Check for invalid measurements
-      if (!DepthTraits<T>::valid(depth)) {
-        *iter_x = *iter_y = *iter_z = bad_point;
-      } else {
-        // Fill in XYZ
-        *iter_x = (u - center_x) * depth * constant_x;
-        *iter_y = (v - center_y) * depth * constant_y;
-        *iter_z = DepthTraits<T>::toMeters(depth);
-      }
-
-      // Fill in intensity
-      *iter_i = inten;
-    }
-  }
-}
 
 }  // namespace depth_image_proc
 

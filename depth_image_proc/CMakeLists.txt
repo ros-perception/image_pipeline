@@ -23,6 +23,7 @@ endif()
 find_package(OpenCV REQUIRED)
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
+  src/conversions.cpp
   src/convert_metric.cpp
   src/crop_foremost.cpp
   src/disparity.cpp
@@ -31,6 +32,7 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
   src/point_cloud_xyzi.cpp
   src/point_cloud_xyz_radial.cpp
   src/point_cloud_xyzi_radial.cpp
+  src/point_cloud_xyzrgb_radial.cpp
   src/register.cpp
 )
 
