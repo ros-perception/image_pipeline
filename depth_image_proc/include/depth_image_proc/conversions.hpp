@@ -29,10 +29,10 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifndef DEPTH_IMAGE_PROC__DEPTH_CONVERSIONS_HPP_
-#define DEPTH_IMAGE_PROC__DEPTH_CONVERSIONS_HPP_
+#ifndef DEPTH_IMAGE_PROC__CONVERSIONS_HPP_
+#define DEPTH_IMAGE_PROC__CONVERSIONS_HPP_
 
-#include <sensor_msgs/msg/image.h>
+#include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <image_geometry/pinhole_camera_model.h>
 #include <depth_image_proc/depth_traits.hpp>
@@ -63,6 +63,7 @@ void convertIntensity(
   const sensor_msgs::msg::Image::ConstSharedPtr & intensity_msg,
   sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg);
 
+// Handles RGB8, BGR8, and MONO8
 void convertRgb(
   const sensor_msgs::msg::Image::ConstSharedPtr & rgb_msg,
   sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
@@ -72,4 +73,4 @@ cv::Mat initMatrix(cv::Mat cameraMatrix, cv::Mat distCoeffs, int width, int heig
 
 }  // namespace depth_image_proc
 
-#endif  // DEPTH_IMAGE_PROC__DEPTH_CONVERSIONS_HPP_
+#endif  // DEPTH_IMAGE_PROC__CONVERSIONS_HPP_

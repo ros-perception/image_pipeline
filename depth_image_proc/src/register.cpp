@@ -42,7 +42,7 @@
 #include <Eigen/Geometry>
 #include <tf2_eigen/tf2_eigen.h>
 #include <depth_image_proc/depth_traits.hpp>
-#include <depth_image_proc/visibility.h>
+#include <depth_image_proc/visibility.hpp>
 #include <memory>
 
 namespace depth_image_proc

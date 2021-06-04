@@ -45,6 +45,7 @@ rclcpp_components_register_nodes(${PROJECT_NAME}
   "${PROJECT_NAME}::PointCloudXyziNode"
   "${PROJECT_NAME}::PointCloudXyziRadialNode"
   "${PROJECT_NAME}::PointCloudXyzrgbNode"
+  "${PROJECT_NAME}::PointCloudXyzrgbRadialNode"
   "${PROJECT_NAME}::RegisterNode"
 )
 

@@ -33,7 +33,7 @@
 #include <image_transport/image_transport.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <depth_image_proc/visibility.h>
+#include <depth_image_proc/visibility.hpp>
 #include <memory>
 
 namespace depth_image_proc

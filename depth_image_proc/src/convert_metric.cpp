@@ -32,7 +32,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 #include <sensor_msgs/image_encodings.hpp>
-#include <depth_image_proc/visibility.h>
+#include <depth_image_proc/visibility.hpp>
 #include <cmath>
 #include <memory>
 #include <limits>

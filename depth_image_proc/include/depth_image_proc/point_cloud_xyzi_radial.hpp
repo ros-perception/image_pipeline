@@ -29,6 +29,9 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#ifndef DEPTH_IMAGE_PROC__POINT_CLOUD_XYZI_RADIAL_HPP_
+#define DEPTH_IMAGE_PROC__POINT_CLOUD_XYZI_RADIAL_HPP_
+
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 #include <sensor_msgs/image_encodings.hpp>
@@ -37,9 +40,9 @@
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/exact_time.h>
 #include <image_geometry/pinhole_camera_model.h>
-#include "depth_image_proc/conversions.hpp"
+#include <depth_image_proc/conversions.hpp>
 #include <depth_image_proc/depth_traits.hpp>
-#include <depth_image_proc/visibility.h>
+#include <depth_image_proc/visibility.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <memory>
 #include <vector>
@@ -99,3 +102,5 @@ private:
 };
 
 }  // namespace depth_image_proc
+
+#endif  // DEPTH_IMAGE_PROC__POINT_CLOUD_XYZI_RADIAL_HPP_

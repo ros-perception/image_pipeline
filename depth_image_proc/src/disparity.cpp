@@ -37,7 +37,7 @@
 #include <sensor_msgs/image_encodings.hpp>
 #include <stereo_msgs/msg/disparity_image.hpp>
 #include <depth_image_proc/depth_traits.hpp>
-#include <depth_image_proc/visibility.h>
+#include <depth_image_proc/visibility.hpp>
 #include <memory>
 #include <limits>
 
