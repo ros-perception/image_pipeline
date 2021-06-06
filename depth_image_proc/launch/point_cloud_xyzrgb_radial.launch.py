@@ -59,7 +59,7 @@ def generate_launch_description():
                 launch_ros.descriptions.ComposableNode(
                     package='depth_image_proc',
                     plugin='depth_image_proc::PointCloudXyzrgbRadialNode',
-                    name='point_cloud_xyzrgb_radial_node',
+                    name='point_cloud_xyzrgb_node',
                     remappings=[('rgb/camera_info', '/camera/color/camera_info'),
                                 ('rgb/image_rect_color', '/camera/color/image_raw'),
                                 ('depth_registered/image_rect',

@@ -224,11 +224,11 @@ void PointCloudXyzrgbRadialNode::imageCb(
   }
 
   // Convert RGB
-  if(rgb_msg->encoding == enc::RGB8) {
+  if (rgb_msg->encoding == enc::RGB8) {
     convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
-  } else if(rgb_msg->encoding == enc::BGR8) {
+  } else if (rgb_msg->encoding == enc::BGR8) {
     convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
-  } else if(rgb_msg->encoding == enc::MONO8) {
+  } else if (rgb_msg->encoding == enc::MONO8) {
     convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
   } else {
     RCLCPP_ERROR(logger_, "RGB image has unsupported encoding [%s]", rgb_msg->encoding.c_str());

@@ -140,11 +140,10 @@ void convertRgb(
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(*cloud_msg, "r");
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(*cloud_msg, "g");
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*cloud_msg, "b");
-  const uint8_t* rgb = &rgb_msg->data[0];
+  const uint8_t * rgb = &rgb_msg->data[0];
   int rgb_skip = rgb_msg->step - rgb_msg->width * color_step;
-  for (int v = 0; v < static_cast<int>cloud_msg->height; ++v, rgb += rgb_skip)
-  {
-    for (int u = 0; u < static_cast<int>cloud_msg->width; ++u,
+  for (int v = 0; v < static_cast<int> cloud_msg->height; ++v, rgb += rgb_skip) {
+    for (int u = 0; u < static_cast<int> cloud_msg->width; ++u,
       rgb += color_step, ++iter_r, ++iter_g, ++iter_b)
     {
       *iter_r = rgb[red_offset];
@@ -165,9 +164,9 @@ cv::Mat initMatrix(cv::Mat cameraMatrix, cv::Mat distCoeffs, int width, int heig
   cv::Mat undistortedSensorPoints(1, totalsize, CV_32FC2);
 
   std::vector<cv::Mat> ch;
-  for(j = 0; j < height; j++) {
-    for(i = 0; i < width; i++) {
-      cv::Vec2f &p = sensorPoints.at<cv::Vec2f>(i, j);
+  for (j = 0; j < height; j++) {
+    for (i = 0; i < width; i++) {
+      cv::Vec2f & p = sensorPoints.at<cv::Vec2f>(i, j);
       p[0] = i;
       p[1] = j;
     }
@@ -181,12 +180,11 @@ cv::Mat initMatrix(cv::Mat cameraMatrix, cv::Mat distCoeffs, int width, int heig
   ch.push_back(cv::Mat::ones(1, totalsize, CV_32FC1));
   cv::merge(ch, pixelVectors);
 
-  if(radial)
-  {
-    for(i = 0; i < totalsize; i++)
-    {
-      normalize(pixelVectors.at<cv::Vec3f>(i),
-      dst.at<cv::Vec3f>(i));
+  if (radial) {
+    for (i = 0; i < totalsize; i++) {
+      normalize(
+        pixelVectors.at<cv::Vec3f>(i),
+        dst.at<cv::Vec3f>(i));
     }
     pixelVectors = dst;
   }
@@ -194,4 +192,3 @@ cv::Mat initMatrix(cv::Mat cameraMatrix, cv::Mat distCoeffs, int width, int heig
 }
 
 }  // namespace depth_image_proc
-

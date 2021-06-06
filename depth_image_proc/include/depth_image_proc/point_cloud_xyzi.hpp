@@ -93,4 +93,3 @@ private:
 }  // namespace depth_image_proc
 
 #endif  // DEPTH_IMAGE_PROC__POINT_CLOUD_XYZI_HPP_
-

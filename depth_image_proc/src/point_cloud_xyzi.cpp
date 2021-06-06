@@ -194,8 +194,10 @@ void PointCloudXyziNode::imageCb(
   // Convert Intensity Image to Pointcloud
   if (intensity_msg->encoding == enc::MONO8) {
     convertIntensity<uint8_t>(intensity_msg, cloud_msg);
-  } else if (intensity_msg->encoding == enc::MONO16 ||
-    intensity_msg->encoding == enc::TYPE_16UC1) {
+  } else if (
+    intensity_msg->encoding == enc::MONO16 ||
+    intensity_msg->encoding == enc::TYPE_16UC1)
+  {
     convertIntensity<uint16_t>(intensity_msg, cloud_msg);
   } else {
     RCLCPP_ERROR(
