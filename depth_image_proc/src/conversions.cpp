@@ -31,6 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "depth_image_proc/conversions.hpp"
 
+#include <limits>
+#include <vector>
+
 namespace depth_image_proc
 {
 
@@ -139,9 +142,10 @@ void convertRgb(
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*cloud_msg, "b");
   const uint8_t* rgb = &rgb_msg->data[0];
   int rgb_skip = rgb_msg->step - rgb_msg->width * color_step;
-  for (int v = 0; v < (int)cloud_msg->height; ++v, rgb += rgb_skip)
+  for (int v = 0; v < static_cast<int>cloud_msg->height; ++v, rgb += rgb_skip)
   {
-    for (int u = 0; u < (int)cloud_msg->width; ++u, rgb += color_step, ++iter_r, ++iter_g, ++iter_b)
+    for (int u = 0; u < static_cast<int>cloud_msg->width; ++u,
+      rgb += color_step, ++iter_r, ++iter_g, ++iter_b)
     {
       *iter_r = rgb[red_offset];
       *iter_g = rgb[green_offset];
@@ -152,41 +156,41 @@ void convertRgb(
 
 cv::Mat initMatrix(cv::Mat cameraMatrix, cv::Mat distCoeffs, int width, int height, bool radial)
 {
-	int i,j;
-	int totalsize = width*height;
-	cv::Mat pixelVectors(1,totalsize,CV_32FC3);
-	cv::Mat dst(1,totalsize,CV_32FC3);
+  int i, j;
+  int totalsize = width * height;
+  cv::Mat pixelVectors(1, totalsize, CV_32FC3);
+  cv::Mat dst(1, totalsize, CV_32FC3);
 
-	cv::Mat sensorPoints(cv::Size(height,width), CV_32FC2);
-	cv::Mat undistortedSensorPoints(1,totalsize, CV_32FC2);
+  cv::Mat sensorPoints(cv::Size(height, width), CV_32FC2);
+  cv::Mat undistortedSensorPoints(1, totalsize, CV_32FC2);
 
-	std::vector<cv::Mat> ch;
-	for(j = 0; j < height; j++) {
-	  for(i = 0; i < width; i++) {
-      cv::Vec2f &p = sensorPoints.at<cv::Vec2f>(i,j);
+  std::vector<cv::Mat> ch;
+  for(j = 0; j < height; j++) {
+    for(i = 0; i < width; i++) {
+      cv::Vec2f &p = sensorPoints.at<cv::Vec2f>(i, j);
       p[0] = i;
       p[1] = j;
-	  }
-	}
+    }
+  }
 
-	sensorPoints = sensorPoints.reshape(2,1);
+  sensorPoints = sensorPoints.reshape(2, 1);
 
-	cv::undistortPoints(sensorPoints, undistortedSensorPoints, cameraMatrix, distCoeffs);
+  cv::undistortPoints(sensorPoints, undistortedSensorPoints, cameraMatrix, distCoeffs);
 
-	ch.push_back(undistortedSensorPoints);
-	ch.push_back(cv::Mat::ones(1,totalsize,CV_32FC1));
-	cv::merge(ch,pixelVectors);
+  ch.push_back(undistortedSensorPoints);
+  ch.push_back(cv::Mat::ones(1, totalsize, CV_32FC1));
+  cv::merge(ch, pixelVectors);
 
-	if(radial)
-	{
-	  for(i = 0; i < totalsize; i++)
-	  {
-		  normalize(pixelVectors.at<cv::Vec3f>(i),
-			dst.at<cv::Vec3f>(i));
-	  }
-	  pixelVectors = dst;
-	}
-	return pixelVectors.reshape(3,width);
+  if(radial)
+  {
+    for(i = 0; i < totalsize; i++)
+    {
+      normalize(pixelVectors.at<cv::Vec3f>(i),
+      dst.at<cv::Vec3f>(i));
+    }
+    pixelVectors = dst;
+  }
+  return pixelVectors.reshape(3, width);
 }
 
 }  // namespace depth_image_proc

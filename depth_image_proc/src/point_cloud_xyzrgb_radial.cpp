@@ -31,6 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "depth_image_proc/point_cloud_xyzrgb_radial.hpp"
 
+#include <memory>
+#include <string>
+
 namespace depth_image_proc
 {
 
@@ -49,15 +52,29 @@ PointCloudXyzrgbRadialNode::PointCloudXyzrgbRadialNode(const rclcpp::NodeOptions
       sub_depth_,
       sub_rgb_,
       sub_info_);
-    exact_sync_->registerCallback(std::bind(&PointCloudXyzrgbRadialNode::imageCb, this, _1, _2, _3));
+    exact_sync_->registerCallback(
+      std::bind(
+        &PointCloudXyzrgbRadialNode::imageCb,
+        this,
+        std::placeholders::_1,
+        std::placeholders::_2,
+        std::placeholders::_3));
   } else {
-    sync_ = std::make_shared<Synchronizer>(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_);
-    sync_->registerCallback(std::bind(&PointCloudXyzrgbRadialNode::imageCb, this, _1, _2, _3));
+    sync_ =
+      std::make_shared<Synchronizer>(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_);
+    sync_->registerCallback(
+      std::bind(
+        &PointCloudXyzrgbRadialNode::imageCb,
+        this,
+        std::placeholders::_1,
+        std::placeholders::_2,
+        std::placeholders::_3));
   }
 
   // Monitor whether anyone is subscribed to the output
   // TODO(ros2) Implement when SubscriberStatusCallback is available
-  // ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudXyzrgbRadialNode::connectCb, this);
+  // ros::SubscriberStatusCallback connect_cb =
+  //   boost::bind(&PointCloudXyzrgbRadialNode::connectCb, this);
   connectCb();
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // Make sure we don't enter connectCb() between advertising and assigning to pub_point_cloud_
@@ -207,23 +224,16 @@ void PointCloudXyzrgbRadialNode::imageCb(
   }
 
   // Convert RGB
-	if(rgb_msg->encoding == enc::RGB8)
-	{
-	  convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
-	}
-	else if(rgb_msg->encoding == enc::BGR8)
-	{
-	  convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
-	}
-	else if(rgb_msg->encoding == enc::MONO8)
-	{
-	  convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
-	}
-	else
-	{
-	  RCLCPP_ERROR(logger_, "RGB image has unsupported encoding [%s]", rgb_msg->encoding.c_str());
-	  return;
-	}
+  if(rgb_msg->encoding == enc::RGB8) {
+    convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
+  } else if(rgb_msg->encoding == enc::BGR8) {
+    convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
+  } else if(rgb_msg->encoding == enc::MONO8) {
+    convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
+  } else {
+    RCLCPP_ERROR(logger_, "RGB image has unsupported encoding [%s]", rgb_msg->encoding.c_str());
+    return;
+  }
 
   pub_point_cloud_->publish(*cloud_msg);
 }

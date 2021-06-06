@@ -31,6 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "depth_image_proc/point_cloud_xyzi.hpp"
 
+#include <memory>
+#include <string>
+
 namespace depth_image_proc
 {
 
@@ -47,7 +50,13 @@ PointCloudXyziNode::PointCloudXyziNode(const rclcpp::NodeOptions & options)
     sub_depth_,
     sub_intensity_,
     sub_info_);
-  sync_->registerCallback(std::bind(&PointCloudXyziNode::imageCb, this, _1, _2, _3));
+  sync_->registerCallback(
+    std::bind(
+      &PointCloudXyziNode::imageCb,
+      this,
+      std::placeholders::_1,
+      std::placeholders::_2,
+      std::placeholders::_3));
 
   // Monitor whether anyone is subscribed to the output
   // TODO(ros2) Implement when SubscriberStatusCallback is available
@@ -181,7 +190,7 @@ void PointCloudXyziNode::imageCb(
     RCLCPP_ERROR(logger_, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
     return;
   }
-  
+
   // Convert Intensity Image to Pointcloud
   if (intensity_msg->encoding == enc::MONO8) {
     convertIntensity<uint8_t>(intensity_msg, cloud_msg);
@@ -189,7 +198,8 @@ void PointCloudXyziNode::imageCb(
     intensity_msg->encoding == enc::TYPE_16UC1) {
     convertIntensity<uint16_t>(intensity_msg, cloud_msg);
   } else {
-    RCLCPP_ERROR(logger_, "Intensity image has unsupported encoding [%s]", intensity_msg->encoding.c_str());
+    RCLCPP_ERROR(
+      logger_, "Intensity image has unsupported encoding [%s]", intensity_msg->encoding.c_str());
     return;
   }
 

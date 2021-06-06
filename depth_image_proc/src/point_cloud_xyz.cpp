@@ -31,6 +31,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "depth_image_proc/point_cloud_xyz.hpp"
 
+#include <memory>
+
 namespace depth_image_proc
 {
 

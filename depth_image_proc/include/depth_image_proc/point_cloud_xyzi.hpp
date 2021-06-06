@@ -54,7 +54,6 @@
 namespace depth_image_proc
 {
 
-using namespace std::placeholders;
 namespace enc = sensor_msgs::image_encodings;
 
 class PointCloudXyziNode : public rclcpp::Node

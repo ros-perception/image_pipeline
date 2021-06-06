@@ -31,6 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "depth_image_proc/point_cloud_xyzrgb.hpp"
 
+#include <memory>
+#include <string>
+
 namespace depth_image_proc
 {
 
@@ -49,10 +52,22 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
       sub_depth_,
       sub_rgb_,
       sub_info_);
-    exact_sync_->registerCallback(std::bind(&PointCloudXyzrgbNode::imageCb, this, _1, _2, _3));
+    exact_sync_->registerCallback(
+      std::bind(
+        &PointCloudXyzrgbNode::imageCb,
+        this,
+        std::placeholders::_1,
+        std::placeholders::_2,
+        std::placeholders::_3));
   } else {
     sync_ = std::make_shared<Synchronizer>(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_);
-    sync_->registerCallback(std::bind(&PointCloudXyzrgbNode::imageCb, this, _1, _2, _3));
+    sync_->registerCallback(
+      std::bind(
+        &PointCloudXyzrgbNode::imageCb,
+        this,
+        std::placeholders::_1,
+        std::placeholders::_2,
+        std::placeholders::_3));
   }
 
   // Monitor whether anyone is subscribed to the output
@@ -207,23 +222,16 @@ void PointCloudXyzrgbNode::imageCb(
   }
 
   // Convert RGB
-	if(rgb_msg->encoding == enc::RGB8)
-	{
-	  convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
-	}
-	else if(rgb_msg->encoding == enc::BGR8)
-	{
-	  convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
-	}
-	else if(rgb_msg->encoding == enc::MONO8)
-	{
-	  convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
-	}
-	else
-	{
-	  RCLCPP_ERROR(logger_, "RGB image has unsupported encoding [%s]", rgb_msg->encoding.c_str());
-	  return;
-	}
+  if(rgb_msg->encoding == enc::RGB8) {
+    convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
+  } else if(rgb_msg->encoding == enc::BGR8) {
+    convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
+  } else if(rgb_msg->encoding == enc::MONO8) {
+    convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
+  } else {
+    RCLCPP_ERROR(logger_, "RGB image has unsupported encoding [%s]", rgb_msg->encoding.c_str());
+    return;
+  }
 
   pub_point_cloud_->publish(*cloud_msg);
 }

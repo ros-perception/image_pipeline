@@ -31,6 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #include "depth_image_proc/point_cloud_xyzi_radial.hpp"
 
+#include <memory>
+#include <string>
+
 namespace depth_image_proc
 {
 
@@ -47,7 +50,13 @@ PointCloudXyziRadialNode::PointCloudXyziRadialNode(const rclcpp::NodeOptions & o
     sub_depth_,
     sub_intensity_,
     sub_info_);
-  sync_->registerCallback(std::bind(&PointCloudXyziRadialNode::imageCb, this, _1, _2, _3));
+  sync_->registerCallback(
+    std::bind(
+      &PointCloudXyziRadialNode::imageCb,
+      this,
+      std::placeholders::_1,
+      std::placeholders::_2,
+      std::placeholders::_3));
 
   // Monitor whether anyone is subscribed to the output
   // TODO(ros2) Implement when SubscriberStatusCallback is available
@@ -136,7 +145,8 @@ void PointCloudXyziRadialNode::imageCb(
     intensity_msg->encoding == enc::TYPE_16UC1) {
     convertIntensity<uint16_t>(intensity_msg, cloud_msg);
   } else {
-    RCLCPP_ERROR(logger_, "Intensity image has unsupported encoding [%s]", intensity_msg->encoding.c_str());
+    RCLCPP_ERROR(
+      logger_, "Intensity image has unsupported encoding [%s]", intensity_msg->encoding.c_str());
     return;
   }
 

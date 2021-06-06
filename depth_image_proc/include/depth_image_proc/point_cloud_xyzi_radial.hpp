@@ -52,7 +52,6 @@
 namespace depth_image_proc
 {
 
-using namespace std::placeholders;
 namespace enc = sensor_msgs::image_encodings;
 using SyncPolicy =
   message_filters::sync_policies::ExactTime<
