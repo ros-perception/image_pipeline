@@ -142,8 +142,8 @@ void convertRgb(
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*cloud_msg, "b");
   const uint8_t * rgb = &rgb_msg->data[0];
   int rgb_skip = rgb_msg->step - rgb_msg->width * color_step;
-  for (int v = 0; v < static_cast<int> cloud_msg->height; ++v, rgb += rgb_skip) {
-    for (int u = 0; u < static_cast<int> cloud_msg->width; ++u,
+  for (int v = 0; v < static_cast<int>(cloud_msg->height); ++v, rgb += rgb_skip) {
+    for (int u = 0; u < static_cast<int>(cloud_msg->width); ++u,
       rgb += color_step, ++iter_r, ++iter_g, ++iter_b)
     {
       *iter_r = rgb[red_offset];
