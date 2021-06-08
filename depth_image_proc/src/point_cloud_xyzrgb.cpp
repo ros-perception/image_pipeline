@@ -29,6 +29,7 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#include "depth_image_proc/point_cloud_xyzrgb.hpp"
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 #include <image_transport/subscriber_filter.hpp>
@@ -41,9 +42,11 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <image_geometry/pinhole_camera_model.h>
 #include <depth_image_proc/depth_traits.hpp>
+#include <depth_image_proc/conversions.hpp>
 #include <depth_image_proc/visibility.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/imgproc/imgproc.hpp>
+
 #include <memory>
 #include <limits>
 #include <string>
@@ -52,53 +55,6 @@
 namespace depth_image_proc
 {
 
-using namespace std::placeholders;
-namespace enc = sensor_msgs::image_encodings;
-
-class PointCloudXyzrgbNode : public rclcpp::Node
-{
-public:
-  DEPTH_IMAGE_PROC_PUBLIC PointCloudXyzrgbNode(const rclcpp::NodeOptions & options);
-
-private:
-  using PointCloud2 = sensor_msgs::msg::PointCloud2;
-  using Image = sensor_msgs::msg::Image;
-  using CameraInfo = sensor_msgs::msg::CameraInfo;
-
-  // Subscriptions
-  image_transport::SubscriberFilter sub_depth_, sub_rgb_;
-  message_filters::Subscriber<CameraInfo> sub_info_;
-  using SyncPolicy =
-    message_filters::sync_policies::ApproximateTime<Image, Image, CameraInfo>;
-  using ExactSyncPolicy =
-    message_filters::sync_policies::ExactTime<Image, Image, CameraInfo>;
-  using Synchronizer = message_filters::Synchronizer<SyncPolicy>;
-  using ExactSynchronizer = message_filters::Synchronizer<ExactSyncPolicy>;
-  std::shared_ptr<Synchronizer> sync_;
-  std::shared_ptr<ExactSynchronizer> exact_sync_;
-
-  // Publications
-  std::mutex connect_mutex_;
-  rclcpp::Publisher<PointCloud2>::SharedPtr pub_point_cloud_;
-
-  image_geometry::PinholeCameraModel model_;
-
-  void connectCb();
-
-  void imageCb(
-    const Image::ConstSharedPtr & depth_msg,
-    const Image::ConstSharedPtr & rgb_msg,
-    const CameraInfo::ConstSharedPtr & info_msg);
-
-  template<typename T>
-  void convert(
-    const Image::ConstSharedPtr & depth_msg,
-    const Image::ConstSharedPtr & rgb_msg,
-    const PointCloud2::SharedPtr & cloud_msg,
-    int red_offset, int green_offset, int blue_offset, int color_step);
-
-  rclcpp::Logger logger_ = rclcpp::get_logger("PointCloudXyzrgbNode");
-};
 
 PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
 : Node("PointCloudXyzrgbNode", options)
@@ -114,10 +70,22 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
       sub_depth_,
       sub_rgb_,
       sub_info_);
-    exact_sync_->registerCallback(std::bind(&PointCloudXyzrgbNode::imageCb, this, _1, _2, _3));
+    exact_sync_->registerCallback(
+      std::bind(
+        &PointCloudXyzrgbNode::imageCb,
+        this,
+        std::placeholders::_1,
+        std::placeholders::_2,
+        std::placeholders::_3));
   } else {
     sync_ = std::make_shared<Synchronizer>(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_);
-    sync_->registerCallback(std::bind(&PointCloudXyzrgbNode::imageCb, this, _1, _2, _3));
+    sync_->registerCallback(
+      std::bind(
+        &PointCloudXyzrgbNode::imageCb,
+        this,
+        std::placeholders::_1,
+        std::placeholders::_2,
+        std::placeholders::_3));
   }
 
   // Monitor whether anyone is subscribed to the output
@@ -261,77 +229,29 @@ void PointCloudXyzrgbNode::imageCb(
   sensor_msgs::PointCloud2Modifier pcd_modifier(*cloud_msg);
   pcd_modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
 
+  // Convert Depth Image to Pointcloud
   if (depth_msg->encoding == enc::TYPE_16UC1) {
-    convert<uint16_t>(
-      depth_msg, rgb_msg, cloud_msg, red_offset, green_offset, blue_offset,
-      color_step);
+    convertDepth<uint16_t>(depth_msg, cloud_msg, model_);
   } else if (depth_msg->encoding == enc::TYPE_32FC1) {
-    convert<float>(
-      depth_msg, rgb_msg, cloud_msg, red_offset, green_offset, blue_offset,
-      color_step);
+    convertDepth<float>(depth_msg, cloud_msg, model_);
   } else {
     RCLCPP_ERROR(logger_, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
     return;
   }
 
-  pub_point_cloud_->publish(*cloud_msg);
-}
-
-template<typename T>
-void PointCloudXyzrgbNode::convert(
-  const Image::ConstSharedPtr & depth_msg,
-  const Image::ConstSharedPtr & rgb_msg,
-  const PointCloud2::SharedPtr & cloud_msg,
-  int red_offset, int green_offset, int blue_offset, int color_step)
-{
-  // Use correct principal point from calibration
-  float center_x = model_.cx();
-  float center_y = model_.cy();
-
-  // Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
-  double unit_scaling = DepthTraits<T>::toMeters(T(1) );
-  float constant_x = unit_scaling / model_.fx();
-  float constant_y = unit_scaling / model_.fy();
-  float bad_point = std::numeric_limits<float>::quiet_NaN();
-
-  const T * depth_row = reinterpret_cast<const T *>(&depth_msg->data[0]);
-  int row_step = depth_msg->step / sizeof(T);
-  const uint8_t * rgb = &rgb_msg->data[0];
-  int rgb_skip = rgb_msg->step - rgb_msg->width * color_step;
-
-  sensor_msgs::PointCloud2Iterator<float> iter_x(*cloud_msg, "x");
-  sensor_msgs::PointCloud2Iterator<float> iter_y(*cloud_msg, "y");
-  sensor_msgs::PointCloud2Iterator<float> iter_z(*cloud_msg, "z");
-  sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(*cloud_msg, "r");
-  sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(*cloud_msg, "g");
-  sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*cloud_msg, "b");
-  sensor_msgs::PointCloud2Iterator<uint8_t> iter_a(*cloud_msg, "a");
-
-  for (int v = 0; v < static_cast<int>(cloud_msg->height);
-    ++v, depth_row += row_step, rgb += rgb_skip)
-  {
-    for (int u = 0; u < static_cast<int>(cloud_msg->width);
-      ++u, rgb += color_step, ++iter_x, ++iter_y, ++iter_z, ++iter_a, ++iter_r, ++iter_g, ++iter_b)
-    {
-      T depth = depth_row[u];
-
-      // Check for invalid measurements
-      if (!DepthTraits<T>::valid(depth)) {
-        *iter_x = *iter_y = *iter_z = bad_point;
-      } else {
-        // Fill in XYZ
-        *iter_x = (u - center_x) * depth * constant_x;
-        *iter_y = (v - center_y) * depth * constant_y;
-        *iter_z = DepthTraits<T>::toMeters(depth);
-      }
-
-      // Fill in color
-      *iter_a = 255;
-      *iter_r = rgb[red_offset];
-      *iter_g = rgb[green_offset];
-      *iter_b = rgb[blue_offset];
-    }
+  // Convert RGB
+  if (rgb_msg->encoding == enc::RGB8) {
+    convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
+  } else if (rgb_msg->encoding == enc::BGR8) {
+    convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
+  } else if (rgb_msg->encoding == enc::MONO8) {
+    convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
+  } else {
+    RCLCPP_ERROR(logger_, "RGB image has unsupported encoding [%s]", rgb_msg->encoding.c_str());
+    return;
   }
+
+  pub_point_cloud_->publish(*cloud_msg);
 }
 
 }  // namespace depth_image_proc
