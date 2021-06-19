@@ -323,12 +323,28 @@ namespace depth_image_proc {
 	    convert_rgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
 
 	}
+	if(rgb_msg->encoding == enc::RGBA8)
+	{
+		red_offset = 0;
+		green_offset = 1;
+		blue_offset = 2;
+		color_step = 4;
+	    convert_rgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
+	}
 	else if(rgb_msg->encoding == enc::BGR8)
 	{
 		red_offset = 2;
 		green_offset = 1;
 		blue_offset = 0;
 		color_step = 3;
+	    convert_rgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
+	}
+	else if(rgb_msg->encoding == enc::BGRA8)
+	{
+		red_offset = 2;
+		green_offset = 1;
+		blue_offset = 0;
+		color_step = 4;
 	    convert_rgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
 	}
 	else if(rgb_msg->encoding == enc::MONO8)
