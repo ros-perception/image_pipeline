@@ -194,12 +194,34 @@ void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity
       }
     }
   }
+  else if (encoding == enc::RGBA8) {
+    for (int32_t u = 0; u < dense_points_.rows; ++u) {
+      for (int32_t v = 0; v < dense_points_.cols; ++v) {
+        if (isValidPoint(dense_points_(u,v))) {
+          const cv::Vec4b& rgba = color.at<cv::Vec4b>(u,v);
+          int32_t rgb_packed = (rgba[0] << 16) | (rgba[1] << 8) | rgba[2];
+          points.channels[0].values.push_back(*(float*)(&rgb_packed));
+        }
+      }
+    }
+  }
   else if (encoding == enc::BGR8) {
     for (int32_t u = 0; u < dense_points_.rows; ++u) {
       for (int32_t v = 0; v < dense_points_.cols; ++v) {
         if (isValidPoint(dense_points_(u,v))) {
           const cv::Vec3b& bgr = color.at<cv::Vec3b>(u,v);
           int32_t rgb_packed = (bgr[2] << 16) | (bgr[1] << 8) | bgr[0];
+          points.channels[0].values.push_back(*(float*)(&rgb_packed));
+        }
+      }
+    }
+  }
+  else if (encoding == enc::BGRA8) {
+    for (int32_t u = 0; u < dense_points_.rows; ++u) {
+      for (int32_t v = 0; v < dense_points_.cols; ++v) {
+        if (isValidPoint(dense_points_(u,v))) {
+          const cv::Vec4b& bgra = color.at<cv::Vec4b>(u,v);
+          int32_t rgb_packed = (bgra[2] << 16) | (bgra[1] << 8) | bgra[0];
           points.channels[0].values.push_back(*(float*)(&rgb_packed));
         }
       }
@@ -295,12 +317,40 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
       }
     }
   }
+  else if (encoding == enc::RGBA8) {
+    for (int32_t u = 0; u < dense_points_.rows; ++u) {
+      for (int32_t v = 0; v < dense_points_.cols; ++v, ++i) {
+        if (isValidPoint(dense_points_(u,v))) {
+          const cv::Vec4b& rgba = color.at<cv::Vec4b>(u,v);
+          int32_t rgb_packed = (rgba[0] << 16) | (rgba[1] << 8) | rgba[2];
+          memcpy (&points.data[i * points.point_step + 12], &rgb_packed, sizeof (int32_t));
+        }
+        else {
+          memcpy (&points.data[i * points.point_step + 12], &bad_point, sizeof (float));
+        }
+      }
+    }
+  }
   else if (encoding == enc::BGR8) {
     for (int32_t u = 0; u < dense_points_.rows; ++u) {
       for (int32_t v = 0; v < dense_points_.cols; ++v, ++i) {
         if (isValidPoint(dense_points_(u,v))) {
           const cv::Vec3b& bgr = color.at<cv::Vec3b>(u,v);
           int32_t rgb_packed = (bgr[2] << 16) | (bgr[1] << 8) | bgr[0];
+          memcpy (&points.data[i * points.point_step + 12], &rgb_packed, sizeof (int32_t));
+        }
+        else {
+          memcpy (&points.data[i * points.point_step + 12], &bad_point, sizeof (float));
+        }
+      }
+    }
+  }
+  else if (encoding == enc::BGRA8) {
+    for (int32_t u = 0; u < dense_points_.rows; ++u) {
+      for (int32_t v = 0; v < dense_points_.cols; ++v, ++i) {
+        if (isValidPoint(dense_points_(u,v))) {
+          const cv::Vec4b& bgra = color.at<cv::Vec4b>(u,v);
+          int32_t rgb_packed = (bgra[2] << 16) | (bgra[1] << 8) | bgra[0];
           memcpy (&points.data[i * points.point_step + 12], &rgb_packed, sizeof (int32_t));
         }
         else {
