@@ -24,7 +24,6 @@
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
   <depend>camera_info_manager</depend>
-  <depend>camera_calibration_parsers</depend>
   <depend>class_loader</depend>
   <depend>cv_bridge</depend>
   <depend>image_geometry</depend>
