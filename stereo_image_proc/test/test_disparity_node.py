@@ -74,7 +74,6 @@ def generate_test_description():
             executable='disparity_node',
             name='disparity_node',
             parameters=[
-                {"approximate_sync": True},
                 {"use_system_default_qos": True}
             ],
             output='screen'
