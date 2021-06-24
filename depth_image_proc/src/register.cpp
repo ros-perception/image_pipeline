@@ -40,7 +40,7 @@
 #include <sensor_msgs/image_encodings.hpp>
 #include <image_geometry/pinhole_camera_model.h>
 #include <Eigen/Geometry>
-#include <tf2_eigen/tf2_eigen.hpp>
+#include <tf2_eigen/tf2_eigen.h>
 #include <depth_image_proc/depth_traits.hpp>
 #include <depth_image_proc/visibility.h>
 #include <memory>
