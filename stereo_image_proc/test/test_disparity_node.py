@@ -73,6 +73,9 @@ def generate_test_description():
             package='stereo_image_proc',
             executable='disparity_node',
             name='disparity_node',
+            parameters=[
+                {"use_system_default_qos": True}
+            ],
             output='screen'
         ),
         launch_testing.actions.ReadyToTest(),

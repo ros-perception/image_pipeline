@@ -74,9 +74,10 @@ def generate_test_description():
             executable='point_cloud_node',
             name='point_cloud_node',
             output='screen',
-            parameters=[
-                {'use_color': True}
-            ],
+            parameters=[{
+                'use_color': True,
+                'use_system_default_qos': True
+            }],
         ),
         # PointCloudNode (color disabled)
         Node(
@@ -84,12 +85,14 @@ def generate_test_description():
             executable='point_cloud_node',
             name='point_cloud_node_xyz',
             output='screen',
-            parameters=[
-                {'use_color': False}
-            ],
+            parameters=[{
+                'use_color': False,
+                'use_system_default_qos': True
+            }],
             remappings=[
                 ('/points2', '/xyz/points2'),
             ]
+            output='screen'
         ),
         launch_testing.actions.ReadyToTest(),
     ])

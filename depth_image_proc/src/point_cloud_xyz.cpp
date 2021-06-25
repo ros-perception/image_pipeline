@@ -29,11 +29,12 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#include "depth_image_proc/point_cloud_xyz.hpp"
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <image_geometry/pinhole_camera_model.h>
-#include <depth_image_proc/depth_conversions.hpp>
+#include <depth_image_proc/conversions.hpp>
 #include <depth_image_proc/visibility.h>
 
 #include <sensor_msgs/point_cloud2_iterator.hpp>
@@ -41,37 +42,6 @@
 
 namespace depth_image_proc
 {
-
-namespace enc = sensor_msgs::image_encodings;
-
-class PointCloudXyzNode : public rclcpp::Node
-{
-public:
-  DEPTH_IMAGE_PROC_PUBLIC PointCloudXyzNode(const rclcpp::NodeOptions & options);
-
-private:
-  using PointCloud2 = sensor_msgs::msg::PointCloud2;
-  using Image = sensor_msgs::msg::Image;
-  using CameraInfo = sensor_msgs::msg::CameraInfo;
-
-  // Subscriptions
-  image_transport::CameraSubscriber sub_depth_;
-  int queue_size_;
-
-  // Publications
-  std::mutex connect_mutex_;
-  rclcpp::Publisher<PointCloud2>::SharedPtr pub_point_cloud_;
-
-  image_geometry::PinholeCameraModel model_;
-
-  void connectCb();
-
-  void depthCb(
-    const Image::ConstSharedPtr & depth_msg,
-    const CameraInfo::ConstSharedPtr & info_msg);
-
-  rclcpp::Logger logger_ = rclcpp::get_logger("PointCloudXyzNode");
-};
 
 PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
 : Node("PointCloudXyzNode", options)
@@ -129,10 +99,11 @@ void PointCloudXyzNode::depthCb(
   // Update camera model
   model_.fromCameraInfo(info_msg);
 
+  // Convert Depth Image to Pointcloud
   if (depth_msg->encoding == enc::TYPE_16UC1) {
-    convert<uint16_t>(depth_msg, cloud_msg, model_);
+    convertDepth<uint16_t>(depth_msg, cloud_msg, model_);
   } else if (depth_msg->encoding == enc::TYPE_32FC1) {
-    convert<float>(depth_msg, cloud_msg, model_);
+    convertDepth<float>(depth_msg, cloud_msg, model_);
   } else {
     RCLCPP_ERROR(logger_, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
     return;
