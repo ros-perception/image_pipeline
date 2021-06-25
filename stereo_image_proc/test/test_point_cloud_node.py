@@ -92,7 +92,6 @@ def generate_test_description():
             remappings=[
                 ('/points2', '/xyz/points2'),
             ]
-            output='screen'
         ),
         launch_testing.actions.ReadyToTest(),
     ])
