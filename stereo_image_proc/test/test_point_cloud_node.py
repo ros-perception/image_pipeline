@@ -68,15 +68,30 @@ def generate_test_description():
             ],
             output='screen'
         ),
-        # PointCloudNode
+        # PointCloudNode (color enabled)
         Node(
             package='stereo_image_proc',
             executable='point_cloud_node',
             name='point_cloud_node',
-            parameters=[
-                {"use_system_default_qos": True}
-            ],
-            output='screen'
+            output='screen',
+            parameters=[{
+                'use_color': True,
+                'use_system_default_qos': True
+            }],
+        ),
+        # PointCloudNode (color disabled)
+        Node(
+            package='stereo_image_proc',
+            executable='point_cloud_node',
+            name='point_cloud_node_xyz',
+            output='screen',
+            parameters=[{
+                'use_color': False,
+                'use_system_default_qos': True
+            }],
+            remappings=[
+                ('/points2', '/xyz/points2'),
+            ]
         ),
         launch_testing.actions.ReadyToTest(),
     ])
@@ -96,17 +111,32 @@ class TestPointCloudNode(unittest.TestCase):
 
     def test_message_received(self):
         # Expect the point cloud node to publish on '/points2' topic
-        msgs_received = []
+        msgs_received_rgb = []
         self.node.create_subscription(
             PointCloud2,
             'points2',
-            lambda msg: msgs_received.append(msg),
+            lambda msg: msgs_received_rgb.append(msg),
+            1
+        )
+
+        msgs_received_xyz = []
+        self.node.create_subscription(
+            PointCloud2,
+            '/xyz/points2',
+            lambda msg: msgs_received_xyz.append(msg),
             1
         )
 
         # Wait up to 60 seconds to receive message
         start_time = time.time()
-        while len(msgs_received) == 0 and (time.time() - start_time) < 60:
+        while (len(msgs_received_rgb) == 0 or len(msgs_received_xyz) == 0
+               and (time.time() - start_time) < 60):
             rclpy.spin_once(self.node, timeout_sec=(0.1))
 
-        assert len(msgs_received) > 0
+        assert len(msgs_received_rgb) > 0
+        assert len(msgs_received_xyz) > 0
+
+        # point_step is length of point in bytes
+        # Expect 32 bytes if color is enabled, 16 if disabled
+        assert msgs_received_rgb[0].point_step == 32
+        assert msgs_received_xyz[0].point_step == 16

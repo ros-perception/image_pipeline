@@ -109,6 +109,7 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
     "This reduces bandwidth requirements, as the point cloud size is halved."
     "Using point clouds without alignment padding might degrade performance for some algorithms.";
   this->declare_parameter("avoid_point_cloud_padding", false, descriptor);
+  this->declare_parameter("use_color", true);
 
   // Synchronize callbacks
   if (approx) {
@@ -196,28 +197,43 @@ void PointCloudNode::imageCb(
   sensor_msgs::PointCloud2Modifier pcd_modifier(*points_msg);
 
   if (!this->get_parameter("avoid_point_cloud_padding").as_bool()) {
-    // Data will be packed as (DC=don't care, each item is a float):
-    //   x, y, z, DC, rgb, DC, DC, DC
-    // Resulting step size: 32 bytes
-    pcd_modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
+    if (this->get_parameter("use_color").as_bool()) {
+      // Data will be packed as (DC=don't care, each item is a float):
+      //   x, y, z, DC, rgb, DC, DC, DC
+      // Resulting step size: 32 bytes
+      pcd_modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
+    } else {
+      // Data will be packed as:
+      //   x, y, z, DC
+      // Resulting step size: 16 bytes
+      pcd_modifier.setPointCloud2FieldsByString(1, "xyz");
+    }
   } else {
-    // Data will be packed as:
-    //   x, y, z, rgb
-    // Resulting step size: 16 bytes
-    pcd_modifier.setPointCloud2Fields(
-      4,
-      "x", 1, sensor_msgs::msg::PointField::FLOAT32,
-      "y", 1, sensor_msgs::msg::PointField::FLOAT32,
-      "z", 1, sensor_msgs::msg::PointField::FLOAT32,
-      "rgb", 1, sensor_msgs::msg::PointField::FLOAT32);
+    if (this->get_parameter("use_color").as_bool()) {
+      // Data will be packed as:
+      //   x, y, z, rgb
+      // Resulting step size: 16 bytes
+      pcd_modifier.setPointCloud2Fields(
+        4,
+        "x", 1, sensor_msgs::msg::PointField::FLOAT32,
+        "y", 1, sensor_msgs::msg::PointField::FLOAT32,
+        "z", 1, sensor_msgs::msg::PointField::FLOAT32,
+        "rgb", 1, sensor_msgs::msg::PointField::FLOAT32);
+    } else {
+      // Data will be packed as:
+      //   x, y, z
+      // Resulting step size: 12 bytes
+      pcd_modifier.setPointCloud2Fields(
+        3,
+        "x", 1, sensor_msgs::msg::PointField::FLOAT32,
+        "y", 1, sensor_msgs::msg::PointField::FLOAT32,
+        "z", 1, sensor_msgs::msg::PointField::FLOAT32);
+    }
   }
 
   sensor_msgs::PointCloud2Iterator<float> iter_x(*points_msg, "x");
   sensor_msgs::PointCloud2Iterator<float> iter_y(*points_msg, "y");
   sensor_msgs::PointCloud2Iterator<float> iter_z(*points_msg, "z");
-  sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(*points_msg, "r");
-  sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(*points_msg, "g");
-  sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*points_msg, "b");
 
   float bad_point = std::numeric_limits<float>::quiet_NaN();
   for (int v = 0; v < mat.rows; ++v) {
@@ -233,52 +249,58 @@ void PointCloudNode::imageCb(
     }
   }
 
-  // Fill in color
-  namespace enc = sensor_msgs::image_encodings;
-  const std::string & encoding = l_image_msg->encoding;
-  if (encoding == enc::MONO8) {
-    const cv::Mat_<uint8_t> color(
-      l_image_msg->height, l_image_msg->width,
-      const_cast<uint8_t *>(&l_image_msg->data[0]),
-      l_image_msg->step);
-    for (int v = 0; v < mat.rows; ++v) {
-      for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b) {
-        uint8_t g = color(v, u);
-        *iter_r = *iter_g = *iter_b = g;
+  if (this->get_parameter("use_color").as_bool()) {
+    sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(*points_msg, "r");
+    sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(*points_msg, "g");
+    sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*points_msg, "b");
+
+    // Fill in color
+    namespace enc = sensor_msgs::image_encodings;
+    const std::string & encoding = l_image_msg->encoding;
+    if (encoding == enc::MONO8) {
+      const cv::Mat_<uint8_t> color(
+        l_image_msg->height, l_image_msg->width,
+        const_cast<uint8_t *>(&l_image_msg->data[0]),
+        l_image_msg->step);
+      for (int v = 0; v < mat.rows; ++v) {
+        for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b) {
+          uint8_t g = color(v, u);
+          *iter_r = *iter_g = *iter_b = g;
+        }
       }
-    }
-  } else if (encoding == enc::RGB8) {
-    const cv::Mat_<cv::Vec3b> color(
-      l_image_msg->height, l_image_msg->width,
-      (cv::Vec3b *)(&l_image_msg->data[0]),
-      l_image_msg->step);
-    for (int v = 0; v < mat.rows; ++v) {
-      for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b) {
-        const cv::Vec3b & rgb = color(v, u);
-        *iter_r = rgb[0];
-        *iter_g = rgb[1];
-        *iter_b = rgb[2];
+    } else if (encoding == enc::RGB8) {
+      const cv::Mat_<cv::Vec3b> color(
+        l_image_msg->height, l_image_msg->width,
+        (cv::Vec3b *)(&l_image_msg->data[0]),
+        l_image_msg->step);
+      for (int v = 0; v < mat.rows; ++v) {
+        for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b) {
+          const cv::Vec3b & rgb = color(v, u);
+          *iter_r = rgb[0];
+          *iter_g = rgb[1];
+          *iter_b = rgb[2];
+        }
       }
-    }
-  } else if (encoding == enc::BGR8) {
-    const cv::Mat_<cv::Vec3b> color(
-      l_image_msg->height, l_image_msg->width,
-      (cv::Vec3b *)(&l_image_msg->data[0]),
-      l_image_msg->step);
-    for (int v = 0; v < mat.rows; ++v) {
-      for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b) {
-        const cv::Vec3b & bgr = color(v, u);
-        *iter_r = bgr[2];
-        *iter_g = bgr[1];
-        *iter_b = bgr[0];
+    } else if (encoding == enc::BGR8) {
+      const cv::Mat_<cv::Vec3b> color(
+        l_image_msg->height, l_image_msg->width,
+        (cv::Vec3b *)(&l_image_msg->data[0]),
+        l_image_msg->step);
+      for (int v = 0; v < mat.rows; ++v) {
+        for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b) {
+          const cv::Vec3b & bgr = color(v, u);
+          *iter_r = bgr[2];
+          *iter_g = bgr[1];
+          *iter_b = bgr[0];
+        }
       }
+    } else {
+      // Throttle duration in milliseconds
+      RCUTILS_LOG_WARN_THROTTLE(
+        RCUTILS_STEADY_TIME, 30000,
+        "Could not fill color channel of the point cloud, "
+        "unsupported encoding '%s'", encoding.c_str());
     }
-  } else {
-    // Throttle duration in milliseconds
-    RCUTILS_LOG_WARN_THROTTLE(
-      RCUTILS_STEADY_TIME, 30000,
-      "Could not fill color channel of the point cloud, "
-      "unsupported encoding '%s'", encoding.c_str());
   }
 
   pub_points2_->publish(*points_msg);
