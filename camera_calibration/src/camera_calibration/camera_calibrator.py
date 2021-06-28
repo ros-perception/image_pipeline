@@ -41,6 +41,7 @@ import sensor_msgs.msg
 import sensor_msgs.srv
 import threading
 import time
+from cv_bridge import CvBridge
 from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, Patterns
 try:
     from queue import Queue
@@ -110,7 +111,7 @@ class ConsumerThread(threading.Thread):
 class CalibrationNode:
     def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
                 fisheye_flags = 0, pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0,
-                max_chessboard_speed = -1, queue_size = 1):
+                max_chessboard_speed = -1, queue_size = 1, no_gui=False, no_mono_if_stereo=False):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -132,6 +133,23 @@ class CalibrationNode:
         self._pattern = pattern
         self._camera_name = camera_name
         self._max_chessboard_speed = max_chessboard_speed
+        self._no_gui = no_gui
+        self._no_mono_if_stereo = no_mono_if_stereo
+
+        if self._no_mono_if_stereo:
+            left_camera_info_topic = "{}/camera_info".format(rospy.remap_name("left_camera"))
+            rospy.loginfo("Waiting for the CameraInfo msg from {} topic".format(left_camera_info_topic))
+            self.left_camera_info_msg= rospy.wait_for_message(left_camera_info_topic, sensor_msgs.msg.CameraInfo, 100)
+
+            right_camera_info_topic = "{}/camera_info".format(rospy.remap_name("right_camera"))
+            rospy.loginfo("Waiting for the CameraInfo msg from {} topic".format(right_camera_info_topic))
+            self.right_camera_info_msg= rospy.wait_for_message(right_camera_info_topic, sensor_msgs.msg.CameraInfo, 100)
+
+        if self._no_gui:
+            self.lpub = rospy.Publisher("/camera_calibration_left", sensor_msgs.msg.Image, queue_size=10)
+            self.rpub = rospy.Publisher("/camera_calibration_right", sensor_msgs.msg.Image, queue_size=10)
+            self.bridge = CvBridge()
+
         lsub = message_filters.Subscriber('left', sensor_msgs.msg.Image)
         rsub = message_filters.Subscriber('right', sensor_msgs.msg.Image)
         ts = synchronizer([lsub, rsub], 4)
@@ -186,24 +204,63 @@ class CalibrationNode:
 
         # This should just call the MonoCalibrator
         drawable = self.c.handle_msg(msg)
-        self.displaywidth = drawable.scrib.shape[1]
-        self.redraw_monocular(drawable)
+        if not self._no_gui: 
+            self.displaywidth = drawable.scrib.shape[1]
+            self.redraw_monocular(drawable)
+        else:
+            self.lpub.publish(self.bridge.cv2_to_imgmsg(drawable.scrib, "bgr8"))
+
+            if self.c.goodenough:
+                do_calibrate=self.ask_yes_no_question("Current collected set of samples is good enough, do you want to calibrate?")
+                if do_calibrate:
+                    print("**** Calibrating ****")
+                    self.c.do_calibration()
+                    print("Resulting linear error is: "+str(drawable.linear_error))
+                    print("Resulting params are: ")
+                    for p in drawable.params:
+                        print(p)
+                    if self.c.calibrated:
+                        do_save=self.ask_yes_no_question("Do you want to save this result?")
+                        if do_save:
+                            self.c.do_save()
+                            rospy.signal_shutdown('Quit')
 
     def handle_stereo(self, msg):
         if self.c == None:
             if self._camera_name:
                 self.c = StereoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern, name=self._camera_name,
                                           checkerboard_flags=self._checkerboard_flags,
-                                          max_chessboard_speed = self._max_chessboard_speed)
+                                          max_chessboard_speed = self._max_chessboard_speed, no_mono_if_stereo=self._no_mono_if_stereo)
             else:
                 self.c = StereoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern,
                                           checkerboard_flags=self._checkerboard_flags,
-                                          max_chessboard_speed = self._max_chessboard_speed)
+                                          max_chessboard_speed = self._max_chessboard_speed, no_mono_if_stereo=self._no_mono_if_stereo)
+            if self._no_mono_if_stereo:
+                self.c.from_message((self.left_camera_info_msg, self.right_camera_info_msg))
 
         drawable = self.c.handle_msg(msg)
-        self.displaywidth = drawable.lscrib.shape[1] + drawable.rscrib.shape[1]
-        self.redraw_stereo(drawable)
 
+        if not self._no_gui:        
+            self.displaywidth = drawable.lscrib.shape[1] + drawable.rscrib.shape[1]
+            self.redraw_stereo(drawable)
+        else:
+            self.lpub.publish(self.bridge.cv2_to_imgmsg(drawable.lscrib, "bgr8"))
+            self.rpub.publish(self.bridge.cv2_to_imgmsg(drawable.rscrib, "bgr8"))
+
+            if self.c.goodenough:
+                do_calibrate=self.ask_yes_no_question("Current collected set of samples is good enough, do you want to calibrate?")
+                if do_calibrate:
+                    print("**** Calibrating ****")
+                    self.c.do_calibration()
+                    print("Resulting epipolar error is: "+str(drawable.epierror))
+                    print("Resulting params are: ")
+                    for p in drawable.params:
+                        print(p)
+                    if self.c.calibrated:
+                        do_save=self.ask_yes_no_question("Do you want to save this result?")
+                        if do_save:
+                            self.c.do_save()
+                            rospy.signal_shutdown('Quit')
 
     def check_set_camera_info(self, response):
         if response.success:
@@ -236,6 +293,26 @@ class CalibrationNode:
             rv = rv and self.check_set_camera_info(response)
         return rv
 
+    def ask_yes_no_question(self, question, default_yes=True):
+        """
+        Ask the user a question via a command line prompt.
+        The user should answer, y, yes, n, no or some upper-/lowercase
+        variation thereof, with empty input interpreted as the default
+        answer (yes if not specified when calling this method)
+        :param default_yes: bool with the default answer
+        :param question: string with the question to be asked
+        """
+        while True:
+            answer = input(
+                question + (' [Y/n]: ' if default_yes else ' [y/N]: ')).lower()
+            if answer in ['y', 'ye', 'yes']:
+                return True
+            elif answer in ['n', 'no']:
+                return False
+            elif answer == '':
+                return default_yes
+            else:
+                print('Please answer using only y or n (or yes/no if you prefer)')
 
 class OpenCVCalibrationNode(CalibrationNode):
     """ Calibration node with an OpenCV Gui """
@@ -247,10 +324,11 @@ class OpenCVCalibrationNode(CalibrationNode):
 
         CalibrationNode.__init__(self, *args, **kwargs)
 
-        self.queue_display = BufferQueue(maxsize=1)
-        self.display_thread = DisplayThread(self.queue_display, self)
-        self.display_thread.setDaemon(True)
-        self.display_thread.start()
+        if not self._no_gui:
+            self.queue_display = BufferQueue(maxsize=1)
+            self.display_thread = DisplayThread(self.queue_display, self)
+            self.display_thread.setDaemon(True)
+            self.display_thread.start()
 
     @classmethod
     def putText(cls, img, text, org, color = (0,0,0)):

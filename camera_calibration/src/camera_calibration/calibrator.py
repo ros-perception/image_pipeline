@@ -43,6 +43,7 @@ import random
 import sensor_msgs.msg
 import tarfile
 import time
+import PyKDL
 from distutils.version import LooseVersion
 import sys
 from enum import Enum
@@ -306,7 +307,7 @@ class Calibrator():
     Base class for calibration system
     """
     def __init__(self, boards, flags=0, fisheye_flags = 0, pattern=Patterns.Chessboard, name='',
-    checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, max_chessboard_speed = -1.0):
+    checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, max_chessboard_speed = -1.0, no_mono_if_stereo=False):
         # Ordering the dimensions for the different detectors is actually a minefield...
         if pattern == Patterns.Chessboard:
             # Make sure n_cols > n_rows to agree with OpenCV CB detector output
@@ -328,6 +329,7 @@ class Calibrator():
         self.pattern = pattern
         self.br = cv_bridge.CvBridge()
         self.camera_model = CAMERA_MODEL.PINHOLE
+        self.no_mono_if_stereo = no_mono_if_stereo
         # self.db is list of (parameters, image) samples for use in calibration. parameters has form
         # (X, Y, size, skew) all normalized to [0,1], to keep track of what sort of samples we've taken
         # and ensure enough variety.
@@ -1108,11 +1110,14 @@ class StereoCalibrator(Calibrator):
         return good
 
     def cal_fromcorners(self, good):
-        # Perform monocular calibrations
+        
         lcorners = [(lco, lid, b) for (lco, rco, lid, rid, b) in good]
         rcorners = [(rco, rid, b) for (lco, rco, lid, rid, b) in good]
-        self.l.cal_fromcorners(lcorners)
-        self.r.cal_fromcorners(rcorners)
+
+        if not self.no_mono_if_stereo:
+            # Perform monocular calibrations
+            self.l.cal_fromcorners(lcorners)
+            self.r.cal_fromcorners(rcorners)
 
         (lipts, ripts, _, _, boards) = zip(*good)
 
@@ -1249,6 +1254,13 @@ class StereoCalibrator(Calibrator):
         self.lrreport(self.r.distortion, self.r.intrinsics, self.r.R, self.r.P)
         print("self.T =", numpy.ravel(self.T).tolist())
         print("self.R =", numpy.ravel(self.R).tolist())
+
+        r = PyKDL.Rotation(self.R[0][0], self.R[0][1], self.R[0][2],
+                           self.R[1][0], self.R[1][1], self.R[1][2],
+                           self.R[2][0], self.R[2][1], self.R[2][2])
+        return("Extrinsic transformation from the right camera to the left camera:\nT = "
+                +str(numpy.ravel(self.T).tolist())+"\nR = "+str(numpy.ravel(self.R).tolist())
+                +"\nquaternion = "+str(list(r.GetQuaternion()))+"\nRPY = "+str(list(r.GetRPY())))
 
     def ost(self):
         return (self.lrost(self.name + "/left", self.l.distortion, self.l.intrinsics, self.l.R, self.l.P, self.size) +
@@ -1422,6 +1434,7 @@ class StereoCalibrator(Calibrator):
         taradd('left.yaml', self.yaml("/left", self.l))
         taradd('right.yaml', self.yaml("/right", self.r))
         taradd('ost.txt', self.ost())
+        taradd('transformation.txt', self.report())
 
     def do_tarfile_calibration(self, filename):
         archive = tarfile.open(filename, 'r')
