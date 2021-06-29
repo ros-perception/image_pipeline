@@ -44,6 +44,7 @@ import sensor_msgs.msg
 import tarfile
 import time
 from distutils.version import LooseVersion
+from enum import Enum
 
 # Supported camera models
 class CAMERA_MODEL(Enum):
