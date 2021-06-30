@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>depth_image_proc</name>
-  <version>2.2.0</version>
+  <version>2.2.1</version>
   <description>
 
      Contains components for processing depth images such as those
@@ -13,9 +13,10 @@
   </description>
 
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
-  <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
   <maintainer email="whitleysoftwareservices@gmail.com">Joshua Whitley</maintainer>
   <maintainer email="chris.ye@intel.com">Chris Ye</maintainer>
+  <maintainer email="jacob@openrobotics.org">Jacob Perron</maintainer>
+
   <license>BSD</license>
   <url type="website">https://index.ros.org/p/depth_image_proc/github-ros-perception-image_pipeline/</url>
   <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>

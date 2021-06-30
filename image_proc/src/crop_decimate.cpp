@@ -46,10 +46,9 @@ void debayer2x2toBGR(
   int R, int G1, int G2, int B)
 {
   typedef cv::Vec<T, 3> DstPixel;  // 8- or 16-bit BGR
-#if CV_VERSION_MAJOR >= 4
+#if CV_VERSION_MAJOR >= 4 || (CV_MAJOR_VERSION == 3 && CV_MINOR_VERSION > 2)
   dst.create(src.rows / 2, src.cols / 2, cv::traits::Type<DstPixel>::value);
 #else
-  // Assume OpenCV 3 API
   dst.create(src.rows / 2, src.cols / 2, cv::DataType<DstPixel>::type);
 #endif
 
@@ -119,9 +118,9 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
   int interpolation = this->declare_parameter("interpolation", 0);
   interpolation_ = static_cast<CropDecimateModes>(interpolation);
 
-  pub_ = image_transport::create_camera_publisher(this, "image_raw");
+  pub_ = image_transport::create_camera_publisher(this, "out/image_raw");
   sub_ = image_transport::create_camera_subscription(
-    this, "image_raw", std::bind(
+    this, "in/image_raw", std::bind(
       &CropDecimateNode::imageCb, this,
       std::placeholders::_1, std::placeholders::_2), "raw");
 }

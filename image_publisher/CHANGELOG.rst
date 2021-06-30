@@ -5,14 +5,28 @@ Changelog for package image_publisher
 2.0.0 (2018-12-09)
 ------------------
 * port image_publisher on ROS2 (`#366 <https://github.com/ros-perception/image_pipeline/issues/366>`_)
-  * port image_publisher on ROS2
-  * switch to use cmake 3.5
-  * change nodelet to classloader
-  * change ros::param to ros2 parameter APIs
-  * use ros2 code style
-  * enable ros2 camera_info_manager
 * Initial ROS2 commit.
 * Contributors: Chris Ye, Michael Carroll
+
+2.2.1 (2020-08-27)
+------------------
+* remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)
+* [Foxy][Image Publisher] Update launch file (`#579 <https://github.com/ros-perception/image_pipeline/issues/579>`_)
+  Co-authored-by: louis <louis.tran@otsaw.com>
+* [Foxy] Use ament_auto Macros (`#573 <https://github.com/ros-perception/image_pipeline/issues/573>`_)
+  * Fixing version and maintainer problems in camera_calibration.
+  * Applying ament_auto macros to depth_image_proc.
+  * Cleaning up package.xml in image_pipeline.
+  * Applying ament_auto macros to image_proc.
+  * Applying ament_auto macros to image_publisher.
+  * Applying ament_auto macros to image_rotate.
+  * Applying ament_auto macros to image_view.
+  * Replacing some deprecated headers in image_view.
+  * Fixing some build warnings in image_view.
+  * Applying ament_auto macros to stereo_image_proc.
+  * Adding some linter tests to image_pipeline.
+  * Updating package URLs to point to ROS Index.
+* Contributors: Joshua Whitley, Steve Macenski, trthanhquang
 
 2.2.0 (2020-07-27)
 ------------------

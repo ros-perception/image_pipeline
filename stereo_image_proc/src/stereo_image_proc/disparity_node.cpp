@@ -215,7 +215,7 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
     64, 32, 4096, 16);
   add_param_to_map(
     int_params,
-    "texture_ratio",
+    "texture_threshold",
     "Filter out if SAD window response does not exceed texture threshold",
     10, 0, 10000, 1);
   add_param_to_map(

@@ -2,30 +2,32 @@
 ------------------
 * enable rclcpp_register_node_plugins (`#368 <https://github.com/ros-perception/image_pipeline/issues/368>`_)
 * Port depth image proc on ROS2 (`#362 <https://github.com/ros-perception/image_pipeline/issues/362>`_)
-  * Port depth_image_proc on ROS2
-  * Port depth_image_proc of image_pipeline on ROS2
-  * rename Nodelets as Node
-  * add launch examples, such as "ros2 launch depth_image_proc point_cloud_xyzi.launch.py"
-  * verified point_cloud_xyzrgb, point_cloud_xyz, convert_metric based on Realsense camera(https://github.com/intel/ros2_intel_realsense).
-  Signed-off-by: Chris Ye <chris.ye@intel.com>
-  * add ament_lint_auto test and adjust code style
-  Signed-off-by: Chris Ye <chris.ye@intel.com>
-  * update test example for depth_image_proc
-  - rename raw topic as image_transport fixed the issue (https://github.com/ros-perception/image_common/issues/96)
-  - update test example of point_cloud_xyzrgb.launch
-  Signed-off-by: Chris Ye <chris.ye@intel.com>
-  * remove unused dependence in cmakelist
-  * remove boost which is unused on ROS2
-  * remove cv_bridge version check logic as setted in find_package
-  * update maintainer in package.xml
-  Signed-off-by: Chris Ye <chris.ye@intel.com>
-  * added all example launchers for demo test
-  Signed-off-by: Chris Ye <chris.ye@intel.com>
-  * @wip update to use raw pointers.
-  * continue to update to use raw pointer
-  Signed-off-by: Chris Ye <chris.ye@intel.com>
 * Initial ROS2 commit.
 * Contributors: Chris Ye, Michael Carroll
+
+2.2.1 (2020-08-27)
+------------------
+* remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)
+* [Foxy] Use ament_auto Macros (`#573 <https://github.com/ros-perception/image_pipeline/issues/573>`_)
+  * Fixing version and maintainer problems in camera_calibration.
+  * Applying ament_auto macros to depth_image_proc.
+  * Cleaning up package.xml in image_pipeline.
+  * Applying ament_auto macros to image_proc.
+  * Applying ament_auto macros to image_publisher.
+  * Applying ament_auto macros to image_rotate.
+  * Applying ament_auto macros to image_view.
+  * Replacing some deprecated headers in image_view.
+  * Fixing some build warnings in image_view.
+  * Applying ament_auto macros to stereo_image_proc.
+  * Adding some linter tests to image_pipeline.
+  * Updating package URLs to point to ROS Index.
+* Add rclcpp and rclcpp_components dependencies to package.xml. (`#569 <https://github.com/ros-perception/image_pipeline/issues/569>`_) (`#570 <https://github.com/ros-perception/image_pipeline/issues/570>`_)
+  I noticed that these are listed in CMakeLists.txt but not in package.xml
+  and this is causing a build failure for the binary releases on
+  build.ros2.org:
+  http://build.ros2.org/view/Dbin_ubhf_uBhf/job/Dbin_uB64__depth_image_proc__ubuntu_bionic_amd64__binary/
+  Co-authored-by: Steven! Ragnarök <nuclearsandwich@users.noreply.github.com>
+* Contributors: Joshua Whitley, Steve Macenski
 
 2.2.0 (2020-07-27)
 ------------------

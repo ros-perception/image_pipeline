@@ -34,7 +34,7 @@ namespace image_view
 VideoRecorderNode::VideoRecorderNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("video_recorder_node", options),
   g_count(0),
-  g_last_wrote_time(rclcpp::Time(0)),
+  g_last_wrote_time(rclcpp::Time((int64_t) 0, RCL_ROS_TIME)),
   recording_started(false)
 {
   bool stamped_filename;
@@ -111,7 +111,10 @@ void VideoRecorderNode::callback(const sensor_msgs::msg::Image::ConstSharedPtr &
       codec.c_str(), size.height, size.width, fps);
   }
 
-  if ((rclcpp::Time(image_msg->header.stamp) - g_last_wrote_time) < rclcpp::Duration(1.0 / fps)) {
+  if (
+    (rclcpp::Time(image_msg->header.stamp, RCL_ROS_TIME) - g_last_wrote_time) <
+    rclcpp::Duration::from_seconds(1.0 / fps))
+  {
     // Skip to get video with correct fps
     return;
   }
@@ -130,7 +133,7 @@ void VideoRecorderNode::callback(const sensor_msgs::msg::Image::ConstSharedPtr &
       outputVideo << image;
       RCLCPP_INFO(this->get_logger(), "Recording frame %i\x1b[1F", g_count);
       g_count++;
-      g_last_wrote_time = image_msg->header.stamp;
+      g_last_wrote_time = rclcpp::Time(image_msg->header.stamp, RCL_ROS_TIME);
     } else {
       RCLCPP_WARN(this->get_logger(), "Frame skipped, no data!");
     }

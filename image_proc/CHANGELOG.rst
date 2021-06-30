@@ -1,3 +1,11 @@
+2.2.1 (2020-08-27)
+------------------
+* make crop_decimate work (`#593 <https://github.com/ros-perception/image_pipeline/issues/593>`_)
+* remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)
+* Disable "Publish Color!" debug_info (`#577 <https://github.com/ros-perception/image_pipeline/issues/577>`_)
+* [Foxy] Use ament_auto Macros (`#573 <https://github.com/ros-perception/image_pipeline/issues/573>`_)
+* Contributors: Dereck Wonnacott, Joshua Whitley, Michael Ferguson, Steve Macenski
+
 2.2.0 (2020-07-27)
 ------------------
 * Replacing deprecated header includes with new HPP versions. (`#566 <https://github.com/ros-perception/image_pipeline/issues/566>`_)

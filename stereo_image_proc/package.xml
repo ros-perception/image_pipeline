@@ -2,12 +2,13 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>stereo_image_proc</name>
-  <version>2.2.0</version>
+  <version>2.2.1</version>
   <description>Stereo and single image rectification and disparity processing.</description>
 
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
-  <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
   <maintainer email="whitleysoftwareservices@gmail.com">Joshua Whitley</maintainer>
+  <maintainer email="jacob@openrobotics.org">Jacob Perron</maintainer>
+
   <license>BSD</license>
   <url type="website">https://index.ros.org/p/stereo_image_proc/github-ros-perception-image_pipeline/</url>
   <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>
@@ -38,6 +39,7 @@
   <test_depend>python3-opencv</test_depend>
   <test_depend>python_cmake_module</test_depend>
   <test_depend>rclpy</test_depend>
+  <test_depend>ros_testing</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
