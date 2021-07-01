@@ -64,7 +64,6 @@ class BufferQueue(Queue):
             self.unfinished_tasks += 1
             self.not_empty.notify()
 
-
 class DisplayThread(threading.Thread):
     """
     Thread that displays the current images
@@ -95,6 +94,30 @@ class DisplayThread(threading.Thread):
                 rospy.signal_shutdown('Quit')
             elif k == ord('s') and self.image is not None:
                 self.opencv_calibration_node.screendump(self.image)
+
+class TerminalThread(threading.Thread):
+    """
+    Thread that offers user interface through terminal
+    by asking yes/no quastions to the user (calibrate? save?)
+    """
+    def __init__(self, queue, opencv_calibration_node):
+        threading.Thread.__init__(self)
+        self.queue = queue
+        self.opencv_calibration_node = opencv_calibration_node
+
+    def run(self):
+        while True:
+            if self.queue.qsize() == self.queue.maxsize:                        
+                # ask for calibration only if the queue is full                 
+                # acquire lock until yes/no questionare is done to avoid  
+                # adding new samples if not necessary                           
+                with self.queue.mutex:                                     
+                    self.opencv_calibration_node.ask_for_calibration()          
+                while not self.queue.empty():                                   
+                    self.queue.get()                                            
+                    self.queue.task_done()
+            else:
+                time.sleep(0.1)
 
 class ConsumerThread(threading.Thread):
     def __init__(self, queue, function):
@@ -210,21 +233,6 @@ class CalibrationNode:
         else:
             self.lpub.publish(self.bridge.cv2_to_imgmsg(drawable.scrib, "bgr8"))
 
-            if self.c.goodenough:
-                do_calibrate=self.ask_yes_no_question("Current collected set of samples is good enough, do you want to calibrate?")
-                if do_calibrate:
-                    print("**** Calibrating ****")
-                    self.c.do_calibration()
-                    print("Resulting linear error is: "+str(drawable.linear_error))
-                    print("Resulting params are: ")
-                    for p in drawable.params:
-                        print(p)
-                    if self.c.calibrated:
-                        do_save=self.ask_yes_no_question("Do you want to save this result?")
-                        if do_save:
-                            self.c.do_save()
-                            rospy.signal_shutdown('Quit')
-
     def handle_stereo(self, msg):
         if self.c == None:
             if self._camera_name:
@@ -240,27 +248,14 @@ class CalibrationNode:
 
         drawable = self.c.handle_msg(msg)
 
-        if not self._no_gui:        
+        if not self._no_gui:
             self.displaywidth = drawable.lscrib.shape[1] + drawable.rscrib.shape[1]
             self.redraw_stereo(drawable)
         else:
             self.lpub.publish(self.bridge.cv2_to_imgmsg(drawable.lscrib, "bgr8"))
             self.rpub.publish(self.bridge.cv2_to_imgmsg(drawable.rscrib, "bgr8"))
-
-            if self.c.goodenough:
-                do_calibrate=self.ask_yes_no_question("Current collected set of samples is good enough, do you want to calibrate?")
-                if do_calibrate:
-                    print("**** Calibrating ****")
-                    self.c.do_calibration()
-                    print("Resulting epipolar error is: "+str(drawable.epierror))
-                    print("Resulting params are: ")
-                    for p in drawable.params:
-                        print(p)
-                    if self.c.calibrated:
-                        do_save=self.ask_yes_no_question("Do you want to save this result?")
-                        if do_save:
-                            self.c.do_save()
-                            rospy.signal_shutdown('Quit')
+            if drawable.good_sample:
+                self.queue_terminal.put(True)
 
     def check_set_camera_info(self, response):
         if response.success:
@@ -321,10 +316,15 @@ class OpenCVCalibrationNode(CalibrationNode):
     FONT_THICKNESS = 2
 
     def __init__(self, *args, **kwargs):
-
+        
         CalibrationNode.__init__(self, *args, **kwargs)
 
-        if not self._no_gui:
+        if self._no_gui:
+            self.queue_terminal = BufferQueue(maxsize=5)
+            self.terminal_thread = TerminalThread(self.queue_terminal, self)
+            self.terminal_thread.setDaemon(True)
+            self.terminal_thread.start()
+        else:
             self.queue_display = BufferQueue(maxsize=1)
             self.display_thread = DisplayThread(self.queue_display, self)
             self.display_thread.setDaemon(True)
@@ -465,3 +465,17 @@ class OpenCVCalibrationNode(CalibrationNode):
 
         self._last_display = display
         self.queue_display.put(display)
+
+    def ask_for_calibration(self):
+        if self.c.goodenough:
+            do_calibrate=self.ask_yes_no_question("Current collected set of samples is good enough, do you want to calibrate?")
+            if do_calibrate:
+                print("**** Calibrating ****")
+                self.c.do_calibration()
+                if self.c.calibrated:
+                    do_save=self.ask_yes_no_question("Do you want to save this result?")
+                    if do_save:
+                        self.c.do_save()
+                        rospy.signal_shutdown('Quit')
+            self.c.calibrated = False
+            print("Continuing with collecting new samples...")
