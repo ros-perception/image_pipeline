@@ -34,6 +34,7 @@ ros::Time g_last_wrote_time = ros::Time(0);
 std::string encoding;
 std::string codec;
 int fps;
+double tolerance;
 std::string filename;
 double min_depth_range;
 double max_depth_range;
@@ -70,9 +71,14 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
 
     }
 
-    if ((image_msg->header.stamp - g_last_wrote_time) < ros::Duration(1.0 / fps))
+    if ((image_msg->header.stamp - g_last_wrote_time) < ros::Duration((1.0 / fps)*(1.0-tolerance/100)))
     {
       // Skip to get video with correct fps
+      ROS_INFO_STREAM("Skipping frame "<< g_count <<": "
+                << image_msg->header.stamp - g_last_wrote_time << " sec is outside of the " 
+                << tolerance<< "\% tolerance");
+      
+      g_count++;
       return;
     }
 
@@ -108,6 +114,7 @@ int main(int argc, char** argv)
     bool stamped_filename;
     local_nh.param("stamped_filename", stamped_filename, false);
     local_nh.param("fps", fps, 15);
+    local_nh.param("tolerance", tolerance, 15.0);
     local_nh.param("codec", codec, std::string("MJPG"));
     local_nh.param("encoding", encoding, std::string("bgr8"));
     // cv_bridge::CvtColorForDisplayOptions
