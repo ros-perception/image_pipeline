@@ -232,6 +232,8 @@ class CalibrationNode:
             self.redraw_monocular(drawable)
         else:
             self.lpub.publish(self.bridge.cv2_to_imgmsg(drawable.scrib, "bgr8"))
+            if drawable.good_sample:
+                self.queue_terminal.put(True)
 
     def handle_stereo(self, msg):
         if self.c == None:
@@ -473,7 +475,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 print("**** Calibrating ****")
                 self.c.do_calibration()
                 if self.c.calibrated:
-                    do_save=self.ask_yes_no_question("Do you want to save this result?")
+                    do_save=self.ask_yes_no_question("Do you want to save this result and exit? If no then collecting new samples.")
                     if do_save:
                         self.c.do_save()
                         rospy.signal_shutdown('Quit')

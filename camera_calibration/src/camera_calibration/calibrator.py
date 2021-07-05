@@ -699,6 +699,7 @@ class MonoDrawable(ImageDrawable):
         ImageDrawable.__init__(self)
         self.scrib = None
         self.linear_error = -1.0
+        self.good_sample = False
 
 class StereoDrawable(ImageDrawable):
     def __init__(self):
@@ -947,6 +948,7 @@ class MonoCalibrator(Calibrator):
         """
         gray = self.mkgray(msg)
         linear_error = -1
+        good_sample = False
 
         # Get display-image-to-be (scrib) and detection of the calibration target
         scrib_mono, corners, downsampled_corners, ids, board, (x_scale, y_scale) = self.downsample_and_detect(gray)
@@ -985,6 +987,7 @@ class MonoCalibrator(Calibrator):
                 params = self.get_parameters(corners, ids, board, (gray.shape[1], gray.shape[0]))
                 if self.is_good_sample(params, corners, ids, self.last_frame_corners, self.last_frame_ids):
                     self.db.append((params, gray))
+                    good_sample = True
                     if self.pattern == Patterns.ChArUco:
                         self.good_corners.append((corners, ids, board))
                     else:
@@ -997,6 +1000,7 @@ class MonoCalibrator(Calibrator):
         rv.scrib = scrib
         rv.params = self.compute_goodenough()
         rv.linear_error = linear_error
+        rv.good_sample = good_sample
         return rv
 
     def do_calibration(self, dump = False):
