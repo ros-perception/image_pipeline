@@ -1015,9 +1015,6 @@ class MonoCalibrator(Calibrator):
                         open("/tmp/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
         self.cal_fromcorners(self.good_corners)
         self.calibrated = True
-        # DEBUG
-        print((self.report()))
-        print((self.ost()))
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """
@@ -1132,6 +1129,7 @@ class StereoCalibrator(Calibrator):
 
         self.T = numpy.zeros((3, 1), dtype=numpy.float64)
         self.R = numpy.eye(3, dtype=numpy.float64)
+        ret = [0]
 
         if self.pattern == Patterns.ChArUco:
             # TODO: implement stereo ChArUco calibration
@@ -1140,7 +1138,7 @@ class StereoCalibrator(Calibrator):
         if self.camera_model == CAMERA_MODEL.PINHOLE:
             print("stereo pinhole calibration...")
             if LooseVersion(cv2.__version__).version[0] == 2:
-                cv2.stereoCalibrate(opts, lipts, ripts, self.size,
+                ret = cv2.stereoCalibrate(opts, lipts, ripts, self.size,
                                    self.l.intrinsics, self.l.distortion,
                                    self.r.intrinsics, self.r.distortion,
                                    self.R,                            # R
@@ -1148,7 +1146,7 @@ class StereoCalibrator(Calibrator):
                                    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
                                    flags = flags)
             else:
-                cv2.stereoCalibrate(opts, lipts, ripts,
+                ret = cv2.stereoCalibrate(opts, lipts, ripts,
                                    self.l.intrinsics, self.l.distortion,
                                    self.r.intrinsics, self.r.distortion,
                                    self.size,
@@ -1170,7 +1168,7 @@ class StereoCalibrator(Calibrator):
                 opts64 = numpy.asarray(opts, dtype=numpy.float64)
                 opts = opts64
 
-                cv2.fisheye.stereoCalibrate(opts, lipts, ripts,
+                ret = cv2.fisheye.stereoCalibrate(opts, lipts, ripts,
                                    self.l.intrinsics, self.l.distortion,
                                    self.r.intrinsics, self.r.distortion,
                                    self.size,
@@ -1180,6 +1178,8 @@ class StereoCalibrator(Calibrator):
                                    flags = flags)
 
         self.set_alpha(0.0)
+        rms = ret[0]
+        return rms
 
     def set_alpha(self, a):
         """
@@ -1415,11 +1415,9 @@ class StereoCalibrator(Calibrator):
                         open("/tmp/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
         self.l.size = self.size
         self.r.size = self.size
-        self.cal_fromcorners(self.good_corners)
+        rms = self.cal_fromcorners(self.good_corners)
         self.calibrated = True
-        # DEBUG
-        print((self.report()))
-        print((self.ost()))
+        return rms
 
     def do_tarfile_save(self, tf):
         """ Write images and calibration solution to a tarfile object """

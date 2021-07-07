@@ -473,8 +473,9 @@ class OpenCVCalibrationNode(CalibrationNode):
             do_calibrate=self.ask_yes_no_question("Current collected set of samples is good enough, do you want to calibrate?")
             if do_calibrate:
                 print("**** Calibrating ****")
-                self.c.do_calibration()
+                rms = self.c.do_calibration()
                 if self.c.calibrated:
+                    print("RMS Error from this calibration is: {}".format(str(rms)))
                     do_save=self.ask_yes_no_question("Do you want to save this result and exit? If no then collecting new samples.")
                     if do_save:
                         self.c.do_save()
