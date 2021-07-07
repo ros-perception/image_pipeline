@@ -5,12 +5,12 @@ on:
   - push
 
 jobs:
-  build-foxy:
+  build-rolling:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
     container:
-      image: ros:foxy-ros-base
+      image: ros:rolling-ros-base
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
