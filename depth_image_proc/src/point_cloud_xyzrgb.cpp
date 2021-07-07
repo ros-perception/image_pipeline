@@ -134,10 +134,9 @@ void PointCloudXyzrgbNode::imageCb(
 {
   // Check for bad inputs
   if (depth_msg->header.frame_id != rgb_msg_in->header.frame_id) {
-    RCLCPP_ERROR(
+    RCLCPP_WARN(
       logger_, "Depth image frame id [%s] doesn't match RGB image frame id [%s]",
       depth_msg->header.frame_id.c_str(), rgb_msg_in->header.frame_id.c_str());
-    return;
   }
 
   // Update camera model
