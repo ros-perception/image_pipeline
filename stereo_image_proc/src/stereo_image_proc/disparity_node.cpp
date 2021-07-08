@@ -265,7 +265,10 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
   this->declare_parameters("", double_params);
   this->declare_parameters("", bool_params);
 
-  pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>("disparity", 1);
+  // Update the publisher options to allow reconfigurable qos settings.
+  rclcpp::PublisherOptions pub_opts;
+  pub_opts.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
+  pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>("disparity", 1, pub_opts);
 
   // TODO(jacobperron): Replace this with a graph event.
   //                    Only subscribe if there's a subscription listening to our publisher.
@@ -283,10 +286,14 @@ void DisparityNode::connectCb()
     image_sub_qos = rclcpp::SystemDefaultsQoS();
   }
   const auto image_sub_rmw_qos = image_sub_qos.get_rmw_qos_profile();
-  sub_l_image_.subscribe(this, "left/image_rect", hints.getTransport(), image_sub_rmw_qos);
-  sub_l_info_.subscribe(this, "left/camera_info", image_sub_rmw_qos);
-  sub_r_image_.subscribe(this, "right/image_rect", hints.getTransport(), image_sub_rmw_qos);
-  sub_r_info_.subscribe(this, "right/camera_info", image_sub_rmw_qos);
+  auto sub_opts = rclcpp::SubscriptionOptions();
+  sub_opts.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
+  sub_l_image_.subscribe(
+    this, "left/image_rect", hints.getTransport(), image_sub_rmw_qos, sub_opts);
+  sub_l_info_.subscribe(this, "left/camera_info", image_sub_rmw_qos, sub_opts);
+  sub_r_image_.subscribe(
+    this, "right/image_rect", hints.getTransport(), image_sub_rmw_qos, sub_opts);
+  sub_r_info_.subscribe(this, "right/camera_info", image_sub_rmw_qos, sub_opts);
 }
 
 void DisparityNode::imageCb(
