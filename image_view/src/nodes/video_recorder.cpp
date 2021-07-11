@@ -26,6 +26,9 @@
 #if CV_MAJOR_VERSION == 3
 #include <opencv2/videoio.hpp>
 #endif
+#include <stdio.h>
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include <queue>
 
 cv::VideoWriter outputVideo;
 
@@ -34,31 +37,73 @@ ros::Time g_last_wrote_time = ros::Time(0);
 std::string encoding;
 std::string codec;
 int fps;
-std::string filename;
+std::string base_filename, filename;
 double min_depth_range;
 double max_depth_range;
 bool use_dynamic_range;
 int colormap;
+bool stamped_filename;
+bool rolling_buffer;
+ros::Duration rb_video_length;
+int rb_n_videos;
+ros::Time video_creation_stamp;
+std::queue<std::string> filenames;
+std::string video_topic;
+bool use_posix;
 
+void generateStampedFilename(std::string &filename) {
+  std::size_t found = base_filename.find_last_of("/\\");
+  std::string path = base_filename.substr(0, found + 1);
+  std::string basename = base_filename.substr(found + 1);
+  std::stringstream ss;
+  if (use_posix) {
+    boost::posix_time::ptime my_posix_time = ros::Time::now().toBoost();
+    std::string iso_time_str = boost::posix_time::to_iso_extended_string(my_posix_time);
+    ss << iso_time_str << "_" << basename;
+  }
+  else {
+    ss << ros::Time::now().toNSec() << "_" << basename;
+  }
+  filename = path + ss.str();
+  ROS_INFO("Video recording to %s", filename.c_str());
+  // If rolling_buffer mode, store filenames in a vector
+  if (rolling_buffer) {
+    filenames.push(filename);
+    // Delete oldest video
+    if (filenames.size() > rb_n_videos) {
+      remove(filenames.front().c_str());
+      filenames.pop();
+    }
+  }
+}
 
 void callback(const sensor_msgs::ImageConstPtr& image_msg)
 {
     if (!outputVideo.isOpened()) {
 
+      // Generate stamped file name if required or in rolling_buffer mode
+      if (stamped_filename or rolling_buffer) {
+        generateStampedFilename(filename);
+      }
+      else {
+        filename = base_filename;
+      }
         cv::Size size(image_msg->width, image_msg->height);
 
         outputVideo.open(filename, 
 #if CV_MAJOR_VERSION >= 3
+
                 cv::VideoWriter::fourcc(codec.c_str()[0],
 #else
                 CV_FOURCC(codec.c_str()[0],
 #endif
                           codec.c_str()[1],
                           codec.c_str()[2],
-                          codec.c_str()[3]), 
+                          codec.c_str()[3]),
                 fps,
                 size,
                 true);
+        video_creation_stamp = ros::Time::now();
 
         if (!outputVideo.isOpened())
         {
@@ -73,6 +118,12 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
     if ((image_msg->header.stamp - g_last_wrote_time) < ros::Duration(1.0 / fps))
     {
       // Skip to get video with correct fps
+      return;
+    }
+
+    // Check if video has reached maximum length (only if rolling_buffer mode enabled and video is opened)
+    if (rolling_buffer && ros::Time::now() - video_creation_stamp >= rb_video_length) {
+      outputVideo.release(); // Release video, so in next frame a new one will be created
       return;
     }
 
@@ -104,8 +155,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "video_recorder", ros::init_options::AnonymousName);
     ros::NodeHandle nh;
     ros::NodeHandle local_nh("~");
-    local_nh.param("filename", filename, std::string("output.avi"));
-    bool stamped_filename;
+    local_nh.param("filename", base_filename, std::string("output.avi"));
     local_nh.param("stamped_filename", stamped_filename, false);
     local_nh.param("fps", fps, 15);
     local_nh.param("codec", codec, std::string("MJPG"));
@@ -115,15 +165,20 @@ int main(int argc, char** argv)
     local_nh.param("max_depth_range", max_depth_range, 0.0);
     local_nh.param("use_dynamic_depth_range", use_dynamic_range, false);
     local_nh.param("colormap", colormap, -1);
+    local_nh.param("rolling_buffer_mode", rolling_buffer, false); // rolling_buffer mode enabled/disabled
+    double rb_v_duration;
+    local_nh.param("rb_video_length", rb_v_duration, 5.0);
+    rb_video_length = ros::Duration(rb_v_duration*60); // Video length in ros::Duration (seconds)
+    local_nh.param("rb_n_videos", rb_n_videos, 10); // Number of videos to store in rolling_buffer mode
+    local_nh.param("video_topic", video_topic, std::string("image")); // Input video topic
+    local_nh.param("use_posix_timestamp", use_posix, true); // Use human readable posix format in stamped filenames
 
-    if (stamped_filename) {
-      std::size_t found = filename.find_last_of("/\\");
-      std::string path = filename.substr(0, found + 1);
-      std::string basename = filename.substr(found + 1);
-      std::stringstream ss;
-      ss << ros::Time::now().toNSec() << basename;
-      filename = path + ss.str();
-      ROS_INFO("Video recording to %s", filename.c_str());
+    // Generate stamped file name if required or in rolling_buffer mode
+    if (stamped_filename or rolling_buffer) {
+      generateStampedFilename(filename);
+    }
+    else {
+      filename = base_filename;
     }
 
     if (codec.size() != 4) {
@@ -132,7 +187,7 @@ int main(int argc, char** argv)
     }
 
     image_transport::ImageTransport it(nh);
-    std::string topic = nh.resolveName("image");
+    std::string topic = nh.resolveName(video_topic);
     image_transport::Subscriber sub_image = it.subscribe(topic, 1, callback);
 
     ROS_INFO_STREAM("Waiting for topic " << topic << "...");
