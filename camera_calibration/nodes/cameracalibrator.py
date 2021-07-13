@@ -132,14 +132,11 @@ def main():
     group.add_option("--max-chessboard-speed", type="float", default=-1.0,
                      help="Do not use samples where the calibration pattern is moving faster \
                      than this speed in px/frame. Set to eg. 0.5 for rolling shutter cameras.")
-    parser.add_option("-g", "--no-gui",
-                     action="store_true", default=False,
-                     help="Do not use OpenCV GUI")
-    parser.add_option("--no-mono-if-stereo",
-                     action="store_true", default=False,
-                     help="Do not calibrate also Mono even if only Stereo is asked (new intrinsics for both cameras)")
-
     parser.add_option_group(group)
+    parser.add_option("--no-gui", action="store_true", default=False,
+                      help="Do not use OpenCV GUI")
+    parser.add_option("--no-mono-if-stereo", action="store_true", default=False,
+                      help="Skip Mono calibration if asked for Stereo calibration")
 
     options, args = parser.parse_args()
 
@@ -227,8 +224,8 @@ def main():
 
     rospy.init_node('cameracalibrator')
     node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, fisheye_calib_flags, pattern, options.camera_name,
-                                checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed,
-                                queue_size=options.queue_size, no_gui=options.no_gui, no_mono_if_stereo=options.no_mono_if_stereo)
+                                 checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed,
+                                 queue_size=options.queue_size, no_gui=options.no_gui, no_mono_if_stereo=options.no_mono_if_stereo)
     rospy.spin()
 
 if __name__ == "__main__":

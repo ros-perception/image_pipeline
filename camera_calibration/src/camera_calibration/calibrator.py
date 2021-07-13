@@ -39,11 +39,11 @@ import image_geometry
 import math
 import numpy.linalg
 import pickle
+import PyKDL
 import random
 import sensor_msgs.msg
 import tarfile
 import time
-import PyKDL
 from distutils.version import LooseVersion
 import sys
 from enum import Enum
@@ -1112,7 +1112,11 @@ class StereoCalibrator(Calibrator):
         return good
 
     def cal_fromcorners(self, good):
-        
+        """
+        Perform Stereo Calibration
+        Skip Mono calibration if param (no_mono_if_stereo) is set
+        :param good: list of good corners detected in both left and right images
+        """
         lcorners = [(lco, lid, b) for (lco, rco, lid, rid, b) in good]
         rcorners = [(rco, rid, b) for (lco, rco, lid, rid, b) in good]
 
@@ -1263,9 +1267,10 @@ class StereoCalibrator(Calibrator):
         r = PyKDL.Rotation(self.R[0][0], self.R[0][1], self.R[0][2],
                            self.R[1][0], self.R[1][1], self.R[1][2],
                            self.R[2][0], self.R[2][1], self.R[2][2])
-        return("Extrinsic transformation from the right camera to the left camera:\nT = "
-                +str(numpy.ravel(self.T).tolist())+"\nR = "+str(numpy.ravel(self.R).tolist())
-                +"\nquaternion = "+str(list(r.GetQuaternion()))+"\nRPY = "+str(list(r.GetRPY())))
+                           
+        return (f"Extrinsic transformation from the right camera to the left camera:\nT = "
+                "{str(numpy.ravel(self.T).tolist())} \nR = {str(numpy.ravel(self.R).tolist())}"
+                "\nquaternion = {str(list(r.GetQuaternion()))}\nRPY = {str(list(r.GetRPY()))}")
 
     def ost(self):
         return (self.lrost(self.name + "/left", self.l.distortion, self.l.intrinsics, self.l.R, self.l.P, self.size) +

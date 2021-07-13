@@ -49,6 +49,7 @@ except ImportError:
     from Queue import Queue
 from camera_calibration.calibrator import CAMERA_MODEL
 
+
 class BufferQueue(Queue):
     """Slight modification of the standard Queue that discards the oldest item
     when adding an item and the queue is full.
@@ -63,6 +64,7 @@ class BufferQueue(Queue):
             self._put(item)
             self.unfinished_tasks += 1
             self.not_empty.notify()
+
 
 class DisplayThread(threading.Thread):
     """
@@ -95,10 +97,11 @@ class DisplayThread(threading.Thread):
             elif k == ord('s') and self.image is not None:
                 self.opencv_calibration_node.screendump(self.image)
 
+
 class TerminalThread(threading.Thread):
     """
-    Thread that offers user interface through terminal
-    by asking yes/no quastions to the user (calibrate? save?)
+    Thread that offers user interface through the terminal
+    by asking yes/no questions to the user (calibrate? save?)
     """
     def __init__(self, queue, opencv_calibration_node):
         threading.Thread.__init__(self)
@@ -107,17 +110,18 @@ class TerminalThread(threading.Thread):
 
     def run(self):
         while True:
-            if self.queue.qsize() == self.queue.maxsize:                        
-                # ask for calibration only if the queue is full                 
-                # acquire lock until yes/no questionare is done to avoid  
-                # adding new samples if not necessary                           
-                with self.queue.mutex:                                     
-                    self.opencv_calibration_node.ask_for_calibration()          
-                while not self.queue.empty():                                   
-                    self.queue.get()                                            
+            if self.queue.qsize() == self.queue.maxsize:
+                # ask for calibration only if the queue is full
+                # acquire lock until yes/no questionnaire is done to avoid
+                # adding new samples if not necessary
+                with self.queue.mutex:
+                    self.opencv_calibration_node.ask_for_calibration()
+                while not self.queue.empty():
+                    self.queue.get()
                     self.queue.task_done()
             else:
                 time.sleep(0.1)
+
 
 class ConsumerThread(threading.Thread):
     def __init__(self, queue, function):
@@ -162,11 +166,11 @@ class CalibrationNode:
         if self._no_mono_if_stereo:
             left_camera_info_topic = "{}/camera_info".format(rospy.remap_name("left_camera"))
             rospy.loginfo("Waiting for the CameraInfo msg from {} topic".format(left_camera_info_topic))
-            self.left_camera_info_msg= rospy.wait_for_message(left_camera_info_topic, sensor_msgs.msg.CameraInfo, 100)
+            self.left_camera_info_msg = rospy.wait_for_message(left_camera_info_topic, sensor_msgs.msg.CameraInfo, 100)
 
             right_camera_info_topic = "{}/camera_info".format(rospy.remap_name("right_camera"))
             rospy.loginfo("Waiting for the CameraInfo msg from {} topic".format(right_camera_info_topic))
-            self.right_camera_info_msg= rospy.wait_for_message(right_camera_info_topic, sensor_msgs.msg.CameraInfo, 100)
+            self.right_camera_info_msg = rospy.wait_for_message(right_camera_info_topic, sensor_msgs.msg.CameraInfo, 100)
 
         if self._no_gui:
             self.lpub = rospy.Publisher("/camera_calibration_left", sensor_msgs.msg.Image, queue_size=10)
@@ -290,26 +294,6 @@ class CalibrationNode:
             rv = rv and self.check_set_camera_info(response)
         return rv
 
-    def ask_yes_no_question(self, question, default_yes=True):
-        """
-        Ask the user a question via a command line prompt.
-        The user should answer, y, yes, n, no or some upper-/lowercase
-        variation thereof, with empty input interpreted as the default
-        answer (yes if not specified when calling this method)
-        :param default_yes: bool with the default answer
-        :param question: string with the question to be asked
-        """
-        while True:
-            answer = input(
-                question + (' [Y/n]: ' if default_yes else ' [y/N]: ')).lower()
-            if answer in ['y', 'ye', 'yes']:
-                return True
-            elif answer in ['n', 'no']:
-                return False
-            elif answer == '':
-                return default_yes
-            else:
-                print('Please answer using only y or n (or yes/no if you prefer)')
 
 class OpenCVCalibrationNode(CalibrationNode):
     """ Calibration node with an OpenCV Gui """
@@ -318,7 +302,7 @@ class OpenCVCalibrationNode(CalibrationNode):
     FONT_THICKNESS = 2
 
     def __init__(self, *args, **kwargs):
-        
+
         CalibrationNode.__init__(self, *args, **kwargs)
 
         if self._no_gui:
@@ -470,15 +454,40 @@ class OpenCVCalibrationNode(CalibrationNode):
 
     def ask_for_calibration(self):
         if self.c.goodenough:
-            do_calibrate=self.ask_yes_no_question("Current collected set of samples is good enough, do you want to calibrate?")
+            do_calibrate = ask_yes_no_question("Current collected set of samples"
+                                               "is good enough, do you want to calibrate?")
             if do_calibrate:
                 print("**** Calibrating ****")
                 rms = self.c.do_calibration()
                 if self.c.calibrated:
                     print("RMS Error from this calibration is: {}".format(str(rms)))
-                    do_save=self.ask_yes_no_question("Do you want to save this result and exit? If no then collecting new samples.")
+                    do_save = ask_yes_no_question("Do you want to save this result and exit?"
+                                                  "If no then collecting new samples.")
                     if do_save:
                         self.c.do_save()
-                        rospy.signal_shutdown('Quit')
+                        rospy.signal_shutdown("Quit")
             self.c.calibrated = False
             print("Continuing with collecting new samples...")
+
+
+def ask_yes_no_question(self, question, default_yes=True):
+    """
+    Ask the user a question via a command line prompt.
+    The user should answer, y, yes, n, no or some upper-/lowercase
+    variation thereof, with empty input interpreted as the default
+    answer (yes if not specified when calling this method)
+    :param default_yes: bool with the default answer
+    :param question: string with the question to be asked
+    """
+    while True:
+        answer = input(
+            question + (" [Y/n]: " if default_yes else " [y/N]: ")).lower()
+        if answer in ["y", "ye", "yes"]:
+            return True
+        elif answer in ["n", "no"]:
+            return False
+        elif answer == "":
+            return default_yes
+        else:
+            print("Please answer using only y or n (or yes/no if you prefer)")
+
