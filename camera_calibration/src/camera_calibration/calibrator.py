@@ -1269,8 +1269,8 @@ class StereoCalibrator(Calibrator):
                            self.R[2][0], self.R[2][1], self.R[2][2])
                            
         return (f"Extrinsic transformation from the right camera to the left camera:\nT = "
-                "{str(numpy.ravel(self.T).tolist())} \nR = {str(numpy.ravel(self.R).tolist())}"
-                "\nquaternion = {str(list(r.GetQuaternion()))}\nRPY = {str(list(r.GetRPY()))}")
+                f"{str(numpy.ravel(self.T).tolist())} \nR = {str(numpy.ravel(self.R).tolist())}"
+                f"\nquaternion = {str(list(r.GetQuaternion()))}\nRPY = {str(list(r.GetRPY()))}")
 
     def ost(self):
         return (self.lrost(self.name + "/left", self.l.distortion, self.l.intrinsics, self.l.R, self.l.P, self.size) +
