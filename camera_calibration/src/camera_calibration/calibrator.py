@@ -1143,21 +1143,21 @@ class StereoCalibrator(Calibrator):
             print("stereo pinhole calibration...")
             if LooseVersion(cv2.__version__).version[0] == 2:
                 ret = cv2.stereoCalibrate(opts, lipts, ripts, self.size,
-                                   self.l.intrinsics, self.l.distortion,
-                                   self.r.intrinsics, self.r.distortion,
-                                   self.R,                            # R
-                                   self.T,                            # T
-                                   criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
-                                   flags = flags)
+                                          self.l.intrinsics, self.l.distortion,
+                                          self.r.intrinsics, self.r.distortion,
+                                          self.R,                            # R
+                                          self.T,                            # T
+                                          criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
+                                          flags = flags)
             else:
                 ret = cv2.stereoCalibrate(opts, lipts, ripts,
-                                   self.l.intrinsics, self.l.distortion,
-                                   self.r.intrinsics, self.r.distortion,
-                                   self.size,
-                                   self.R,                            # R
-                                   self.T,                            # T
-                                   criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
-                                   flags = flags)
+                                          self.l.intrinsics, self.l.distortion,
+                                          self.r.intrinsics, self.r.distortion,
+                                          self.size,
+                                          self.R,                            # R
+                                          self.T,                            # T
+                                          criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5),
+                                          flags = flags)
         elif self.camera_model == CAMERA_MODEL.FISHEYE:
             print("stereo fisheye calibration...")
             if LooseVersion(cv2.__version__).version[0] == 2:
@@ -1173,13 +1173,13 @@ class StereoCalibrator(Calibrator):
                 opts = opts64
 
                 ret = cv2.fisheye.stereoCalibrate(opts, lipts, ripts,
-                                   self.l.intrinsics, self.l.distortion,
-                                   self.r.intrinsics, self.r.distortion,
-                                   self.size,
-                                   self.R,                            # R
-                                   self.T,                            # T
-                                   criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5), # 30, 1e-6
-                                   flags = flags)
+                                                  self.l.intrinsics, self.l.distortion,
+                                                  self.r.intrinsics, self.r.distortion,
+                                                  self.size,
+                                                  self.R,                            # R
+                                                  self.T,                            # T
+                                                  criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5), # 30, 1e-6
+                                                  flags = flags)
 
         self.set_alpha(0.0)
         rms = ret[0]

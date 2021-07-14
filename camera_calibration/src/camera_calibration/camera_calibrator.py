@@ -244,11 +244,11 @@ class CalibrationNode:
             if self._camera_name:
                 self.c = StereoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern, name=self._camera_name,
                                           checkerboard_flags=self._checkerboard_flags,
-                                          max_chessboard_speed = self._max_chessboard_speed, no_mono_if_stereo=self._no_mono_if_stereo)
+                                          max_chessboard_speed=self._max_chessboard_speed, no_mono_if_stereo=self._no_mono_if_stereo)
             else:
                 self.c = StereoCalibrator(self._boards, self._calib_flags, self._fisheye_calib_flags, self._pattern,
                                           checkerboard_flags=self._checkerboard_flags,
-                                          max_chessboard_speed = self._max_chessboard_speed, no_mono_if_stereo=self._no_mono_if_stereo)
+                                          max_chessboard_speed=self._max_chessboard_speed, no_mono_if_stereo=self._no_mono_if_stereo)
             if self._no_mono_if_stereo:
                 self.c.from_message((self.left_camera_info_msg, self.right_camera_info_msg))
 
@@ -454,14 +454,14 @@ class OpenCVCalibrationNode(CalibrationNode):
 
     def ask_for_calibration(self):
         if self.c.goodenough:
-            do_calibrate = ask_yes_no_question("Current collected set of samples"
+            do_calibrate = ask_yes_no_question("Current collected set of samples "
                                                "is good enough, do you want to calibrate?")
             if do_calibrate:
                 print("**** Calibrating ****")
                 rms = self.c.do_calibration()
                 if self.c.calibrated:
                     print("RMS Error from this calibration is: {}".format(str(rms)))
-                    do_save = ask_yes_no_question("Do you want to save this result and exit?"
+                    do_save = ask_yes_no_question("Do you want to save this result and exit? "
                                                   "If no then collecting new samples.")
                     if do_save:
                         self.c.do_save()
@@ -470,7 +470,7 @@ class OpenCVCalibrationNode(CalibrationNode):
             print("Continuing with collecting new samples...")
 
 
-def ask_yes_no_question(self, question, default_yes=True):
+def ask_yes_no_question(question, default_yes=True):
     """
     Ask the user a question via a command line prompt.
     The user should answer, y, yes, n, no or some upper-/lowercase
