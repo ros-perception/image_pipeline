@@ -488,6 +488,3 @@ def ask_yes_no_question(question, default_yes=True):
             return False
         elif answer == "":
             return default_yes
-        else:
-            print("Please answer using only y or n (or yes/no if you prefer)")
-

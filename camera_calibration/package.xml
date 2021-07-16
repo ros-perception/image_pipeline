@@ -20,6 +20,8 @@
   <run_depend>rospy</run_depend>
   <run_depend>std_srvs</run_depend>
   <run_depend>sensor_msgs</run_depend>
+  
+  <exec_depend>python_orocos_kdl</exec_depend>
 
   <license>BSD</license>
   <url>http://www.ros.org/wiki/camera_calibration</url>
