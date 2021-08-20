@@ -50,10 +50,10 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("ResizeNode", options)
 {
   // Create image pub
-  pub_image_ = image_transport::create_camera_publisher(this, "resize");
+  pub_image_ = image_transport::create_camera_publisher(this, "resize/image_raw");
   // Create image sub
   sub_image_ = image_transport::create_camera_subscription(
-    this, "image",
+    this, "image/image_raw",
     std::bind(
       &ResizeNode::imageCb, this,
       std::placeholders::_1,
