@@ -70,12 +70,13 @@ public:
 
 private:
   boost::format g_format;
-  bool save_all_image, save_image_service;
-  std::string encoding;
-  bool request_start_end;
-  bool is_first_image_;
-  bool has_camera_info_;
-  size_t count_;
+  bool save_all_image_{false};
+  bool save_image_service_{false};
+  std::string encoding_;
+  bool request_start_end_{false};
+  bool is_first_image_{true};
+  bool has_camera_info_{false};
+  size_t count_{0u};
   rclcpp::Time start_time_;
   rclcpp::Time end_time_;
   image_transport::CameraSubscriber cam_sub_;
