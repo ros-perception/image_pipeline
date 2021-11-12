@@ -90,6 +90,11 @@ class StereoImagePublisher(Node):
         camera_info_msg = CameraInfo()
         camera_info_msg.height = image.shape[0]
         camera_info_msg.width = image.shape[1]
+        camera_info_msg.p = [
+            1.0, 0.0, 1.0, 0.0,
+            0.0, 1.0, 1.0, 0.0,
+            0.0, 0.0, 1.0, 0.0
+        ]
 
         return (image_msg, camera_info_msg)
 
