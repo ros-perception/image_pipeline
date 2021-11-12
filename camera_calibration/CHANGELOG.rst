@@ -1,3 +1,9 @@
+Forthcoming
+-----------
+* fix premature camera model change in camera_calibration
+* Fix shebang lines for noetic python3
+* Contributors: Michael Carroll, Victor Dubois
+
 1.15.3 (2020-12-11)
 -------------------
 * Update fisheye distortion model definition

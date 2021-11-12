@@ -1,6 +1,9 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Forthcoming
+-----------
+
 1.15.3 (2020-12-11)
 -------------------
 * remove email blasts from steve macenski (`#595 <https://github.com/ros-perception/image_pipeline/issues/595>`_)

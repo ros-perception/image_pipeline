@@ -1,3 +1,18 @@
+Forthcoming
+-----------
+* Fix includes
+  In the following commit in vision_opencv, the include
+  opencv2/calib3d/calib3d.hpp was removed from pinhole_camera_model.h :
+  https://github.com/ros-perception/vision_opencv/commit/51ca54354a8353fc728fcc8bd8ead7d2b6cf7444
+  Since we indirectly depended on this include, we now have to add it
+  directly.
+* support rgba8 and bgra8 encodings by skipping alpha channel
+* functional xyzrgb radial nodelet
+* add xyzrgb radial nodelet
+* Support MONO16 image encodings.
+* Add missing cstdint, vector, cmath includes.
+* Contributors: Avinash Thakur, Evan Flynn, Martin Günther, Mike Purvis
+
 1.15.3 (2020-12-11)
 -------------------
 * remove email blasts from steve macenski (`#595 <https://github.com/ros-perception/image_pipeline/issues/595>`_)

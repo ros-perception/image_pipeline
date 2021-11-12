@@ -1,3 +1,14 @@
+Forthcoming
+-----------
+* remove GTK3 dep.
+* remove harfbuzz.
+* Update image_view/CMakeLists.txt
+  Co-authored-by: Joshua Whitley <josh.whitley@autoware.org>
+* Update image_view/CMakeLists.txt
+  Co-authored-by: Joshua Whitley <josh.whitley@autoware.org>
+* Make GTK3 and harfbuzz optional
+* Contributors: Sean Yen, seanyen
+
 1.15.3 (2020-12-11)
 -------------------
 * remove email blasts from steve macenski (`#595 <https://github.com/ros-perception/image_pipeline/issues/595>`_)
