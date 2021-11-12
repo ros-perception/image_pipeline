@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
     container:
-      image: ros:rolling-ros-base
+      image: osrf/ros2:testing
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
