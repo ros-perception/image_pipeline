@@ -1,8 +1,10 @@
 name: Basic Build Workflow
 
 on:
-  - pull_request
-  - push
+  push:
+    branches: [rolling]
+  pull_request:
+    types: [opened, reopened, synchronize]
 
 jobs:
   build-rolling:
