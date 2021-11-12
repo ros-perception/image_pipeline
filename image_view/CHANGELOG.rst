@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.16.0 (2021-11-12)
+-------------------
 * remove GTK3 dep.
 * remove harfbuzz.
 * Update image_view/CMakeLists.txt

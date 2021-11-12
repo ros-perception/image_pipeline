@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.16.0 (2021-11-12)
+-------------------
 * Fix includes
   In the following commit in vision_opencv, the include
   opencv2/calib3d/calib3d.hpp was removed from pinhole_camera_model.h :
