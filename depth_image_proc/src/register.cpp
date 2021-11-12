@@ -54,7 +54,7 @@ namespace enc = sensor_msgs::image_encodings;
 class RegisterNode : public rclcpp::Node
 {
 public:
-  DEPTH_IMAGE_PROC_PUBLIC RegisterNode(const rclcpp::NodeOptions& options);
+  DEPTH_IMAGE_PROC_PUBLIC RegisterNode(const rclcpp::NodeOptions & options);
 
 private:
   using Image = sensor_msgs::msg::Image;
@@ -93,7 +93,7 @@ private:
   rclcpp::Logger logger_ = rclcpp::get_logger("RegisterNode");
 };
 
-RegisterNode::RegisterNode(const rclcpp::NodeOptions& options)
+RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
 : Node("RegisterNode", options)
 {
   rclcpp::Clock::SharedPtr clock = this->get_clock();
