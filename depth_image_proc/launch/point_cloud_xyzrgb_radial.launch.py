@@ -33,7 +33,10 @@
 # uncomment if you want to launch rviz too in this launch
 # import os
 # from ament_index_python.packages import get_package_share_directory
+import os
 
+from ament_index_python.packages import get_package_share_directory
+import launch
 from launch import LaunchDescription
 
 import launch_ros.actions
@@ -41,10 +44,22 @@ import launch_ros.descriptions
 
 
 def generate_launch_description():
-    # uncomment if you want to launch rviz too in this launch
-    # default_rviz = os.path.join(get_package_share_directory('depth_image_proc'),
-    #                            'launch', 'rviz/point_cloud_xyzrgb.rviz')
+    default_rviz = os.path.join(get_package_share_directory('depth_image_proc'),
+                                'launch', 'rviz/point_cloud_xyzrgb.rviz')
     return LaunchDescription([
+        launch.actions.DeclareLaunchArgument(
+            name='rviz', default_value='False',
+            description='Launch RViz for viewing point cloud xyzrgb radial data'
+        ),
+        launch_ros.actions.Node(
+            condition=launch.conditions.IfCondition(
+                launch.substitutions.LaunchConfiguration('rviz')
+            ),
+            package='rviz2',
+            executable='rviz2',
+            output='screen',
+            arguments=['--display-config', default_rviz]
+        ),
         # launch plugin through rclcpp_components container
         # make sure remapped topics are available
         launch_ros.actions.ComposableNodeContainer(

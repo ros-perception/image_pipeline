@@ -63,7 +63,7 @@ PointCloudXyzrgbRadialNode::PointCloudXyzrgbRadialNode(const rclcpp::NodeOptions
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   if (use_exact_sync) {
-    exact_sync_ = std::make_shared<ExactSynchronizer>(
+    exact_sync_ = std::make_unique<ExactSynchronizer>(
       ExactSyncPolicy(queue_size),
       sub_depth_,
       sub_rgb_,
@@ -77,7 +77,7 @@ PointCloudXyzrgbRadialNode::PointCloudXyzrgbRadialNode(const rclcpp::NodeOptions
         std::placeholders::_3));
   } else {
     sync_ =
-      std::make_shared<Synchronizer>(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_);
+      std::make_unique<Synchronizer>(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_);
     sync_->registerCallback(
       std::bind(
         &PointCloudXyzrgbRadialNode::imageCb,
@@ -94,7 +94,7 @@ PointCloudXyzrgbRadialNode::PointCloudXyzrgbRadialNode(const rclcpp::NodeOptions
   connectCb();
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // Make sure we don't enter connectCb() between advertising and assigning to pub_point_cloud_
-  std::lock_guard<std::mutex> lock(connect_mutex_);
+  // std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement connect_cb when SubscriberStatusCallback is available
   // pub_point_cloud_ = depth_nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
   pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SensorDataQoS());
@@ -134,7 +134,7 @@ void PointCloudXyzrgbRadialNode::imageCb(
 {
   // Check for bad inputs
   if (depth_msg->header.frame_id != rgb_msg_in->header.frame_id) {
-    RCLCPP_ERROR(
+    RCLCPP_WARN(
       logger_, "Depth image frame id [%s] doesn't match RGB image frame id [%s]",
       depth_msg->header.frame_id.c_str(), rgb_msg_in->header.frame_id.c_str());
     return;
@@ -187,6 +187,16 @@ void PointCloudXyzrgbRadialNode::imageCb(
     return;
   } else {
     rgb_msg = rgb_msg_in;
+  }
+
+  if (info_msg->d != D_ || info_msg->k != K_ || width_ != info_msg->width ||
+    height_ != info_msg->height)
+  {
+    D_ = info_msg->d;
+    K_ = info_msg->k;
+    width_ = info_msg->width;
+    height_ = info_msg->height;
+    transform_ = initMatrix(cv::Mat_<double>(3, 3, &K_[0]), cv::Mat(D_), width_, height_, true);
   }
 
   // Supported color encodings: RGB8, BGR8, MONO8

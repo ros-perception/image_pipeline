@@ -77,8 +77,8 @@ private:
     message_filters::sync_policies::ExactTime<Image, Image, CameraInfo>;
   using Synchronizer = message_filters::Synchronizer<SyncPolicy>;
   using ExactSynchronizer = message_filters::Synchronizer<ExactSyncPolicy>;
-  std::shared_ptr<Synchronizer> sync_;
-  std::shared_ptr<ExactSynchronizer> exact_sync_;
+  std::unique_ptr<Synchronizer> sync_;
+  std::unique_ptr<ExactSynchronizer> exact_sync_;
 
   // Publications
   std::mutex connect_mutex_;
@@ -101,7 +101,7 @@ private:
     const Image::ConstSharedPtr & rgb_msg,
     const CameraInfo::ConstSharedPtr & info_msg);
 
-  rclcpp::Logger logger_ = rclcpp::get_logger("PointCloudXyzrgbRadialNode");
+  rclcpp::Logger logger_ = this->get_logger();
 };
 
 }  // namespace depth_image_proc
