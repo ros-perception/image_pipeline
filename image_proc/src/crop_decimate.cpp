@@ -119,9 +119,9 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
   int interpolation = this->declare_parameter("interpolation", 0);
   interpolation_ = static_cast<CropDecimateModes>(interpolation);
 
-  pub_ = image_transport::create_camera_publisher(this, "image_raw");
+  pub_ = image_transport::create_camera_publisher(this, "out/image_raw");
   sub_ = image_transport::create_camera_subscription(
-    this, "image_raw", std::bind(&CropDecimateNode::imageCb, this,
+    this, "in/image_raw", std::bind(&CropDecimateNode::imageCb, this,
     std::placeholders::_1, std::placeholders::_2), "raw");
 }
 
@@ -131,9 +131,9 @@ void CropDecimateNode::imageCb(
 {
   /// @todo Check image dimensions match info_msg
 
-  if (pub_.getNumSubscribers() < 1) {
-    return;
-  }
+  //if (pub_.getNumSubscribers() < 1) {
+    //return;
+  //}
 
   int decimation_x = decimation_x_;
   int decimation_y = decimation_y_;
