@@ -117,8 +117,11 @@ void PointCloudXyziNode::imageCb(
 {
   // Check for bad inputs
   if (depth_msg->header.frame_id != intensity_msg_in->header.frame_id) {
-    RCLCPP_WARN(
-      logger_, "Depth image frame id [%s] doesn't match image frame id [%s]",
+    RCLCPP_WARN_THROTTLE(
+      logger_,
+      *get_clock(),
+      10000,  // 10 seconds
+      "Depth image frame id [%s] doesn't match image frame id [%s]",
       depth_msg->header.frame_id.c_str(), intensity_msg_in->header.frame_id.c_str());
   }
 
