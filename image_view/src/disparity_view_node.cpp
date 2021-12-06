@@ -70,7 +70,7 @@ DisparityViewNode::DisparityViewNode(const rclcpp::NodeOptions & options)
   if (topic == "image") {
     RCLCPP_WARN(
       this->get_logger(), "Topic 'image' has not been remapped! Typical command-line usage:\n"
-      "\t$ rosrun image_view disparity_view image:=<disparity image topic>");
+      "\t$ ros2 run image_view disparity_view --ros-args -r image:=<disparity image topic>");
   }
 
   initialized = false;
