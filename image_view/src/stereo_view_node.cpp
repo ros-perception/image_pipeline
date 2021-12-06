@@ -163,14 +163,12 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
       std::bind(&StereoViewNode::imageCb, this, _1, _2, _3));
   }
 
-  for (auto const& x : topics)
-  {
+  for (auto const& x : topics) {
     if (x.first.find("/stereo/left/image") != std::string::npos ||
-        x.first.find("/stereo/right/image") != std::string::npos ||
-        x.first.find("/stereo/disparity") != std::string::npos)
-    {
+      x.first.find("/stereo/right/image") != std::string::npos ||
+      x.first.find("/stereo/disparity") != std::string::npos) {
       RCLCPP_WARN(
-       this->get_logger(), "defaults topics '/stereo/xxx' have not been remapped! "
+        this->get_logger(), "defaults topics '/stereo/xxx' have not been remapped! "
         "Example command-line usage:\n"
         "\t$ ros2 run image_view stereo_view --ros-args "
         "-r /stereo/left/image:=/narrow_stereo/left/color_raw "
