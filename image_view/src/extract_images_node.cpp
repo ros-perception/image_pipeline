@@ -84,7 +84,8 @@ ExtractImagesNode::ExtractImagesNode(const rclcpp::NodeOptions & options)
   if (topics.find(topic) != topics.end()) {
     RCLCPP_WARN(
       this->get_logger(), "extract_images: image has not been remapped! "
-      "Typical command-line usage:\n\t$ ros2 run image_view extract_images --ros-args -r image:=<image topic> -p transport:=<transport mode>");
+      "Typical command-line usage:\n\t$ ros2 run image_view extract_images "
+      "--ros-args -r image:=<image topic> -p transport:=<transport mode>");
   }
 
   this->declare_parameter<std::string>("filename_format", std::string("frame%04i.jpg"));
