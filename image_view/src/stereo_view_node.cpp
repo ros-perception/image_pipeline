@@ -170,7 +170,8 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
         x.first.find("/stereo/disparity") != std::string::npos)
     {
       RCLCPP_WARN(
-       this->get_logger(), "defaults topics '/stereo/xxx' have not been remapped! Example command-line usage:\n"
+       this->get_logger(), "defaults topics '/stereo/xxx' have not been remapped! "
+        "Example command-line usage:\n"
         "\t$ ros2 run image_view stereo_view --ros-args "
         "-r /stereo/left/image:=/narrow_stereo/left/color_raw "
         "-r /stereo/right/image:=/narrow_stereo/right/color_raw "
