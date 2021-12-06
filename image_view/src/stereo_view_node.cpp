@@ -92,11 +92,12 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
   // Read local parameters
   bool autosize = this->declare_parameter("autosize", true);
 
-  std::string format_string;
-  format_string = this->declare_parameter("filename_format", std::string("%s%04i.jpg"));
+  this->declare_parameter<std::string>("filename_format", std::string("frame%04i.jpg"));
+  std::string format_string = this->get_parameter("filename_format").as_string();
   filename_format_.parse(format_string);
 
-  std::string transport = this->declare_parameter("transport", std::string("raw"));
+  this->declare_parameter<std::string>("transport", std::string("raw"));
+  std::string transport = this->get_parameter("transport").as_string();
 
   // Do GUI window setup
   int flags = autosize ? (cv::WINDOW_AUTOSIZE | cv::WINDOW_KEEPRATIO | cv::WINDOW_GUI_EXPANDED) : 0;
@@ -110,26 +111,30 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
   // Resolve topic names
   std::string stereo_ns = rclcpp::expand_topic_or_service_name(
     "stereo", this->get_name(), this->get_namespace());
+
   std::string left_topic = rclcpp::expand_topic_or_service_name(
-    stereo_ns + "/left/" + rclcpp::expand_topic_or_service_name(
+    stereo_ns + "/left" + rclcpp::expand_topic_or_service_name(
       "image", this->get_name(), this->get_namespace()),
     this->get_name(), this->get_namespace());
   std::string right_topic = rclcpp::expand_topic_or_service_name(
-    stereo_ns + "/right/" + rclcpp::expand_topic_or_service_name(
+    stereo_ns + "/right" + rclcpp::expand_topic_or_service_name(
       "image", this->get_name(), this->get_namespace()),
     this->get_name(), this->get_namespace());
   std::string disparity_topic = rclcpp::expand_topic_or_service_name(
     stereo_ns + "/disparity", this->get_name(), this->get_namespace());
-  RCLCPP_INFO(
-    this->get_logger(),
-    "Subscribing to:\n\t* %s\n\t* %s\n\t* %s",
-    left_topic.c_str(), right_topic.c_str(),
-    disparity_topic.c_str());
 
   // Subscribe to three input topics.
   left_sub_.subscribe(this, left_topic, transport);
   right_sub_.subscribe(this, right_topic, transport);
   disparity_sub_.subscribe(this, disparity_topic);
+
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Subscribing to:\n\t* %s\n\t* %s\n\t* %s",
+    left_sub_.getTopic().c_str(), right_sub_.getTopic().c_str(),
+    disparity_sub_.getSubscriber()->get_topic_name());
+
+  auto topics = this->get_topic_names_and_types();
 
   // Complain every 30s if the topics appear unsynchronized
   left_sub_.registerCallback(std::bind(increment, &left_received_));
@@ -158,23 +163,20 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
       std::bind(&StereoViewNode::imageCb, this, _1, _2, _3));
   }
 
-  std::string stereo_topic =
-    rclcpp::expand_topic_or_service_name("stereo", this->get_name(), this->get_namespace());
-  std::string image_topic =
-    rclcpp::expand_topic_or_service_name("image", this->get_name(), this->get_namespace());
-  auto topics = this->get_topic_names_and_types();
-
-  if (topics.find(stereo_topic) != topics.end()) {
-    RCLCPP_WARN(
-      this->get_logger(), "'stereo' has not been remapped! Example command-line usage:\n"
-      "\t$ rosrun image_view stereo_view stereo:=narrow_stereo image:=image_color");
-  }
-
-  if (topics.find(image_topic) != topics.end()) {
-    RCLCPP_WARN(
-      this->get_logger(), "There is a delay between when the camera drivers publish "
-      "the raw images and when stereo_image_proc publishes the computed point cloud. "
-      "stereo_view may fail to synchronize these topics without a large queue_size.");
+  for (auto const& x : topics)
+  {
+    if (x.first.find("/stereo/left/image") != std::string::npos ||
+        x.first.find("/stereo/right/image") != std::string::npos ||
+        x.first.find("/stereo/disparity") != std::string::npos)
+    {
+      RCLCPP_WARN(
+       this->get_logger(), "defaults topics '/stereo/xxx' have not been remapped! Example command-line usage:\n"
+        "\t$ ros2 run image_view stereo_view --ros-args "
+        "-r /stereo/left/image:=/narrow_stereo/left/color_raw "
+        "-r /stereo/right/image:=/narrow_stereo/right/color_raw "
+        "-r /stereo/disparity:=/narrow_stereo/disparity");
+      break;
+    }
   }
 }
 
@@ -308,7 +310,7 @@ void StereoViewNode::checkInputsSynchronized()
       "Synchronized triplets: %d\n"
       "Possible issues:\n"
       "\t* stereo_image_proc is not running.\n"
-      "\t  Does `rosnode info %s` show any connections?\n"
+      "\t  Does `ros2 node info %s` show any connections?\n"
       "\t* The cameras are not synchronized.\n"
       "\t  Try restarting stereo_view with parameter _approximate_sync:=True\n"
       "\t* The network is too slow. One or more images are dropped from each triplet.\n"
