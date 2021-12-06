@@ -59,7 +59,6 @@ int main(int argc, char ** argv)
   rclcpp::init(argc, argv);
 
   rclcpp::NodeOptions options;
-  options.append_parameter_override("transport", (argc > 1) ? argv[1] : "raw");
   auto ein = std::make_shared<ExtractImagesNode>(options);
 
   rclcpp::spin(ein);
