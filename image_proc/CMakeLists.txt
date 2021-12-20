@@ -13,6 +13,7 @@ endif()
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
+find_package(tracetools_image_pipeline REQUIRED)
 find_package(OpenCV REQUIRED)
 if(OpenCV_VERSION VERSION_LESS "3.2.0")
   message(FATAL "Minimum OpenCV version is 3.2.0 (found version ${OpenCV_VERSION})")
