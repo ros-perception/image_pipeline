@@ -163,6 +163,11 @@ void ResizeNodelet::infoCb(const sensor_msgs::CameraInfoConstPtr& info_msg)
   dst_info_msg->P[5] = dst_info_msg->P[5] * scale_y;  // fy
   dst_info_msg->P[6] = dst_info_msg->P[6] * scale_y;  // cy
 
+  dst_info_msg->roi.x_offset = static_cast<int>(dst_info_msg->roi.x_offset * scale_x);
+  dst_info_msg->roi.y_offset = static_cast<int>(dst_info_msg->roi.y_offset * scale_y);
+  dst_info_msg->roi.width = static_cast<int>(dst_info_msg->roi.width * scale_x);
+  dst_info_msg->roi.height = static_cast<int>(dst_info_msg->roi.height * scale_y);
+
   pub_info_.publish(dst_info_msg);
 }
 
