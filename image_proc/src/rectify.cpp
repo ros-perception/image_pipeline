@@ -81,14 +81,14 @@ void RectifyNode::imageCb(
   TRACEPOINT(
     image_proc_rectify_init,
     static_cast<const void *>(this),
-    static_cast<const void *> (&(*image_msg)),
+    static_cast<const void *>(&(*image_msg)),
     static_cast<const void *>(&(*info_msg)));
 
   if (pub_rect_.getNumSubscribers() < 1) {
     TRACEPOINT(
       image_proc_rectify_fini,
       static_cast<const void *>(this),
-      static_cast<const void *> (&(*image_msg)),
+      static_cast<const void *>(&(*image_msg)),
       static_cast<const void *>(&(*info_msg)));
 
     return;
@@ -102,7 +102,7 @@ void RectifyNode::imageCb(
     TRACEPOINT(
       image_proc_rectify_fini,
       static_cast<const void *>(this),
-      static_cast<const void *> (&(*image_msg)),
+      static_cast<const void *>(&(*image_msg)),
       static_cast<const void *>(&(*info_msg)));
     return;
   }
@@ -123,7 +123,7 @@ void RectifyNode::imageCb(
     TRACEPOINT(
       image_proc_rectify_fini,
       static_cast<const void *>(this),
-      static_cast<const void *> (&(*image_msg)),
+      static_cast<const void *>(&(*image_msg)),
       static_cast<const void *>(&(*info_msg)));
     return;
   }
@@ -146,7 +146,7 @@ void RectifyNode::imageCb(
   TRACEPOINT(
     image_proc_rectify_fini,
     static_cast<const void *>(this),
-    static_cast<const void *> (&(*image_msg)),
+    static_cast<const void *>(&(*image_msg)),
     static_cast<const void *>(&(*info_msg)));
 }
 

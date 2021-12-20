@@ -81,7 +81,7 @@ void ResizeNode::imageCb(
   TRACEPOINT(
     image_proc_resize_init,
     static_cast<const void *>(this),
-    static_cast<const void *> (&(*image_msg)),
+    static_cast<const void *>(&(*image_msg)),
     static_cast<const void *>(&(*info_msg)));
 
   cv_bridge::CvImagePtr cv_ptr;
@@ -92,7 +92,7 @@ void ResizeNode::imageCb(
     TRACEPOINT(
       image_proc_resize_fini,
       static_cast<const void *>(this),
-      static_cast<const void *> (&(*image_msg)),
+      static_cast<const void *>(&(*image_msg)),
       static_cast<const void *>(&(*info_msg)));
     RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
     return;
@@ -142,9 +142,8 @@ void ResizeNode::imageCb(
   TRACEPOINT(
     image_proc_resize_fini,
     static_cast<const void *>(this),
-    static_cast<const void *> (&(*image_msg)),
+    static_cast<const void *>(&(*image_msg)),
     static_cast<const void *>(&(*info_msg)));
-
 }
 
 }  // namespace image_proc

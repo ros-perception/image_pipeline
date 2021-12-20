@@ -44,9 +44,9 @@ bool ros_trace_compile_status()
 
 void TRACEPOINT(
   image_proc_resize_init,
-    const void * resize_node_arg,
-    const void * resize_image_msg_arg,
-    const void * resize_info_msg_arg)
+  const void * resize_node_arg,
+  const void * resize_image_msg_arg,
+  const void * resize_info_msg_arg)
 {
   CONDITIONAL_TP(
     image_proc_resize_init,
@@ -57,9 +57,9 @@ void TRACEPOINT(
 
 void TRACEPOINT(
   image_proc_resize_fini,
-    const void * resize_node_arg,
-    const void * resize_image_msg_arg,
-    const void * resize_info_msg_arg)
+  const void * resize_node_arg,
+  const void * resize_image_msg_arg,
+  const void * resize_info_msg_arg)
 {
   CONDITIONAL_TP(
     image_proc_resize_fini,
@@ -70,9 +70,9 @@ void TRACEPOINT(
 
 void TRACEPOINT(
   image_proc_rectify_init,
-    const void * rectify_node_arg,
-    const void * rectify_image_msg_arg,
-    const void * rectify_info_msg_arg)
+  const void * rectify_node_arg,
+  const void * rectify_image_msg_arg,
+  const void * rectify_info_msg_arg)
 {
   CONDITIONAL_TP(
     image_proc_rectify_init,
@@ -83,9 +83,9 @@ void TRACEPOINT(
 
 void TRACEPOINT(
   image_proc_rectify_fini,
-    const void * rectify_node_arg,
-    const void * rectify_image_msg_arg,
-    const void * rectify_info_msg_arg)
+  const void * rectify_node_arg,
+  const void * rectify_image_msg_arg,
+  const void * rectify_info_msg_arg)
 {
   CONDITIONAL_TP(
     image_proc_rectify_fini,
