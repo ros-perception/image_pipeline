@@ -39,6 +39,7 @@
 #include <memory>
 #include <vector>
 
+#include "tracetools_image_pipeline/tracetools.h"
 #include "image_proc/rectify.hpp"
 
 namespace image_proc
@@ -77,7 +78,19 @@ void RectifyNode::imageCb(
   const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
   const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
 {
+  TRACEPOINT(
+    image_proc_rectify_init,
+    static_cast<const void *>(this),
+    static_cast<const void *> (&(*image_msg)),
+    static_cast<const void *>(&(*info_msg)));
+
   if (pub_rect_.getNumSubscribers() < 1) {
+    TRACEPOINT(
+      image_proc_rectify_fini,
+      static_cast<const void *>(this),
+      static_cast<const void *> (&(*image_msg)),
+      static_cast<const void *>(&(*info_msg)));
+
     return;
   }
 
@@ -86,6 +99,11 @@ void RectifyNode::imageCb(
     RCLCPP_ERROR(
       this->get_logger(), "Rectified topic '%s' requested but camera publishing '%s' "
       "is uncalibrated", pub_rect_.getTopic().c_str(), sub_camera_.getInfoTopic().c_str());
+    TRACEPOINT(
+      image_proc_rectify_fini,
+      static_cast<const void *>(this),
+      static_cast<const void *> (&(*image_msg)),
+      static_cast<const void *>(&(*info_msg)));
     return;
   }
 
@@ -102,6 +120,11 @@ void RectifyNode::imageCb(
   // This will be true if D is empty/zero sized
   if (zero_distortion) {
     pub_rect_.publish(image_msg);
+    TRACEPOINT(
+      image_proc_rectify_fini,
+      static_cast<const void *>(this),
+      static_cast<const void *> (&(*image_msg)),
+      static_cast<const void *>(&(*info_msg)));
     return;
   }
 
@@ -119,6 +142,12 @@ void RectifyNode::imageCb(
   sensor_msgs::msg::Image::SharedPtr rect_msg =
     cv_bridge::CvImage(image_msg->header, image_msg->encoding, rect).toImageMsg();
   pub_rect_.publish(rect_msg);
+
+  TRACEPOINT(
+    image_proc_rectify_fini,
+    static_cast<const void *>(this),
+    static_cast<const void *> (&(*image_msg)),
+    static_cast<const void *>(&(*info_msg)));
 }
 
 }  // namespace image_proc

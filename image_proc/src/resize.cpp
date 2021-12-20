@@ -41,6 +41,7 @@
 #include <mutex>
 #include <vector>
 
+#include "tracetools_image_pipeline/tracetools.h"
 #include "image_proc/resize.hpp"
 
 namespace image_proc
@@ -77,11 +78,22 @@ void ResizeNode::imageCb(
   //  return;
   //}
 
+  TRACEPOINT(
+    image_proc_resize_init,
+    static_cast<const void *>(this),
+    static_cast<const void *> (&(*image_msg)),
+    static_cast<const void *>(&(*info_msg)));
+
   cv_bridge::CvImagePtr cv_ptr;
 
   try {
     cv_ptr = cv_bridge::toCvCopy(image_msg);
   } catch (cv_bridge::Exception & e) {
+    TRACEPOINT(
+      image_proc_resize_fini,
+      static_cast<const void *>(this),
+      static_cast<const void *> (&(*image_msg)),
+      static_cast<const void *>(&(*info_msg)));
     RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
     return;
   }
@@ -131,6 +143,13 @@ void ResizeNode::imageCb(
   dst_info_msg->roi.height = static_cast<int>(dst_info_msg->roi.height * scale_y);
 
   pub_image_.publish(*cv_ptr->toImageMsg(), *dst_info_msg);
+
+  TRACEPOINT(
+    image_proc_resize_fini,
+    static_cast<const void *>(this),
+    static_cast<const void *> (&(*image_msg)),
+    static_cast<const void *>(&(*info_msg)));
+
 }
 
 }  // namespace image_proc
