@@ -56,6 +56,7 @@ private:
   image_transport::CameraSubscriber sub_camera_;
 
   int queue_size_;
+  bool use_qos_;
   int interpolation;
   std::mutex connect_mutex_;
   image_transport::Publisher pub_rect_;

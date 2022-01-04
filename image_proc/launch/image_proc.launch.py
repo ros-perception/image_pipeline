@@ -46,6 +46,9 @@ def generate_launch_description():
             package='image_proc',
             plugin='image_proc::DebayerNode',
             name='debayer_node',
+            parameters=[{
+                'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
+            }],
         ),
         ComposableNode(
             package='image_proc',
@@ -57,6 +60,9 @@ def generate_launch_description():
                 ('camera_info', 'camera_info'),
                 ('image_rect', 'image_rect')
             ],
+            parameters=[{
+                'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
+            }],
         ),
         ComposableNode(
             package='image_proc',
@@ -67,6 +73,9 @@ def generate_launch_description():
                 ('image', 'image_color'),
                 ('image_rect', 'image_rect_color')
             ],
+            parameters=[{
+                'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
+            }],
         )
     ]
 
@@ -75,6 +84,14 @@ def generate_launch_description():
         description=(
             'Name of an existing node container to load launched nodes into. '
             'If unset, a new container will be created.'
+        )
+    )
+
+    arg_use_system_default_qos = DeclareLaunchArgument(
+        name='use_system_default_qos', default_value='False',
+        description=(
+            'if the input image, and output image topics should use system '
+            'default QOS or the sensor data QOS policy'
         )
     )
 
@@ -99,6 +116,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         arg_container,
+        arg_use_system_default_qos,
         image_processing_container,
         load_composable_nodes,
     ])

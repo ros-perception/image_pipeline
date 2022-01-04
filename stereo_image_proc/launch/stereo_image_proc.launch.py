@@ -89,10 +89,10 @@ def generate_launch_description():
             remappings=[
                 ('left/camera_info', [LaunchConfiguration('left_namespace'), '/camera_info']),
                 ('right/camera_info', [LaunchConfiguration('right_namespace'), '/camera_info']),
-                (
-                    'left/image_rect_color',
-                    [LaunchConfiguration('left_namespace'), '/image_rect_color']
-                ),
+                ('left/image_rect_color',
+                    [LaunchConfiguration('left_namespace'), '/image_rect_color']),
+                ('right/image_rect_color',
+                    [LaunchConfiguration('right_namespace'), '/image_rect_color']),
             ]
         ),
     ]
@@ -224,7 +224,10 @@ def generate_launch_description():
                     PythonLaunchDescriptionSource([
                         FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
                     ]),
-                    launch_arguments={'container': LaunchConfiguration('container')}.items()
+                    launch_arguments={
+                        'container': LaunchConfiguration('container'),
+                        'use_system_default_qos': LaunchConfiguration('use_system_default_qos')
+                    }.items()
                 ),
             ],
             condition=IfCondition(LaunchConfiguration('launch_image_proc')),
@@ -236,7 +239,10 @@ def generate_launch_description():
                     PythonLaunchDescriptionSource([
                         FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
                     ]),
-                    launch_arguments={'container': LaunchConfiguration('container')}.items()
+                    launch_arguments={
+                        'container': LaunchConfiguration('container'),
+                        'use_system_default_qos': LaunchConfiguration('use_system_default_qos')
+                    }.items()
                 ),
             ],
             condition=IfCondition(LaunchConfiguration('launch_image_proc')),

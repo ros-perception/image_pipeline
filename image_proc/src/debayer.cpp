@@ -52,11 +52,13 @@ namespace enc = sensor_msgs::image_encodings;
 DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
 : Node("DebayerNode", options)
 {
+  bool use_qos_ = this->declare_parameter("use_system_default_qos", false);
   sub_raw_ = image_transport::create_subscription(
     this, "image_raw",
     std::bind(
       &DebayerNode::imageCb, this,
-      std::placeholders::_1), "raw");
+      std::placeholders::_1), "raw",
+    (use_qos_ ? rmw_qos_profile_default : rmw_qos_profile_sensor_data));
 
   pub_mono_ = image_transport::create_publisher(this, "image_mono");
   pub_color_ = image_transport::create_publisher(this, "image_color");
