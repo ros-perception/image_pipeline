@@ -125,6 +125,11 @@ void ResizeNode::imageCb(
   dst_info_msg->p[5] = dst_info_msg->p[5] * scale_y;  // fy
   dst_info_msg->p[6] = dst_info_msg->p[6] * scale_y;  // cy
 
+  dst_info_msg->roi.x_offset = static_cast<int>(dst_info_msg->roi.x_offset * scale_x);
+  dst_info_msg->roi.y_offset = static_cast<int>(dst_info_msg->roi.y_offset * scale_y);
+  dst_info_msg->roi.width = static_cast<int>(dst_info_msg->roi.width * scale_x);
+  dst_info_msg->roi.height = static_cast<int>(dst_info_msg->roi.height * scale_y);
+
   pub_image_.publish(*cv_ptr->toImageMsg(), *dst_info_msg);
 }
 
