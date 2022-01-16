@@ -285,6 +285,9 @@ void RegisterNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
           continue;
 
         // TODO(lucasw) this is identical to above except adding 0.5 instead of subtracting
+        // TODO(lucasw) need a third and fourth position with u+0.5 and v-0.5 and u-0.5 and v+0.5
+        // (and then could do the triangle rastering mentioned above, or just take the min
+        // and max of all of them)
         xyz_depth_2 << ((u+0.5f - depth_cx)*depth - depth_Tx) * inv_depth_fx,
                        ((v+0.5f - depth_cy)*depth - depth_Ty) * inv_depth_fy,
                        depth,
@@ -302,9 +305,9 @@ void RegisterNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
 
         // fill in the square defined by uv range
         const T new_depth = DepthTraits<T>::fromMeters(0.5*(xyz_rgb_1.z()+xyz_rgb_2.z()));
-        for (int nv=v_rgb_1; nv<=v_rgb_2; ++nv)
+        for (int nv=std::min(v_rgb_1, v_rgb_2); nv<=std::max(v_rgb_1, v_rgb_2); ++nv)
         {
-          for (int nu=u_rgb_1; nu<=u_rgb_2; ++nu)
+          for (int nu=std::min(u_rgb_1, u_rgb_2); nu<=std::max(u_rgb_2, u_rgb_2); ++nu)
           {
             T& reg_depth = registered_data[nv*registered_msg->width + nu];
             // Validity and Z-buffer checks
