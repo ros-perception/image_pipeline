@@ -268,10 +268,11 @@ void RegisterNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
   const T* depth_row = reinterpret_cast<const T*>(&depth_msg->data[0]);
   const int row_step = depth_msg->step / sizeof(T);
   T* registered_data = reinterpret_cast<T*>(&registered_msg->data[0]);
-  int raw_index = 0;
+  // TODO(lucasw) this isn't used
+  // int raw_index = 0;
   for (unsigned v = 0; v < depth_msg->height; ++v, depth_row += row_step)
   {
-    for (unsigned u = 0; u < depth_msg->width; ++u, ++raw_index)
+    for (unsigned u = 0; u < depth_msg->width; ++u  /* , ++raw_index */)
     {
       const T raw_depth = depth_row[u];
       if (!DepthTraits<T>::valid(raw_depth))
@@ -293,7 +294,7 @@ void RegisterNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
           continue;
         }
 
-        T& reg_depth = registered_data[v_rgb*registered_msg->width + u_rgb];
+        T& reg_depth = registered_data[v_rgb*dst_width + u_rgb];
         // Validity and Z-buffer checks
         if (!DepthTraits<T>::valid(reg_depth) || reg_depth > new_depth)
           reg_depth = new_depth;
@@ -303,40 +304,53 @@ void RegisterNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
       {
         // TODO(lucasw) loop on two -0.5, 0.5 vectors, keep track of u_min/max and v_min/max
         // as it goes
-        int u_rgb_1;
-        int v_rgb_1;
-        T new_depth_1;
-        if (!transform_depth(depth_to_rgb,
-            u - 0.5, v - 0.5,
-            depth_model_, rgb_model_,
-            inv_depth_fx, inv_depth_fy,
-            dst_width, dst_height,
-            depth,
-            u_rgb_1, v_rgb_1, new_depth_1)) {
-          // TODO(lucasw) need to be able to handle partiall out of bounds squares here
-          continue;
+        int u_rgb_min, u_rgb_max;
+        int v_rgb_min, v_rgb_max;
+        size_t count = 0;
+        T new_depth_sum = 0.0;
+        const std::array<double, 2> uv_offsets = {-0.5, 0.5};
+        for (const auto& v_offset : uv_offsets) {
+          for (const auto& u_offset : uv_offsets) {
+            int u_rgb;
+            int v_rgb;
+            T new_depth;
+            if (!transform_depth(depth_to_rgb,
+                u + u_offset, v + v_offset,
+                depth_model_, rgb_model_,
+                inv_depth_fx, inv_depth_fy,
+                dst_width, dst_height,
+                depth,
+                u_rgb, v_rgb, new_depth)) {
+              // TODO(lucasw) need to be able to handle partiall out of bounds squares here
+              continue;
+            }
+            if (count == 0) {
+              u_rgb_min = u_rgb;
+              u_rgb_max = u_rgb;
+              v_rgb_min = v_rgb;
+              v_rgb_max = v_rgb;
+            } else {
+              u_rgb_min = std::min(u_rgb, u_rgb_min);
+              u_rgb_max = std::max(u_rgb, u_rgb_max);
+              v_rgb_min = std::min(v_rgb, v_rgb_min);
+              v_rgb_max = std::max(v_rgb, v_rgb_max);
+            }
+            new_depth_sum += new_depth;
+            count++;
+          }
         }
 
-        int u_rgb_2;
-        int v_rgb_2;
-        T new_depth_2;
-        if (!transform_depth(depth_to_rgb,
-            u + 0.5, v + 0.5,
-            depth_model_, rgb_model_,
-            inv_depth_fx, inv_depth_fy,
-            dst_width, dst_height,
-            depth,
-            u_rgb_2, v_rgb_2, new_depth_2)) {
+        if (count == 0) {
           continue;
         }
 
         // fill in the square defined by uv range
-        const T new_depth = DepthTraits<T>::fromMeters(0.5 * (new_depth_1 + new_depth_2));
-        for (int nv=std::min(v_rgb_1, v_rgb_2); nv<=std::max(v_rgb_1, v_rgb_2); ++nv)
+        const T new_depth = DepthTraits<T>::fromMeters(new_depth_sum / static_cast<double>(count));
+        for (int nv=v_rgb_min; nv<=v_rgb_max; ++nv)
         {
-          for (int nu=std::min(u_rgb_1, u_rgb_2); nu<=std::max(u_rgb_2, u_rgb_2); ++nu)
+          for (int nu=u_rgb_min; nu<=u_rgb_max; ++nu)
           {
-            T& reg_depth = registered_data[nv*registered_msg->width + nu];
+            T& reg_depth = registered_data[nv*dst_width + nu];
             // Validity and Z-buffer checks
             if (!DepthTraits<T>::valid(reg_depth) || reg_depth > new_depth)
               reg_depth = new_depth;
