@@ -224,10 +224,17 @@ bool transform_depth(
 
   // Transform to RGB camera frame
   Eigen::Vector4d xyz_rgb = depth_to_rgb * xyz_depth;
-  // TODO(lucasw) return false if xyz_rgb.z() < 0.0 - or is that okay for some < 0 fx/fy?
+  new_depth = static_cast<T>(xyz_rgb.z());
+  // TODO(lucasw) is the intent to simulate what a real depth camera would see?  If so reject negative depth
+  // but if want to preserve as much data as possible it may make sense to pass through negative values
+  // (though don't overwrite positive values, use abs in the z buffer test)
+  if (new_depth < 0.0)
+  {
+    return false;
+  }
 
   // Project to (u,v) in RGB image
-  const double inv_Z = 1.0 / xyz_rgb.z();
+  const double inv_Z = 1.0 / new_depth;
 
   u_rgb = (rgb_fx*xyz_rgb.x() + rgb_Tx)*inv_Z + rgb_cx + 0.5;
   if (u_rgb < 0 || u_rgb >= width)
@@ -236,8 +243,6 @@ bool transform_depth(
   v_rgb = (rgb_fy*xyz_rgb.y() + rgb_Ty)*inv_Z + rgb_cy + 0.5;
   if (v_rgb < 0 || v_rgb >= height)
     return false;
-
-  new_depth = static_cast<T>(xyz_rgb.z());
 
   return true;
 }
