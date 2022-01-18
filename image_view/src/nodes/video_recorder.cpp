@@ -33,7 +33,7 @@ int g_count = 0;
 ros::Time g_last_wrote_time = ros::Time(0);
 std::string encoding;
 std::string codec;
-int fps;
+double fps;
 std::string filename;
 double min_depth_range;
 double max_depth_range;
@@ -107,7 +107,7 @@ int main(int argc, char** argv)
     local_nh.param("filename", filename, std::string("output.avi"));
     bool stamped_filename;
     local_nh.param("stamped_filename", stamped_filename, false);
-    local_nh.param("fps", fps, 15);
+    local_nh.param("fps", fps, 15.0);
     local_nh.param("codec", codec, std::string("MJPG"));
     local_nh.param("encoding", encoding, std::string("bgr8"));
     // cv_bridge::CvtColorForDisplayOptions
