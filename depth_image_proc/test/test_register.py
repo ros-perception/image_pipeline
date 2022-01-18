@@ -65,7 +65,6 @@ class TestRegister(unittest.TestCase):
         rospy.loginfo(depth)
 
         depth_msg = self.cv_bridge.cv2_to_imgmsg(depth, "32FC1")
-        ci_msg.header.stamp = rospy.Time.now()
         rgb_ci_msg = copy.deepcopy(ci_msg)
         rgb_ci_msg.header.frame_id = "station2"
         depth_msg.header = ci_msg.header
@@ -87,6 +86,10 @@ class TestRegister(unittest.TestCase):
         self.count = 0
         rospy.loginfo("publishing depth and ci, wait for callbacks")
         for i in range(4):
+            stamp = rospy.Time.now()
+            ci_msg.header.stamp = stamp
+            rgb_ci_msg.header.stamp = stamp
+            depth_msg.header.stamp = stamp
             self.depth_image_pub.publish(depth_msg)
             self.depth_ci_pub.publish(ci_msg)
             self.rgb_ci_pub.publish(rgb_ci_msg)
