@@ -312,7 +312,7 @@ class Calibrator():
         if pattern == Patterns.Chessboard:
             # Make sure n_cols > n_rows to agree with OpenCV CB detector output
             self._boards = [ChessboardInfo("chessboard", max(i.n_cols, i.n_rows), min(i.n_cols, i.n_rows), i.dim) for i in boards]
-        if pattern == Patterns.ChArUco:
+        elif pattern == Patterns.ChArUco:
             self._boards = boards
         elif pattern == Patterns.ACircles:
             # 7x4 and 4x7 are actually different patterns. Assume square-ish pattern, so n_rows > n_cols.
@@ -320,6 +320,9 @@ class Calibrator():
         elif pattern == Patterns.Circles:
             # We end up having to check both ways anyway
             self._boards = boards
+        else:
+            raise CalibratorException('pattern must be one of: Chessboard, Circles, ACircles, or ChArUco')
+
 
         # Set to true after we perform calibration
         self.calibrated = False
