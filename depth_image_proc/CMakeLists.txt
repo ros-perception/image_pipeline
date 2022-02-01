@@ -15,10 +15,6 @@ find_package(catkin REQUIRED
   tf2_ros
 )
 
-if(cv_bridge_VERSION VERSION_GREATER "1.12.0")
-  add_compile_options(-std=c++11)
-endif()
-
 catkin_package(
     INCLUDE_DIRS include
     CATKIN_DEPENDS image_geometry sensor_msgs
