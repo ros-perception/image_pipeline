@@ -193,16 +193,19 @@ int main(int argc, char** argv)
   image_transport::ImageTransport it(nh);
   std::string topic = nh.resolveName("image");
 
+  ros::NodeHandle local_nh("~");
+  int subscriber_queue_size;
+  local_nh.param("queue_size", subscriber_queue_size, 1);
+
   Callbacks callbacks;
   // Useful when CameraInfo is being published
-  image_transport::CameraSubscriber sub_image_and_camera = it.subscribeCamera(topic, 1,
+  image_transport::CameraSubscriber sub_image_and_camera = it.subscribeCamera(topic, subscriber_queue_size,
                                                                               &Callbacks::callbackWithCameraInfo,
                                                                               &callbacks);
   // Useful when CameraInfo is not being published
   image_transport::Subscriber sub_image = it.subscribe(
-      topic, 1, boost::bind(&Callbacks::callbackWithoutCameraInfo, &callbacks, _1));
+      topic, subscriber_queue_size, boost::bind(&Callbacks::callbackWithoutCameraInfo, &callbacks, _1));
 
-  ros::NodeHandle local_nh("~");
   std::string format_string;
   local_nh.param("filename_format", format_string, std::string("left%04i.%s"));
   local_nh.param("encoding", encoding, std::string("bgr8"));
