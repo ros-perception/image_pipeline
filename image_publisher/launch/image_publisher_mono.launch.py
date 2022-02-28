@@ -32,15 +32,24 @@
 
 from launch import LaunchDescription
 import launch_ros.actions
+from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument
 
 
 def generate_launch_description():
     device_0 = '0'
+    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     return LaunchDescription([
+
+         DeclareLaunchArgument(
+            'use_sim_time',
+            default_value='false',
+            description='Use simulation clock if true'),
 
         launch_ros.actions.Node(
             package='image_publisher', executable='image_publisher_node', output='screen',
             arguments=[device_0],
+            parameters=[{'use_sim_time': use_sim_time}],
             remappings=[('image_raw', '/camera/image_raw'),
                         ('camera_info', '/camera/camera_info')]),
     ])

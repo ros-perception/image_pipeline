@@ -141,7 +141,7 @@ void ImagePublisher::doWork()
     sensor_msgs::msg::Image::SharedPtr out_img =
       cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", image_).toImageMsg();
     out_img->header.frame_id = frame_id_;
-    out_img->header.stamp = rclcpp::Clock().now();
+    out_img->header.stamp = this->now();
     camera_info_.header.frame_id = out_img->header.frame_id;
     camera_info_.header.stamp = out_img->header.stamp;
 
