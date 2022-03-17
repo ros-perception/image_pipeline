@@ -189,7 +189,9 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
     }
 
     pub_color_.publish(color_msg);
-  } else if (raw_msg->encoding == sensor_msgs::image_encodings::YUV422) {
+  } else if (raw_msg->encoding == sensor_msgs::image_encodings::YUV422 ||
+    raw_msg->encoding == sensor_msgs::image_encodings::YUV422_YUY2)
+  {
     // Use cv_bridge to convert to BGR8
     sensor_msgs::msg::Image::SharedPtr color_msg;
 
