@@ -33,15 +33,14 @@
 #ifndef IMAGE_PROC__RECTIFY_HPP_
 #define IMAGE_PROC__RECTIFY_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.hpp>
-#include <image_geometry/pinhole_camera_model.h>
-#include <cv_bridge/cv_bridge.h>
+#include <mutex>
 
-#include <thread>
-#include <memory>
-#include <vector>
-#include <string>
+#include "image_geometry/pinhole_camera_model.h"
+
+#include <image_transport/image_transport.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/image.hpp>
 
 namespace image_proc
 {

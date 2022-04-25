@@ -22,6 +22,7 @@
   <depend>cv_bridge</depend>
   <depend>image_geometry</depend>
   <depend>image_transport</depend>
+  <depend>libopencv-dev</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>rcutils</depend>
