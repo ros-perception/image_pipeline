@@ -41,11 +41,10 @@ import numpy.linalg
 import pickle
 import random
 import sensor_msgs.msg
+import sys
 import tarfile
 import time
-import sys
 from distutils.version import LooseVersion
-import sys
 from enum import Enum
 
 # Supported camera models
