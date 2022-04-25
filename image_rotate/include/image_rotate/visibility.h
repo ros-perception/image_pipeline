@@ -29,13 +29,9 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef IMAGE_ROTATE__VISIBILITY_H_
 #define IMAGE_ROTATE__VISIBILITY_H_
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 // This logic was borrowed (then namespaced) from the examples on the gcc wiki:
 //     https://gcc.gnu.org/wiki/Visibility
@@ -74,10 +70,6 @@ extern "C"
   #endif
 
   #define IMAGE_ROTATE_PUBLIC_TYPE
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif  // IMAGE_ROTATE__VISIBILITY_H_

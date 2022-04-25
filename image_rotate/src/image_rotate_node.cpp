@@ -41,35 +41,56 @@
 
 #include "image_rotate/image_rotate_node.hpp"
 
-#include <vector>
-#include <string>
+#include <cmath>
+#include <functional>
 #include <memory>
+#include <string>
+#include <vector>
+
+#include "cv_bridge/cv_bridge.h"
+#include "tf2/LinearMath/Vector3.h"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/transform_broadcaster.h"
+
+#include <opencv2/core/mat.hpp>
+#include <opencv2/core/types.hpp>
+#include <opencv2/imgproc.hpp>
+
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <geometry_msgs/msg/vector3_stamped.hpp>
+#include <image_transport/image_transport.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <rcl_interfaces/msg/set_parameters_result.hpp>
+#include <sensor_msgs/msg/image.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 namespace image_rotate
 {
 
 ImageRotateNode::ImageRotateNode()
-: Node("ImageRotateNode")
+: rclcpp::Node("ImageRotateNode")
 {
   config_.target_frame_id = this->declare_parameter("target_frame_id", std::string(""));
-  config_.target_x = this->declare_parameter("target_x", static_cast<double>(0));
-  config_.target_y = this->declare_parameter("target_y", static_cast<double>(0));
-  config_.target_z = this->declare_parameter("target_z", static_cast<double>(1));
+  config_.target_x = this->declare_parameter("target_x", 0.0);
+  config_.target_y = this->declare_parameter("target_y", 0.0);
+  config_.target_z = this->declare_parameter("target_z", 1.0);
 
   config_.source_frame_id = this->declare_parameter("source_frame_id", std::string(""));
-  config_.source_x = this->declare_parameter("source_x", static_cast<double>(0));
-  config_.source_y = this->declare_parameter("source_y", static_cast<double>(-1));
-  config_.source_z = this->declare_parameter("source_z", static_cast<double>(0));
+  config_.source_x = this->declare_parameter("source_x", 0.0);
+  config_.source_y = this->declare_parameter("source_y", -1.0);
+  config_.source_z = this->declare_parameter("source_z", 0.0);
 
   config_.output_frame_id = this->declare_parameter("output_frame_id", std::string(""));
   config_.input_frame_id = this->declare_parameter("input_frame_id", std::string(""));
   config_.use_camera_info = this->declare_parameter("use_camera_info", true);
   config_.max_angular_rate = this->declare_parameter(
     "max_angular_rate",
-    static_cast<double>(10));
+    10.0);
   config_.output_image_size = this->declare_parameter(
     "output_image_size",
-    static_cast<double>(2));
+    2.0);
 
   auto reconfigureCallback =
     [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
@@ -204,7 +225,7 @@ void ImageRotateNode::do_work(
       angle_ += delta;
     }
     angle_ = fmod(angle_, 2.0 * M_PI);
-  } catch (tf2::TransformException & e) {
+  } catch (const tf2::TransformException & e) {
     RCUTILS_LOG_ERROR("Transform error: %s", e.what());
   }
 
@@ -259,7 +280,7 @@ void ImageRotateNode::do_work(
       cv_bridge::CvImage(msg->header, msg->encoding, out_image).toImageMsg();
     out_img->header.frame_id = transform.child_frame_id;
     img_pub_.publish(out_img);
-  } catch (cv::Exception & e) {
+  } catch (const cv::Exception & e) {
     RCUTILS_LOG_ERROR(
       "Image processing error: %s %s %s %i",
       e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
