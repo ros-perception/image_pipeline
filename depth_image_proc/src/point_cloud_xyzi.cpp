@@ -29,33 +29,30 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "depth_image_proc/point_cloud_xyzi.hpp"
-#include <rclcpp/rclcpp.hpp>
+
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <string>
+
+#include "cv_bridge/cv_bridge.h"
+
 #include <image_transport/image_transport.hpp>
 #include <image_transport/subscriber_filter.hpp>
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <sensor_msgs/image_encodings.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
+#include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <image_geometry/pinhole_camera_model.h>
-#include <depth_image_proc/depth_traits.hpp>
 #include <depth_image_proc/conversions.hpp>
-#include <depth_image_proc/visibility.h>
-#include <cv_bridge/cv_bridge.h>
+#include <depth_image_proc/point_cloud_xyzi.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
-#include <memory>
-#include <string>
-#include <limits>
 
 namespace depth_image_proc
 {
 
 
 PointCloudXyziNode::PointCloudXyziNode(const rclcpp::NodeOptions & options)
-: Node("PointCloudXyziNode", options)
+: rclcpp::Node("PointCloudXyziNode", options)
 {
   // Read parameters
   int queue_size = this->declare_parameter<int>("queue_size", 5);
@@ -118,7 +115,7 @@ void PointCloudXyziNode::imageCb(
   // Check for bad inputs
   if (depth_msg->header.frame_id != intensity_msg_in->header.frame_id) {
     RCLCPP_WARN_THROTTLE(
-      logger_,
+      get_logger(),
       *get_clock(),
       10000,  // 10 seconds
       "Depth image frame id [%s] doesn't match image frame id [%s]",
@@ -148,8 +145,8 @@ void PointCloudXyziNode::imageCb(
     cv_bridge::CvImageConstPtr cv_ptr;
     try {
       cv_ptr = cv_bridge::toCvShare(intensity_msg, intensity_msg->encoding);
-    } catch (cv_bridge::Exception & e) {
-      RCLCPP_ERROR(logger_, "cv_bridge exception: %s", e.what());
+    } catch (const cv_bridge::Exception & e) {
+      RCLCPP_ERROR(get_logger(), "cv_bridge exception: %s", e.what());
       return;
     }
     cv_bridge::CvImage cv_rsz;
@@ -164,7 +161,7 @@ void PointCloudXyziNode::imageCb(
       intensity_msg = cv_bridge::toCvCopy(cv_rsz.toImageMsg(), enc::MONO8)->toImageMsg();
     }
 
-    // RCLCPP_ERROR(logger_, "Depth resolution (%ux%u) does not match resolution (%ux%u)",
+    // RCLCPP_ERROR(get_logger(), "Depth resolution (%ux%u) does not match resolution (%ux%u)",
     //              depth_msg->width, depth_msg->height, rgb_msg->width, rgb_msg->height);
     // return;
   } else {
@@ -175,9 +172,9 @@ void PointCloudXyziNode::imageCb(
   if (intensity_msg->encoding != enc::MONO8 || intensity_msg->encoding != enc::MONO16) {
     try {
       intensity_msg = cv_bridge::toCvCopy(intensity_msg, enc::MONO8)->toImageMsg();
-    } catch (cv_bridge::Exception & e) {
+    } catch (const cv_bridge::Exception & e) {
       RCLCPP_ERROR(
-        logger_, "Unsupported encoding [%s]: %s",
+        get_logger(), "Unsupported encoding [%s]: %s",
         intensity_msg->encoding.c_str(), e.what());
       return;
     }
@@ -205,7 +202,8 @@ void PointCloudXyziNode::imageCb(
   } else if (depth_msg->encoding == enc::TYPE_32FC1) {
     convertDepth<float>(depth_msg, cloud_msg, model_);
   } else {
-    RCLCPP_ERROR(logger_, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
+    RCLCPP_ERROR(
+      get_logger(), "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
     return;
   }
 
@@ -218,7 +216,8 @@ void PointCloudXyziNode::imageCb(
     convertIntensity<uint16_t>(intensity_msg, cloud_msg);
   } else {
     RCLCPP_ERROR(
-      logger_, "Intensity image has unsupported encoding [%s]", intensity_msg->encoding.c_str());
+      get_logger(), "Intensity image has unsupported encoding [%s]",
+      intensity_msg->encoding.c_str());
     return;
   }
 

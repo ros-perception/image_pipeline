@@ -29,18 +29,21 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
+#include <cmath>
+#include <functional>
+#include <limits>
+#include <memory>
+#include <mutex>
+
+#include "depth_image_proc/visibility.h"
+
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 #include <sensor_msgs/image_encodings.hpp>
-#include <depth_image_proc/visibility.h>
-#include <cmath>
-#include <memory>
-#include <limits>
 
 namespace depth_image_proc
 {
-
-namespace enc = sensor_msgs::image_encodings;
 
 class ConvertMetricNode : public rclcpp::Node
 {
@@ -58,8 +61,6 @@ private:
   void connectCb();
 
   void depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg);
-
-  rclcpp::Logger logger_ = rclcpp::get_logger("ConvertMetricNode");
 };
 
 ConvertMetricNode::ConvertMetricNode(const rclcpp::NodeOptions & options)
@@ -103,9 +104,10 @@ void ConvertMetricNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & 
   depth_msg->width = raw_msg->width;
 
   // Set data, encoding and step after converting the metric.
-  if (raw_msg->encoding == enc::TYPE_16UC1) {
-    depth_msg->encoding = enc::TYPE_32FC1;
-    depth_msg->step = raw_msg->width * (enc::bitDepth(depth_msg->encoding) / 8);
+  if (raw_msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
+    depth_msg->encoding = sensor_msgs::image_encodings::TYPE_32FC1;
+    depth_msg->step =
+      raw_msg->width * (sensor_msgs::image_encodings::bitDepth(depth_msg->encoding) / 8);
     depth_msg->data.resize(depth_msg->height * depth_msg->step);
     // Fill in the depth image data, converting mm to m
     float bad_point = std::numeric_limits<float>::quiet_NaN();
@@ -115,9 +117,10 @@ void ConvertMetricNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & 
       uint16_t raw = raw_data[index];
       depth_data[index] = (raw == 0) ? bad_point : static_cast<float>(raw * 0.001f);
     }
-  } else if (raw_msg->encoding == enc::TYPE_32FC1) {
-    depth_msg->encoding = enc::TYPE_16UC1;
-    depth_msg->step = raw_msg->width * (enc::bitDepth(depth_msg->encoding) / 8);
+  } else if (raw_msg->encoding == sensor_msgs::image_encodings::TYPE_32FC1) {
+    depth_msg->encoding = sensor_msgs::image_encodings::TYPE_16UC1;
+    depth_msg->step =
+      raw_msg->width * (sensor_msgs::image_encodings::bitDepth(depth_msg->encoding) / 8);
     depth_msg->data.resize(depth_msg->height * depth_msg->step);
     // Fill in the depth image data, converting m to mm
     uint16_t bad_point = 0;
@@ -128,7 +131,7 @@ void ConvertMetricNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & 
       depth_data[index] = std::isnan(raw) ? bad_point : static_cast<uint16_t>(raw * 1000);
     }
   } else {
-    RCLCPP_ERROR(logger_, "Unsupported image conversion from %s.", raw_msg->encoding.c_str());
+    RCLCPP_ERROR(get_logger(), "Unsupported image conversion from %s.", raw_msg->encoding.c_str());
     return;
   }
 

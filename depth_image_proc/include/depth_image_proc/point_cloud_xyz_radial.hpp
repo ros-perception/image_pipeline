@@ -29,25 +29,26 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef DEPTH_IMAGE_PROC__POINT_CLOUD_XYZ_RADIAL_HPP_
 #define DEPTH_IMAGE_PROC__POINT_CLOUD_XYZ_RADIAL_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.hpp>
-#include <sensor_msgs/image_encodings.hpp>
-#include <image_geometry/pinhole_camera_model.h>
-#include <depth_image_proc/depth_traits.hpp>
-#include <depth_image_proc/conversions.hpp>
-#include <depth_image_proc/visibility.h>
-#include <sensor_msgs/point_cloud2_iterator.hpp>
-#include <memory>
+#include <array>
+#include <mutex>
 #include <vector>
-#include <limits>
+
+#include "depth_image_proc/visibility.h"
+#include "image_geometry/pinhole_camera_model.h"
+
+#include <image_transport/image_transport.hpp>
+#include <opencv2/core/mat.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 
 namespace depth_image_proc
 {
-
-namespace enc = sensor_msgs::image_encodings;
 
 class PointCloudXyzRadialNode : public rclcpp::Node
 {
@@ -77,8 +78,6 @@ private:
   void depthCb(
     const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
     const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg);
-
-  rclcpp::Logger logger_ = rclcpp::get_logger("PointCloudXyzRadialNode");
 };
 
 }  // namespace depth_image_proc

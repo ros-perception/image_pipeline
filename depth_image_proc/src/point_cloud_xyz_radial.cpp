@@ -29,26 +29,26 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "depth_image_proc/point_cloud_xyz_radial.hpp"
+
+#include <functional>
+#include <memory>
+#include <mutex>
+
+#include "image_geometry/pinhole_camera_model.h"
+
+#include <depth_image_proc/point_cloud_xyz_radial.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 #include <sensor_msgs/image_encodings.hpp>
-#include <image_geometry/pinhole_camera_model.h>
 #include <depth_image_proc/depth_traits.hpp>
 #include <depth_image_proc/conversions.hpp>
-#include <depth_image_proc/visibility.h>
-#include <sensor_msgs/point_cloud2_iterator.hpp>
-
-#include <memory>
-#include <vector>
-#include <limits>
 
 namespace depth_image_proc
 {
 
 
 PointCloudXyzRadialNode::PointCloudXyzRadialNode(const rclcpp::NodeOptions & options)
-: Node("PointCloudXyzRadialNode", options)
+: rclcpp::Node("PointCloudXyzRadialNode", options)
 {
   // Read parameters
   queue_size_ = this->declare_parameter<int>("queue_size", 5);
@@ -114,12 +114,13 @@ void PointCloudXyzRadialNode::depthCb(
   }
 
   // Convert Depth Image to Pointcloud
-  if (depth_msg->encoding == enc::TYPE_16UC1) {
+  if (depth_msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
     convertDepthRadial<uint16_t>(depth_msg, cloud_msg, transform_);
-  } else if (depth_msg->encoding == enc::TYPE_32FC1) {
+  } else if (depth_msg->encoding == sensor_msgs::image_encodings::TYPE_32FC1) {
     convertDepthRadial<float>(depth_msg, cloud_msg, transform_);
   } else {
-    RCLCPP_ERROR(logger_, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
+    RCLCPP_ERROR(
+      get_logger(), "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
     return;
   }
 
