@@ -29,20 +29,22 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef IMAGE_ROTATE__IMAGE_ROTATE_NODE_HPP_
 #define IMAGE_ROTATE__IMAGE_ROTATE_NODE_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
-#include <tf2_ros/transform_broadcaster.h>
-#include <image_transport/image_transport.hpp>
-#include <cv_bridge/cv_bridge.h>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#include <math.h>
 #include <memory>
 #include <string>
+
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/transform_broadcaster.h"
+
+#include <geometry_msgs/msg/vector3_stamped.hpp>
+#include <image_transport/image_transport.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/image.hpp>
 
 #include "image_rotate/visibility.h"
 

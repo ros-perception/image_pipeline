@@ -39,9 +39,13 @@
   <build_depend>class_loader</build_depend>
 
   <depend>cv_bridge</depend>
+  <depend>geometry_msgs</depend>
   <depend>image_transport</depend>
+  <depend>libopencv-dev</depend>
+  <depend>rcl_interfaces</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
+  <depend>sensor_msgs</depend>
   <depend>tf2</depend>
   <depend>tf2_geometry_msgs</depend>
   <depend>tf2_ros</depend>
