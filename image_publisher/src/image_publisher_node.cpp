@@ -30,8 +30,9 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "image_publisher/image_publisher.hpp"
 #include <memory>
+
+#include <image_publisher/image_publisher.hpp>
 
 int main(int argc, char ** argv)
 {

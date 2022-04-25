@@ -29,15 +29,16 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef IMAGE_PUBLISHER__IMAGE_PUBLISHER_HPP_
 #define IMAGE_PUBLISHER__IMAGE_PUBLISHER_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <image_publisher/visibility.h>
-#include <image_transport/image_transport.hpp>
-#include <cv_bridge/cv_bridge.h>
-#include <opencv2/highgui/highgui.hpp>
 #include <string>
+
+#include <image_transport/image_transport.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
 
 namespace image_publisher
 {

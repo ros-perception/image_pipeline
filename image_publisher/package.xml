@@ -24,10 +24,9 @@
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
   <depend>camera_info_manager</depend>
-  <depend>class_loader</depend>
   <depend>cv_bridge</depend>
-  <depend>image_geometry</depend>
   <depend>image_transport</depend>
+  <depend>rcl_interfaces</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
 
