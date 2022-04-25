@@ -33,12 +33,12 @@
 #ifndef IMAGE_PROC__PROCESSOR_HPP_
 #define IMAGE_PROC__PROCESSOR_HPP_
 
-#include <image_geometry/pinhole_camera_model.h>
-#include <sensor_msgs/msg/image.hpp>
-
-#include <opencv2/core/core.hpp>
-
 #include <string>
+
+#include "image_geometry/pinhole_camera_model.h"
+
+#include <sensor_msgs/msg/image.hpp>
+#include <opencv2/core/core.hpp>
 
 namespace image_proc
 {

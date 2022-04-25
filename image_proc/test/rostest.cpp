@@ -30,16 +30,17 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <ros/ros.h>
-#include <gtest/gtest.h>
+#include <string>
+
+#include "ros/ros.h>"
+#include "gtest/gtest.h"
+#include "cv_bridge/cv_bridge.h"
+
 #include <camera_calibration_parsers/parse.hpp>
-#include <cv_bridge/cv_bridge.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <image_transport/image_transport.hpp>
 
 #include <boost/foreach.hpp>
-
-#include <string>
 
 class ImageProcTest
   : public testing::Test

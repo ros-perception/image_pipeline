@@ -30,19 +30,18 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <rclcpp/rclcpp.hpp>
-#include <cv_bridge/cv_bridge.h>
+#include <functional>
+#include <memory>
+
+#include "cv_bridge/cv_bridge.h"
+#include "tracetools_image_pipeline/tracetools.h"
+
+#include <image_proc/resize.hpp>
 #include <image_transport/image_transport.hpp>
 #include <rclcpp/qos.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
-
-#include <memory>
-#include <mutex>
-#include <vector>
-
-#include "tracetools_image_pipeline/tracetools.h"
-#include "image_proc/resize.hpp"
 
 namespace image_proc
 {

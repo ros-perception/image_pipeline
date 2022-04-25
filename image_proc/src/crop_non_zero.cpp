@@ -31,15 +31,21 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <algorithm>
+#include <functional>
+#include <iterator>
 #include <vector>
 
-#include "image_proc/crop_non_zero.hpp"
+#include "cv_bridge/cv_bridge.h"
 
+#include <image_proc/crop_non_zero.hpp>
+#include <image_transport/image_transport.hpp>
+#include <opencv2/imgproc.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/image_encodings.hpp>
+#include <sensor_msgs/msg/image.hpp>
 
 namespace image_proc
 {
-
-namespace enc = sensor_msgs::image_encodings;
 
 CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions & options)
 : Node("CropNonZeroNode", options)
@@ -73,7 +79,7 @@ void CropNonZeroNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & ra
   std::vector<std::vector<cv::Point>> cnt;
   cv::Mat1b m(raw_msg->width, raw_msg->height);
 
-  if (raw_msg->encoding == enc::TYPE_8UC1) {
+  if (raw_msg->encoding == sensor_msgs::image_encodings::TYPE_8UC1) {
     m = cv_ptr->image;
   } else {
     double minVal, maxVal;

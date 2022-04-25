@@ -30,12 +30,17 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "image_proc/crop_decimate.hpp"
-
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <string>
-#include <thread>
+
+#include <image_proc/crop_decimate.hpp>
+#include <opencv2/imgproc.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/image_encodings.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/image.hpp>
 
 namespace image_proc
 {

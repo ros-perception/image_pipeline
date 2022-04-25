@@ -30,17 +30,18 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "image_proc/processor.hpp"
-
-#include <rcutils/logging_macros.h>
-#include <sensor_msgs/image_encodings.hpp>
-
 #include <string>
+
+#include "image_geometry/pinhole_camera_model.h"
+#include "rcutils/logging_macros.h"
+
+#include <image_proc/processor.hpp>
+#include <opencv2/imgproc.hpp>
+#include <sensor_msgs/image_encodings.hpp>
+#include <sensor_msgs/msg/image.hpp>
 
 namespace image_proc
 {
-
-namespace enc = sensor_msgs::image_encodings;
 
 bool Processor::process(
   const sensor_msgs::msg::Image::ConstSharedPtr & raw_image,
@@ -56,7 +57,9 @@ bool Processor::process(
   // Check if raw_image is color
   const std::string & raw_encoding = raw_image->encoding;
   int raw_type = CV_8UC1;
-  if (raw_encoding == enc::BGR8 || raw_encoding == enc::RGB8) {
+  if (raw_encoding == sensor_msgs::image_encodings::BGR8 ||
+    raw_encoding == sensor_msgs::image_encodings::RGB8)
+  {
     raw_type = CV_8UC3;
     output.color_encoding = raw_encoding;
   }
@@ -75,20 +78,20 @@ bool Processor::process(
     // TODO(unknown): Faster to convert directly to mono when color is not requested,
     //                but OpenCV doesn't support
     int code = 0;
-    if (raw_encoding == enc::BAYER_RGGB8) {
+    if (raw_encoding == sensor_msgs::image_encodings::BAYER_RGGB8) {
       code = cv::COLOR_BayerBG2BGR;
-    } else if (raw_encoding == enc::BAYER_BGGR8) {
+    } else if (raw_encoding == sensor_msgs::image_encodings::BAYER_BGGR8) {
       code = cv::COLOR_BayerRG2BGR;
-    } else if (raw_encoding == enc::BAYER_GBRG8) {
+    } else if (raw_encoding == sensor_msgs::image_encodings::BAYER_GBRG8) {
       code = cv::COLOR_BayerGR2BGR;
-    } else if (raw_encoding == enc::BAYER_GRBG8) {
+    } else if (raw_encoding == sensor_msgs::image_encodings::BAYER_GRBG8) {
       code = cv::COLOR_BayerGB2BGR;
     } else {
       RCUTILS_LOG_ERROR("[image_proc] Unsupported encoding '%s'", raw_encoding.c_str());
       return false;
     }
     cv::cvtColor(raw, output.color, code);
-    output.color_encoding = enc::BGR8;
+    output.color_encoding = sensor_msgs::image_encodings::BGR8;
 
     if (flags & MONO_EITHER) {
       cv::cvtColor(output.color, output.mono, cv::COLOR_BGR2GRAY);
@@ -96,16 +99,18 @@ bool Processor::process(
   } else if (raw_type == CV_8UC3) {  // Color case
     output.color = raw;
     if (flags & MONO_EITHER) {
-      int code = (raw_encoding == enc::BGR8) ? cv::COLOR_BGR2GRAY : cv::COLOR_RGB2GRAY;
+      int code =
+        (raw_encoding ==
+        sensor_msgs::image_encodings::BGR8) ? cv::COLOR_BGR2GRAY : cv::COLOR_RGB2GRAY;
       cv::cvtColor(output.color, output.mono, code);
     }
-  } else if (raw_encoding == enc::MONO8) {  // Mono case
+  } else if (raw_encoding == sensor_msgs::image_encodings::MONO8) {  // Mono case
     output.mono = raw;
     if (flags & COLOR_EITHER) {
-      output.color_encoding = enc::MONO8;
+      output.color_encoding = sensor_msgs::image_encodings::MONO8;
       output.color = raw;
     }
-  } else if (raw_encoding == enc::TYPE_8UC3) {
+  } else if (raw_encoding == sensor_msgs::image_encodings::TYPE_8UC3) {
     // 8UC3 does not specify a color encoding. Is it BGR, RGB, HSV, XYZ, LUV...?
     RCUTILS_LOG_ERROR(
       "[image_proc] Ambiguous encoding '8UC3'. "

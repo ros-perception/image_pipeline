@@ -30,24 +30,23 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <functional>
+#include <memory>
+
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/image_encodings.hpp>
+#include "cv_bridge/cv_bridge.h"
 
-#include <string>
-#include <thread>
-#include <memory>
-#include <vector>
-
-#include "image_proc/debayer.hpp"
+#include <image_proc/debayer.hpp>
 // Until merged into OpenCV
-#include "image_proc/edge_aware.hpp"
+#include <image_proc/edge_aware.hpp>
+#include <image_transport/image_transport.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/image_encodings.hpp>
+#include <sensor_msgs/msg/image.hpp>
 
 namespace image_proc
 {
-
-namespace enc = sensor_msgs::image_encodings;
 
 DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
 : Node("DebayerNode", options)
@@ -65,15 +64,15 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
 
 void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)
 {
-  int bit_depth = enc::bitDepth(raw_msg->encoding);
+  int bit_depth = sensor_msgs::image_encodings::bitDepth(raw_msg->encoding);
   // TODO(someone): Fix as soon as bitDepth fixes it
-  if (raw_msg->encoding == enc::YUV422) {
+  if (raw_msg->encoding == sensor_msgs::image_encodings::YUV422) {
     bit_depth = 8;
   }
 
   // First publish to mono if needed
   if (pub_mono_.getNumSubscribers()) {
-    if (enc::isMono(raw_msg->encoding)) {
+    if (sensor_msgs::image_encodings::isMono(raw_msg->encoding)) {
       pub_mono_.publish(raw_msg);
     } else {
       if ((bit_depth != 8) && (bit_depth != 16)) {
@@ -88,9 +87,11 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
 
         try {
           if (bit_depth == 8) {
-            gray_msg = cv_bridge::toCvCopy(raw_msg, enc::MONO8)->toImageMsg();
+            gray_msg =
+              cv_bridge::toCvCopy(raw_msg, sensor_msgs::image_encodings::MONO8)->toImageMsg();
           } else {
-            gray_msg = cv_bridge::toCvCopy(raw_msg, enc::MONO16)->toImageMsg();
+            gray_msg =
+              cv_bridge::toCvCopy(raw_msg, sensor_msgs::image_encodings::MONO16)->toImageMsg();
           }
 
           pub_mono_.publish(gray_msg);
@@ -106,7 +107,7 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
     return;
   }
 
-  if (enc::isMono(raw_msg->encoding)) {
+  if (sensor_msgs::image_encodings::isMono(raw_msg->encoding)) {
     // For monochrome, no processing needed!
     pub_color_.publish(raw_msg);
 
@@ -115,9 +116,9 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
       this->get_logger(),
       "Color topic '%s' requested, but raw image data from topic '%s' is grayscale",
       pub_color_.getTopic().c_str(), sub_raw_.getTopic().c_str());
-  } else if (enc::isColor(raw_msg->encoding)) {
+  } else if (sensor_msgs::image_encodings::isColor(raw_msg->encoding)) {
     pub_color_.publish(raw_msg);
-  } else if (enc::isBayer(raw_msg->encoding)) {
+  } else if (sensor_msgs::image_encodings::isBayer(raw_msg->encoding)) {
     int type = bit_depth == 8 ? CV_8U : CV_16U;
     const cv::Mat bayer(
       raw_msg->height, raw_msg->width, CV_MAKETYPE(type, 1),
@@ -128,7 +129,8 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
     color_msg->header = raw_msg->header;
     color_msg->height = raw_msg->height;
     color_msg->width = raw_msg->width;
-    color_msg->encoding = bit_depth == 8 ? enc::BGR8 : enc::BGR16;
+    color_msg->encoding =
+      bit_depth == 8 ? sensor_msgs::image_encodings::BGR8 : sensor_msgs::image_encodings::BGR16;
     color_msg->step = color_msg->width * 3 * (bit_depth / 8);
     color_msg->data.resize(color_msg->height * color_msg->step);
 
@@ -144,7 +146,7 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
       algorithm == debayer_edgeaware_weighted_)
     {
       // These algorithms are not in OpenCV yet
-      if (raw_msg->encoding != enc::BAYER_GRBG8) {
+      if (raw_msg->encoding != sensor_msgs::image_encodings::BAYER_GRBG8) {
         RCLCPP_WARN(
           this->get_logger(), "Edge aware algorithms currently only support GRBG8 Bayer. "
           "Falling back to bilinear interpolation.");
@@ -161,13 +163,21 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
     if (algorithm == debayer_bilinear_ || algorithm == debayer_vng_) {
       int code = -1;
 
-      if (raw_msg->encoding == enc::BAYER_RGGB8 || raw_msg->encoding == enc::BAYER_RGGB16) {
+      if (raw_msg->encoding == sensor_msgs::image_encodings::BAYER_RGGB8 ||
+        raw_msg->encoding == sensor_msgs::image_encodings::BAYER_RGGB16)
+      {
         code = cv::COLOR_BayerBG2BGR;
-      } else if (raw_msg->encoding == enc::BAYER_BGGR8 || raw_msg->encoding == enc::BAYER_BGGR16) {
+      } else if (raw_msg->encoding == sensor_msgs::image_encodings::BAYER_BGGR8 ||  // NOLINT
+        raw_msg->encoding == sensor_msgs::image_encodings::BAYER_BGGR16)
+      {
         code = cv::COLOR_BayerRG2BGR;
-      } else if (raw_msg->encoding == enc::BAYER_GBRG8 || raw_msg->encoding == enc::BAYER_GBRG16) {
+      } else if (raw_msg->encoding == sensor_msgs::image_encodings::BAYER_GBRG8 ||  // NOLINT
+        raw_msg->encoding == sensor_msgs::image_encodings::BAYER_GBRG16)
+      {
         code = cv::COLOR_BayerGR2BGR;
-      } else if (raw_msg->encoding == enc::BAYER_GRBG8 || raw_msg->encoding == enc::BAYER_GRBG16) {
+      } else if (raw_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG8 ||  // NOLINT
+        raw_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG16)
+      {
         code = cv::COLOR_BayerGB2BGR;
       }
 
@@ -179,17 +189,17 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
     }
 
     pub_color_.publish(color_msg);
-  } else if (raw_msg->encoding == enc::YUV422) {
+  } else if (raw_msg->encoding == sensor_msgs::image_encodings::YUV422) {
     // Use cv_bridge to convert to BGR8
     sensor_msgs::msg::Image::SharedPtr color_msg;
 
     try {
-      color_msg = cv_bridge::toCvCopy(raw_msg, enc::BGR8)->toImageMsg();
+      color_msg = cv_bridge::toCvCopy(raw_msg, sensor_msgs::image_encodings::BGR8)->toImageMsg();
       pub_color_.publish(color_msg);
-    } catch (cv_bridge::Exception & e) {
+    } catch (const cv_bridge::Exception & e) {
       RCLCPP_WARN(this->get_logger(), "cv_bridge conversion error: '%s'", e.what());
     }
-  } else if (raw_msg->encoding == enc::TYPE_8UC3) {
+  } else if (raw_msg->encoding == sensor_msgs::image_encodings::TYPE_8UC3) {
     // 8UC3 does not specify a color encoding. Is it BGR, RGB, HSV, XYZ, LUV...?
     RCLCPP_WARN(
       this->get_logger(),
