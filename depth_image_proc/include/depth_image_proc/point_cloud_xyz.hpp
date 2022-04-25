@@ -29,18 +29,24 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef DEPTH_IMAGE_PROC__POINT_CLOUD_XYZ_HPP_
 #define DEPTH_IMAGE_PROC__POINT_CLOUD_XYZ_HPP_
+
+#include <mutex>
+
+#include "depth_image_proc/visibility.h"
+#include "image_geometry/pinhole_camera_model.h"
 
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 #include <sensor_msgs/image_encodings.hpp>
-#include <image_geometry/pinhole_camera_model.h>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <depth_image_proc/conversions.hpp>
-#include <depth_image_proc/visibility.h>
 
 #include <sensor_msgs/point_cloud2_iterator.hpp>
-#include <memory>
 
 namespace depth_image_proc
 {
@@ -72,8 +78,6 @@ private:
   void depthCb(
     const Image::ConstSharedPtr & depth_msg,
     const CameraInfo::ConstSharedPtr & info_msg);
-
-  rclcpp::Logger logger_ = rclcpp::get_logger("PointCloudXyzNode");
 };
 
 }  // namespace depth_image_proc

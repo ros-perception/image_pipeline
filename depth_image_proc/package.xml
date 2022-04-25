@@ -25,12 +25,13 @@
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
-  <build_depend>message_filters</build_depend>
   <build_depend>class_loader</build_depend>
 
   <depend>cv_bridge</depend>
   <depend>image_geometry</depend>
   <depend>image_transport</depend>
+  <depend>libopencv-dev</depend>
+  <depend>message_filters</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>sensor_msgs</depend>

@@ -29,23 +29,26 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
+#include <functional>
+#include <limits>
+#include <memory>
+#include <mutex>
+
+#include "depth_image_proc/visibility.h"
+#include "message_filters/subscriber.h"
+#include "message_filters/time_synchronizer.h"
+
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 #include <image_transport/subscriber_filter.hpp>
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
+#include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <stereo_msgs/msg/disparity_image.hpp>
 #include <depth_image_proc/depth_traits.hpp>
-#include <depth_image_proc/visibility.h>
-#include <memory>
-#include <limits>
 
 namespace depth_image_proc
 {
-
-using namespace std::placeholders;
-namespace enc = sensor_msgs::image_encodings;
 
 class DisparityNode : public rclcpp::Node
 {
@@ -76,12 +79,10 @@ private:
   void convert(
     const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
     stereo_msgs::msg::DisparityImage::SharedPtr & disp_msg);
-
-  rclcpp::Logger logger_ = rclcpp::get_logger("DisparityNode");
 };
 
 DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
-: Node("DisparityNode", options)
+: rclcpp::Node("DisparityNode", options)
 {
   // Read parameters
   int queue_size = this->declare_parameter<int>("queue_size", 5);
@@ -93,7 +94,9 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   sync_ = std::make_shared<Sync>(sub_depth_image_, sub_info_, queue_size);
-  sync_->registerCallback(std::bind(&DisparityNode::depthCb, this, _1, _2));
+  sync_->registerCallback(
+    std::bind(
+      &DisparityNode::depthCb, this, std::placeholders::_1, std::placeholders::_2));
 
   // Monitor whether anyone is subscribed to the output
   // TODO(ros2) Implement when SubscriberStatusCallback is available
@@ -132,7 +135,7 @@ void DisparityNode::depthCb(
   auto disp_msg = std::make_shared<DisparityImage>();
   disp_msg->header = depth_msg->header;
   disp_msg->image.header = disp_msg->header;
-  disp_msg->image.encoding = enc::TYPE_32FC1;
+  disp_msg->image.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
   disp_msg->image.height = depth_msg->height;
   disp_msg->image.width = depth_msg->width;
   disp_msg->image.step = disp_msg->image.width * sizeof(float);
@@ -145,12 +148,13 @@ void DisparityNode::depthCb(
   disp_msg->max_disparity = disp_msg->f * disp_msg->t / min_range_;
   disp_msg->delta_d = delta_d_;
 
-  if (depth_msg->encoding == enc::TYPE_16UC1) {
+  if (depth_msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
     convert<uint16_t>(depth_msg, disp_msg);
-  } else if (depth_msg->encoding == enc::TYPE_32FC1) {
+  } else if (depth_msg->encoding == sensor_msgs::image_encodings::TYPE_32FC1) {
     convert<float>(depth_msg, disp_msg);
   } else {
-    RCLCPP_ERROR(logger_, "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
+    RCLCPP_ERROR(
+      get_logger(), "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
     return;
   }
 

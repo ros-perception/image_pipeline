@@ -29,27 +29,30 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
+#include <chrono>
+#include <functional>
+#include <memory>
+#include <mutex>
+
+#include "Eigen/Geometry"
+#include "depth_image_proc/visibility.h"
+#include "image_geometry/pinhole_camera_model.h"
+#include "message_filters/subscriber.h"
+#include "message_filters/synchronizer.h"
+#include "message_filters/sync_policies/approximate_time.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 #include <image_transport/subscriber_filter.hpp>
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
 #include <sensor_msgs/image_encodings.hpp>
-#include <image_geometry/pinhole_camera_model.h>
-#include <Eigen/Geometry>
 #include <tf2_eigen/tf2_eigen.hpp>
 #include <depth_image_proc/depth_traits.hpp>
-#include <depth_image_proc/visibility.h>
-#include <memory>
 
 namespace depth_image_proc
 {
-
-using namespace std::placeholders;
-namespace enc = sensor_msgs::image_encodings;
 
 class RegisterNode : public rclcpp::Node
 {
@@ -92,12 +95,10 @@ private:
     const Image::ConstSharedPtr & depth_msg,
     const Image::SharedPtr & registered_msg,
     const Eigen::Affine3d & depth_to_rgb);
-
-  rclcpp::Logger logger_ = rclcpp::get_logger("RegisterNode");
 };
 
 RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
-: Node("RegisterNode", options)
+: rclcpp::Node("RegisterNode", options)
 {
   rclcpp::Clock::SharedPtr clock = this->get_clock();
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(clock);
@@ -113,7 +114,10 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
     sub_depth_image_,
     sub_depth_info_,
     sub_rgb_info_);
-  sync_->registerCallback(std::bind(&RegisterNode::imageCb, this, _1, _2, _3));
+  sync_->registerCallback(
+    std::bind(
+      &RegisterNode::imageCb, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3));
 
   // Monitor whether anyone is subscribed to the output
   // TODO(ros2) Implement when SubscriberStatusCallback is available
@@ -169,7 +173,7 @@ void RegisterNode::imageCb(
 
     depth_to_rgb = tf2::transformToEigen(transform);
   } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR(logger_, "TF2 exception:\n%s", ex.what());
+    RCLCPP_ERROR(get_logger(), "TF2 exception:\n%s", ex.what());
     return;
     /// @todo Can take on order of a minute to register a disconnect callback when we
     /// don't call publish() in this cb. What's going on roscpp?
@@ -185,13 +189,13 @@ void RegisterNode::imageCb(
   registered_msg->width = resolution.width;
   // step and data set in convert(), depend on depth data type
 
-  if (depth_image_msg->encoding == enc::TYPE_16UC1) {
+  if (depth_image_msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
     convert<uint16_t>(depth_image_msg, registered_msg, depth_to_rgb);
-  } else if (depth_image_msg->encoding == enc::TYPE_32FC1) {
+  } else if (depth_image_msg->encoding == sensor_msgs::image_encodings::TYPE_32FC1) {
     convert<float>(depth_image_msg, registered_msg, depth_to_rgb);
   } else {
     RCLCPP_ERROR(
-      logger_, "Depth image has unsupported encoding [%s]",
+      get_logger(), "Depth image has unsupported encoding [%s]",
       depth_image_msg->encoding.c_str());
     return;
   }

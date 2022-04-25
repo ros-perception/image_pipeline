@@ -29,34 +29,29 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef DEPTH_IMAGE_PROC__POINT_CLOUD_XYZRGB_HPP_
 #define DEPTH_IMAGE_PROC__POINT_CLOUD_XYZRGB_HPP_
 
-#include <rclcpp/rclcpp.hpp>
+#include <memory>
+#include <mutex>
+
+#include "depth_image_proc/visibility.h"
+#include "image_geometry/pinhole_camera_model.h"
+#include "message_filters/subscriber.h"
+#include "message_filters/synchronizer.h"
+#include "message_filters/sync_policies/exact_time.h"
+#include "message_filters/sync_policies/approximate_time.h"
+
 #include <image_transport/image_transport.hpp>
 #include <image_transport/subscriber_filter.hpp>
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/exact_time.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <sensor_msgs/image_encodings.hpp>
-#include <sensor_msgs/point_cloud2_iterator.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <image_geometry/pinhole_camera_model.h>
-#include <depth_image_proc/conversions.hpp>
-#include <depth_image_proc/depth_traits.hpp>
-#include <depth_image_proc/visibility.h>
-#include <cv_bridge/cv_bridge.h>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <memory>
-#include <limits>
-#include <string>
-#include <vector>
 
 namespace depth_image_proc
 {
-
-namespace enc = sensor_msgs::image_encodings;
 
 class PointCloudXyzrgbNode : public rclcpp::Node
 {
@@ -92,8 +87,6 @@ private:
     const Image::ConstSharedPtr & depth_msg,
     const Image::ConstSharedPtr & rgb_msg,
     const CameraInfo::ConstSharedPtr & info_msg);
-
-  rclcpp::Logger logger_ = rclcpp::get_logger("PointCloudXyzrgbNode");
 };
 
 }  // namespace depth_image_proc

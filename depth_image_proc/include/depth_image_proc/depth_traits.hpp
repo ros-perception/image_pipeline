@@ -29,12 +29,13 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef DEPTH_IMAGE_PROC__DEPTH_TRAITS_HPP_
 #define DEPTH_IMAGE_PROC__DEPTH_TRAITS_HPP_
 
 #include <algorithm>
-#include <limits>
 #include <cmath>
+#include <limits>
 #include <vector>
 
 namespace depth_image_proc
