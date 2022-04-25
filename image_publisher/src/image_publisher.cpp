@@ -31,14 +31,18 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <camera_info_manager/camera_info_manager.hpp>
-
 #include <chrono>
-#include <memory>
-#include <vector>
 #include <string>
+#include <thread>
+#include <vector>
 
-#include "image_publisher/image_publisher.hpp"
+#include "cv_bridge/cv_bridge.h"
+
+#include <camera_info_manager/camera_info_manager.hpp>
+#include <image_publisher/image_publisher.hpp>
+#include <image_transport/image_transport.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <rcl_interfaces/msg/set_parameters_result.hpp>
 
 namespace image_publisher
 {
@@ -46,7 +50,7 @@ namespace image_publisher
 using namespace std::chrono_literals;
 
 ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options)
-: Node("ImagePublisher", options)
+: rclcpp::Node("ImagePublisher", options)
 {
   pub_ = image_transport::create_camera_publisher(this, "image_raw");
 
