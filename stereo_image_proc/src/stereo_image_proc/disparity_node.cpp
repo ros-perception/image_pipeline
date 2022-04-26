@@ -29,22 +29,6 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <stereo_image_proc/stereo_processor.hpp>
-
-#include <cv_bridge/cv_bridge.h>
-#include <image_geometry/stereo_camera_model.h>
-#include <image_transport/image_transport.hpp>
-#include <image_transport/subscriber_filter.hpp>
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/sync_policies/exact_time.h>
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp_components/register_node_macro.hpp>
-#include <sensor_msgs/image_encodings.hpp>
-#include <stereo_msgs/msg/disparity_image.hpp>
-
-#include <opencv2/calib3d/calib3d.hpp>
 
 #include <algorithm>
 #include <map>
@@ -53,6 +37,24 @@
 #include <sstream>
 #include <utility>
 #include <vector>
+
+#include "cv_bridge/cv_bridge.h"
+#include "image_geometry/stereo_camera_model.h"
+#include "message_filters/subscriber.h"
+#include "message_filters/synchronizer.h"
+#include "message_filters/sync_policies/approximate_time.h"
+#include "message_filters/sync_policies/exact_time.h"
+
+#include <stereo_image_proc/stereo_processor.hpp>
+
+#include <image_transport/image_transport.hpp>
+#include <image_transport/subscriber_filter.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
+#include <sensor_msgs/image_encodings.hpp>
+#include <stereo_msgs/msg/disparity_image.hpp>
+
+#include <opencv2/calib3d/calib3d.hpp>
 
 namespace stereo_image_proc
 {

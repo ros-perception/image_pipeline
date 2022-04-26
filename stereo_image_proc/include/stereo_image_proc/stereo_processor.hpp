@@ -29,16 +29,18 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef STEREO_IMAGE_PROC__STEREO_PROCESSOR_HPP_
 #define STEREO_IMAGE_PROC__STEREO_PROCESSOR_HPP_
 
-#include <image_geometry/stereo_camera_model.h>
+#include <string>
+
+#include "image_geometry/stereo_camera_model.h"
+
 #include <image_proc/processor.hpp>
 #include <sensor_msgs/msg/point_cloud.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <stereo_msgs/msg/disparity_image.hpp>
-
-#include <string>
 
 namespace stereo_image_proc
 {

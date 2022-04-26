@@ -29,14 +29,16 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "stereo_image_proc/stereo_processor.hpp"
-
-#include <rcutils/logging_macros.h>
-#include <sensor_msgs/image_encodings.hpp>
 
 #include <cmath>
 #include <limits>
 #include <string>
+
+#include "rcutils/logging_macros.h"
+
+#include "stereo_image_proc/stereo_processor.hpp"
+
+#include <sensor_msgs/image_encodings.hpp>
 
 // TODO(jacobperron): Remove this after it's implemented upstream
 // https://github.com/ros2/rcutils/pull/112
