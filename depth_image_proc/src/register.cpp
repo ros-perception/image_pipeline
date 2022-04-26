@@ -241,8 +241,7 @@ void RegisterNode::convert(
 
       double depth = DepthTraits<T>::toMeters(raw_depth);
 
-      if (fill_upsampling_holes_ == false)
-      {
+      if (fill_upsampling_holes_ == false) {
         /// @todo Combine all operations into one matrix multiply on (u,v,d)
         // Reproject (u,v,Z) to (X,Y,Z,1) in depth camera frame
         Eigen::Vector4d xyz_depth;
@@ -259,18 +258,18 @@ void RegisterNode::convert(
         int u_rgb = (rgb_fx*xyz_rgb.x() + rgb_Tx)*inv_Z + rgb_cx + 0.5;
         int v_rgb = (rgb_fy*xyz_rgb.y() + rgb_Ty)*inv_Z + rgb_cy + 0.5;
 
-        if (u_rgb < 0 || u_rgb >= (int)registered_msg->width ||
-            v_rgb < 0 || v_rgb >= (int)registered_msg->height)
+        if (u_rgb < 0 || u_rgb >= static_cast<int>(registered_msg->width) ||
+            v_rgb < 0 || v_rgb >= static_cast<int>(registered_msg->height)) {
           continue;
+        }
 
-        T& reg_depth = registered_data[v_rgb*registered_msg->width + u_rgb];
-        T  new_depth = DepthTraits<T>::fromMeters(xyz_rgb.z());
+        T & reg_depth = registered_data[v_rgb*registered_msg->width + u_rgb];
+        T new_depth = DepthTraits<T>::fromMeters(xyz_rgb.z());
         // Validity and Z-buffer checks
-        if (!DepthTraits<T>::valid(reg_depth) || reg_depth > new_depth)
+        if (!DepthTraits<T>::valid(reg_depth) || reg_depth > new_depth) {
           reg_depth = new_depth;
-      }
-      else
-      {
+        }
+      } else {
         // Reproject (u,v,Z) to (X,Y,Z,1) in depth camera frame
         Eigen::Vector4d xyz_depth_1, xyz_depth_2;
         xyz_depth_1 << ((u-0.5f - depth_cx)*depth - depth_Tx) * inv_depth_fx,
@@ -294,19 +293,19 @@ void RegisterNode::convert(
         int u_rgb_2 = (rgb_fx*xyz_rgb_2.x() + rgb_Tx)*inv_Z + rgb_cx + 0.5;
         int v_rgb_2 = (rgb_fy*xyz_rgb_2.y() + rgb_Ty)*inv_Z + rgb_cy + 0.5;
 
-        if (u_rgb_1 < 0 || u_rgb_2 >= (int)registered_msg->width ||
-            v_rgb_1 < 0 || v_rgb_2 >= (int)registered_msg->height)
+        if (u_rgb_1 < 0 || u_rgb_2 >= static_cast<int>(registered_msg->width) ||
+            v_rgb_1 < 0 || v_rgb_2 >= static_cast<int>(registered_msg->height)) {
           continue;
+        }
 
-        for (int nv=v_rgb_1; nv<=v_rgb_2; ++nv)
-        {
-          for (int nu=u_rgb_1; nu<=u_rgb_2; ++nu)
-          {
-            T& reg_depth = registered_data[nv*registered_msg->width + nu];
-            T  new_depth = DepthTraits<T>::fromMeters(0.5*(xyz_rgb_1.z()+xyz_rgb_2.z()));
+        for (int nv = v_rgb_1; nv <= v_rgb_2; ++nv) {
+          for (int nu = u_rgb_1; nu <= u_rgb_2; ++nu) {
+            T & reg_depth = registered_data[nv*registered_msg->width + nu];
+            T new_depth = DepthTraits<T>::fromMeters(0.5*(xyz_rgb_1.z()+xyz_rgb_2.z()));
             // Validity and Z-buffer checks
-            if (!DepthTraits<T>::valid(reg_depth) || reg_depth > new_depth)
+            if (!DepthTraits<T>::valid(reg_depth) || reg_depth > new_depth) {
               reg_depth = new_depth;
+            }
           }
         }
       }
