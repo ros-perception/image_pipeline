@@ -48,20 +48,94 @@ void convertDepth(
   const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
   sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
   const image_geometry::PinholeCameraModel & model,
-  double range_max = 0.0);
+  double range_max = 0.0)
+{
+  // Use correct principal point from calibration
+  float center_x = model.cx();
+  float center_y = model.cy();
+
+  // Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
+  double unit_scaling = DepthTraits<T>::toMeters(T(1) );
+  float constant_x = unit_scaling / model.fx();
+  float constant_y = unit_scaling / model.fy();
+  float bad_point = std::numeric_limits<float>::quiet_NaN();
+
+  sensor_msgs::PointCloud2Iterator<float> iter_x(*cloud_msg, "x");
+  sensor_msgs::PointCloud2Iterator<float> iter_y(*cloud_msg, "y");
+  sensor_msgs::PointCloud2Iterator<float> iter_z(*cloud_msg, "z");
+  const T * depth_row = reinterpret_cast<const T *>(&depth_msg->data[0]);
+  int row_step = depth_msg->step / sizeof(T);
+  for (int v = 0; v < static_cast<int>(cloud_msg->height); ++v, depth_row += row_step) {
+    for (int u = 0; u < static_cast<int>(cloud_msg->width); ++u, ++iter_x, ++iter_y, ++iter_z) {
+      T depth = depth_row[u];
+
+      // Missing points denoted by NaNs
+      if (!DepthTraits<T>::valid(depth)) {
+        if (range_max != 0.0) {
+          depth = DepthTraits<T>::fromMeters(range_max);
+        } else {
+          *iter_x = *iter_y = *iter_z = bad_point;
+          continue;
+        }
+      }
+
+      // Fill in XYZ
+      *iter_x = (u - center_x) * depth * constant_x;
+      *iter_y = (v - center_y) * depth * constant_y;
+      *iter_z = DepthTraits<T>::toMeters(depth);
+    }
+  }
+}
 
 // Handles float or uint16 depths
 template<typename T>
 void convertDepthRadial(
   const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
   sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
-  cv::Mat & transform);
+  cv::Mat & transform)
+{
+  // Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
+  float bad_point = std::numeric_limits<float>::quiet_NaN();
+
+  sensor_msgs::PointCloud2Iterator<float> iter_x(*cloud_msg, "x");
+  sensor_msgs::PointCloud2Iterator<float> iter_y(*cloud_msg, "y");
+  sensor_msgs::PointCloud2Iterator<float> iter_z(*cloud_msg, "z");
+  const T * depth_row = reinterpret_cast<const T *>(&depth_msg->data[0]);
+  int row_step = depth_msg->step / sizeof(T);
+  for (int v = 0; v < static_cast<int>(cloud_msg->height); ++v, depth_row += row_step) {
+    for (int u = 0; u < static_cast<int>(cloud_msg->width); ++u, ++iter_x, ++iter_y, ++iter_z) {
+      T depth = depth_row[u];
+
+      // Missing points denoted by NaNs
+      if (!DepthTraits<T>::valid(depth)) {
+        *iter_x = *iter_y = *iter_z = bad_point;
+        continue;
+      }
+      const cv::Vec3f & cvPoint = transform.at<cv::Vec3f>(u, v) * DepthTraits<T>::toMeters(depth);
+      // Fill in XYZ
+      *iter_x = cvPoint(0);
+      *iter_y = cvPoint(1);
+      *iter_z = cvPoint(2);
+    }
+  }
+}
 
 // Handles float or uint16 depths
 template<typename T>
 void convertIntensity(
   const sensor_msgs::msg::Image::ConstSharedPtr & intensity_msg,
-  sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg);
+  sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg)
+{
+  sensor_msgs::PointCloud2Iterator<float> iter_i(*cloud_msg, "intensity");
+  const T * inten_row = reinterpret_cast<const T *>(&intensity_msg->data[0]);
+
+  const int i_row_step = intensity_msg->step / sizeof(T);
+  for (int v = 0; v < static_cast<int>(cloud_msg->height); ++v, inten_row += i_row_step) {
+    for (int u = 0; u < static_cast<int>(cloud_msg->width); ++u, ++iter_i) {
+      *iter_i = inten_row[u];
+    }
+  }
+}
 
 // Handles RGB8, BGR8, and MONO8
 void convertRgb(
