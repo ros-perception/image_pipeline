@@ -31,9 +31,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from launch import LaunchDescription
-import launch_ros.actions
-from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+import launch_ros.actions
 
 
 def generate_launch_description():
@@ -41,7 +41,7 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     return LaunchDescription([
 
-         DeclareLaunchArgument(
+        DeclareLaunchArgument(
             'use_sim_time',
             default_value='false',
             description='Use simulation clock if true'),
