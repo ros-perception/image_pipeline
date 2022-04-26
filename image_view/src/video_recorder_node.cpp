@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <iostream>
+#include <memory>
+#include <string>
+
+#include "cv_bridge/cv_bridge.h"
+
 #include "image_view/video_recorder_node.hpp"
 
 #include <opencv2/highgui/highgui.hpp>
@@ -19,14 +25,9 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <camera_calibration_parsers/parse.hpp>
-#include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/image_encodings.hpp>
-
-#include <iostream>
-#include <memory>
-#include <string>
 
 namespace image_view
 {

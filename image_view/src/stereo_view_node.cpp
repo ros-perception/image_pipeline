@@ -46,28 +46,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+#include <chrono>
+#include <memory>
+#include <mutex>
+#include <string>
+
+#include "cv_bridge/cv_bridge.h"
+#include "message_filters/subscriber.h"
+#include "message_filters/sync_policies/approximate_time.h"
+#include "message_filters/sync_policies/exact_time.h"
+#include "message_filters/synchronizer.h"
+
 #include "image_view/stereo_view_node.hpp"
 
 #include <boost/format.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 #include <rclcpp/rclcpp.hpp>
-#include <cv_bridge/cv_bridge.h>
 #include <image_transport/subscriber_filter.hpp>
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/sync_policies/exact_time.h>
-#include <message_filters/synchronizer.h>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <stereo_msgs/msg/disparity_image.hpp>
-
-#include <algorithm>
-#include <chrono>
-#include <memory>
-#include <mutex>
-#include <string>
 
 namespace image_view
 {

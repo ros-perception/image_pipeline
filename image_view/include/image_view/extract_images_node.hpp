@@ -49,14 +49,14 @@
 #ifndef IMAGE_VIEW__EXTRACT_IMAGES_NODE_HPP_
 #define IMAGE_VIEW__EXTRACT_IMAGES_NODE_HPP_
 
+#include <mutex>
+#include <string>
+
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
 #include <boost/format.hpp>
-
-#include <mutex>
-#include <string>
 
 namespace image_view
 {

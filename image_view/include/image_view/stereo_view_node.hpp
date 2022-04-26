@@ -49,19 +49,21 @@
 #ifndef IMAGE_VIEW__STEREO_VIEW_NODE_HPP_
 #define IMAGE_VIEW__STEREO_VIEW_NODE_HPP_
 
+#include <memory>
+#include <mutex>
+
+#include "message_filters/subscriber.h"
+#include "message_filters/sync_policies/approximate_time.h"
+#include "message_filters/sync_policies/exact_time.h"
+
 #include <opencv2/highgui/highgui.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/subscriber_filter.hpp>
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/sync_policies/exact_time.h>
 #include <sensor_msgs/msg/image.hpp>
 #include <stereo_msgs/msg/disparity_image.hpp>
 
 #include <boost/format.hpp>
-
-#include <memory>
 
 namespace image_view
 {

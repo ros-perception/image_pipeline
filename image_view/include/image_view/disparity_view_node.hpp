@@ -15,13 +15,12 @@
 #ifndef IMAGE_VIEW__DISPARITY_VIEW_NODE_HPP_
 #define IMAGE_VIEW__DISPARITY_VIEW_NODE_HPP_
 
+#include <string>
+
 #include <rclcpp/rclcpp.hpp>
 #include <stereo_msgs/msg/disparity_image.hpp>
 
 #include <opencv2/highgui/highgui.hpp>
-
-#include <memory>
-#include <string>
 
 namespace image_view
 {

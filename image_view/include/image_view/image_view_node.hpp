@@ -15,19 +15,20 @@
 #ifndef IMAGE_VIEW__IMAGE_VIEW_NODE_HPP_
 #define IMAGE_VIEW__IMAGE_VIEW_NODE_HPP_
 
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include "cv_bridge/cv_bridge.h"
+
 #include <rclcpp/rclcpp.hpp>
-#include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/msg/image.hpp>
 #include <image_transport/image_transport.hpp>
 
-#include <opencv2/highgui/highgui.hpp>
 #include <boost/format.hpp>
-
-#include <memory>
-#include <mutex>
-#include <thread>
-#include <string>
-#include <vector>
 
 namespace image_view
 {
