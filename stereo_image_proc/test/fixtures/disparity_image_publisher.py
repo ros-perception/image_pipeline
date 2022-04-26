@@ -75,7 +75,7 @@ class DisparityImagePublisher(Node):
         self.disparity_image = DisparityImage()
         self.disparity_image.image.height = disparity_image.shape[0]
         self.disparity_image.image.width = disparity_image.shape[1]
-        self.disparity_image.image.step = self.disparity_image.image.width
+        self.disparity_image.image.step = self.disparity_image.image.width * 4
         self.disparity_image.image.data = array.array('B', disparity_image.tobytes())
 
         self.left_image_pub = self.create_publisher(Image, 'left/image_rect_color', 1)
