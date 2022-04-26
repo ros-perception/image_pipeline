@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <rclcpp/rclcpp.hpp>
-
 #include <memory>
+
+#include <rclcpp/rclcpp.hpp>
 
 #include "image_view/video_recorder_node.hpp"
 

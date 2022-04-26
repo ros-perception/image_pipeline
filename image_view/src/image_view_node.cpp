@@ -46,17 +46,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "image_view/image_view_node.hpp"
-
-#include <boost/format.hpp>
-#include <opencv2/highgui/highgui.hpp>
-
-#include <rclcpp/rclcpp.hpp>
-#include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.hpp>
-#include <rclcpp_components/register_node_macro.hpp>
-#include <std_msgs/msg/header.hpp>
-
 #include <chrono>
 #include <memory>
 #include <mutex>
@@ -64,6 +53,18 @@
 #include <thread>
 #include <utility>
 #include <vector>
+
+#include "cv_bridge/cv_bridge.h"
+
+#include "image_view/image_view_node.hpp"
+
+#include <boost/format.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+#include <rclcpp/rclcpp.hpp>
+#include <image_transport/image_transport.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
+#include <std_msgs/msg/header.hpp>
 
 namespace image_view
 {

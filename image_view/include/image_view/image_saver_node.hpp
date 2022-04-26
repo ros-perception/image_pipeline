@@ -49,15 +49,15 @@
 #ifndef IMAGE_VIEW__IMAGE_SAVER_NODE_HPP_
 #define IMAGE_VIEW__IMAGE_SAVER_NODE_HPP_
 
+#include <memory>
+#include <string>
+
 #include <boost/format.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 #include <std_srvs/srv/empty.hpp>
 #include <std_srvs/srv/trigger.hpp>
-
-#include <memory>
-#include <string>
 
 namespace image_view
 {

@@ -46,6 +46,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
+#include <memory>
+#include <string>
+
+#include "cv_bridge/cv_bridge.h"
+
 #include "image_view/image_saver_node.hpp"
 
 #include <boost/format.hpp>
@@ -53,22 +59,13 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <camera_calibration_parsers/parse.hpp>
-#include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <std_srvs/srv/empty.hpp>
 #include <std_srvs/srv/trigger.hpp>
 
-#include <chrono>
-#include <memory>
-#include <string>
-
 namespace image_view
 {
-
-using std::placeholders::_1;
-using std::placeholders::_2;
-using std::placeholders::_3;
 
 ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("image_saver_node", options)
@@ -96,11 +93,20 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
   g_format.parse(format_string);
 
   save_srv_ = this->create_service<std_srvs::srv::Empty>(
-    "save", std::bind(&ImageSaverNode::service, this, _1, _2, _3));
+    "save",
+    std::bind(
+      &ImageSaverNode::service, this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3));
   start_srv_ = this->create_service<std_srvs::srv::Trigger>(
-    "start", std::bind(&ImageSaverNode::callbackStartSave, this, _1, _2, _3));
+    "start",
+    std::bind(
+      &ImageSaverNode::callbackStartSave, this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3));
   end_srv_ = this->create_service<std_srvs::srv::Trigger>(
-    "end", std::bind(&ImageSaverNode::callbackEndSave, this, _1, _2, _3));
+    "end",
+    std::bind(
+      &ImageSaverNode::callbackEndSave, this, std::placeholders::_1, std::placeholders::_2,
+      std::placeholders::_3));
 }
 
 bool ImageSaverNode::saveImage(

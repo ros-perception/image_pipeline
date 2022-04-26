@@ -46,18 +46,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <functional>
+#include <mutex>
+#include <string>
+
+#include "cv_bridge/cv_bridge.h"
+
 #include <opencv2/highgui/highgui.hpp>
 
 #include <rclcpp/rclcpp.hpp>
-#include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
 #include <boost/format.hpp>
-
-#include <mutex>
-#include <string>
 
 #include "image_view/extract_images_node.hpp"
 

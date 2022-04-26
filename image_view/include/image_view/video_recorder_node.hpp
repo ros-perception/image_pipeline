@@ -15,13 +15,12 @@
 #ifndef IMAGE_VIEW__VIDEO_RECORDER_NODE_HPP_
 #define IMAGE_VIEW__VIDEO_RECORDER_NODE_HPP_
 
+#include <string>
+
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 
 #include <opencv2/highgui/highgui.hpp>
-
-#include <memory>
-#include <string>
 
 namespace image_view
 {
