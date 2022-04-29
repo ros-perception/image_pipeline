@@ -2,8 +2,8 @@
 Changelog for package depth_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2022-04-29)
+------------------
 * Cleanup of depth_image_proc.
 * Fix linker error caused by templating in the conversions.cpp file (`#718 <https://github.com/ros-perception/image_pipeline/issues/718>`_)
 * Port upsampling interpolation from `#363 <https://github.com/ros-perception/image_pipeline/issues/363>`_ to ROS2 (`#692 <https://github.com/ros-perception/image_pipeline/issues/692>`_)

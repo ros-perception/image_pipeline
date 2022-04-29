@@ -2,8 +2,8 @@
 Changelog for package camera_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2022-04-29)
+------------------
 * Some small fixes noticed while reviewing.
 * fix premature camera model change in camera_calibration
 * Fix shebang lines for noetic python3

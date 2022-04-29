@@ -2,8 +2,8 @@
 Changelog for package image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2022-04-29)
+------------------
 * Cleanup of image_proc.
 * Some small fixes noticed while reviewing.
 * Remove unnecessary find_package

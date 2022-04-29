@@ -2,8 +2,8 @@
 Changelog for package image_rotate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2022-04-29)
+------------------
 * Cleanup the image_rotate package.
 * Replace deprecated geometry2 headers
 * revert a293252

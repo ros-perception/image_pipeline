@@ -2,8 +2,8 @@
 Changelog for package stereo_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2022-04-29)
+------------------
 * Fix the tests for stereo_image_proc.
 * Cleanup stereo_image_proc
 * Populate CameraInfo camera matrix in test fixture

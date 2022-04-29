@@ -2,8 +2,8 @@
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2022-04-29)
+------------------
 * Cleanup image_publisher.
 * image_publisher: Fix out_img timestamp for using with sim time (`#735 <https://github.com/ros-perception/image_pipeline/issues/735>`_)
 * Add retry video capture feature with timeout

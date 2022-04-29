@@ -2,8 +2,8 @@
 Changelog for package tracetools_image_pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2022-04-29)
+------------------
 * tracetools_image_pipeline version consistent with repo
 * Omit changelogfile
 * Deal with uncrustify and cpplint

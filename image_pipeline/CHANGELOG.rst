@@ -2,8 +2,8 @@
 Changelog for package image_pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2022-04-29)
+------------------
 * Add maintainer (`#667 <https://github.com/ros-perception/image_pipeline/issues/667>`_)
 * Contributors: Jacob Perron
 

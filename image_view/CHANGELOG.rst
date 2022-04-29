@@ -2,8 +2,8 @@
 Changelog for package image_view
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.0 (2022-04-29)
+------------------
 * Cleanup image_view.
 * reformat for the uncrustify linter
 * fix code style divergence
