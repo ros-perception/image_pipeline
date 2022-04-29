@@ -2,6 +2,11 @@
 Changelog for package image_pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add maintainer (`#667 <https://github.com/ros-perception/image_pipeline/issues/667>`_)
+* Contributors: Jacob Perron
+
 2.2.1 (2020-08-27)
 ------------------
 * remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)

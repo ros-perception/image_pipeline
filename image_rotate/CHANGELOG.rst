@@ -1,3 +1,16 @@
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package image_rotate
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Forthcoming
+-----------
+* Cleanup the image_rotate package.
+* Replace deprecated geometry2 headers
+* revert a293252
+* Replace deprecated geometry2 headers
+* Add maintainer (`#667 <https://github.com/ros-perception/image_pipeline/issues/667>`_)
+* Contributors: Chris Lalancette, Jacob Perron, Patrick Musau
+
 2.2.1 (2020-08-27)
 ------------------
 * remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)

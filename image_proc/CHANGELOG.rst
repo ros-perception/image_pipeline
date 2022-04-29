@@ -1,3 +1,20 @@
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package image_proc
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Forthcoming
+-----------
+* Cleanup of image_proc.
+* Some small fixes noticed while reviewing.
+* Remove unnecessary find_package
+* Deal with uncrustify and cpplint
+* LTTng instrument image_proc::RectifyNode and image_proc::ResizeNode
+* bring over ros1 fix for missing roi resize
+* Add maintainer (`#667 <https://github.com/ros-perception/image_pipeline/issues/667>`_)
+* Fix build with later versions of OpenCV 3
+* Refactor image_proc and stereo_image_proc launch files (`#583 <https://github.com/ros-perception/image_pipeline/issues/583>`_)
+* Contributors: Chris Lalancette, Evan Flynn, Jacob Perron, Scott K Logan, Víctor Mayoral Vilches
+
 2.2.1 (2020-08-27)
 ------------------
 * make crop_decimate work (`#593 <https://github.com/ros-perception/image_pipeline/issues/593>`_)

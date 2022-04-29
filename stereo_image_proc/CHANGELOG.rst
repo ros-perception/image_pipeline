@@ -1,3 +1,29 @@
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package stereo_image_proc
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Forthcoming
+-----------
+* Fix the tests for stereo_image_proc.
+* Cleanup stereo_image_proc
+* Populate CameraInfo camera matrix in test fixture
+* Use with_default_policies
+* Improve formatting
+* Use SubscriptionOptions
+* Add subscriber qos overrides
+* Remove QosPolicyKind::Invalid
+* Allow QoS overrides for publishers
+* Add missing test dependency
+* Add color param to stereo_image_proc (`#661 <https://github.com/ros-perception/image_pipeline/issues/661>`_)
+* changes per comments
+* fix for stereo_image_proc_tests
+* Add maintainer (`#667 <https://github.com/ros-perception/image_pipeline/issues/667>`_)
+* Add disparity node parameters to launch file
+* Fix disparity node parameter name
+* Expose avoid_point_cloud_padding parameter in stereo_image_proc launch file (`#599 <https://github.com/ros-perception/image_pipeline/issues/599>`_)
+* Refactor image_proc and stereo_image_proc launch files (`#583 <https://github.com/ros-perception/image_pipeline/issues/583>`_)
+* Contributors: Audrow Nash, Chris Lalancette, Jacob Perron, Patrick Musau, Rebecca Butler
+
 2.2.1 (2020-08-27)
 ------------------
 * remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)

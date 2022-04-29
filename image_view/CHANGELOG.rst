@@ -1,3 +1,29 @@
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package image_view
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Forthcoming
+-----------
+* Cleanup image_view.
+* reformat for the uncrustify linter
+* fix code style divergence
+* reduce number of lines under 100
+* print correct topics, remap according to ros2 capabilities, print help with correct ros2 syntax
+* declare and get parameters for value replacement
+* transport shoudl be used as a ros arg parameter
+* use ros2 syntax
+* transport should be use as a ros-arg parameter
+* Fix image saver bug and time-based image saving
+* replace ROSTIME
+* Changing to RCL_SYSTEM_TIME
+* Fix timestamp creation
+* changes per comments
+* fix for stereo_image_proc_tests
+* Add maintainer (`#667 <https://github.com/ros-perception/image_pipeline/issues/667>`_)
+* please linters
+* Fix wrong usage of rclcpp::Duration constructor
+* Contributors: Chris Lalancette, Erwin Lejeune, Ivan Santiago Paunovic, Jacob Perron, Lars Lorentz Ludvigsen, Patrick Musau
+
 2.2.1 (2020-08-27)
 ------------------
 * remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)
