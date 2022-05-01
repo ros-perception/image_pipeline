@@ -136,6 +136,16 @@ ImageRotateNode::ImageRotateNode()
     };
   on_set_parameters_callback_handle_ = this->add_on_set_parameters_callback(reconfigureCallback);
   onInit();
+
+  // Set initial target and source based on config parameters
+  target_vector_.vector.x = config_.target_x;
+  target_vector_.vector.y = config_.target_y;
+  target_vector_.vector.z = config_.target_z;
+
+  source_vector_.vector.x = config_.source_x;
+  source_vector_.vector.y = config_.source_y;
+  source_vector_.vector.z = config_.source_z;
+
 }
 
 const std::string ImageRotateNode::frameWithDefault(
