@@ -15,14 +15,14 @@ ament_auto_find_build_dependencies()
 
 find_package(OpenCV REQUIRED core imgproc)
 
-ament_auto_add_library(${PROJECT_NAME} SHARED src/image_flip.cpp)
+ament_auto_add_library(${PROJECT_NAME} SHARED src/image_flip_node.cpp)
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
-rclcpp_components_register_nodes(${PROJECT_NAME} "${PROJECT_NAME}::ImageFlipNode")
-set(node_plugins "${node_plugins}${PROJECT_NAME}::ImageFlipNode;$<TARGET_FILE:ImageFlipNode>\n")
 
-ament_auto_add_executable(image_flip_node src/image_flip_node.cpp)
-set_target_properties(image_flip_node PROPERTIES OUTPUT_NAME ${PROJECT_NAME}_node)
-target_link_libraries(image_flip_node ${OpenCV_LIBRARIES} ${PROJECT_NAME})
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "${PROJECT_NAME}::ImageFlipNode"
+  EXECUTABLE image_flip_node
+)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
