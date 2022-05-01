@@ -4,7 +4,9 @@
 
 \b image_flip is a simpler image_rotate limited to 90 degree rotations.
 
-It preserves the size data and publishes a camera_info topic ... 
+It preserves the size data and publishes a camera_info topic,
+as well as a tf transform between original optical frame and rotated frame
+... 
 
 <!--
 Provide an overview of your package.

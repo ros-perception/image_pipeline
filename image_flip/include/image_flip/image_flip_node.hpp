@@ -62,7 +62,7 @@ struct ImageFlipConfig
 class ImageFlipNode : public rclcpp::Node
 {
 public:
-  IMAGE_FLIP_PUBLIC ImageFlipNode();
+  IMAGE_FLIP_PUBLIC ImageFlipNode(rclcpp::NodeOptions options);
 
 private:
   const std::string frameWithDefault(const std::string & frame, const std::string & image_frame);
