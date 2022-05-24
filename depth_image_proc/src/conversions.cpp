@@ -97,4 +97,12 @@ void convertRgb(
     }
   }
 }
+
+// force template instantiation
+template void convertDepth<uint16_t>(
+  const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
+  sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
+  const image_geometry::PinholeCameraModel & model,
+  double range_max);
+
 }  // namespace depth_image_proc
