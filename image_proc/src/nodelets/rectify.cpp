@@ -166,5 +166,5 @@ void RectifyNodelet::configCb(Config &config, uint32_t level)
 } // namespace image_proc
 
 // Register nodelet
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS( image_proc::RectifyNodelet, nodelet::Nodelet)

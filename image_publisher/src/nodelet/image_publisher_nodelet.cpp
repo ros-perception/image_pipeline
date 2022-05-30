@@ -192,5 +192,5 @@ public:
   }
 };
 }
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(image_publisher::ImagePublisherNodelet, nodelet::Nodelet);

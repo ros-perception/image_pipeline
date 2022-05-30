@@ -319,5 +319,5 @@ void ImageNodelet::windowThread()
 } // namespace image_view
 
 // Register the nodelet
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS( image_view::ImageNodelet, nodelet::Nodelet)

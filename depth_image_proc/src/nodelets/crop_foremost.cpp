@@ -138,5 +138,5 @@ void CropForemostNodelet::depthCb(const sensor_msgs::ImageConstPtr& raw_msg)
 } // namespace depth_image_proc
 
 // Register as nodelet
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(depth_image_proc::CropForemostNodelet,nodelet::Nodelet);

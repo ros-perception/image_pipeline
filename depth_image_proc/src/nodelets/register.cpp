@@ -307,5 +307,5 @@ void RegisterNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
 } // namespace depth_image_proc
 
 // Register as nodelet
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(depth_image_proc::RegisterNodelet,nodelet::Nodelet);

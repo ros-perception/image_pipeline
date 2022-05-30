@@ -209,5 +209,5 @@ void ResizeNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg)
 
 }  // namespace image_proc
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(image_proc::ResizeNodelet, nodelet::Nodelet)

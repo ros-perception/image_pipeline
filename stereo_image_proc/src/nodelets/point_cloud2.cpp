@@ -300,5 +300,5 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
 } // namespace stereo_image_proc
 
 // Register nodelet
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(stereo_image_proc::PointCloud2Nodelet,nodelet::Nodelet)
