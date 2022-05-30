@@ -232,5 +232,5 @@ namespace depth_image_proc {
 } // namespace depth_image_proc
 
 // Register as nodelet
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(depth_image_proc::PointCloudXyzRadialNodelet,nodelet::Nodelet);

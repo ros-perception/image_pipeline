@@ -327,5 +327,5 @@ void DisparityNodelet::configCb(Config &config, uint32_t level)
 } // namespace stereo_image_proc
 
 // Register nodelet
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(stereo_image_proc::DisparityNodelet,nodelet::Nodelet)
