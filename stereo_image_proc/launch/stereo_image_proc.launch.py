@@ -40,7 +40,6 @@ from launch.conditions import LaunchConfigurationEquals
 from launch.conditions import LaunchConfigurationNotEquals
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch.substitutions import PathJoinSubstitution
 from launch.substitutions import PythonExpression
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.actions import LoadComposableNodes
@@ -217,7 +216,12 @@ def generate_launch_description():
         SetLaunchConfiguration(
             condition=LaunchConfigurationEquals('container', ''),
             name='container',
-            value='stereo_image_proc_container',
+            value=PythonExpression([
+                '"stereo_image_proc_container"', ' if ',
+                '"', LaunchConfiguration('ros_namespace', default=''), '"',
+                ' == "" else ', '"',
+                LaunchConfiguration('ros_namespace', default=''), '/stereo_image_proc_container"'
+            ]),
         ),
         GroupAction(
             [
@@ -226,15 +230,7 @@ def generate_launch_description():
                     PythonLaunchDescriptionSource([
                         FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
                     ]),
-                    launch_arguments={
-                        'container': PathJoinSubstitution([
-                            PythonExpression([
-                                '"/".join("',
-                                LaunchConfiguration('ros_namespace'),
-                                '".split("/")[:-1])'
-                            ]),
-                            LaunchConfiguration('container')
-                        ])}.items()
+                    launch_arguments={'container': LaunchConfiguration('container')}.items()
                 ),
             ],
             condition=IfCondition(LaunchConfiguration('launch_image_proc')),
@@ -246,15 +242,7 @@ def generate_launch_description():
                     PythonLaunchDescriptionSource([
                         FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
                     ]),
-                    launch_arguments={
-                        'container': PathJoinSubstitution([
-                            PythonExpression([
-                                '"/".join("',
-                                LaunchConfiguration('ros_namespace'),
-                                '".split("/")[:-1])'
-                            ]),
-                            LaunchConfiguration('container')
-                        ])}.items()
+                    launch_arguments={'container': LaunchConfiguration('container')}.items()
                 ),
             ],
             condition=IfCondition(LaunchConfiguration('launch_image_proc')),
