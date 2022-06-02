@@ -144,6 +144,9 @@ void ImageFlipNode::do_work(
     } else if (config_.rotation_steps == 3){
       transpose(in_image, out_image);
       flip(out_image, out_image,1); //transpose+flip(1)=CW
+    } else if (config_.rotation_steps == 0) {
+      // Simple pass through
+      out_image = in_image;
     } else { //if not 0,1,2,3:
       RCLCPP_WARN(get_logger(), "Unknown rotation_steps %d", config_.rotation_steps);
       out_image = in_image;
