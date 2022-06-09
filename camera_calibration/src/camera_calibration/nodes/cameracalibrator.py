@@ -87,10 +87,6 @@ def main():
                      help="uses the CALIB_CB_FAST_CHECK flag for findChessboardCorners")
     parser.add_option_group(group)
     
-    rclpy.init()
-    testnode = Node("test")
-    val = testnode.declare_parameter("left", "")
-    print("LEFT VAL:", val._value)
     options, _ = parser.parse_args(rclpy.utilities.remove_ros_args())
     
     
@@ -150,6 +146,7 @@ def main():
         checkerboard_flags = cv2.CALIB_CB_FAST_CHECK
 
     
+    rclpy.init()
     node = OpenCVCalibrationNode("cameracalibrator", boards, options.service_check, sync, calib_flags, pattern, options.camera_name,
                                  checkerboard_flags=checkerboard_flags)
     node.spin()
