@@ -79,6 +79,9 @@ class PointCloudXyzrgbNodelet : public nodelet::Nodelet
 
   image_geometry::PinholeCameraModel model_;
 
+  // variables 
+  double max_range_ = -1;
+
   virtual void onInit();
 
   void connectCb();
@@ -102,6 +105,8 @@ void PointCloudXyzrgbNodelet::onInit()
   ros::NodeHandle depth_nh(nh, "depth_registered");
   rgb_it_  .reset( new image_transport::ImageTransport(*rgb_nh_) );
   depth_it_.reset( new image_transport::ImageTransport(depth_nh) );
+  
+  private_nh.param("max_range", max_range_, std::numeric_limits<double>::infinity());
 
   // Read parameters
   int queue_size;
@@ -116,7 +121,7 @@ void PointCloudXyzrgbNodelet::onInit()
     exact_sync_->registerCallback(boost::bind(&PointCloudXyzrgbNodelet::imageCb, this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3));
   }
   else
-  {
+  { 
     sync_.reset( new Synchronizer(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_) );
     sync_->registerCallback(boost::bind(&PointCloudXyzrgbNodelet::imageCb, this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3));
   }
@@ -329,9 +334,9 @@ void PointCloudXyzrgbNodelet::convert(const sensor_msgs::ImageConstPtr& depth_ms
     for (int u = 0; u < int(cloud_msg->width); ++u, rgb += color_step, ++iter_x, ++iter_y, ++iter_z, ++iter_a, ++iter_r, ++iter_g, ++iter_b)
     {
       T depth = depth_row[u];
-
+      
       // Check for invalid measurements
-      if (!DepthTraits<T>::valid(depth))
+      if (!DepthTraits<T>::valid(depth) ||  DepthTraits<T>::toMeters(depth) > max_range_ )
       {
         *iter_x = *iter_y = *iter_z = bad_point;
       }

@@ -385,6 +385,7 @@ namespace depth_image_proc {
 	    {
 		T depth = depth_row[u];
 
+
 		// Missing points denoted by NaNs
 		if (!DepthTraits<T>::valid(depth))
 		{
