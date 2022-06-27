@@ -36,7 +36,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
-#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/static_transform_broadcaster.h>
 #include <image_transport/image_transport.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -84,7 +84,8 @@ private:
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_sub_;
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_pub_;
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_pub_;
+  bool tf_unpublished_;
 
   image_flip::ImageFlipConfig config_;
 

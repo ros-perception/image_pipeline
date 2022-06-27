@@ -76,6 +76,7 @@ ImageFlipNode::ImageFlipNode(rclcpp::NodeOptions options)
           angle_ = config_.rotation_steps * M_PI / 2.0;
           RCLCPP_INFO(get_logger(), "Reset rotation_steps as '%d'", config_.rotation_steps);
           transform_.transform.rotation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0.0, 0.0, 1.0), angle_));
+          tf_unpublished_ = true;
 
         }
       }
@@ -93,7 +94,6 @@ ImageFlipNode::ImageFlipNode(rclcpp::NodeOptions options)
   transform_.transform.translation.y = 0;
   transform_.transform.translation.z = 0;
   transform_.transform.rotation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0.0, 0.0, 1.0), angle_));
-
 
 }
 
@@ -152,10 +152,6 @@ void ImageFlipNode::do_work(
       out_image = in_image;
     }
 
-    // Update the transform
-    transform_.header.frame_id = input_frame_from_msg;
-    transform_.child_frame_id = frameWithDefault(config_.output_frame_id, input_frame_from_msg + "_rotated");
-    transform_.header.stamp = msg->header.stamp;
 
     // Publish the image.
     sensor_msgs::msg::Image::SharedPtr out_img =
@@ -174,9 +170,14 @@ void ImageFlipNode::do_work(
     }
 
     // Publish the transform.
-
-    if (tf_pub_) {
+    if (tf_pub_ && (tf_unpublished_ || transform_.header.frame_id != input_frame_from_msg)) {
+      // Update the transform
+      transform_.header.frame_id = input_frame_from_msg;
+      transform_.child_frame_id = frameWithDefault(config_.output_frame_id, input_frame_from_msg + "_rotated");
+      transform_.header.stamp = msg->header.stamp;
+      RCLCPP_WARN(get_logger(), "Publish static transform for rotated image from %s!", input_frame_from_msg.c_str());
       tf_pub_->sendTransform(transform_);
+      tf_unpublished_ = false;
     }
 
 
@@ -271,7 +272,9 @@ void ImageFlipNode::onInit()
     img_pub_ = image_transport::create_publisher(this, out_image_topic, custom_qos);
   }
 
-  tf_pub_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
+  tf_pub_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(*this);
+  tf_unpublished_ = true;
+
 }
 }  // namespace image_flip
 
