@@ -81,31 +81,14 @@ class CalibrationNode(Node):
                  max_chessboard_speed = -1):
         super().__init__(name)
         
-        left_camera = self.declare_parameter("left_camera", "").get_parameter_value().string_value
-        right_camera = self.declare_parameter("right_camera", "").get_parameter_value().string_value
-        camera = self.declare_parameter("camera", "").get_parameter_value().string_value
-
-        if camera != "":
-            self.set_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
-                                                          camera + "/set_camera_info")
-        else:
-            self.set_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
-                                                          "camera/set_camera_info")
+        left_camera = self.declare_parameter("left_camera", "left_camera").get_parameter_value().string_value
+        right_camera = self.declare_parameter("right_camera", "right_camera").get_parameter_value().string_value
+        camera = self.declare_parameter("camera", "camera").get_parameter_value().string_value
         
-        if left_camera != "":
-            self.set_left_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
-                                                                left_camera + "/set_camera_info")
-        else:
-            self.set_left_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
-                                                                "left_camera/set_camera_info")
+        self.set_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo, camera + "/set_camera_info")
+        self.set_left_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo, left_camera + "/set_camera_info")
+        self.set_right_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo, right_camera + "/set_camera_info")
         
-        if right_camera != "":
-            self.set_right_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
-                                                                    right_camera + "/set_camera_info")
-        else:
-            self.set_right_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo,
-                                                                    "right_camera/set_camera_info")
-
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for cli in [self.set_camera_info_service, self.set_left_camera_info_service, self.set_right_camera_info_service]:
