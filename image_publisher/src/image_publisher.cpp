@@ -212,10 +212,8 @@ void ImagePublisher::onInit()
   camera_info_.r = {1, 0, 0, 0, 1, 0, 0, 0, 1};
   camera_info_.p = {1, 0, static_cast<float>(camera_info_.width / 2), 0, 0, 1,
     static_cast<float>(camera_info_.height / 2), 0, 0, 0, 1, 0};
-
-  timer_ = this->create_wall_timer(
-    std::chrono::milliseconds(static_cast<int>(1000 / publish_rate_)),
-    std::bind(&ImagePublisher::doWork, this));
+  
+  reconfigureCallback();
 }
 
 }  // namespace image_publisher
