@@ -1,3 +1,8 @@
+Forthcoming
+-----------
+* Include vector
+* support rgba8 and bgra8 encodings by skipping alpha channel
+
 1.15.1 (2020-12-11)
 -------------------
 

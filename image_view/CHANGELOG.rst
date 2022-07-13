@@ -1,3 +1,6 @@
+Forthcoming
+-----------
+
 1.15.1 (2020-12-11)
 -------------------
 * [image_view] Warn when filename_format is invalid (`#586 <https://github.com/ros-perception/image_pipeline/issues/586>`_)

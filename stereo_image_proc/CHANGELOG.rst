@@ -1,3 +1,10 @@
+Forthcoming
+-----------
+* support rgba8 and bgra8 encodings by skipping alpha channel
+* build error fix
+* feedback considered
+* downsampling original img / upsampling disparity img
+
 1.15.1 (2020-12-11)
 -------------------
 

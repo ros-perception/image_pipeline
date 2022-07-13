@@ -1,3 +1,6 @@
+Forthcoming
+-----------
+
 1.15.1 (2020-12-11)
 -------------------
 * Fix calibration yaml formatting (`#580 <https://github.com/ros-perception/image_pipeline/issues/580>`_)
