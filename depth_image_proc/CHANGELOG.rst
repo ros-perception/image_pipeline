@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.15.2 (2022-07-13)
+-------------------
 * Include vector
 * support rgba8 and bgra8 encodings by skipping alpha channel
 
