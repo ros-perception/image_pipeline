@@ -5,7 +5,7 @@
   <version>3.0.0</version>
   <description>
      camera_calibration allows easy calibration of monocular or stereo
-     cameras using a checkerboard calibration target. 
+     cameras using a checkerboard calibration target.
   </description>
 
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
@@ -22,6 +22,7 @@
   <depend>cv_bridge</depend>
   <depend>image_geometry</depend>
   <depend>message_filters</depend>
+  <depend>python3-opencv</depend>
   <depend>rclpy</depend>
   <depend>std_srvs</depend>
   <depend>sensor_msgs</depend>
