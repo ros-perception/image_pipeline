@@ -40,7 +40,7 @@ import cv2
 import cv_bridge
 import tarfile
 
-from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo
+from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, CalibrationException, ChessboardInfo, Patterns
 
 import rospy
 import sensor_msgs.srv
@@ -54,11 +54,11 @@ def display(win_name, img):
         rospy.signal_shutdown('Quit')
 
 
-def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags = 0, visualize = False, alpha=1.0):
+def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags = 0, visualize = False, alpha=1.0, pattern=Patterns.Chessboard):
     if mono:
-        calibrator = MonoCalibrator(boards, calib_flags)
+        calibrator = MonoCalibrator(boards, calib_flags, pattern=pattern)
     else:
-        calibrator = StereoCalibrator(boards, calib_flags)
+        calibrator = StereoCalibrator(boards, calib_flags, pattern=pattern)
 
     calibrator.do_tarfile_calibration(tarname)
 
@@ -158,6 +158,9 @@ if __name__ == '__main__':
                       help="specify chessboard size as NxM [default: 8x6]")
     parser.add_option("-q", "--square", default=[], action="append", dest="square",
                       help="specify chessboard square size in meters [default: 0.108]")
+    parser.add_option("-p", "--pattern",
+                     type="string", default="chessboard",
+                     help="calibration pattern to detect - 'chessboard', 'circles', 'acircles' \n")
     parser.add_option("--upload", default=False, action="store_true", dest="upload",
                       help="Upload results to camera(s).")
     parser.add_option("--fix-principal-point", action="store_true", default=False,
@@ -226,4 +229,15 @@ if __name__ == '__main__':
     if (num_ks < 1):
         calib_flags |= cv2.CALIB_FIX_K1
 
-    cal_from_tarfile(boards, tarname, options.mono, options.upload, calib_flags, options.visualize, options.alpha)
+    pattern = None
+    if options.pattern == "chessboard":
+        pattern = Patterns.Chessboard
+    if options.pattern == "circles":
+        pattern = Patterns.Circles
+    if options.pattern == "acircles":
+        pattern = Patterns.ACircles
+    if pattern is None:
+        parser.error("Must specify pattern type")
+
+    cal_from_tarfile(boards, tarname, options.mono, options.upload, calib_flags, options.visualize, options.alpha,
+        pattern=pattern)
