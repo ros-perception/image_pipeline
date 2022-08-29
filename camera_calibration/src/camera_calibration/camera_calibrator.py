@@ -42,11 +42,12 @@ import sensor_msgs.msg
 import sensor_msgs.srv
 import threading
 import time
-from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, ChessboardInfo, Patterns
+from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, ChessboardInfo, Patterns, CAMERA_MODEL
 from collections import deque
 from message_filters import ApproximateTimeSynchronizer
 from std_msgs.msg import String
 from std_srvs.srv import Empty
+
 
 class SpinThread(threading.Thread):
     """
