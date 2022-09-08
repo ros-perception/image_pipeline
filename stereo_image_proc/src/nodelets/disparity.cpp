@@ -231,9 +231,11 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   model_.fromCameraInfo(l_info_msg, r_info_msg);
 
   // Allocate new disparity image message
-  DisparityImagePtr disp_msg = boost::make_shared<DisparityImage>();
-  disp_msg->header         = l_info_msg->header;
-  disp_msg->image.header   = l_info_msg->header;
+  DisparityImagePtr disp_msg      = boost::make_shared<DisparityImage>();
+  disp_msg->header                = l_info_msg->header;
+  disp_msg->header.frame_id       = l_image_msg->header.frame_id;
+  disp_msg->image.header          = l_info_msg->header;
+  disp_msg->image.header.frame_id = l_image_msg->header.frame_id;
 
   // Compute window of (potentially) valid disparities
   int border   = block_matcher_.getCorrelationWindowSize() / 2;
