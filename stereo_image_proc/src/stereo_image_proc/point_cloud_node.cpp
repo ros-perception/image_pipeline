@@ -38,6 +38,7 @@
 #include "message_filters/subscriber.h"
 #include "message_filters/synchronizer.h"
 #include "message_filters/sync_policies/approximate_time.h"
+#include "message_filters/sync_policies/approximate_epsilon_time.h"
 #include "message_filters/sync_policies/exact_time.h"
 #include "rcutils/logging_macros.h"
 
@@ -73,10 +74,17 @@ private:
     sensor_msgs::msg::CameraInfo,
     sensor_msgs::msg::CameraInfo,
     stereo_msgs::msg::DisparityImage>;
+  using ApproximateEpsilonPolicy = message_filters::sync_policies::ApproximateEpsilonTime<
+    sensor_msgs::msg::Image,
+    sensor_msgs::msg::CameraInfo,
+    sensor_msgs::msg::CameraInfo,
+    stereo_msgs::msg::DisparityImage>;
   using ExactSync = message_filters::Synchronizer<ExactPolicy>;
   using ApproximateSync = message_filters::Synchronizer<ApproximatePolicy>;
+  using ApproximateEpsilonSync = message_filters::Synchronizer<ApproximateEpsilonPolicy>;
   std::shared_ptr<ExactSync> exact_sync_;
   std::shared_ptr<ApproximateSync> approximate_sync_;
+  std::shared_ptr<ApproximateEpsilonSync> approximate_epsilon_sync_;
 
   // Publications
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pub_points2_;
@@ -102,6 +110,7 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
   // Declare/read parameters
   int queue_size = this->declare_parameter("queue_size", 5);
   bool approx = this->declare_parameter("approximate_sync", false);
+  bool approx_sync_epsilon = this->declare_parameter("approximate_sync_tolerance_seconds", 0.0);
   this->declare_parameter("use_system_default_qos", false);
   rcl_interfaces::msg::ParameterDescriptor descriptor;
   // TODO(ivanpauno): Confirm if using point cloud padding in `sensor_msgs::msg::PointCloud2`
@@ -115,13 +124,24 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
 
   // Synchronize callbacks
   if (approx) {
-    approximate_sync_.reset(
-      new ApproximateSync(
-        ApproximatePolicy(queue_size),
-        sub_l_image_, sub_l_info_,
-        sub_r_info_, sub_disparity_));
-    approximate_sync_->registerCallback(
-      std::bind(&PointCloudNode::imageCb, this, _1, _2, _3, _4));
+    if (0.0 == approx_sync_epsilon) {
+      approximate_sync_.reset(
+        new ApproximateSync(
+          ApproximatePolicy(queue_size),
+          sub_l_image_, sub_l_info_,
+          sub_r_info_, sub_disparity_));
+      approximate_sync_->registerCallback(
+        std::bind(&PointCloudNode::imageCb, this, _1, _2, _3, _4));
+    } else {
+      approximate_epsilon_sync_.reset(
+        new ApproximateEpsilonSync(
+          ApproximateEpsilonPolicy(
+            queue_size, rclcpp::Duration::from_seconds(approx_sync_epsilon)),
+          sub_l_image_, sub_l_info_,
+          sub_r_info_, sub_disparity_));
+      approximate_epsilon_sync_->registerCallback(
+        std::bind(&PointCloudNode::imageCb, this, _1, _2, _3, _4));
+    }
   } else {
     exact_sync_.reset(
       new ExactSync(
