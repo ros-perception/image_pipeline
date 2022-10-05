@@ -38,8 +38,8 @@
 #include <utility>
 #include <vector>
 
-#include "cv_bridge/cv_bridge.h"
-#include "image_geometry/stereo_camera_model.h"
+#include "cv_bridge/cv_bridge.hpp"
+#include "image_geometry/stereo_camera_model.hpp"
 #include "message_filters/subscriber.h"
 #include "message_filters/synchronizer.h"
 #include "message_filters/sync_policies/approximate_time.h"

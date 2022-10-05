@@ -33,7 +33,7 @@
 #include <functional>
 #include <mutex>
 
-#include "cv_bridge/cv_bridge.h"
+#include "cv_bridge/cv_bridge.hpp"
 #include "tracetools_image_pipeline/tracetools.h"
 
 #include <image_proc/rectify.hpp>

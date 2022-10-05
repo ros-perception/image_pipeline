@@ -35,7 +35,7 @@
 #include <iterator>
 #include <vector>
 
-#include "cv_bridge/cv_bridge.h"
+#include "cv_bridge/cv_bridge.hpp"
 
 #include <image_proc/crop_non_zero.hpp>
 #include <image_transport/image_transport.hpp>

@@ -34,7 +34,7 @@
 #include <memory>
 #include <mutex>
 
-#include "image_geometry/pinhole_camera_model.h"
+#include "image_geometry/pinhole_camera_model.hpp"
 
 #include <depth_image_proc/point_cloud_xyz_radial.hpp>
 #include <rclcpp/rclcpp.hpp>

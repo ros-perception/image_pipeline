@@ -36,7 +36,7 @@
 #include <mutex>
 
 #include "depth_image_proc/visibility.h"
-#include "image_geometry/pinhole_camera_model.h"
+#include "image_geometry/pinhole_camera_model.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>

@@ -35,7 +35,7 @@
 
 #include <string>
 
-#include "image_geometry/stereo_camera_model.h"
+#include "image_geometry/stereo_camera_model.hpp"
 
 #include <image_proc/processor.hpp>
 #include <sensor_msgs/msg/point_cloud.hpp>

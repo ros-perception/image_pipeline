@@ -36,7 +36,7 @@
 #include <thread>
 #include <vector>
 
-#include "cv_bridge/cv_bridge.h"
+#include "cv_bridge/cv_bridge.hpp"
 
 #include <camera_info_manager/camera_info_manager.hpp>
 #include <image_publisher/image_publisher.hpp>
