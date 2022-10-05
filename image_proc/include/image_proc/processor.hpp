@@ -35,7 +35,7 @@
 
 #include <string>
 
-#include "image_geometry/pinhole_camera_model.h"
+#include "image_geometry/pinhole_camera_model.hpp"
 
 #include <sensor_msgs/msg/image.hpp>
 #include <opencv2/core/core.hpp>

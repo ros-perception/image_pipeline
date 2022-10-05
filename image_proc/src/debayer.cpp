@@ -35,7 +35,7 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "cv_bridge/cv_bridge.h"
+#include "cv_bridge/cv_bridge.hpp"
 
 #include <image_proc/debayer.hpp>
 // Until merged into OpenCV

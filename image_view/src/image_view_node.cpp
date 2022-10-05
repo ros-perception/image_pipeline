@@ -54,7 +54,7 @@
 #include <utility>
 #include <vector>
 
-#include "cv_bridge/cv_bridge.h"
+#include "cv_bridge/cv_bridge.hpp"
 
 #include "image_view/image_view_node.hpp"
 

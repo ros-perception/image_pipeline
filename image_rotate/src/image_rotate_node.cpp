@@ -47,7 +47,7 @@
 #include <string>
 #include <vector>
 
-#include "cv_bridge/cv_bridge.h"
+#include "cv_bridge/cv_bridge.hpp"
 #include "tf2/LinearMath/Vector3.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_ros/buffer.h"

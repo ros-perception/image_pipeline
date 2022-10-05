@@ -35,7 +35,7 @@
 
 #include <mutex>
 
-#include "image_geometry/pinhole_camera_model.h"
+#include "image_geometry/pinhole_camera_model.hpp"
 
 #include <image_transport/image_transport.hpp>
 #include <rclcpp/rclcpp.hpp>

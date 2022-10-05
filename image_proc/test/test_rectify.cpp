@@ -35,7 +35,7 @@
 
 #include "ros/ros.h"
 #include "gtest/gtest.h"
-#include "cv_bridge/cv_bridge.h"
+#include "cv_bridge/cv_bridge.hpp"
 
 #include <camera_calibration_parsers/parse.hpp>
 #include <opencv2/highgui/highgui.hpp>

@@ -52,7 +52,7 @@
 #include <mutex>
 #include <string>
 
-#include "cv_bridge/cv_bridge.h"
+#include "cv_bridge/cv_bridge.hpp"
 #include "message_filters/subscriber.h"
 #include "message_filters/sync_policies/approximate_time.h"
 #include "message_filters/sync_policies/exact_time.h"

@@ -38,7 +38,7 @@
 #include <vector>
 
 #include "depth_image_proc/visibility.h"
-#include "image_geometry/pinhole_camera_model.h"
+#include "image_geometry/pinhole_camera_model.hpp"
 
 #include <image_transport/image_transport.hpp>
 #include <opencv2/core/mat.hpp>

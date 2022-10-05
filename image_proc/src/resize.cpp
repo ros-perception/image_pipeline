@@ -33,7 +33,7 @@
 #include <functional>
 #include <memory>
 
-#include "cv_bridge/cv_bridge.h"
+#include "cv_bridge/cv_bridge.hpp"
 #include "tracetools_image_pipeline/tracetools.h"
 
 #include <image_proc/resize.hpp>

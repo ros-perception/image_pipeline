@@ -32,7 +32,7 @@
 
 #include <string>
 
-#include "image_geometry/pinhole_camera_model.h"
+#include "image_geometry/pinhole_camera_model.hpp"
 #include "rcutils/logging_macros.h"
 
 #include <image_proc/processor.hpp>

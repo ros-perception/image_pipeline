@@ -50,7 +50,7 @@
 #include <memory>
 #include <string>
 
-#include "cv_bridge/cv_bridge.h"
+#include "cv_bridge/cv_bridge.hpp"
 
 #include "image_view/image_saver_node.hpp"
 
