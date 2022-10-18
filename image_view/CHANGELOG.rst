@@ -1,5 +1,5 @@
-Forthcoming
------------
+1.17.0 (2022-10-17)
+-------------------
 * Switch to hpp headers of pluginlib
 * Switch to new boost/bind/bind.hpp
 * Add support for floating point fps
