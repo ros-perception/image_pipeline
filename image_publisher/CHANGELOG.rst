@@ -1,6 +1,12 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Forthcoming
+-----------
+* Switch to hpp headers of pluginlib
+* Switch to new boost/bind/bind.hpp
+* Contributors: Jochen Sprickerhof
+
 1.16.0 (2021-11-12)
 -------------------
 

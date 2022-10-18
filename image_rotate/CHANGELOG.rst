@@ -1,3 +1,10 @@
+Forthcoming
+-----------
+* Switch to hpp headers of pluginlib
+* Fix tf2 dependency for image_rotate
+* Switch to new boost/bind/bind.hpp
+* Contributors: Jochen Sprickerhof, Timo Röhling
+
 1.16.0 (2021-11-12)
 -------------------
 

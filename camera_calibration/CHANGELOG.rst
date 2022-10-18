@@ -1,3 +1,6 @@
+Forthcoming
+-----------
+
 1.16.0 (2021-11-12)
 -------------------
 * fix premature camera model change in camera_calibration

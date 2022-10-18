@@ -1,3 +1,11 @@
+Forthcoming
+-----------
+* Switch to hpp headers of pluginlib
+* Drop old C++ standard compiler flag
+* Switch to new boost/bind/bind.hpp
+* Update ROI parameters on resize
+* Contributors: Jochen Sprickerhof, Yuki Furuta
+
 1.16.0 (2021-11-12)
 -------------------
 
