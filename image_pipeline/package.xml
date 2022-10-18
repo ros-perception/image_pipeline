@@ -1,6 +1,6 @@
 <package>
   <name>image_pipeline</name>
-  <version>1.16.0</version>
+  <version>1.17.0</version>
   <description>image_pipeline fills the gap between getting raw images from a camera driver and higher-level vision processing.</description>
   <author>Patrick Mihelich</author>
   <author>James Bowman</author>

@@ -1,3 +1,10 @@
+1.17.0 (2022-10-17)
+-------------------
+* Switch to hpp headers of pluginlib
+* Switch to new boost/bind/bind.hpp
+* Add support for floating point fps
+* Contributors: Jochen Sprickerhof, Júnio Eduardo de Morais Aquino
+
 1.16.0 (2021-11-12)
 -------------------
 * remove GTK3 dep.

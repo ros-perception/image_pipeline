@@ -1,3 +1,16 @@
+1.17.0 (2022-10-17)
+-------------------
+* Switch to hpp headers of pluginlib
+* Drop old C++ standard compiler flag
+* Switch to new boost/bind/bind.hpp
+* Add missing CATKIN_DEPENDS
+* Update frame id to match depth_front, rgb_front
+* Create point_cloud_xyzrgb.launch
+  Created launch file for point_cloud_xyzrgb
+* Delete depth_image_proc/script directory
+* Delete depth_image_proc/launch directory
+* Contributors: Anirban Dam, Jochen Sprickerhof
+
 1.16.0 (2021-11-12)
 -------------------
 * Fix includes

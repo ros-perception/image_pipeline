@@ -1,3 +1,10 @@
+1.17.0 (2022-10-17)
+-------------------
+* Switch to hpp headers of pluginlib
+* Drop old C++ standard compiler flag
+* Switch to new boost/bind/bind.hpp
+* Contributors: Jochen Sprickerhof
+
 1.16.0 (2021-11-12)
 -------------------
 * Fix includes
