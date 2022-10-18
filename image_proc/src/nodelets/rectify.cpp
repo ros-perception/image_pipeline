@@ -52,7 +52,7 @@ class RectifyNodelet : public nodelet::Nodelet
   boost::shared_ptr<image_transport::ImageTransport> it_;
   image_transport::CameraSubscriber sub_camera_;
   int queue_size_;
-  std::string frame_id_suffix_;
+  std::string rectified_frame_suffix_;
   
   boost::mutex connect_mutex_;
   image_transport::Publisher pub_rect_;
@@ -85,7 +85,7 @@ void RectifyNodelet::onInit()
 
   // Read parameters
   private_nh.param("queue_size", queue_size_, 5);
-  private_nh.param("frame_id_suffix", frame_id_suffix_, std::string(""));
+  private_nh.param("rectified_frame_suffix", rectified_frame_suffix_, std::string(""));
 
   // Set up dynamic reconfigure
   reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
@@ -158,10 +158,10 @@ void RectifyNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   // Allocate new rectified image message
   sensor_msgs::ImagePtr rect_msg = cv_bridge::CvImage(image_msg->header, image_msg->encoding, rect).toImageMsg();
   
-  // If 'frame_id_suffix_' is not empty, add to header
-  if (!frame_id_suffix_.empty())
+  // If 'rectified_frame_suffix_' is not empty, add to header
+  if (!rectified_frame_suffix_.empty())
   {
-    rect_msg->header.frame_id += frame_id_suffix_;
+    rect_msg->header.frame_id += rectified_frame_suffix_;
   }
   
   pub_rect_.publish(rect_msg);
