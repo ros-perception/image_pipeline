@@ -276,7 +276,8 @@ class OpenCVCalibrationNode(CalibrationNode):
             if self.c.goodenough:
                 if 180 <= y < 280:
                     print("**** Calibrating ****")
-                    self.c.do_calibration()
+                    # Perform calibration in another thread to prevent UI blocking
+                    threading.Thread(target=self.c.do_calibration, name="Calibration").start()
                     self.buttons(self._last_display)
                     self.queue_display.put(self._last_display)
             if self.c.calibrated:
