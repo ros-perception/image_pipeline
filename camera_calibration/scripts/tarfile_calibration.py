@@ -229,15 +229,13 @@ if __name__ == '__main__':
     if (num_ks < 1):
         calib_flags |= cv2.CALIB_FIX_K1
 
-    pattern = None
-    if options.pattern == "chessboard":
-        pattern = Patterns.Chessboard
-    if options.pattern == "circles":
-        pattern = Patterns.Circles
-    if options.pattern == "acircles":
-        pattern = Patterns.ACircles
-    if pattern is None:
-        parser.error("Must specify pattern type")
+    pattern = Patterns.Chessboard
+    if options.pattern != "chessboard":
+        if options.pattern == "circles":
+            pattern = Patterns.Circles
+        elif options.pattern == "acircles":
+            pattern = Patterns.ACircles
+        else: parser.error("Unknown pattern type %s" % options.pattern)
 
     cal_from_tarfile(boards, tarname, options.mono, options.upload, calib_flags, options.visualize, options.alpha,
-        pattern=pattern)
+        pattern)
