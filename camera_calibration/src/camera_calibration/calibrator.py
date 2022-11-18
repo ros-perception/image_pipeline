@@ -305,8 +305,11 @@ class Calibrator():
     """
     Base class for calibration system
     """
-    def __init__(self, boards, flags=0, fisheye_flags = 0, pattern=Patterns.Chessboard, name='',
-    checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, max_chessboard_speed = -1.0):
+    def __init__(self, boards, flags=0, fisheye_flags = 0,
+                 pattern=Patterns.Chessboard, name='',
+                 checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, 
+                 max_chessboard_speed = -1.0,
+                 scale = 1.0):
         # Ordering the dimensions for the different detectors is actually a minefield...
         if pattern == Patterns.Chessboard:
             # Make sure n_cols > n_rows to agree with OpenCV CB detector output
@@ -341,6 +344,7 @@ class Calibrator():
         self.last_frame_corners = None
         self.last_frame_ids = None
         self.max_chessboard_speed = max_chessboard_speed
+        self.scale = float(scale)
 
     def mkgray(self, msg):
         """
@@ -520,7 +524,7 @@ class Calibrator():
         # Scale the input image down to ~VGA size
         height = img.shape[0]
         width = img.shape[1]
-        scale = math.sqrt( (width*height) / (640.*480.) )
+        scale = self.scale
         if scale > 1.0:
             scrib = cv2.resize(img, (int(width / scale), int(height / scale)))
         else:
