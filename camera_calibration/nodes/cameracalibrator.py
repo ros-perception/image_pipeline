@@ -133,7 +133,8 @@ def main():
                      help="Do not use samples where the calibration pattern is moving faster \
                      than this speed in px/frame. Set to eg. 0.5 for rolling shutter cameras.")
     group.add_option("--scale", type="float", default=1.0,
-                     help="Scaling option for the input image, decrease if your camera ")
+                     help="Scaling option for the input image during pattern \
+                     detection. Decreasing helps with computation.")
 
     parser.add_option_group(group)
 
@@ -226,7 +227,7 @@ def main():
                 calib_flags, fisheye_calib_flags, pattern, options.camera_name,
                 checkerboard_flags=checkerboard_flags,
                 max_chessboard_speed=options.max_chessboard_speed,
-                queue_size=options.queue_size, img_downscale = options.scale)
+                queue_size=options.queue_size, img_downscale=options.scale)
     rospy.spin()
 
 if __name__ == "__main__":

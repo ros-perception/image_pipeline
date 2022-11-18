@@ -184,7 +184,8 @@ class CalibrationNode:
                             self._fisheye_calib_flags, self._pattern,
                             name=self._camera_name,
                             checkerboard_flags=self._checkerboard_flags,
-                            max_chessboard_speed=self._max_chessboard_speed)
+                            max_chessboard_speed=self._max_chessboard_speed,
+                            scale = self._img_scale)
             else:
                 self.c = MonoCalibrator(self._boards, self._calib_flags,
                             self._fisheye_calib_flags, self._pattern,
