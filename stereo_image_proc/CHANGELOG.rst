@@ -2,6 +2,14 @@
 Changelog for package stereo_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Replace deprecated headers
+  Fixing compiler warnings.
+* Add support for ApproximateEpsilonTime in stereo_image_proc and disparity_node
+* Forward container namespace from stereo_image_proc -> image_proc (`#752 <https://github.com/ros-perception/image_pipeline/issues/752>`_)
+* Contributors: Brian, Ivan Santiago Paunovic, Jacob Perron
+
 3.0.0 (2022-04-29)
 ------------------
 * Fix the tests for stereo_image_proc.

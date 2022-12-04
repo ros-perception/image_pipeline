@@ -2,6 +2,14 @@
 Changelog for package image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Replace deprecated headers
+  Fixing compiler warnings.
+* add NOLINT to keep cpplint happy about curly brace being on new line
+* Add conversion from YUV422-YUY2
+* Contributors: Jacob Perron, Kenji Brameld, Tillmann Falck
+
 3.0.0 (2022-04-29)
 ------------------
 * Cleanup of image_proc.

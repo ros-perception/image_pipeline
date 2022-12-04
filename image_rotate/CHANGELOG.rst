@@ -2,6 +2,12 @@
 Changelog for package image_rotate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Replace deprecated headers
+  Fixing compiler warnings.
+* Contributors: Jacob Perron
+
 3.0.0 (2022-04-29)
 ------------------
 * Cleanup the image_rotate package.
