@@ -39,6 +39,7 @@ double min_depth_range;
 double max_depth_range;
 bool use_dynamic_range;
 int colormap;
+cv::Mat image;
 
 
 void callback(const sensor_msgs::ImageConstPtr& image_msg)
@@ -83,19 +84,23 @@ void callback(const sensor_msgs::ImageConstPtr& image_msg)
       options.min_image_value = min_depth_range;
       options.max_image_value = max_depth_range;
       options.colormap = colormap;
-      const cv::Mat image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image;
-      if (!image.empty()) {
-        outputVideo << image;
-        ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[1F");
-        g_count++;
-        g_last_wrote_time = image_msg->header.stamp;
-      } else {
-          ROS_WARN("Frame skipped, no data!");
-      }
+      image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image_msg), encoding, options)->image;
     } catch(cv_bridge::Exception)
     {
         ROS_ERROR("Unable to convert %s image to %s", image_msg->encoding.c_str(), encoding.c_str());
         return;
+    }
+}
+
+void timercallback(const ros::TimerEvent&)
+{
+    if (!image.empty()) {
+      outputVideo << image;
+      ROS_INFO_STREAM("Recording frame " << g_count << "\x1b[1F");
+      g_count++;
+      g_last_wrote_time = ros::Time::now();
+    } else {
+      ROS_WARN("Frame skipped, no data!");
     }
 }
 
@@ -134,6 +139,7 @@ int main(int argc, char** argv)
     image_transport::ImageTransport it(nh);
     std::string topic = nh.resolveName("image");
     image_transport::Subscriber sub_image = it.subscribe(topic, 1, callback);
+    ros::Timer timer = nh.createTimer(ros::Duration(1.0 / fps), timercallback);
 
     ROS_INFO_STREAM("Waiting for topic " << topic << "...");
     ros::spin();
