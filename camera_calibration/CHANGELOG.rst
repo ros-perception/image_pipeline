@@ -2,8 +2,8 @@
 Changelog for package camera_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.1 (2022-12-04)
+------------------
 * add python3-opencv to camera calibration dependency
 * port changes from `#755 <https://github.com/ros-perception/image_pipeline/issues/755>`_ to rolling branch
 * Contributors: Kenji Brameld

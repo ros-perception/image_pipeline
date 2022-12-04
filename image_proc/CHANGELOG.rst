@@ -2,8 +2,8 @@
 Changelog for package image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.1 (2022-12-04)
+------------------
 * Replace deprecated headers
   Fixing compiler warnings.
 * add NOLINT to keep cpplint happy about curly brace being on new line

@@ -2,8 +2,8 @@
 Changelog for package image_view
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.1 (2022-12-04)
+------------------
 * Replace deprecated headers
   Fixing compiler warnings.
 * Contributors: Jacob Perron

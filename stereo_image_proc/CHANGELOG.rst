@@ -2,8 +2,8 @@
 Changelog for package stereo_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.1 (2022-12-04)
+------------------
 * Replace deprecated headers
   Fixing compiler warnings.
 * Add support for ApproximateEpsilonTime in stereo_image_proc and disparity_node
