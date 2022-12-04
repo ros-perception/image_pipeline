@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.3.0 (2022-12-04)
+------------------
 * Add conversion from YUV422-YUY2
 * Remove unnecessary find_package
   tracetools_image_pipeline included in package.xml and

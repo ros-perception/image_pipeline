@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.3.0 (2022-12-04)
+------------------
 * Fix image saver bug and time-based image saving
   Add missing 'request_start_end' ROS parameter (from ROS 1) and ensure related
   member variables are initialized properly. This restores the time-based image

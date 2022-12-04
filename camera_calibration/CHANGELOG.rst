@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.3.0 (2022-12-04)
+------------------
 * Remove random tab
 * Remove lines from cameracalibrator.py and simplify service creation
 * Read camera_names

@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.3.0 (2022-12-04)
+------------------
 * revert a293252
 * Replace deprecated geometry2 headers
   tf2_geometry_msgs.h was deprecated in https://github.com/ros2/geometry2/pull/418

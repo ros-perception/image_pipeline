@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.3.0 (2022-12-04)
+------------------
 * Add missing test dependency
 * Add color param to stereo_image_proc (`#661 <https://github.com/ros-perception/image_pipeline/issues/661>`_)
   * Add color param to point cloud node in stereo_image_proc

@@ -1,5 +1,5 @@
-Forthcoming
------------
+2.3.0 (2022-12-04)
+------------------
 * Fix linker error caused by templating in the conversions.cpp file (`#718 <https://github.com/ros-perception/image_pipeline/issues/718>`_)
 * Fixed typo in pointcloudxyz launch file
 * use unique_ptrs, remove unused code, add back in missing initMatrix call

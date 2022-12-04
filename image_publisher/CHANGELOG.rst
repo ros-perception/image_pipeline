@@ -2,8 +2,8 @@
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.3.0 (2022-12-04)
+------------------
 * Add retry video capture feature with timeout
   Retry onInit() if the loading image fails or if the image is empty.
   This is useful if the stream is lost for a while or if the stream
