@@ -1,3 +1,20 @@
+Forthcoming
+-----------
+* Remove random tab
+* Remove lines from cameracalibrator.py and simplify service creation
+* Read camera_names
+* Read params
+* added missing imports
+* update pytest.ini
+* implemented fisheye mono and stereo calibration based on the melodic branch
+* trimmed whitespace at line endings
+* Update camera_calibration setup.cfg to use underscores (`#688 <https://github.com/ros-perception/image_pipeline/issues/688>`_)
+  Fixes a deprecation warning.
+* Add maintainer (`#667 <https://github.com/ros-perception/image_pipeline/issues/667>`_)
+* Fixed crash when rosargs are given (`#597 <https://github.com/ros-perception/image_pipeline/issues/597>`_)
+  Co-authored-by: Matthijs den Toom <mdentoom@lely.com>
+* Contributors: Gabor Soros, Jacob Perron, Matthijs den Toom, Patrick Musau, Wouter Heerwegh, jaiveersinghNV
+
 2.2.1 (2020-08-27)
 ------------------
 * remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)

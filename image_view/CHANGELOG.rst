@@ -1,3 +1,22 @@
+Forthcoming
+-----------
+* Fix image saver bug and time-based image saving
+  Add missing 'request_start_end' ROS parameter (from ROS 1) and ensure related
+  member variables are initialized properly. This restores the time-based image
+  saving feature from ROS 1 and fixes a bug where member variables
+  'save_image_service' and 'request_start_end' were not initialized properly
+  which could lead to images not properly saving.
+  I've also renamed some member variables to have a trailing underscore, for
+  consistency with other members.
+* replace ROSTIME
+* Changing to RCL_SYSTEM_TIME
+* Fix timestamp creation
+* changes per comments
+* fix for stereo_image_proc_tests
+* Add maintainer (`#667 <https://github.com/ros-perception/image_pipeline/issues/667>`_)
+* Fix wrong usage of rclcpp::Duration constructor
+* Contributors: Ivan Santiago Paunovic, Jacob Perron, Lars Lorentz Ludvigsen, Patrick Musau
+
 2.2.1 (2020-08-27)
 ------------------
 * remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)

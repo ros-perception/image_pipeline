@@ -1,3 +1,12 @@
+Forthcoming
+-----------
+* revert a293252
+* Replace deprecated geometry2 headers
+  tf2_geometry_msgs.h was deprecated in https://github.com/ros2/geometry2/pull/418
+  tf2_eigen.h was deprecated in https://github.com/ros2/geometry2/pull/413
+* Add maintainer (`#667 <https://github.com/ros-perception/image_pipeline/issues/667>`_)
+* Contributors: Jacob Perron, Patrick Musau
+
 2.2.1 (2020-08-27)
 ------------------
 * remove email blasts from steve macenski (`#596 <https://github.com/ros-perception/image_pipeline/issues/596>`_)

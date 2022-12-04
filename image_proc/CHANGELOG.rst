@@ -1,3 +1,34 @@
+Forthcoming
+-----------
+* Add conversion from YUV422-YUY2
+* Remove unnecessary find_package
+  tracetools_image_pipeline included in package.xml and
+  fetched by ament_auto_find_build_dependencies().
+* Deal with uncrustify and cpplint
+* LTTng instrument image_proc::RectifyNode and image_proc::ResizeNode
+* bring over ros1 fix for missing roi resize
+* Add maintainer (`#667 <https://github.com/ros-perception/image_pipeline/issues/667>`_)
+* Fix build with later versions of OpenCV 3
+  This first regressed in 2b17a38a5e3d4aef9c6a51c2de10d7396c521648.
+  Support for OpenCV 3.2 was re-added in
+  2e0c6d42cb650534e4aeea586482030e5c0d46c8. This fixes the build with
+  OpenCV 3.3 and newer.
+* Refactor image_proc and stereo_image_proc launch files (`#583 <https://github.com/ros-perception/image_pipeline/issues/583>`_)
+  * Allow passing container name to image_proc launch file
+  If a container name is provided, then load the image_proc nodes
+  into that container. Otherwise, launch a container to load the nodes into.
+  * Include the image_proc launch file in the stereo_image_proc launch file
+  This resolves a TODO, making the launch file have similar behavior as the version from ROS 1.
+  Also expose a new launch argument for optionally providing a container (similar to image_proc's launch file).
+  * Minor refactor to stereo_image_proc launch file
+  * Fix lint errors
+  Removing vestigial imports.
+  * Rename namespace launch arguments
+  * Make image_proc nodes optional
+  Default to launching the image_proc nodes.
+  * Remap topics from stereo nodes based on namespace arguments
+* Contributors: Evan Flynn, Jacob Perron, Scott K Logan, Tillmann Falck, Víctor Mayoral Vilches
+
 2.2.1 (2020-08-27)
 ------------------
 * make crop_decimate work (`#593 <https://github.com/ros-perception/image_pipeline/issues/593>`_)

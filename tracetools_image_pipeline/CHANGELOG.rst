@@ -4,6 +4,7 @@ Changelog for package tracetools_image_pipeline
 
 Forthcoming
 -----------
+* Add initial CHANGELOG for tracetools_image_pipeline.
 * tracetools_image_pipeline version consistent with repo
 * Omit changelogfile
   See https://github.com/ros-perception/image_pipeline/pull/717#discussion_r781637389

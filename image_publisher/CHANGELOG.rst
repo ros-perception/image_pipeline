@@ -2,11 +2,16 @@
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-2.0.0 (2018-12-09)
-------------------
-* port image_publisher on ROS2 (`#366 <https://github.com/ros-perception/image_pipeline/issues/366>`_)
-* Initial ROS2 commit.
-* Contributors: Chris Ye, Michael Carroll
+Forthcoming
+-----------
+* Add retry video capture feature with timeout
+  Retry onInit() if the loading image fails or if the image is empty.
+  This is useful if the stream is lost for a while or if the stream
+  is not ready in the beginning.
+* changes per comments
+* fix for stereo_image_proc_tests
+* Add maintainer (`#667 <https://github.com/ros-perception/image_pipeline/issues/667>`_)
+* Contributors: Ashwin Sushil, Jacob Perron, Patrick Musau
 
 2.2.1 (2020-08-27)
 ------------------
@@ -48,6 +53,12 @@ Changelog for package image_publisher
   The old API was deprecated in Foxy and since removed in https://github.com/ros2/rclcpp/pull/1199.
 * Remove redundant install call in CMakeLists.txt (`#555 <https://github.com/ros-perception/image_pipeline/issues/555>`_)
 * Contributors: Chris Lalancette, Jacob Perron, Joshua Whitley, sgvandijk
+
+2.0.0 (2018-12-09)
+------------------
+* port image_publisher on ROS2 (`#366 <https://github.com/ros-perception/image_pipeline/issues/366>`_)
+* Initial ROS2 commit.
+* Contributors: Chris Ye, Michael Carroll
 
 1.12.23 (2018-05-10)
 --------------------
