@@ -79,7 +79,7 @@ class PointCloudXyzrgbNodelet : public nodelet::Nodelet
 
   image_geometry::PinholeCameraModel model_;
 
-  // variables 
+  // range crop 
   double max_x ;
   double max_y ;
   double max_z ;
@@ -112,13 +112,14 @@ void PointCloudXyzrgbNodelet::onInit()
   rgb_it_  .reset( new image_transport::ImageTransport(*rgb_nh_) );
   depth_it_.reset( new image_transport::ImageTransport(depth_nh) );
   
+  // min/max ranges for crop
   private_nh.param("max_x", max_x, std::numeric_limits<double>::infinity());
   private_nh.param("max_y", max_y, std::numeric_limits<double>::infinity());
   private_nh.param("max_z", max_z, std::numeric_limits<double>::infinity());
   private_nh.param("min_x", min_x, -1*std::numeric_limits<double>::infinity());
   private_nh.param("min_y", min_y, -1*std::numeric_limits<double>::infinity());
   private_nh.param("min_z", min_z, -1*std::numeric_limits<double>::infinity());
-
+ 
   // Read parameters
   int queue_size;
   private_nh.param("queue_size", queue_size, 5);
@@ -355,6 +356,7 @@ void PointCloudXyzrgbNodelet::convert(const sensor_msgs::ImageConstPtr& depth_ms
       }
       else
       {
+        // test if the point is in the XYZ range
         if ( 
             ( (u - center_x) * depth * constant_x ) < max_x &&
             ( (v - center_y) * depth * constant_y ) < max_y &&

@@ -61,7 +61,15 @@ namespace depth_image_proc {
 	
 	std::vector<double> D_;
 	boost::array<double, 9> K_;
-  
+
+	// range crop 
+	double max_x ;
+	double max_y ;
+	double max_z ;
+	double min_x ;
+	double min_y ;
+	double min_z ;
+	
 	int width_;
 	int height_;
 
@@ -129,6 +137,14 @@ namespace depth_image_proc {
 
 	// Read parameters
 	private_nh.param("queue_size", queue_size_, 5);
+
+	// min/max ranges for crop
+	private_nh.param("max_x", max_x, std::numeric_limits<double>::infinity());
+	private_nh.param("max_y", max_y, std::numeric_limits<double>::infinity());
+	private_nh.param("max_z", max_z, std::numeric_limits<double>::infinity());
+	private_nh.param("min_x", min_x, -1*std::numeric_limits<double>::infinity());
+	private_nh.param("min_y", min_y, -1*std::numeric_limits<double>::infinity());
+	private_nh.param("min_z", min_z, -1*std::numeric_limits<double>::infinity());
 
 	// Monitor whether anyone is subscribed to the output
 	ros::SubscriberStatusCallback connect_cb = 
@@ -221,10 +237,26 @@ namespace depth_image_proc {
 		    continue;
 		}
 		const cv::Vec3f &cvPoint = binned.at<cv::Vec3f>(u,v) * DepthTraits<T>::toMeters(depth);
-		// Fill in XYZ
-		*iter_x = cvPoint(0);
-		*iter_y = cvPoint(1);
-		*iter_z = cvPoint(2);
+		// test if the point is in the XYZ range
+		if ( 
+            ( cvPoint(0) ) < max_x &&
+            ( cvPoint(1) ) < max_y &&
+            ( cvPoint(2) ) < max_z && 
+            ( cvPoint(0) ) > min_x &&
+            ( cvPoint(1) ) > min_y &&
+            ( cvPoint(2) ) > min_z 
+		)
+		{
+			// Fill in XYZ
+			*iter_x = cvPoint(0);
+			*iter_y = cvPoint(1);
+			*iter_z = cvPoint(2);
+		}
+		else
+		{
+			*iter_x = *iter_y = *iter_z = bad_point;
+		    continue;
+		}
 	    }
 	}
     }

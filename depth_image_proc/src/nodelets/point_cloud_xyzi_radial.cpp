@@ -78,6 +78,14 @@ namespace depth_image_proc {
 	int width_;
 	int height_;
 
+	// range crop 
+	double max_x ;
+	double max_y ;
+	double max_z ;
+	double min_x ;
+	double min_y ;
+	double min_z ;
+
 	cv::Mat transform_;
   
 	virtual void onInit();
@@ -154,6 +162,14 @@ namespace depth_image_proc {
 	// Read parameters
 	private_nh.param("queue_size", queue_size_, 5);
 
+	// min/max ranges for crop
+	private_nh.param("max_x", max_x, std::numeric_limits<double>::infinity());
+	private_nh.param("max_y", max_y, std::numeric_limits<double>::infinity());
+	private_nh.param("max_z", max_z, std::numeric_limits<double>::infinity());
+	private_nh.param("min_x", min_x, -1*std::numeric_limits<double>::infinity());
+	private_nh.param("min_y", min_y, -1*std::numeric_limits<double>::infinity());
+	private_nh.param("min_z", min_z, -1*std::numeric_limits<double>::infinity());
+	
 	// Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
 	sync_.reset( new Synchronizer(SyncPolicy(queue_size_), sub_depth_, sub_intensity_, sub_info_) );
 	sync_->registerCallback(boost::bind(&PointCloudXyziRadialNodelet::imageCb, this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3));
@@ -286,10 +302,26 @@ namespace depth_image_proc {
 		    continue;
 		}
 		const cv::Vec3f &cvPoint = transform_.at<cv::Vec3f>(u,v) * DepthTraits<T>::toMeters(depth);
-		// Fill in XYZ
-		*iter_x = cvPoint(0);
-		*iter_y = cvPoint(1);
-		*iter_z = cvPoint(2);
+		// test if the point is in the XYZ range
+		if ( 
+            ( cvPoint(0) ) < max_x &&
+            ( cvPoint(1) ) < max_y &&
+            ( cvPoint(2) ) < max_z && 
+            ( cvPoint(0) ) > min_x &&
+            ( cvPoint(1) ) > min_y &&
+            ( cvPoint(2) ) > min_z 
+		)
+		{
+			// Fill in XYZ
+			*iter_x = cvPoint(0);
+			*iter_y = cvPoint(1);
+			*iter_z = cvPoint(2);
+		}
+		else
+		{
+			*iter_x = *iter_y = *iter_z = bad_point;
+		    continue;
+		}
 	    }
 	}
     }
