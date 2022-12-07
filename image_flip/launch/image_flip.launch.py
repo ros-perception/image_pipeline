@@ -37,9 +37,9 @@ import launch_ros.actions
 def generate_launch_description():
     return LaunchDescription([
         launch_ros.actions.Node(
-            package='image_rotate', node_executable='image_rotate', output='screen',
+            package='image_flip', node_executable='image_flip', output='screen',
             remappings=[('image', '/camera/rgb/image_raw'),
                         ('camera_info', '/camera/rgb/camera_info'),
                         ('output_image', '/camera/rotated/image_raw'),
-                        ('output_camera_info', '/camera/rotated/camera_info']),
+                        ('output_camera_info', '/camera/rotated/camera_info')]),
     ])

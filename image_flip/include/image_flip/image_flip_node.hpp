@@ -33,18 +33,18 @@
 #ifndef IMAGE_FLIP__IMAGE_FLIP_NODE_HPP_
 #define IMAGE_FLIP__IMAGE_FLIP_NODE_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
-#include <tf2_ros/static_transform_broadcaster.h>
-#include <image_transport/image_transport.hpp>
-#include <cv_bridge/cv_bridge.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <math.h>
 #include <memory>
 #include <string>
-
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/static_transform_broadcaster.h>
+#include <cv_bridge/cv_bridge.h>
 #include "image_flip/visibility.h"
+#include <image_transport/image_transport.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
 
 namespace image_flip
 {
@@ -56,7 +56,6 @@ struct ImageFlipConfig
   bool use_camera_info;
   std::string in_image_topic_name;
   std::string out_image_topic_name;
-
 };
 
 class ImageFlipNode : public rclcpp::Node
@@ -98,7 +97,6 @@ private:
   double angle_;
   tf2::TimePoint prev_stamp_;
   geometry_msgs::msg::TransformStamped transform_;
-
 };
 }  // namespace image_flip
 

@@ -138,12 +138,12 @@ void ImageFlipNode::do_work(
     // based on https://stackoverflow.com/questions/15043152/rotate-opencv-matrix-by-90-180-270-degrees
     if (config_.rotation_steps == 1) {
       transpose(in_image, out_image);
-      flip(out_image, out_image,0); //transpose+flip(0)=CCW
+      flip(out_image, out_image, 0);  //transpose+flip(0)=CCW
     } else if (config_.rotation_steps ==2){
-      flip(in_image, out_image,-1);    //flip(-1)=180
+      flip(in_image, out_image, -1);    //flip(-1)=180
     } else if (config_.rotation_steps == 3){
       transpose(in_image, out_image);
-      flip(out_image, out_image,1); //transpose+flip(1)=CW
+      flip(out_image, out_image, 1);  //transpose+flip(1)=CW
     } else if (config_.rotation_steps == 0) {
       // Simple pass through
       out_image = in_image;
@@ -164,8 +164,7 @@ void ImageFlipNode::do_work(
       out_info->height = out_img->height;
       out_info->width = out_img->width;
       cam_pub_.publish(out_img, out_info);
-    }
-    else {
+    } else {
       img_pub_.publish(out_img);
     }
 
@@ -197,17 +196,17 @@ void ImageFlipNode::subscribe()
   RCUTILS_LOG_INFO("Subscribing to image topic %s.", image_topic.c_str());
 
   if (config_.use_camera_info) {
-    auto custom_qos = rmw_qos_profile_sensor_data; // To match Gazebo 11 pub
+    auto custom_qos = rmw_qos_profile_sensor_data;  // To match Gazebo 11 pub
     cam_sub_ = image_transport::create_camera_subscription(
       this,
-      image_topic, //"image",
+      image_topic,  //"image",
       std::bind(
         &ImageFlipNode::imageCallbackWithInfo, this,
         std::placeholders::_1, std::placeholders::_2),
       "raw",
       custom_qos);
   } else {
-    auto custom_qos = rmw_qos_profile_sensor_data; // To match Gazebo 11 pub
+    auto custom_qos = rmw_qos_profile_sensor_data;  // To match Gazebo 11 pub
     img_sub_ = image_transport::create_subscription(
       this,
       image_topic, //"image",
@@ -274,7 +273,6 @@ void ImageFlipNode::onInit()
 
   tf_pub_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(*this);
   tf_unpublished_ = true;
-
 }
 }  // namespace image_flip
 
