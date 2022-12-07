@@ -124,7 +124,6 @@ ImageRotateNode::ImageRotateNode()
       target_vector_.vector.x = config_.target_x;
       target_vector_.vector.y = config_.target_y;
       target_vector_.vector.z = config_.target_z;
-
       source_vector_.vector.x = config_.source_x;
       source_vector_.vector.y = config_.source_y;
       source_vector_.vector.z = config_.source_z;
@@ -145,7 +144,6 @@ ImageRotateNode::ImageRotateNode()
   source_vector_.vector.x = config_.source_x;
   source_vector_.vector.y = config_.source_y;
   source_vector_.vector.z = config_.source_z;
-
 }
 
 const std::string ImageRotateNode::frameWithDefault(
