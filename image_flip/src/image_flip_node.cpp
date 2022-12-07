@@ -53,12 +53,13 @@ namespace image_flip
 ImageFlipNode::ImageFlipNode(rclcpp::NodeOptions options)
 : Node("ImageFlipNode", options)
 {
-
   config_.output_frame_id = this->declare_parameter("output_frame_id", std::string(""));
   config_.rotation_steps = this->declare_parameter("rotation_steps", 2);
   config_.use_camera_info = this->declare_parameter("use_camera_info", true);
-  config_.in_image_topic_name = this->declare_parameter("in_image_topic_name", std::string("image"));
-  config_.out_image_topic_name = this->declare_parameter("out_image_topic_name", std::string("rotated_image"));
+  config_.in_image_topic_name =
+    this->declare_parameter("in_image_topic_name", std::string("image"));
+  config_.out_image_topic_name =
+    this->declare_parameter("out_image_topic_name", std::string("rotated_image"));
 
   auto reconfigureCallback =
     [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
@@ -75,9 +76,9 @@ ImageFlipNode::ImageFlipNode(rclcpp::NodeOptions options)
           config_.rotation_steps = parameter.as_int();
           angle_ = config_.rotation_steps * M_PI / 2.0;
           RCLCPP_INFO(get_logger(), "Reset rotation_steps as '%d'", config_.rotation_steps);
-          transform_.transform.rotation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0.0, 0.0, 1.0), angle_));
+          transform_.transform.rotation =
+            tf2::toMsg(tf2::Quaternion(tf2::Vector3(0.0, 0.0, 1.0), angle_));
           tf_unpublished_ = true;
-
         }
       }
 
@@ -139,9 +140,9 @@ void ImageFlipNode::do_work(
     if (config_.rotation_steps == 1) {
       transpose(in_image, out_image);
       flip(out_image, out_image, 0);  //transpose+flip(0)=CCW
-    } else if (config_.rotation_steps ==2){
+    } else if (config_.rotation_steps == 2) {
       flip(in_image, out_image, -1);    //flip(-1)=180
-    } else if (config_.rotation_steps == 3){
+    } else if (config_.rotation_steps == 3) {
       transpose(in_image, out_image);
       flip(out_image, out_image, 1);  //transpose+flip(1)=CW
     } else if (config_.rotation_steps == 0) {
@@ -172,9 +173,13 @@ void ImageFlipNode::do_work(
     if (tf_pub_ && (tf_unpublished_ || transform_.header.frame_id != input_frame_from_msg)) {
       // Update the transform
       transform_.header.frame_id = input_frame_from_msg;
-      transform_.child_frame_id = frameWithDefault(config_.output_frame_id, input_frame_from_msg + "_rotated");
+      transform_.child_frame_id = frameWithDefault(
+        config_.output_frame_id,
+        input_frame_from_msg + "_rotated");
       transform_.header.stamp = msg->header.stamp;
-      RCLCPP_WARN(get_logger(), "Publish static transform for rotated image from %s!", input_frame_from_msg.c_str());
+      RCLCPP_WARN(
+        get_logger(), "Publish static transform for rotated image from %s!",
+        input_frame_from_msg.c_str());
       tf_pub_->sendTransform(transform_);
       tf_unpublished_ = false;
     }
