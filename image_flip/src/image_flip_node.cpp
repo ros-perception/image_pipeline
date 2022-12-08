@@ -95,7 +95,6 @@ ImageFlipNode::ImageFlipNode(rclcpp::NodeOptions options)
   transform_.transform.translation.y = 0;
   transform_.transform.translation.z = 0;
   transform_.transform.rotation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0.0, 0.0, 1.0), angle_));
-
 }
 
 const std::string ImageFlipNode::frameWithDefault(
@@ -129,7 +128,6 @@ void ImageFlipNode::do_work(
   const sensor_msgs::msg::CameraInfo::ConstSharedPtr & cam_info,
   const std::string input_frame_from_msg)
 {
-
   // Transform the image.
   try {
     // Convert the image into something opencv can handle.
@@ -139,16 +137,16 @@ void ImageFlipNode::do_work(
     // based on https://stackoverflow.com/questions/15043152/rotate-opencv-matrix-by-90-180-270-degrees
     if (config_.rotation_steps == 1) {
       transpose(in_image, out_image);
-      flip(out_image, out_image, 0);  //transpose+flip(0)=CCW
+      flip(out_image, out_image, 0);  // transpose+flip(0)=CCW
     } else if (config_.rotation_steps == 2) {
-      flip(in_image, out_image, -1);    //flip(-1)=180
+      flip(in_image, out_image, -1);  // flip(-1)=180
     } else if (config_.rotation_steps == 3) {
       transpose(in_image, out_image);
-      flip(out_image, out_image, 1);  //transpose+flip(1)=CW
+      flip(out_image, out_image, 1);  // transpose+flip(1)=CW
     } else if (config_.rotation_steps == 0) {
       // Simple pass through
       out_image = in_image;
-    } else { //if not 0,1,2,3:
+    } else {  // if not 0,1,2,3:
       RCLCPP_WARN(get_logger(), "Unknown rotation_steps %d", config_.rotation_steps);
       out_image = in_image;
     }
@@ -183,8 +181,6 @@ void ImageFlipNode::do_work(
       tf_pub_->sendTransform(transform_);
       tf_unpublished_ = false;
     }
-
-
   } catch (cv::Exception & e) {
     RCUTILS_LOG_ERROR(
       "Image processing error: %s %s %s %i",
@@ -204,7 +200,7 @@ void ImageFlipNode::subscribe()
     auto custom_qos = rmw_qos_profile_sensor_data;  // To match Gazebo 11 pub
     cam_sub_ = image_transport::create_camera_subscription(
       this,
-      image_topic,  //"image",
+      image_topic,  // "image",
       std::bind(
         &ImageFlipNode::imageCallbackWithInfo, this,
         std::placeholders::_1, std::placeholders::_2),
@@ -214,7 +210,7 @@ void ImageFlipNode::subscribe()
     auto custom_qos = rmw_qos_profile_sensor_data;  // To match Gazebo 11 pub
     img_sub_ = image_transport::create_subscription(
       this,
-      image_topic, //"image",
+      image_topic,  // "image",
       std::bind(&ImageFlipNode::imageCallback, this, std::placeholders::_1),
       "raw",
       custom_qos);
@@ -268,7 +264,7 @@ void ImageFlipNode::onInit()
   // This is a foxy hack while waiting on rclcpp resolve_topic_name
   std::string out_image_topic = config_.out_image_topic_name;
   RCUTILS_LOG_DEBUG("Advertising to image topic %s.", out_image_topic.c_str());
-  auto custom_qos = rmw_qos_profile_sensor_data; // To match Gazebo 11 pub
+  auto custom_qos = rmw_qos_profile_sensor_data;  // To match Gazebo 11 pub
 
   if (config_.use_camera_info) {
     cam_pub_ = image_transport::create_camera_publisher(this, out_image_topic, custom_qos);
