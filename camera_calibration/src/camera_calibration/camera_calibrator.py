@@ -158,6 +158,8 @@ class CalibrationNode:
         self._fisheye_calib_flags = fisheye_flags
         self._checkerboard_flags = checkerboard_flags
         self._pattern = pattern
+        self._progress = [0, 0, 0, 0]
+        self._red_mask = None
         self._camera_name = camera_name
         self._max_chessboard_speed = max_chessboard_speed
         self._no_gui = no_gui
@@ -229,8 +231,27 @@ class CalibrationNode:
                                         checkerboard_flags=self.checkerboard_flags,
                                         max_chessboard_speed = self._max_chessboard_speed)
 
-        # This should just call the MonoCalibrator
+        # This should just call the MonoCalibrator and compute the mask for the detected corners if any
+        prec_progress = self._progress
         drawable = self.c.handle_msg(msg)
+        img = self.c.mkgray(msg)
+        height = img.shape[0]
+        width = img.shape[1]
+        shape = drawable.scrib.shape
+        scale_height = height / shape[0]
+        scale_width = width / shape[1]
+        if self._red_mask is None:
+            self._red_mask = numpy.uint8(numpy.ones((shape[0],shape[1],1))*(0,0,255))
+        if drawable.params:
+            self._progress = [result[3] for result in drawable.params]
+            if any([old_val < new_val for old_val, new_val in zip(prec_progress, self._progress)]):
+                null_mask = numpy.zeros(shape, numpy.uint8)
+                for corners in self.c.good_corners:
+                    downsampled_corners = [[int(corner[0][0]/scale_height), int(corner[0][1]/scale_width)] for corner in corners[0]]
+                    for index, el in enumerate(downsampled_corners):
+                        null_mask = cv2.circle(null_mask,tuple(el), 25, (0, 255, 255), -1)
+                self._red_mask = cv2.subtract(self._red_mask, null_mask)
+        drawable.scrib = cv2.addWeighted(self._red_mask, 0.35, drawable.scrib, 1, 0)
         if not self._no_gui: 
             self.displaywidth = drawable.scrib.shape[1]
             self.redraw_monocular(drawable)
