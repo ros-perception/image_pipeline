@@ -200,7 +200,7 @@ def _get_corners(img, board, refine = True, checkerboard_flags=0):
     else:
         mono = img
     (ok, corners) = cv2.findChessboardCorners(mono, (board.n_cols, board.n_rows), flags = cv2.CALIB_CB_ADAPTIVE_THRESH |
-                                              cv2.CALIB_CB_NORMALIZE_IMAGE | checkerboard_flags)    
+                                              cv2.CALIB_CB_NORMALIZE_IMAGE | checkerboard_flags)
     if not ok:
         return (ok, corners)
 
