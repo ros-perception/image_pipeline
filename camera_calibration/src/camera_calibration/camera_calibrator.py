@@ -106,16 +106,19 @@ class CalibrationNode(Node):
         self.set_right_camera_info_service = self.create_client(sensor_msgs.srv.SetCameraInfo, right_camera + "/set_camera_info")
 
         if service_check:
+            available = False
             # assume any non-default service names have been set.  Wait for the service to become ready
             for cli in [self.set_camera_info_service, self.set_left_camera_info_service, self.set_right_camera_info_service]:
                 print("Waiting for service", cli.srv_name, "...")
                 # check all services so they are ready.
-                try:
-                    cli.wait_for_service(timeout_sec=5)
+                if cli.wait_for_service(timeout_sec=1):
+                    available = True
                     print("OK")
-                except Exception as e:
-                    print("Service not found: %s".format(e))
-                    rclpy.shutdown()
+                else:
+                    print(f"Service {cli.srv_name} not found.")
+
+            if not available:
+                raise RuntimeError("no camera service available")
 
         self._boards = boards
         self._calib_flags = flags
