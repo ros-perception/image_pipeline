@@ -317,9 +317,6 @@ class OpenCVCalibrationNode(CalibrationNode):
 
         self.c.set_cammodel( CAMERA_MODEL.PINHOLE if model_select_val < 0.5 else CAMERA_MODEL.FISHEYE)
 
-    def on_model_change(self, model_select_val):
-        self.c.set_cammodel( CAMERA_MODEL.PINHOLE if model_select_val < 0.5 else CAMERA_MODEL.FISHEYE)
-
     def on_scale(self, scalevalue):
         if self.c.calibrated:
             self.c.set_alpha(scalevalue / 100.0)
