@@ -108,9 +108,6 @@ class CalibrationNode(Node):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for cli in [self.set_camera_info_service, self.set_left_camera_info_service, self.set_right_camera_info_service]:
-                #remapped = rclpy.remap_name(svcname)
-                #if remapped != svcname:
-                #fullservicename = "%s/set_camera_info" % remapped
                 print("Waiting for service", cli.srv_name, "...")
                 # check all services so they are ready.
                 try:
