@@ -86,7 +86,7 @@ class ConsumerThread(threading.Thread):
         self.function = function
 
     def run(self):
-        while True:
+        while rclpy.ok():
             m = self.queue.get()
             self.function(m)
 
@@ -259,10 +259,9 @@ class OpenCVCalibrationNode(CalibrationNode):
 
     def spin(self):
         sth = SpinThread(self)
-        sth.setDaemon(True)
         sth.start()
 
-        while True:
+        while rclpy.ok():
             if self.queue_display.qsize() > 0:
                 self.image = self.queue_display.get()
                 cv2.imshow("display", self.image)
@@ -270,7 +269,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 time.sleep(0.1)
             k = cv2.waitKey(6) & 0xFF
             if k in [27, ord('q')]:
-                rclpy.shutdown()
+                return
             elif k == ord('s') and self.image is not None:
                 self.screendump(self.image)
 
