@@ -190,10 +190,8 @@ class CalibrationNode(Node):
 
 
     def check_set_camera_info(self, response):
-        if response.done():
-            if response.result() is not None:
-                if response.result().success:
-                    return True
+        if response.success:
+            return True
 
         for i in range(10):
             print("!" * 80)
@@ -215,14 +213,14 @@ class CalibrationNode(Node):
         rv = True
         if self.c.is_mono:
             req.camera_info = info
-            response = self.set_camera_info_service.call_async(req)
+            response = self.set_camera_info_service.call(req)
             rv = self.check_set_camera_info(response)
         else:
             req.camera_info = info[0]
-            response = self.set_left_camera_info_service.call_async(req)
+            response = self.set_left_camera_info_service.call(req)
             rv = rv and self.check_set_camera_info(response)
             req.camera_info = info[1]
-            response = self.set_right_camera_info_service.call_async(req)
+            response = self.set_right_camera_info_service.call(req)
             rv = rv and self.check_set_camera_info(response)
         return rv
 
