@@ -224,6 +224,7 @@ def main():
                                  checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed,
                                  queue_size=options.queue_size)
     node.spin()
+    rclpy.shutdown()
 
 if __name__ == "__main__":
     try:
