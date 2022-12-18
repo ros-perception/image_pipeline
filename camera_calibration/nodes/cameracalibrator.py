@@ -132,9 +132,9 @@ def main():
     group.add_option("--max-chessboard-speed", type="float", default=-1.0,
                      help="Do not use samples where the calibration pattern is moving faster \
                      than this speed in px/frame. Set to eg. 0.5 for rolling shutter cameras.")
-    group.add_option("--scale", type="float", default=1.0,
-                     help="Scaling option for the input image during pattern \
-                     detection. Decreasing helps with computation.")
+    group.add_option("--scale", type="float", default=None,
+                     help="Scaling option for the input image relative to 640x480. \
+                     Default scaled to 640x480, 1.0 result with no up/down scaling")
 
     parser.add_option_group(group)
 

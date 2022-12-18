@@ -112,7 +112,7 @@ class CalibrationNode:
                 synchronizer = message_filters.TimeSynchronizer, flags = 0,
                 fisheye_flags = 0, pattern=Patterns.Chessboard, camera_name='',
                 checkerboard_flags = 0, max_chessboard_speed = -1,
-                queue_size = 1, img_downscale = 1.0):
+                queue_size = 1, img_downscale = None):
 
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
