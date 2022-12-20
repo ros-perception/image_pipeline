@@ -57,7 +57,7 @@ struct ImageFlipConfig
   std::string output_frame_id;
   int rotation_steps;
   bool use_camera_info;
-  rmw_qos_profile_t input_qos; // "default", "sensor_data", etc ..
+  rmw_qos_profile_t input_qos;  // "default", "sensor_data", etc ..
   rmw_qos_profile_t output_qos;
 };
 

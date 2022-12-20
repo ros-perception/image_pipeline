@@ -57,8 +57,10 @@ ImageFlipNode::ImageFlipNode(rclcpp::NodeOptions options)
   config_.rotation_steps = this->declare_parameter("rotation_steps", 2);
   config_.use_camera_info = this->declare_parameter("use_camera_info", true);
 
-  // Assume best_effort (sensor_data) on subscriber (which is compatible with reliable publisher)
-  // Assume default reliable on publisher so it will be compatible with both reliable and best_effort subscriptions
+  // Assume best_effort (sensor_data) on subscriber
+  //    which is compatible with reliable publisher
+  // Assume default reliable on publisher so it will be compatible with both
+  //    reliable and best_effort subscriptions
   std::string qos_type = this->declare_parameter("input_qos", "sensor_data");
   if (qos_type == "sensor_data") {
     config_.input_qos = rmw_qos_profile_sensor_data;
@@ -273,7 +275,7 @@ void ImageFlipNode::onInit()
 
   connectCb();
 
-  std::string out_image_topic = "rotated/image"; //config_.out_image_topic_name;
+  std::string out_image_topic = "rotated/image";
   RCUTILS_LOG_DEBUG("Advertising to image topic %s.", out_image_topic.c_str());
   auto custom_qos = config_.output_qos;
 
