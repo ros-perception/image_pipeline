@@ -38,8 +38,18 @@ def generate_launch_description():
     return LaunchDescription([
         launch_ros.actions.Node(
             package='image_flip', node_executable='image_flip', output='screen',
-            remappings=[('image', '/camera/rgb/image_raw'),
-                        ('camera_info', '/camera/rgb/camera_info'),
-                        ('output_image', '/camera/rotated/image_raw'),
-                        ('output_camera_info', '/camera/rotated/camera_info')]),
+            remappings=[("image",                'camera/rgb/image_raw'),
+                        ('camera_info',          'camera/rgb/camera_info'),
+                        ('rotated/image',        'camera_rotated/image_rotated'),
+                        ('rotated/camera_info',  'camera_rotated/camera_info'),
+                        ('rotated/image/compressed',      'camera_rotated/image_rotated/compressed'),
+                        ('rotated/image/compressedDepth', 'camera_rotated/image_rotated/compressedDepth'),
+                        ('rotated/image/theora',          'camera_rotated/image_rotated/theora')
+                       ]),
+            parameters=[{'output_frame_id': "camera_rotated",
+                         'rotation_steps': 2,
+                         'use_camera_info': True,
+                         'input_qos': 'best_effort',
+                         'output_qos': 'default',
+                        }]
     ])

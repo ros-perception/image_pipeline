@@ -57,8 +57,8 @@ struct ImageFlipConfig
   std::string output_frame_id;
   int rotation_steps;
   bool use_camera_info;
-  std::string in_image_topic_name;
-  std::string out_image_topic_name;
+  rmw_qos_profile_t input_qos; // "default", "sensor_data", etc ..
+  rmw_qos_profile_t output_qos;
 };
 
 class ImageFlipNode : public rclcpp::Node

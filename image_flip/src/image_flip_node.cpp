@@ -56,10 +56,22 @@ ImageFlipNode::ImageFlipNode(rclcpp::NodeOptions options)
   config_.output_frame_id = this->declare_parameter("output_frame_id", std::string(""));
   config_.rotation_steps = this->declare_parameter("rotation_steps", 2);
   config_.use_camera_info = this->declare_parameter("use_camera_info", true);
-  config_.in_image_topic_name =
-    this->declare_parameter("in_image_topic_name", std::string("image"));
-  config_.out_image_topic_name =
-    this->declare_parameter("out_image_topic_name", std::string("rotated_image"));
+
+  // Assume best_effort (sensor_data) on subscriber (which is compatible with reliable publisher)
+  // Assume default reliable on publisher so it will be compatible with both reliable and best_effort subscriptions
+  std::string qos_type = this->declare_parameter("input_qos", "sensor_data");
+  if (qos_type == "sensor_data") {
+    config_.input_qos = rmw_qos_profile_sensor_data;
+  } else {
+    config_.input_qos = rmw_qos_profile_default;
+  }
+
+  qos_type = this->declare_parameter("output_qos", "default");
+  if (qos_type == "sensor_data") {
+    config_.output_qos = rmw_qos_profile_sensor_data;
+  } else {
+    config_.output_qos = rmw_qos_profile_default;
+  }
 
   auto reconfigureCallback =
     [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
@@ -192,12 +204,12 @@ void ImageFlipNode::do_work(
 
 void ImageFlipNode::subscribe()
 {
-  // This is a foxy hack while waiting on rclcpp resolve_topic_name
-  std::string image_topic = config_.in_image_topic_name;
+  std::string image_topic = "image";
+  auto custom_qos = config_.input_qos;
+
   RCUTILS_LOG_INFO("Subscribing to image topic %s.", image_topic.c_str());
 
   if (config_.use_camera_info) {
-    auto custom_qos = rmw_qos_profile_sensor_data;  // To match Gazebo 11 pub
     cam_sub_ = image_transport::create_camera_subscription(
       this,
       image_topic,  // "image",
@@ -207,7 +219,6 @@ void ImageFlipNode::subscribe()
       "raw",
       custom_qos);
   } else {
-    auto custom_qos = rmw_qos_profile_sensor_data;  // To match Gazebo 11 pub
     img_sub_ = image_transport::create_subscription(
       this,
       image_topic,  // "image",
@@ -248,7 +259,7 @@ void ImageFlipNode::onInit()
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(clock);
   tf_sub_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-  // --- Note: From image_rotate (foxy branch)
+  // --- Note: From image_rotate (rolling branch 19-Dec-22))
   // TODO(yechun1): Implement when SubscriberStatusCallback is available
   // image_transport::SubscriberStatusCallback connect_cb =
   //   boost::bind(&ImageFlipNode::connectCb, this, _1);
@@ -261,10 +272,10 @@ void ImageFlipNode::onInit()
   //----------------------------------------------------
 
   connectCb();
-  // This is a foxy hack while waiting on rclcpp resolve_topic_name
-  std::string out_image_topic = config_.out_image_topic_name;
+
+  std::string out_image_topic = "rotated/image"; //config_.out_image_topic_name;
   RCUTILS_LOG_DEBUG("Advertising to image topic %s.", out_image_topic.c_str());
-  auto custom_qos = rmw_qos_profile_sensor_data;  // To match Gazebo 11 pub
+  auto custom_qos = config_.output_qos;
 
   if (config_.use_camera_info) {
     cam_pub_ = image_transport::create_camera_publisher(this, out_image_topic, custom_qos);
