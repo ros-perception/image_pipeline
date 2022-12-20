@@ -30,9 +30,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-"""
-Demonstration of basic launch of the image_flip_node with remappings
-"""
+""" Demonstration of basic launch of the image_flip_node with remappings """
 
 import launch_ros.actions
 from launch import LaunchDescription
@@ -40,7 +38,8 @@ from launch import LaunchDescription
 
 def generate_launch_description():
     """
-    Launch description for basic launch of the image_flip_node with remappings
+    Launch description for basic launch of the image_flip_node.
+    Includes parameters and topic remappings.
     """
     return LaunchDescription([
         launch_ros.actions.Node(
