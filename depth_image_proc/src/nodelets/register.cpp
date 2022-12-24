@@ -247,9 +247,6 @@ bool transform_depth(
   return true;
 }
 
-// TODO(lucasw) need a unit test for this, simple low res image (e.g. 4x4 pixels) with
-// depth ranges of around 1.0
-// shift it to the right 1.0 units, view from 90 degrees
 template<typename T>
 void RegisterNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
                               const sensor_msgs::ImagePtr& registered_msg,

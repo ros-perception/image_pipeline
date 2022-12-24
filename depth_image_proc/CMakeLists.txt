@@ -54,3 +54,10 @@ install(TARGETS ${PROJECT_NAME}
 install(FILES nodelet_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
+
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+
+  add_rostest(test/test_register.test
+    DEPENDENCIES ${${PROJECT_NAME}_EXPORTED_TARGETS})
+endif()
