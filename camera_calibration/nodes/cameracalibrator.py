@@ -71,6 +71,9 @@ def main():
                      help="calibration pattern to detect - 'chessboard', 'circles', 'acircles', 'charuco'\n" +
                      "  if 'charuco' is used, a --charuco_marker_size and --aruco_dict argument must be supplied\n" +
                      "  with each --size and --square argument")
+    group.add_option("--mask",
+                     action="store_true", dest="mask", default=False,
+                     help="Set to display a mask with detected corners on top of the image")
     group.add_option("-s", "--size",
                      action="append", default=[],
                      help="chessboard size as NxM, counting interior corners (e.g. a standard chessboard is 7x7)")
@@ -225,7 +228,8 @@ def main():
     rospy.init_node('cameracalibrator')
     node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, fisheye_calib_flags, pattern, options.camera_name,
                                  checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed,
-                                 queue_size=options.queue_size, no_gui=options.no_gui, no_mono_if_stereo=options.no_mono_if_stereo)
+                                 queue_size=options.queue_size, no_gui=options.no_gui, no_mono_if_stereo=options.no_mono_if_stereo,
+                                 mask=options.mask)
     rospy.spin()
 
 if __name__ == "__main__":

@@ -727,6 +727,7 @@ class MonoCalibrator(Calibrator):
         if 'name' not in kwargs:
             kwargs['name'] = 'narrow_stereo/left'
         super(MonoCalibrator, self).__init__(*args, **kwargs)
+        self.mask = None
 
     def cal(self, images):
         """
@@ -938,8 +939,45 @@ class MonoCalibrator(Calibrator):
         else:
             return None
 
+    def create_mask(self, screen):
+        """
+        Create a full binary mask with the image shape
 
-    def handle_msg(self, msg):
+        :param screen: display
+        :type screen: :class:`cvMat`
+        """
+        shape = screen.shape
+        # Create the binary mask
+        self.mask = numpy.full((shape[0], shape[1]), 1, dtype=bool)
+
+    def update_mask(self, img, screen, radius=35):
+        """
+        Update or if None create a mask which shows where no corner detection has occurred
+        with the same size of screen and add on top of it detection areas displayed through
+        circles which represents instead areas of the image where corners have been detected
+
+        :param img: source image
+        :type img: :class:`cvMat`
+
+        :param screen: display
+        :type screen: :class:`cvMat`
+
+        :param radius: radius of the circle which shows where corner detection has occurred
+        :type radius: :class:`int`
+        """
+        height, width = img.shape[0], img.shape[1]
+        shape = screen.shape
+        scale_height, scale_width = height / shape[0], width / shape[1]
+        # Update the mask with the corners detected
+        for corners in self.good_corners:
+            downsampled_corners = [
+                (int(corner[0][0] / scale_height), int(corner[0][1] / scale_width))
+                for corner in corners[0]
+            ]
+            for element in downsampled_corners:
+                self.mask = numpy.array(cv2.circle(numpy.array(self.mask, dtype=numpy.uint8), element, radius, 0, -1), dtype=bool)
+
+    def handle_msg(self, msg, mask: bool = False):
         """
         Detects the calibration target and, if found and provides enough new information,
         adds it to the sample database.
@@ -992,6 +1030,10 @@ class MonoCalibrator(Calibrator):
                         self.good_corners.append((corners, ids, board))
                     else:
                         self.good_corners.append((corners, None, board))
+                    if mask:
+                        if self.mask is None:
+                            self.create_mask(scrib)
+                        self.update_mask(gray, scrib)
                     print(("*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" % tuple([len(self.db)] + params)))
 
         self.last_frame_corners = corners

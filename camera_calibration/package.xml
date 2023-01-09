@@ -1,4 +1,4 @@
-<package>
+<package format="2">
   <name>camera_calibration</name>
   <version>1.17.0</version>
   <description>
@@ -14,12 +14,12 @@
 
   <test_depend>rostest</test_depend>
 
-  <run_depend>cv_bridge</run_depend>
-  <run_depend>image_geometry</run_depend>
-  <run_depend>message_filters</run_depend>
-  <run_depend>rospy</run_depend>
-  <run_depend>std_srvs</run_depend>
-  <run_depend>sensor_msgs</run_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>image_geometry</exec_depend>
+  <exec_depend>message_filters</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
   
   <exec_depend>python_orocos_kdl</exec_depend>
 

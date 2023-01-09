@@ -138,7 +138,8 @@ class ConsumerThread(threading.Thread):
 class CalibrationNode:
     def __init__(self, boards, service_check = True, synchronizer = message_filters.TimeSynchronizer, flags = 0,
                 fisheye_flags = 0, pattern=Patterns.Chessboard, camera_name='', checkerboard_flags = 0,
-                max_chessboard_speed = -1, queue_size = 1, no_gui=False, no_mono_if_stereo=False):
+                max_chessboard_speed = -1, queue_size = 1, no_gui = False, no_mono_if_stereo = False,
+                mask = False):
         if service_check:
             # assume any non-default service names have been set.  Wait for the service to become ready
             for svcname in ["camera", "left_camera", "right_camera"]:
@@ -162,6 +163,7 @@ class CalibrationNode:
         self._max_chessboard_speed = max_chessboard_speed
         self._no_gui = no_gui
         self._no_mono_if_stereo = no_mono_if_stereo
+        self._mask = mask
 
         if self._no_mono_if_stereo:
             left_camera_info_topic = "{}/camera_info".format(rospy.remap_name("left_camera"))
@@ -218,6 +220,18 @@ class CalibrationNode:
     def queue_stereo(self, lmsg, rmsg):
         self.q_stereo.put((lmsg, rmsg))
 
+    def apply_mask(self, drawable):
+        if self.c.mask is not None and self._mask:
+            # Transform the mask in a BGR image
+            shape = self.c.mask.shape
+            overlaying_bgr_image = numpy.zeros((shape[0], shape[1], 3), dtype=numpy.uint8)
+            # Insert the inverse of the mask in the green channel
+            overlaying_bgr_image[:,:,1] = ~self.c.mask * 255
+            overlaying_bgr_image[:,:,2] = self.c.mask * 255  # Write the mask in the red channel
+            return cv2.addWeighted(overlaying_bgr_image, 0.35, drawable.scrib, 1, 0)
+        else:
+            return drawable.scrib
+
     def handle_monocular(self, msg):
         if self.c == None:
             if self._camera_name:
@@ -229,8 +243,9 @@ class CalibrationNode:
                                         checkerboard_flags=self.checkerboard_flags,
                                         max_chessboard_speed = self._max_chessboard_speed)
 
-        # This should just call the MonoCalibrator
-        drawable = self.c.handle_msg(msg)
+        # This should just call the MonoCalibrator and compute the mask for the detected corners if any
+        drawable = self.c.handle_msg(msg, self._mask)
+        drawable.scrib = self.apply_mask(drawable)
         if not self._no_gui: 
             self.displaywidth = drawable.scrib.shape[1]
             self.redraw_monocular(drawable)
@@ -329,6 +344,7 @@ class OpenCVCalibrationNode(CalibrationNode):
             if self.c.goodenough:
                 if 180 <= y < 280:
                     print("**** Calibrating ****")
+                    self.c.mask = None
                     self.c.do_calibration()
                     self.buttons(self._last_display)
                     self.queue_display.put(self._last_display)
