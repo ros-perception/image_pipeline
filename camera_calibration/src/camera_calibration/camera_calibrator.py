@@ -364,7 +364,11 @@ class OpenCVCalibrationNode(CalibrationNode):
 
     def on_scale(self, scalevalue):
         if self.c.calibrated:
-            self.c.set_alpha(scalevalue / 100.0)
+            if self.c.camera_model is not CAMERA_MODEL.FISHEYE:
+                self.c.set_alpha(scalevalue / 100.0)
+            else:
+                print("Camera model is FISHEYE, scaling is not allowed")
+                scalevalue = 0
 
     def button(self, dst, label, enable):
         dst.fill(255)
