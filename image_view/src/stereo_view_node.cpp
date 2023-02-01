@@ -308,7 +308,7 @@ void StereoViewNode::checkInputsSynchronized()
       "Synchronized triplets: %d\n"
       "Possible issues:\n"
       "\t* stereo_image_proc is not running.\n"
-      "\t  Does `rosnode info %s` show any connections?\n"
+      "\t  Does `ros2 node info %s` show any connections?\n"
       "\t* The cameras are not synchronized.\n"
       "\t  Try restarting stereo_view with parameter _approximate_sync:=True\n"
       "\t* The network is too slow. One or more images are dropped from each triplet.\n"
