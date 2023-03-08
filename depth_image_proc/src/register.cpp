@@ -274,4 +274,4 @@ void RegisterNode::convert(
 #include "class_loader/register_macro.hpp"
 
 // Register the component with class_loader.
-CLASS_LOADER_REGISTER_CLASS(depth_image_proc::RegisterNode, rclcpp::Node)
+RCLCPP_COMPONENTS_REGISTER_NODE( depth_image_proc::RegisterNode )
