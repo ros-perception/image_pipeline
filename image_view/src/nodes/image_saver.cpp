@@ -43,6 +43,7 @@
 #include <std_srvs/Trigger.h>
 
 boost::format g_format;
+bool stamped_filename;
 bool save_all_image, save_image_service;
 std::string encoding;
 bool request_start_end;
@@ -164,6 +165,14 @@ private:
       } catch (...) { g_format.clear(); }
 
       if ( save_all_image || save_image_service ) {
+        
+        if (stamped_filename) {
+          std::stringstream ss;
+          ss << ros::Time::now().toNSec();
+          std::string timestamp_str = ss.str();
+          filename.insert(0,timestamp_str);
+        }
+
         cv::imwrite(filename, image);
         ROS_INFO("Saved image %s", filename.c_str());
 
@@ -205,6 +214,7 @@ int main(int argc, char** argv)
   ros::NodeHandle local_nh("~");
   std::string format_string;
   local_nh.param("filename_format", format_string, std::string("left%04i.%s"));
+  local_nh.param("stamped_filename", stamped_filename, false);
   local_nh.param("encoding", encoding, std::string("bgr8"));
   local_nh.param("save_all_image", save_all_image, true);
   local_nh.param("request_start_end", request_start_end, false);
