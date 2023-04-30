@@ -187,14 +187,15 @@ class CameraCheckerNode:
         (lmsg, lcmsg, rmsg, rcmsg) = msg
         lgray = self.mkgray(lmsg)
         rgray = self.mkgray(rmsg)
-
-        L, _ = self.image_corners(lgray)
-        R, _ = self.image_corners(rgray)
-        if L is not None and R is not None:
+        
+        try:
+            L, _ = self.image_corners(lgray)
+            R, _ = self.image_corners(rgray)
+        
             epipolar = self.sc.epipolar_error(L, R)
 
             dimension = self.sc.chessboard_size(L, R, self.board, msg=(lcmsg, rcmsg))
-
             print("epipolar error: %f pixels   dimension: %f m" % (epipolar, dimension))
-        else:
+
+        except TypeError:
             print("no chessboard")
