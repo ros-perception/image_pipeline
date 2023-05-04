@@ -142,8 +142,11 @@ bool ImageSaverNode::saveImage(
     }
 
     if (save_all_image_ || save_image_service_) {
-      cv::imwrite(filename, image);
-      RCLCPP_INFO(this->get_logger(), "Saved image %s", filename.c_str());
+      if (cv::imwrite(filename, image)) {
+        RCLCPP_INFO(this_->get_logger(), "Saved image %s", filename.c_str());
+      } else {
+        RCLCPP_ERROR(this_->get_logger(), "Failed to save image to path %s", filename.c_str());
+      }
 
       save_image_service_ = false;
     } else {
