@@ -38,6 +38,7 @@
 #include "cv_bridge/cv_bridge.hpp"
 
 #include <image_proc/debayer.hpp>
+#include <image_proc/utils.hpp>
 // Until merged into OpenCV
 #include <image_proc/edge_aware.hpp>
 #include <image_transport/image_transport.hpp>
@@ -51,14 +52,15 @@ namespace image_proc
 DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
 : Node("DebayerNode", options)
 {
+  auto qos_profile = getTopicQosProfile(this, "image_raw");
   sub_raw_ = image_transport::create_subscription(
     this, "image_raw",
     std::bind(
       &DebayerNode::imageCb, this,
-      std::placeholders::_1), "raw");
+      std::placeholders::_1), "raw", qos_profile);
 
-  pub_mono_ = image_transport::create_publisher(this, "image_mono");
-  pub_color_ = image_transport::create_publisher(this, "image_color");
+  pub_mono_ = image_transport::create_publisher(this, "image_mono", qos_profile);
+  pub_color_ = image_transport::create_publisher(this, "image_color", qos_profile);
   debayer_ = this->declare_parameter("debayer", 3);
 }
 

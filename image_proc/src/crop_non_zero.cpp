@@ -38,6 +38,8 @@
 #include "cv_bridge/cv_bridge.hpp"
 
 #include <image_proc/crop_non_zero.hpp>
+#include <image_proc/utils.hpp>
+
 #include <image_transport/image_transport.hpp>
 #include <opencv2/imgproc.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -50,13 +52,14 @@ namespace image_proc
 CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions & options)
 : Node("CropNonZeroNode", options)
 {
-  pub_ = image_transport::create_publisher(this, "image");
+  auto qos_profile = getTopicQosProfile(this, "image_raw");
+  pub_ = image_transport::create_publisher(this, "image", qos_profile);
   RCLCPP_INFO(this->get_logger(), "subscribe: %s", "image_raw");
   sub_raw_ = image_transport::create_subscription(
     this, "image_raw",
     std::bind(
       &CropNonZeroNode::imageCb,
-      this, std::placeholders::_1), "raw");
+      this, std::placeholders::_1), "raw", qos_profile);
 }
 
 void CropNonZeroNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)
