@@ -84,44 +84,34 @@ PointCloudXyzrgbRadialNode::PointCloudXyzrgbRadialNode(const rclcpp::NodeOptions
         std::placeholders::_3));
   }
 
-  // Monitor whether anyone is subscribed to the output
-  // TODO(ros2) Implement when SubscriberStatusCallback is available
-  // ros::SubscriberStatusCallback connect_cb =
-  //   boost::bind(&PointCloudXyzrgbRadialNode::connectCb, this);
-  connectCb();
-  // TODO(ros2) Implement when SubscriberStatusCallback is available
-  // Make sure we don't enter connectCb() between advertising and assigning to pub_point_cloud_
-  // std::lock_guard<std::mutex> lock(connect_mutex_);
-  // TODO(ros2) Implement connect_cb when SubscriberStatusCallback is available
-  // pub_point_cloud_ = depth_nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
-  pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SensorDataQoS());
-  // TODO(ros2) Implement connect_cb when SubscriberStatusCallback is available
-}
+  // Create publisher with connect callback
+  rclcpp::PublisherOptions pub_options;
+  pub_options.event_callbacks.matched_callback =
+    [this](rclcpp::MatchedInfo& s)
+    {
+      std::lock_guard<std::mutex> lock(connect_mutex_);
+      if (s.current_count == 0)
+      {
+        sub_depth_.unsubscribe();
+        sub_rgb_.unsubscribe();
+        sub_info_.unsubscribe();
+      }
+      else if (!sub_depth_.getSubscriber())
+      {
+        // parameter for depth_image_transport hint
+        std::string depth_image_transport_param = "depth_image_transport";
+        image_transport::TransportHints depth_hints(this, "raw", depth_image_transport_param);
 
-// Handles (un)subscribing when clients (un)subscribe
-void PointCloudXyzrgbRadialNode::connectCb()
-{
-  std::lock_guard<std::mutex> lock(connect_mutex_);
-  // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
-  // if (pub_point_cloud_->getNumSubscribers() == 0)
-  if (0) {
-    // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
-    sub_depth_.unsubscribe();
-    sub_rgb_.unsubscribe();
-    sub_info_.unsubscribe();
-  } else if (!sub_depth_.getSubscriber()) {
-    // parameter for depth_image_transport hint
-    std::string depth_image_transport_param = "depth_image_transport";
-    image_transport::TransportHints depth_hints(this, "raw", depth_image_transport_param);
+        // depth image can use different transport.(e.g. compressedDepth)
+        sub_depth_.subscribe(this, "depth_registered/image_rect", depth_hints.getTransport());
 
-    // depth image can use different transport.(e.g. compressedDepth)
-    sub_depth_.subscribe(this, "depth_registered/image_rect", depth_hints.getTransport());
-
-    // rgb uses normal ros transport hints.
-    image_transport::TransportHints hints(this, "raw");
-    sub_rgb_.subscribe(this, "rgb/image_rect_color", hints.getTransport());
-    sub_info_.subscribe(this, "rgb/camera_info");
-  }
+        // rgb uses normal ros transport hints.
+        image_transport::TransportHints hints(this, "raw");
+        sub_rgb_.subscribe(this, "rgb/image_rect_color", hints.getTransport());
+        sub_info_.subscribe(this, "rgb/camera_info");
+      }
+    };
+  pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SensorDataQoS(), pub_options);
 }
 
 void PointCloudXyzrgbRadialNode::imageCb(

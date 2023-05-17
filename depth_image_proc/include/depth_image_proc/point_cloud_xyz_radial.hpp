@@ -73,8 +73,6 @@ private:
 
   cv::Mat transform_;
 
-  void connectCb();
-
   void depthCb(
     const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
     const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg);
