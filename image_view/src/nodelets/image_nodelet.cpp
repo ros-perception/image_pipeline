@@ -306,7 +306,7 @@ void ImageNodelet::windowThread()
   {
   }
 
-  cv::destroyWindow(window_name_);
+  cv::destroyAllWindows();
 
   pub_.shutdown();
 
