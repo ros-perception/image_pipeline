@@ -51,12 +51,12 @@ namespace image_proc
 ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("ResizeNode", options)
 {
-  auto qos_profile = getTopicQosProfile(this, "image");
+  auto qos_profile = getTopicQosProfile(this, "image/image_raw");
   // Create image pub
-  pub_image_ = image_transport::create_camera_publisher(this, "resize", qos_profile);
+  pub_image_ = image_transport::create_camera_publisher(this, "resize/image_raw", qos_profile);
   // Create image sub
   sub_image_ = image_transport::create_camera_subscription(
-    this, "image",
+    this, "image/image_raw",
     std::bind(
       &ResizeNode::imageCb, this,
       std::placeholders::_1,

@@ -108,7 +108,7 @@ void decimate(const cv::Mat & src, cv::Mat & dst, int decimation_x, int decimati
 CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
 : Node("CropNonZeroNode", options)
 {
-  auto qos_profile = getTopicQosProfile(this, "image_raw");
+  auto qos_profile = getTopicQosProfile(this, "in/image_raw");
 
   queue_size_ = this->declare_parameter("queue_size", 5);
   target_frame_id_ = this->declare_parameter("target_frame_id", std::string());
