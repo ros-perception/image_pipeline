@@ -37,6 +37,8 @@
 #include "tracetools_image_pipeline/tracetools.h"
 
 #include <image_proc/resize.hpp>
+#include <image_proc/utils.hpp>
+
 #include <image_transport/image_transport.hpp>
 #include <rclcpp/qos.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -49,6 +51,7 @@ namespace image_proc
 ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("ResizeNode", options)
 {
+  auto qos_profile = getTopicQosProfile(this, "image");
   // Create image pub
   pub_image_ = image_transport::create_camera_publisher(this, "resize/image_raw");
   // Create image sub
@@ -57,7 +60,7 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
     std::bind(
       &ResizeNode::imageCb, this,
       std::placeholders::_1,
-      std::placeholders::_2), "raw");
+      std::placeholders::_2), "raw", qos_profile);
 
   interpolation_ = this->declare_parameter("interpolation", 1);
   use_scale_ = this->declare_parameter("use_scale", true);
