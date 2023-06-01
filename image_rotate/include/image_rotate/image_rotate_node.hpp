@@ -71,7 +71,7 @@ struct ImageRotateConfig
 class ImageRotateNode : public rclcpp::Node
 {
 public:
-  IMAGE_ROTATE_PUBLIC ImageRotateNode();
+  IMAGE_ROTATE_PUBLIC ImageRotateNode(const rclcpp::NodeOptions& options);
 
 private:
   const std::string frameWithDefault(const std::string & frame, const std::string & image_frame);

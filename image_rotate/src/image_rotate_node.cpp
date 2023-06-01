@@ -69,8 +69,8 @@
 namespace image_rotate
 {
 
-ImageRotateNode::ImageRotateNode()
-: rclcpp::Node("ImageRotateNode")
+ImageRotateNode::ImageRotateNode(const rclcpp::NodeOptions& options)
+: rclcpp::Node("ImageRotateNode", options)
 {
   config_.target_frame_id = this->declare_parameter("target_frame_id", std::string(""));
   config_.target_x = this->declare_parameter("target_x", 0.0);
@@ -361,7 +361,7 @@ void ImageRotateNode::onInit()
 }
 }  // namespace image_rotate
 
-#include "class_loader/register_macro.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
 
 // Register the component with class_loader.
-CLASS_LOADER_REGISTER_CLASS(image_rotate::ImageRotateNode, rclcpp::Node)
+RCLCPP_COMPONENTS_REGISTER_NODE(image_rotate::ImageRotateNode)
