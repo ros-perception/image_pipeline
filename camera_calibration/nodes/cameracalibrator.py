@@ -132,6 +132,9 @@ def main():
     group.add_option("--max-chessboard-speed", type="float", default=-1.0,
                      help="Do not use samples where the calibration pattern is moving faster \
                      than this speed in px/frame. Set to eg. 0.5 for rolling shutter cameras.")
+    group.add_option("--scale", type="float", default=None,
+                     help="Scaling option for the input image relative to 640x480. \
+                     Default scaled to 640x480, 1.0 result with no up/down scaling")
 
     parser.add_option_group(group)
 
@@ -220,9 +223,11 @@ def main():
         checkerboard_flags = cv2.CALIB_CB_FAST_CHECK
 
     rospy.init_node('cameracalibrator')
-    node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, fisheye_calib_flags, pattern, options.camera_name,
-                                 checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed,
-                                 queue_size=options.queue_size)
+    node = OpenCVCalibrationNode(boards, options.service_check, sync,
+                calib_flags, fisheye_calib_flags, pattern, options.camera_name,
+                checkerboard_flags=checkerboard_flags,
+                max_chessboard_speed=options.max_chessboard_speed,
+                queue_size=options.queue_size, img_downscale=options.scale)
     rospy.spin()
 
 if __name__ == "__main__":
