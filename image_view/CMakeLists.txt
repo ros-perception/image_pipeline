@@ -57,6 +57,7 @@ add_dependencies(disparity_view
 
 ament_auto_add_executable(${PROJECT_NAME}
   src/image_view.cpp
+  src/utilities.cpp
 )
 target_link_libraries(${PROJECT_NAME}
   ${PROJECT_NAME}_nodes

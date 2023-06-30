@@ -122,7 +122,7 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
     RCLCPP_WARN(
       this->get_logger(), "Topic 'image' has not been remapped! "
       "Typical command-line usage:\n"
-      "\t$ rosrun image_view image_view image:=<image topic> [transport]");
+      "\t$ ros2 run image_view image_view image:=<image topic> --image_transport transport");
   }
 
   // Default window name is the resolved topic name

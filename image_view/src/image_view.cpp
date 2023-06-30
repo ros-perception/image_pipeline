@@ -46,19 +46,94 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstdlib>
 #include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include <rclcpp/rclcpp.hpp>
 
 #include "image_view/image_view_node.hpp"
+#include "utilities.hpp"
 
 int main(int argc, char ** argv)
 {
   using image_view::ImageViewNode;
 
-  rclcpp::init(argc, argv);
+  std::vector<std::string> args = rclcpp::init_and_remove_ros_arguments(argc, argv);
+
+  // remove program name
+  args.erase(args.begin());
+
+  std::string image_transport{"raw"};
+  std::string window_name{"window"};
+  bool gui{true};
+  bool autosize{false};
+  int width{-1};
+  int height{-1};
+  std::string fileformat{"frame%04i.jpg"};
+  int colormap{-1};
+  int min_image_value{0};
+  int max_image_value{0};
+
+  if (image_view::has_option(args, "--image_transport")) {
+    image_transport = image_view::get_option(args, "--image_transport");
+  }
+  if (image_view::has_option(args, "--window_name")) {
+    window_name = image_view::get_option(args, "--window_name");
+  }
+  if (image_view::has_option(args, "--gui")) {
+    std::string result = image_view::get_option(args, "--gui");
+    if (result.size() == 1) {
+      std::istringstream(result) >> gui;
+    } else {
+      std::istringstream(result) >> std::boolalpha >> gui;
+    }
+  }
+  if (image_view::has_option(args, "--autosize")) {
+    std::string result = image_view::get_option(args, "--autosize");
+    if (result.size() == 1) {
+      std::istringstream(result) >> autosize;
+    } else {
+      std::istringstream(result) >> std::boolalpha >> autosize;
+    }
+  }
+  if (image_view::has_option(args, "--width")) {
+    width = std::atoi(image_view::get_option(args, "--width").c_str());
+  }
+  if (image_view::has_option(args, "--height")) {
+    height = std::atoi(image_view::get_option(args, "--height").c_str());
+  }
+  if (image_view::has_option(args, "--fileformat")) {
+    fileformat = image_view::get_option(args, "--fileformat");
+  }
+  if (image_view::has_option(args, "--colormap")) {
+    colormap = std::atoi(image_view::get_option(args, "--colormap").c_str());
+  }
+  if (image_view::has_option(args, "--min_image_value")) {
+    min_image_value = std::atoi(image_view::get_option(args, "--min_image_value").c_str());
+  }
+  if (image_view::has_option(args, "--max_image_value")) {
+    max_image_value = std::atoi(image_view::get_option(args, "--max_image_value").c_str());
+  }
 
   rclcpp::NodeOptions options;
+  // override default parameters with the desired transform
+  options.parameter_overrides(
+  {
+    {"image_transport", image_transport},
+    {"window_name", window_name},
+    {"gui", gui},
+    {"autosize", autosize},
+    {"height", height},
+    {"width", width},
+    {"colormap", colormap},
+    {"min_image_value", min_image_value},
+    {"max_image_value", max_image_value},
+    {"fileformat", fileformat},
+  });
+
   auto iv_node = std::make_shared<ImageViewNode>(options);
 
   rclcpp::spin(iv_node);
