@@ -135,9 +135,33 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
     this->declare_parameter("filename_format", std::string("frame%04i.jpg"));
   filename_format_.parse(format_string);
 
-  colormap_ = this->declare_parameter("colormap", -1);
-  min_image_value_ = this->declare_parameter("min_image_value", 0);
-  max_image_value_ = this->declare_parameter("max_image_value", 0);
+  rcl_interfaces::msg::ParameterDescriptor colormap_paramDescriptor;
+  colormap_paramDescriptor.name = "colormap";
+  colormap_paramDescriptor.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+  colormap_paramDescriptor.description =
+    "ColorMap -1 = NO_COLORMAP, 0 = AUTUMN, 1 = BONE, 2 = JET, 3 = WINTER, 4 = RAINBOW, 5 = OCEAN"
+    "6 = SUMMER, 7 = SPRING, 8 = COOL, 9 = HSV, 10 = PINK, 11 = HOT";
+  colormap_paramDescriptor.set__integer_range(
+    {rcl_interfaces::msg::IntegerRange()
+      .set__from_value(-1)
+      .set__to_value(11)
+      .set__step(1)});
+  colormap_ = this->declare_parameter<int>(
+    colormap_paramDescriptor.name, -1, colormap_paramDescriptor);
+
+  rcl_interfaces::msg::ParameterDescriptor min_image_value_paramDescriptor;
+  min_image_value_paramDescriptor.name = "min_image_value";
+  min_image_value_paramDescriptor.type = rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE;
+  min_image_value_paramDescriptor.description = "Minimum image value for scaling depth/float image";
+  min_image_value_ = this->declare_parameter(
+    min_image_value_paramDescriptor.name, 0, min_image_value_paramDescriptor);
+
+  rcl_interfaces::msg::ParameterDescriptor max_image_value_paramDescriptor;
+  max_image_value_paramDescriptor.name = "max_image_value";
+  max_image_value_paramDescriptor.type = rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE;
+  max_image_value_paramDescriptor.description = "Minimum image value for scaling depth/float image";
+  max_image_value_ = this->declare_parameter(
+    max_image_value_paramDescriptor.name, 0, max_image_value_paramDescriptor);
 
   if (g_gui) {
     window_thread_ = std::thread(&ImageViewNode::windowThread, this);
