@@ -73,6 +73,7 @@ class RegisterNodelet : public nodelet::Nodelet
 
   // Parameters
   bool fill_upsampling_holes_;	// fills holes which occur due to upsampling by scaling each pixel to the target image scale (only takes effect on upsampling)
+  bool use_rgb_timestamp_;  // use source time stamp from RGB camera
 
   virtual void onInit();
 
@@ -102,6 +103,7 @@ void RegisterNodelet::onInit()
   int queue_size;
   private_nh.param("queue_size", queue_size, 5);
   private_nh.param("fill_upsampling_holes", fill_upsampling_holes_, false);
+  private_nh.param("use_rgb_timestamp", use_rgb_timestamp_, false);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   sync_.reset( new Synchronizer(SyncPolicy(queue_size), sub_depth_image_, sub_depth_info_, sub_rgb_info_) );
@@ -165,7 +167,7 @@ void RegisterNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_image_msg,
 
   // Allocate registered depth image
   sensor_msgs::ImagePtr registered_msg( new sensor_msgs::Image );
-  registered_msg->header.stamp    = depth_image_msg->header.stamp;
+  registered_msg->header.stamp    = use_rgb_timestamp_ ? rgb_info_msg->header.stamp : depth_image_msg->header.stamp;
   registered_msg->header.frame_id = rgb_info_msg->header.frame_id;
   registered_msg->encoding        = depth_image_msg->encoding;
   
