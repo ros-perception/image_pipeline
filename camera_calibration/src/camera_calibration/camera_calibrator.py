@@ -47,6 +47,7 @@ from collections import deque
 from message_filters import ApproximateTimeSynchronizer
 from std_msgs.msg import String
 from std_srvs.srv import Empty
+from .calibrator import CAMERA_MODEL
 
 class SpinThread(threading.Thread):
     """
