@@ -48,6 +48,7 @@ except ImportError:
 from camera_calibration.calibrator import CAMERA_MODEL
 from rclpy.qos import qos_profile_system_default
 from rclpy.qos import QoSProfile
+from threading import Event
 
 
 class BufferQueue(Queue):
@@ -214,19 +215,29 @@ class CalibrationNode(Node):
         print(self.c.ost())
         info = self.c.as_message()
 
+        event=Event()
+        def done_callback(future):
+            nonlocal event
+            event.set()
+
         req = sensor_msgs.srv.SetCameraInfo.Request()
         rv = True
         if self.c.is_mono:
             req.camera_info = info
             response = self.set_camera_info_service.call_async(req)
+            response.add_done_callback(done_callback)
+            event.wait()
             rv = self.check_set_camera_info(response)
         else:
             req.camera_info = info[0]
-            response = self.set_left_camera_info_service.call_async(req)
-            rv = rv and self.check_set_camera_info(response)
+            response0 = self.set_left_camera_info_service.call_async(req)
+            response0.add_done_callback(done_callback)
             req.camera_info = info[1]
-            response = self.set_right_camera_info_service.call_async(req)
-            rv = rv and self.check_set_camera_info(response)
+            response1 = self.set_right_camera_info_service.call_async(req)
+            response1.add_done_callback(done_callback)
+            event.wait()
+            rv = rv and self.check_set_camera_info(response0)
+            rv = rv and self.check_set_camera_info(response1)
         return rv
 
     def get_topic_qos(self, topic_name: str) -> QoSProfile:
@@ -307,6 +318,7 @@ class OpenCVCalibrationNode(CalibrationNode):
                 elif 380 <= y < 480:
                     # Only shut down if we set camera info correctly, #3993
                     if self.do_upload():
+                        self.get_logger().info('Calibration committed')
                         rclpy.shutdown()
     def on_model_change(self, model_select_val):
         if self.c == None:
@@ -423,3 +435,4 @@ class OpenCVCalibrationNode(CalibrationNode):
 
         self._last_display = display
         self.queue_display.put(display)
+
