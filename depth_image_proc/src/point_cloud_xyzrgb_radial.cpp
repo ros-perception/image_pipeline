@@ -87,17 +87,14 @@ PointCloudXyzrgbRadialNode::PointCloudXyzrgbRadialNode(const rclcpp::NodeOptions
   // Create publisher with connect callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
-    [this](rclcpp::MatchedInfo& s)
+    [this](rclcpp::MatchedInfo & s)
     {
       std::lock_guard<std::mutex> lock(connect_mutex_);
-      if (s.current_count == 0)
-      {
+      if (s.current_count == 0) {
         sub_depth_.unsubscribe();
         sub_rgb_.unsubscribe();
         sub_info_.unsubscribe();
-      }
-      else if (!sub_depth_.getSubscriber())
-      {
+      } else if (!sub_depth_.getSubscriber()) {
         // parameter for depth_image_transport hint
         std::string depth_image_transport_param = "depth_image_transport";
         image_transport::TransportHints depth_hints(this, "raw", depth_image_transport_param);

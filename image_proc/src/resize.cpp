@@ -55,14 +55,11 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
   // Create image pub with connection callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
-    [this](rclcpp::MatchedInfo&)
+    [this](rclcpp::MatchedInfo &)
     {
-      if (pub_image_.getNumSubscribers() == 0)
-      {
+      if (pub_image_.getNumSubscribers() == 0) {
         sub_image_.shutdown();
-      }
-      else if (!sub_image_)
-      {
+      } else if (!sub_image_) {
         auto qos_profile = getTopicQosProfile(this, "image/image_raw");
         sub_image_ = image_transport::create_camera_subscription(
           this, "image/image_raw",
@@ -72,7 +69,8 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
             std::placeholders::_2), "raw", qos_profile);
       }
     };
-  pub_image_ = image_transport::create_camera_publisher(this, "resize/image_raw", qos_profile, pub_options);
+  pub_image_ = image_transport::create_camera_publisher(
+    this, "resize/image_raw", qos_profile, pub_options);
 
   interpolation_ = this->declare_parameter("interpolation", 1);
   use_scale_ = this->declare_parameter("use_scale", true);

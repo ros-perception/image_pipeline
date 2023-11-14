@@ -56,15 +56,12 @@ PointCloudXyzRadialNode::PointCloudXyzRadialNode(const rclcpp::NodeOptions & opt
   // Create publisher with connect callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
-    [this](rclcpp::MatchedInfo& s)
+    [this](rclcpp::MatchedInfo & s)
     {
       std::lock_guard<std::mutex> lock(connect_mutex_);
-      if (s.current_count == 0)
-      {
+      if (s.current_count == 0) {
         sub_depth_.shutdown();
-      }
-      else if (!sub_depth_)
-      {
+      } else if (!sub_depth_) {
         auto custom_qos = rmw_qos_profile_system_default;
         custom_qos.depth = queue_size_;
 
@@ -76,9 +73,10 @@ PointCloudXyzRadialNode::PointCloudXyzRadialNode(const rclcpp::NodeOptions & opt
             std::placeholders::_2),
           "raw",
           custom_qos);
-          }
+      }
     };
-  pub_point_cloud_ = create_publisher<sensor_msgs::msg::PointCloud2>("points", rclcpp::SensorDataQoS(), pub_options);
+  pub_point_cloud_ = create_publisher<sensor_msgs::msg::PointCloud2>(
+    "points", rclcpp::SensorDataQoS(), pub_options);
 }
 
 void PointCloudXyzRadialNode::depthCb(

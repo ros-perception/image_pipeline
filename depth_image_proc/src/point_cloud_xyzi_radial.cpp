@@ -72,17 +72,14 @@ PointCloudXyziRadialNode::PointCloudXyziRadialNode(const rclcpp::NodeOptions & o
   // Create publisher with connect callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
-    [this](rclcpp::MatchedInfo& s)
+    [this](rclcpp::MatchedInfo & s)
     {
       std::lock_guard<std::mutex> lock(connect_mutex_);
-      if (s.current_count == 0)
-      {
+      if (s.current_count == 0) {
         sub_depth_.unsubscribe();
         sub_intensity_.unsubscribe();
         sub_info_.unsubscribe();
-      }
-      else if (!sub_depth_.getSubscriber())
-      {
+      } else if (!sub_depth_.getSubscriber()) {
         // parameter for depth_image_transport hint
         std::string depth_image_transport_param = "depth_image_transport";
 
@@ -96,7 +93,8 @@ PointCloudXyziRadialNode::PointCloudXyziRadialNode(const rclcpp::NodeOptions & o
         sub_info_.subscribe(this, "intensity/camera_info");
       }
     };
-  pub_point_cloud_ = create_publisher<sensor_msgs::msg::PointCloud2>("points", rclcpp::SensorDataQoS(), pub_options);
+  pub_point_cloud_ = create_publisher<sensor_msgs::msg::PointCloud2>(
+    "points", rclcpp::SensorDataQoS(), pub_options);
 }
 
 void PointCloudXyziRadialNode::imageCb(

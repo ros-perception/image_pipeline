@@ -58,19 +58,16 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions & options)
   // Create publisher with connect callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
-    [this](rclcpp::MatchedInfo&)
+    [this](rclcpp::MatchedInfo &)
     {
-      if (pub_rect_.getNumSubscribers() == 0)
-      {
+      if (pub_rect_.getNumSubscribers() == 0) {
         sub_camera_.shutdown();
-      }
-      else if (!sub_camera_)
-      {
+      } else if (!sub_camera_) {
         auto qos_profile = getTopicQosProfile(this, "image");
         sub_camera_ = image_transport::create_camera_subscription(
           this, "image", std::bind(
-          &RectifyNode::imageCb,
-          this, std::placeholders::_1, std::placeholders::_2), "raw", qos_profile);
+            &RectifyNode::imageCb,
+            this, std::placeholders::_1, std::placeholders::_2), "raw", qos_profile);
       }
     };
   pub_rect_ = image_transport::create_publisher(this, "image_rect", qos_profile, pub_options);

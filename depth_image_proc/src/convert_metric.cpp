@@ -67,15 +67,12 @@ ConvertMetricNode::ConvertMetricNode(const rclcpp::NodeOptions & options)
   // Create publisher with connect callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
-    [this](rclcpp::MatchedInfo&)
+    [this](rclcpp::MatchedInfo &)
     {
       std::lock_guard<std::mutex> lock(connect_mutex_);
-      if (pub_depth_.getNumSubscribers() == 0)
-      {
+      if (pub_depth_.getNumSubscribers() == 0) {
         sub_raw_.shutdown();
-      }
-      else if (!sub_raw_)
-      {
+      } else if (!sub_raw_) {
         image_transport::TransportHints hints(this, "raw");
         sub_raw_ = image_transport::create_subscription(
           this, "image_raw",
@@ -83,7 +80,8 @@ ConvertMetricNode::ConvertMetricNode(const rclcpp::NodeOptions & options)
           hints.getTransport());
       }
     };
-  pub_depth_ = image_transport::create_publisher(this, "image", rmw_qos_profile_default, pub_options);
+  pub_depth_ =
+    image_transport::create_publisher(this, "image", rmw_qos_profile_default, pub_options);
 }
 
 void ConvertMetricNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)

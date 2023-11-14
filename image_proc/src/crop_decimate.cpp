@@ -130,17 +130,14 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
   // Create image pub with connection callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
-    [this](rclcpp::MatchedInfo&)
+    [this](rclcpp::MatchedInfo &)
     {
-      if (pub_.getNumSubscribers() == 0)
-      {
+      if (pub_.getNumSubscribers() == 0) {
         sub_.shutdown();
-      }
-      else if (!sub_)
-      {
+      } else if (!sub_) {
         auto qos_profile = getTopicQosProfile(this, "in/image_raw");
         sub_ = image_transport::create_camera_subscription(
-            this, "in/image_raw", std::bind(
+          this, "in/image_raw", std::bind(
             &CropDecimateNode::imageCb, this,
             std::placeholders::_1, std::placeholders::_2), "raw", qos_profile);
       }

@@ -56,20 +56,17 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
   // Create publisher options to setup callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
-    [this](rclcpp::MatchedInfo&)
+    [this](rclcpp::MatchedInfo &)
     {
-      if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0)
-      {
+      if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0) {
         sub_raw_.shutdown();
-      }
-      else if (!sub_raw_)
-      {
+      } else if (!sub_raw_) {
         auto qos_profile = getTopicQosProfile(this, "image_raw");
         sub_raw_ = image_transport::create_subscription(
-            this, "image_raw",
-            std::bind(
-              &DebayerNode::imageCb, this,
-              std::placeholders::_1), "raw", qos_profile);
+          this, "image_raw",
+          std::bind(
+            &DebayerNode::imageCb, this,
+            std::placeholders::_1), "raw", qos_profile);
       }
     };
   pub_mono_ = image_transport::create_publisher(this, "image_mono", qos_profile, pub_options);
