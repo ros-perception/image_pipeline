@@ -132,6 +132,9 @@ def main():
     group.add_option("--max-chessboard-speed", type="float", default=-1.0,
                      help="Do not use samples where the calibration pattern is moving faster \
                      than this speed in px/frame. Set to eg. 0.5 for rolling shutter cameras.")
+    parser.add_option("-r", "--range-policy",
+                     type="string", default="upper",
+                     help="For 16 bit images, the policy to use for determining the range of pixel values to use for thresholding. Choose from 'upper', 'dynamic', or 'legacy'.")
 
     parser.add_option_group(group)
 
@@ -219,10 +222,13 @@ def main():
     else:
         checkerboard_flags = cv2.CALIB_CB_FAST_CHECK
 
+    range_policy = options.range_policy
+    assert range_policy in ['upper', 'dynamic', 'legacy'], "Invalid range policy: %s" % range_policy
+
     rospy.init_node('cameracalibrator')
     node = OpenCVCalibrationNode(boards, options.service_check, sync, calib_flags, fisheye_calib_flags, pattern, options.camera_name,
                                  checkerboard_flags=checkerboard_flags, max_chessboard_speed=options.max_chessboard_speed,
-                                 queue_size=options.queue_size)
+                                 queue_size=options.queue_size, range_policy=range_policy)
     rospy.spin()
 
 if __name__ == "__main__":
