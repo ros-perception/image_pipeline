@@ -318,7 +318,8 @@ class Calibrator():
     Base class for calibration system
     """
     def __init__(self, boards, flags=0, fisheye_flags = 0, pattern=Patterns.Chessboard, name='',
-    checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, max_chessboard_speed = -1.0):
+                 checkerboard_flags=cv2.CALIB_CB_FAST_CHECK, max_chessboard_speed = -1.0,
+                 range_policy="upper"):
         # Ordering the dimensions for the different detectors is actually a minefield...
         if pattern == Patterns.Chessboard:
             # Make sure n_cols > n_rows to agree with OpenCV CB detector output
@@ -353,6 +354,7 @@ class Calibrator():
         self.last_frame_corners = None
         self.last_frame_ids = None
         self.max_chessboard_speed = max_chessboard_speed
+        self.range_policy = range_policy
 
     def mkgray(self, msg):
         """
@@ -362,7 +364,27 @@ class Calibrator():
         # TODO: get a Python API in cv_bridge to check for the image depth.
         if self.br.encoding_to_dtype_with_channels(msg.encoding)[0] in ['uint16', 'int16']:
             mono16 = self.br.imgmsg_to_cv2(msg, '16UC1')
-            mono8 = numpy.array(mono16 / 256, dtype=numpy.uint8)
+            if self.range_policy == "upper":
+                # this policy works when the image is too bright
+                mono16 = self.br.imgmsg_to_cv2(msg, '16UC1')
+                mono8 = numpy.array(mono16 / 256, dtype=numpy.uint8)
+            elif self.range_policy == "dynamic":
+                min_val, max_val, _, _ = cv2.minMaxLoc(mono16)
+                value_range = max_val - min_val
+                if value_range > 0:
+                    mono8_float = (mono16 - min_val) * (255.0 / value_range)
+                else:
+                    mono8_float = mono16
+                mono8 = mono8_float.astype(numpy.uint8)
+            elif self.range_policy == "legacy":
+                # revival of old behavior removed in
+                # https://github.com/ros-perception/image_pipeline/pull/334
+                # this policy works when the image is too dark which might be the case
+                # with old IR cameras
+                mono8 = numpy.array(numpy.clip(mono16, 0, 255), dtype=numpy.uint8)
+            else:
+                assert False, "Unknown range policy '%s'" % self.range_policy
+
             return mono8
         elif 'FC1' in msg.encoding:
             # floating point image handling
