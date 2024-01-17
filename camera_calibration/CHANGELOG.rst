@@ -2,6 +2,11 @@
 Changelog for package camera_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.2 (2022-01-17)
+------------------
+* Fix QoS incompatibility camera_calibration ROS2
+* Contributors: Michal Wojcik
+
 3.0.0 (2022-04-29)
 ------------------
 * Some small fixes noticed while reviewing.

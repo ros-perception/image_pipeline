@@ -2,6 +2,12 @@
 Changelog for package image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.2 (2022-01-17)
+------------------
+* Fix to allow remapping resize and image topics
+* Use the same QoS profiles as publishers in image_proc
+* Contributors: Michal Wojcik
+
 3.0.0 (2022-04-29)
 ------------------
 * Cleanup of image_proc.

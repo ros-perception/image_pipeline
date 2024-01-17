@@ -2,6 +2,11 @@
 Changelog for package depth_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.2 (2022-01-17)
+------------------
+* Depth image transport configure susbcribers (`#844 <https://github.com/ros-perception/image_pipeline/issues/844>`_)
+* Contributors: Alejandro Hernández Cordero
+
 3.0.0 (2022-04-29)
 ------------------
 * Cleanup of depth_image_proc.

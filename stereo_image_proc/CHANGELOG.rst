@@ -2,6 +2,11 @@
 Changelog for package stereo_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.2 (2022-01-17)
+------------------
+* Forward container namespace from stereo_image_proc -> image_proc (`#752 <https://github.com/ros-perception/image_pipeline/issues/752>`_)
+* Contributors: Brian
+
 3.0.0 (2022-04-29)
 ------------------
 * Fix the tests for stereo_image_proc.

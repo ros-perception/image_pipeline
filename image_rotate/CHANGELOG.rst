@@ -2,6 +2,9 @@
 Changelog for package image_rotate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.2 (2022-01-17)
+------------------
+
 3.0.0 (2022-04-29)
 ------------------
 * Cleanup the image_rotate package.

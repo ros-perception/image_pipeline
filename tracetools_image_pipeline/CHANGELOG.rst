@@ -2,6 +2,9 @@
 Changelog for package tracetools_image_pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.2 (2022-01-17)
+------------------
+
 3.0.0 (2022-04-29)
 ------------------
 * tracetools_image_pipeline version consistent with repo
