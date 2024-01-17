@@ -98,13 +98,13 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
         rclcpp::SubscriptionOptions sub_opts;
         // Update the subscription options to allow reconfigurable qos settings.
         sub_opts.qos_overriding_options = rclcpp::QosOverridingOptions {
-        {
-          // Here all policies that are desired to be reconfigurable are listed.
-          rclcpp::QosPolicyKind::Depth,
-          rclcpp::QosPolicyKind::Durability,
-          rclcpp::QosPolicyKind::History,
-          rclcpp::QosPolicyKind::Reliability,
-        }};
+          {
+            // Here all policies that are desired to be reconfigurable are listed.
+            rclcpp::QosPolicyKind::Depth,
+            rclcpp::QosPolicyKind::Durability,
+            rclcpp::QosPolicyKind::History,
+            rclcpp::QosPolicyKind::Reliability,
+          }};
 
         // depth image can use different transport.(e.g. compressedDepth)
         sub_depth_.subscribe(
