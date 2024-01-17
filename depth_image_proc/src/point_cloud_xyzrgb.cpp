@@ -109,12 +109,27 @@ void PointCloudXyzrgbNode::connectCb()
     std::string depth_image_transport_param = "depth_image_transport";
     image_transport::TransportHints depth_hints(this, "raw", depth_image_transport_param);
 
+    rclcpp::SubscriptionOptions sub_opts;
+    // Update the subscription options to allow reconfigurable qos settings.
+    sub_opts.qos_overriding_options = rclcpp::QosOverridingOptions {
+      {
+        // Here all policies that are desired to be reconfigurable are listed.
+        rclcpp::QosPolicyKind::Depth,
+        rclcpp::QosPolicyKind::Durability,
+        rclcpp::QosPolicyKind::History,
+        rclcpp::QosPolicyKind::Reliability,
+      }};
+
     // depth image can use different transport.(e.g. compressedDepth)
-    sub_depth_.subscribe(this, "depth_registered/image_rect", depth_hints.getTransport());
+    sub_depth_.subscribe(
+      this, "depth_registered/image_rect",
+      depth_hints.getTransport(), rmw_qos_profile_default, sub_opts);
 
     // rgb uses normal ros transport hints.
     image_transport::TransportHints hints(this, "raw");
-    sub_rgb_.subscribe(this, "rgb/image_rect_color", hints.getTransport());
+    sub_rgb_.subscribe(
+      this, "rgb/image_rect_color",
+      hints.getTransport(), rmw_qos_profile_default, sub_opts);
     sub_info_.subscribe(this, "rgb/camera_info");
   }
 }
