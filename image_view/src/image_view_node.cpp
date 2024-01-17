@@ -122,7 +122,8 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
     RCLCPP_WARN(
       this->get_logger(), "Topic 'image' has not been remapped! "
       "Typical command-line usage:\n"
-      "\t$ rosrun image_view image_view image:=<image topic> [transport]");
+      "\t$ ros2 run image_view image_view --ros-args -p image:=<image topic> "
+      "[-p image_transport:=<transport>]");
   }
 
   // Default window name is the resolved topic name
@@ -210,9 +211,11 @@ void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
       }
     }
 
+    std::string encoding = msg->encoding.empty() ? "bgr8" : msg->encoding;
+
     queued_image_.set(
       cv_bridge::cvtColorForDisplay(
-        cv_bridge::toCvShare(msg), "bgr8", options));
+        cv_bridge::toCvShare(msg), encoding, options));
   } catch (cv_bridge::Exception & e) {
     RCLCPP_ERROR_EXPRESSION(
       this->get_logger(), (static_cast<int>(this->now().seconds()) % 30 == 0),
