@@ -7,9 +7,9 @@
     LTTng tracing provider wrapper for image_pipeline ROS 2 meta-package.
   </description>
   <maintainer email="v.mayoralv@gmail.com">Víctor Mayoral-Vilches</maintainer>
+  <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
   <license>Apache 2.0</license>
   <author email="v.mayoralv@gmail.com">Víctor Mayoral-Vilches</author>
-
 
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
   <buildtool_depend>pkg-config</buildtool_depend>

@@ -14,6 +14,7 @@
   <maintainer email="whitleysoftwareservices@gmail.com">Joshua Whitley</maintainer>
   <maintainer email="chris.ye@intel.com">Chris Ye</maintainer>
   <maintainer email="jacob@openrobotics.org">Jacob Perron</maintainer>
+  <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
 
   <license>BSD</license>
   <url type="website">https://index.ros.org/p/image_publisher/github-ros-perception-image_pipeline/</url>
