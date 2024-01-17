@@ -166,7 +166,7 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
   // Declare/read parameters
   int queue_size = this->declare_parameter("queue_size", 5);
   bool approx = this->declare_parameter("approximate_sync", false);
-  bool approx_sync_epsilon = this->declare_parameter("approximate_sync_tolerance_seconds", 0.0);
+  double approx_sync_epsilon = this->declare_parameter("approximate_sync_tolerance_seconds", 0.0);
   this->declare_parameter("use_system_default_qos", false);
 
   // Synchronize callbacks
