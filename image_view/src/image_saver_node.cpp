@@ -70,8 +70,10 @@ namespace image_view
 ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("image_saver_node", options)
 {
-  auto topic = rclcpp::expand_topic_or_service_name(
-    "image", this->get_name(), this->get_namespace());
+  // For compressed topics to remap appropriately, we need to pass a
+  // fully expanded and remapped topic name to image_transport
+  auto node_base = this->get_node_base_interface();
+  std::string topic = node_base->resolve_topic_or_service_name("image", false);
 
   // Useful when CameraInfo is being published
   cam_sub_ = image_transport::create_camera_subscription(
