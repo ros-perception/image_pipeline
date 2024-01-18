@@ -58,8 +58,6 @@ private:
   std::mutex connect_mutex_;
   image_transport::Publisher pub_depth_;
 
-  void connectCb();
-
   void depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg);
 
   double distance_;
