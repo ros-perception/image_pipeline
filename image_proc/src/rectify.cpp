@@ -54,28 +54,23 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions & options)
   auto qos_profile = getTopicQosProfile(this, "image");
   queue_size_ = this->declare_parameter("queue_size", 5);
   interpolation = this->declare_parameter("interpolation", 1);
-  pub_rect_ = image_transport::create_publisher(this, "image_rect");
-  subscribeToCamera(qos_profile);
-}
 
-// Handles (un)subscribing when clients (un)subscribe
-void RectifyNode::subscribeToCamera(const rmw_qos_profile_t & qos_profile)
-{
-  std::lock_guard<std::mutex> lock(connect_mutex_);
-
-  /*
-  *  SubscriberStatusCallback not yet implemented
-  *
-  if (pub_rect_.getNumSubscribers() == 0)
-    sub_camera_.shutdown();
-  else if (!sub_camera_)
-  {
-  */
-  sub_camera_ = image_transport::create_camera_subscription(
-    this, "image", std::bind(
-      &RectifyNode::imageCb,
-      this, std::placeholders::_1, std::placeholders::_2), "raw", qos_profile);
-  // }
+  // Create publisher with connect callback
+  rclcpp::PublisherOptions pub_options;
+  pub_options.event_callbacks.matched_callback =
+    [this](rclcpp::MatchedInfo &)
+    {
+      if (pub_rect_.getNumSubscribers() == 0) {
+        sub_camera_.shutdown();
+      } else if (!sub_camera_) {
+        auto qos_profile = getTopicQosProfile(this, "image");
+        sub_camera_ = image_transport::create_camera_subscription(
+          this, "image", std::bind(
+            &RectifyNode::imageCb,
+            this, std::placeholders::_1, std::placeholders::_2), "raw", qos_profile);
+      }
+    };
+  pub_rect_ = image_transport::create_publisher(this, "image_rect", qos_profile, pub_options);
 }
 
 void RectifyNode::imageCb(

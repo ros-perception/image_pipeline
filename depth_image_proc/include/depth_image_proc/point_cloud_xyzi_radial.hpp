@@ -90,8 +90,6 @@ private:
 
   cv::Mat transform_;
 
-  void connectCb();
-
   void imageCb(
     const Image::ConstSharedPtr & depth_msg,
     const Image::ConstSharedPtr & intensity_msg_in,

@@ -127,11 +127,22 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
   int interpolation = this->declare_parameter("interpolation", 0);
   interpolation_ = static_cast<CropDecimateModes>(interpolation);
 
-  pub_ = image_transport::create_camera_publisher(this, "out/image_raw", qos_profile);
-  sub_ = image_transport::create_camera_subscription(
-    this, "in/image_raw", std::bind(
-      &CropDecimateNode::imageCb, this,
-      std::placeholders::_1, std::placeholders::_2), "raw", qos_profile);
+  // Create image pub with connection callback
+  rclcpp::PublisherOptions pub_options;
+  pub_options.event_callbacks.matched_callback =
+    [this](rclcpp::MatchedInfo &)
+    {
+      if (pub_.getNumSubscribers() == 0) {
+        sub_.shutdown();
+      } else if (!sub_) {
+        auto qos_profile = getTopicQosProfile(this, "in/image_raw");
+        sub_ = image_transport::create_camera_subscription(
+          this, "in/image_raw", std::bind(
+            &CropDecimateNode::imageCb, this,
+            std::placeholders::_1, std::placeholders::_2), "raw", qos_profile);
+      }
+    };
+  pub_ = image_transport::create_camera_publisher(this, "out/image_raw", qos_profile, pub_options);
 }
 
 void CropDecimateNode::imageCb(

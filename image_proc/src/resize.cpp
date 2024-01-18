@@ -52,15 +52,25 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("ResizeNode", options)
 {
   auto qos_profile = getTopicQosProfile(this, "image/image_raw");
-  // Create image pub
-  pub_image_ = image_transport::create_camera_publisher(this, "resize/image_raw", qos_profile);
-  // Create image sub
-  sub_image_ = image_transport::create_camera_subscription(
-    this, "image/image_raw",
-    std::bind(
-      &ResizeNode::imageCb, this,
-      std::placeholders::_1,
-      std::placeholders::_2), "raw", qos_profile);
+  // Create image pub with connection callback
+  rclcpp::PublisherOptions pub_options;
+  pub_options.event_callbacks.matched_callback =
+    [this](rclcpp::MatchedInfo &)
+    {
+      if (pub_image_.getNumSubscribers() == 0) {
+        sub_image_.shutdown();
+      } else if (!sub_image_) {
+        auto qos_profile = getTopicQosProfile(this, "image/image_raw");
+        sub_image_ = image_transport::create_camera_subscription(
+          this, "image/image_raw",
+          std::bind(
+            &ResizeNode::imageCb, this,
+            std::placeholders::_1,
+            std::placeholders::_2), "raw", qos_profile);
+      }
+    };
+  pub_image_ = image_transport::create_camera_publisher(
+    this, "resize/image_raw", qos_profile, pub_options);
 
   interpolation_ = this->declare_parameter("interpolation", 1);
   use_scale_ = this->declare_parameter("use_scale", true);
@@ -74,12 +84,6 @@ void ResizeNode::imageCb(
   sensor_msgs::msg::Image::ConstSharedPtr image_msg,
   sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg)
 {
-  // getNumSubscribers has a bug/doesn't work
-  // Eventually revisit and figure out how to make this work
-  // if (pub_image_.getNumSubscribers() < 1) {
-  //  return;
-  //}
-
   TRACEPOINT(
     image_proc_resize_init,
     static_cast<const void *>(this),

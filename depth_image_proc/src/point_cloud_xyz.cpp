@@ -54,38 +54,31 @@ PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
   // Read parameters
   queue_size_ = this->declare_parameter<int>("queue_size", 5);
 
-  // Monitor whether anyone is subscribed to the output
-  // TODO(ros2) Implement when SubscriberStatusCallback is available
-  // ros::SubscriberStatusCallback connect_cb = boost::bind(&PointCloudXyzNode::connectCb, this);
-  connectCb();
+  // Create publisher with connect callback
+  rclcpp::PublisherOptions pub_options;
+  pub_options.event_callbacks.matched_callback =
+    [this](rclcpp::MatchedInfo & s)
+    {
+      std::lock_guard<std::mutex> lock(connect_mutex_);
+      if (s.current_count == 0) {
+        sub_depth_.shutdown();
+      } else if (!sub_depth_) {
+        auto custom_qos = rmw_qos_profile_system_default;
+        custom_qos.depth = queue_size_;
 
-  // Make sure we don't enter connectCb() between advertising and assigning to pub_point_cloud_
-  std::lock_guard<std::mutex> lock(connect_mutex_);
-  // TODO(ros2) Implement when SubscriberStatusCallback is available
-  // pub_point_cloud_ = nh.advertise<PointCloud>("points", 1, connect_cb, connect_cb);
-  pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SensorDataQoS());
+        sub_depth_ = image_transport::create_camera_subscription(
+          this,
+          "image_rect",
+          std::bind(
+            &PointCloudXyzNode::depthCb, this, std::placeholders::_1,
+            std::placeholders::_2),
+          "raw",
+          custom_qos);
+      }
+    };
+  pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SensorDataQoS(), pub_options);
 }
 
-// Handles (un)subscribing when clients (un)subscribe
-void PointCloudXyzNode::connectCb()
-{
-  std::lock_guard<std::mutex> lock(connect_mutex_);
-  // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
-  // if (pub_point_cloud_->getNumSubscribers() == 0)
-  if (0) {
-    sub_depth_.shutdown();
-  } else if (!sub_depth_) {
-    auto custom_qos = rmw_qos_profile_system_default;
-    custom_qos.depth = queue_size_;
-
-    sub_depth_ = image_transport::create_camera_subscription(
-      this,
-      "image_rect",
-      std::bind(&PointCloudXyzNode::depthCb, this, std::placeholders::_1, std::placeholders::_2),
-      "raw",
-      custom_qos);
-  }
-}
 
 void PointCloudXyzNode::depthCb(
   const Image::ConstSharedPtr & depth_msg,
