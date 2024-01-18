@@ -52,7 +52,11 @@ using namespace std::chrono_literals;
 ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options)
 : rclcpp::Node("ImagePublisher", options)
 {
-  pub_ = image_transport::create_camera_publisher(this, "image_raw");
+  // For compressed topics to remap appropriately, we need to pass a
+  // fully expanded and remapped topic name to image_transport
+  auto node_base = this->get_node_base_interface();
+  std::string topic_name = node_base->resolve_topic_or_service_name("image_raw", false);
+  pub_ = image_transport::create_camera_publisher(this, topic_name);
 
   flip_horizontal_ = this->declare_parameter("flip_horizontal", false);
   flip_vertical_ = this->declare_parameter("flip_vertical", false);
