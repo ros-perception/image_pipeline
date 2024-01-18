@@ -66,8 +66,11 @@ VideoRecorderNode::VideoRecorderNode(const rclcpp::NodeOptions & options)
     rclcpp::shutdown();
   }
 
-  auto topic = rclcpp::expand_topic_or_service_name(
-    "image", this->get_name(), this->get_namespace());
+  // For compressed topics to remap appropriately, we need to pass a
+  // fully expanded and remapped topic name to image_transport
+  auto node_base = this->get_node_base_interface();
+  std::string topic = node_base->resolve_topic_or_service_name("image", false);
+
   sub_image = image_transport::create_subscription(
     this, topic, std::bind(&VideoRecorderNode::callback, this, std::placeholders::_1), "raw");
 

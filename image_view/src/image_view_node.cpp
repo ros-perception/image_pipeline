@@ -107,8 +107,10 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
   auto transport = this->declare_parameter("image_transport", "raw");
   RCLCPP_INFO(this->get_logger(), "Using transport \"%s\"", transport.c_str());
 
-  std::string topic = rclcpp::expand_topic_or_service_name(
-    "image", this->get_name(), this->get_namespace());
+  // For compressed topics to remap appropriately, we need to pass a
+  // fully expanded and remapped topic name to image_transport
+  auto node_base = this->get_node_base_interface();
+  std::string topic = node_base->resolve_topic_or_service_name("image", false);
 
   image_transport::TransportHints hints(this, transport);
   pub_ = this->create_publisher<sensor_msgs::msg::Image>("output", 1);
@@ -118,7 +120,7 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
 
   auto topics = this->get_topic_names_and_types();
 
-  if (topics.find(topic) != topics.end()) {
+  if (topics.find(topic) == topics.end()) {
     RCLCPP_WARN(
       this->get_logger(), "Topic 'image' has not been remapped! "
       "Typical command-line usage:\n"

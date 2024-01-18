@@ -70,8 +70,10 @@ ExtractImagesNode::ExtractImagesNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("extract_images_node", options),
   filename_format_(""), count_(0), _time(this->now())
 {
-  auto topic = rclcpp::expand_topic_or_service_name(
-    "image", this->get_name(), this->get_namespace());
+  // For compressed topics to remap appropriately, we need to pass a
+  // fully expanded and remapped topic name to image_transport
+  auto node_base = this->get_node_base_interface();
+  std::string topic = node_base->resolve_topic_or_service_name("image", false);
 
   this->declare_parameter<std::string>("transport", std::string("raw"));
   std::string transport = this->get_parameter("transport").as_string();
@@ -83,7 +85,7 @@ ExtractImagesNode::ExtractImagesNode(const rclcpp::NodeOptions & options)
 
   auto topics = this->get_topic_names_and_types();
 
-  if (topics.find(topic) != topics.end()) {
+  if (topics.find(topic) == topics.end()) {
     RCLCPP_WARN(
       this->get_logger(), "extract_images: image has not been remapped! "
       "Typical command-line usage:\n\t$ ros2 run image_view extract_images "

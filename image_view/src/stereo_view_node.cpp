@@ -109,9 +109,10 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
   cv::setMouseCallback("right", &StereoViewNode::mouseCb, this);
   cv::setMouseCallback("disparity", &StereoViewNode::mouseCb, this);
 
-  // Resolve topic names
-  std::string stereo_ns = rclcpp::expand_topic_or_service_name(
-    "stereo", this->get_name(), this->get_namespace());
+  // For compressed topics to remap appropriately, we need to pass a
+  // fully expanded and remapped topic name to image_transport
+  auto node_base = this->get_node_base_interface();
+  std::string stereo_ns = node_base->resolve_topic_or_service_name("stereo", false);
 
   std::string left_topic = rclcpp::expand_topic_or_service_name(
     stereo_ns + "/left" + rclcpp::expand_topic_or_service_name(
