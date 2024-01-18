@@ -69,8 +69,6 @@ private:
   double max_range_;
   double delta_d_;
 
-  void connectCb();
-
   void depthCb(
     const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
     const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg);
@@ -98,34 +96,23 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
     std::bind(
       &DisparityNode::depthCb, this, std::placeholders::_1, std::placeholders::_2));
 
-  // Monitor whether anyone is subscribed to the output
-  // TODO(ros2) Implement when SubscriberStatusCallback is available
-  // ros::SubscriberStatusCallback connect_cb = std::bind(&DisparityNode::connectCb, this);
-  connectCb();
-
-  // Make sure we don't enter connectCb() between advertising and assigning to pub_disparity_
-  std::lock_guard<std::mutex> lock(connect_mutex_);
-  // TODO(ros2) Implement when SubscriberStatusCallback is available
-  // pub_disparity_ =
-  //   left_nh.advertise<stereo_msgs::DisparityImage>("disparity", 1, connect_cb, connect_cb);
+  // Create publisher with connect callback
+  rclcpp::PublisherOptions pub_options;
+  pub_options.event_callbacks.matched_callback =
+    [this](rclcpp::MatchedInfo &)
+    {
+      std::lock_guard<std::mutex> lock(connect_mutex_);
+      if (pub_disparity_->get_subscription_count() == 0) {
+        sub_depth_image_.unsubscribe();
+        sub_info_.unsubscribe();
+      } else if (!sub_depth_image_.getSubscriber()) {
+        image_transport::TransportHints hints(this, "raw");
+        sub_depth_image_.subscribe(this, "left/image_rect", hints.getTransport());
+        sub_info_.subscribe(this, "right/camera_info");
+      }
+    };
   pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>(
-    "left/disparity", rclcpp::SensorDataQoS());
-}
-
-// Handles (un)subscribing when clients (un)subscribe
-void DisparityNode::connectCb()
-{
-  std::lock_guard<std::mutex> lock(connect_mutex_);
-  // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
-  // if (pub_disparity_.getNumSubscribers() == 0)
-  if (0) {
-    sub_depth_image_.unsubscribe();
-    sub_info_.unsubscribe();
-  } else if (!sub_depth_image_.getSubscriber()) {
-    image_transport::TransportHints hints(this, "raw");
-    sub_depth_image_.subscribe(this, "left/image_rect", hints.getTransport());
-    sub_info_.subscribe(this, "right/camera_info");
-  }
+    "left/disparity", rclcpp::SensorDataQoS(), pub_options);
 }
 
 void DisparityNode::depthCb(

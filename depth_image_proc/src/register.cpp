@@ -83,8 +83,6 @@ private:
   // Parameters
   bool fill_upsampling_holes_;
 
-  void connectCb();
-
   void imageCb(
     const Image::ConstSharedPtr & depth_image_msg,
     const CameraInfo::ConstSharedPtr & depth_info_msg,
@@ -119,36 +117,26 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
       &RegisterNode::imageCb, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
 
-  // Monitor whether anyone is subscribed to the output
-  // TODO(ros2) Implement when SubscriberStatusCallback is available
-  // image_transport::SubscriberStatusCallback image_connect_cb
-  //   boost::bind(&RegisterNode::connectCb, this);
-  // ros::SubscriberStatusCallback info_connect_cb = boost::bind(&RegisterNode::connectCb, this);
-  connectCb();
-  // Make sure we don't enter connectCb() between advertising and assigning to pub_registered_
-  std::lock_guard<std::mutex> lock(connect_mutex_);
-  // pub_registered_ = it_depth_reg.advertiseCamera("image_rect", 1,
-  //                                               image_connect_cb, image_connect_cb,
-  //                                               info_connect_cb, info_connect_cb);
-  pub_registered_ = image_transport::create_camera_publisher(this, "depth_registered/image_rect");
-}
-
-// Handles (un)subscribing when clients (un)subscribe
-void RegisterNode::connectCb()
-{
-  std::lock_guard<std::mutex> lock(connect_mutex_);
-  // TODO(ros2) Implement getNumSubscribers when rcl/rmw support it
-  // if (pub_point_cloud_->getNumSubscribers() == 0)
-  if (0) {
-    sub_depth_image_.unsubscribe();
-    sub_depth_info_.unsubscribe();
-    sub_rgb_info_.unsubscribe();
-  } else if (!sub_depth_image_.getSubscriber()) {
-    image_transport::TransportHints hints(this, "raw");
-    sub_depth_image_.subscribe(this, "depth/image_rect", hints.getTransport());
-    sub_depth_info_.subscribe(this, "depth/camera_info");
-    sub_rgb_info_.subscribe(this, "rgb/camera_info");
-  }
+  // Create publisher with connect callback
+  rclcpp::PublisherOptions pub_options;
+  pub_options.event_callbacks.matched_callback =
+    [this](rclcpp::MatchedInfo &)
+    {
+      std::lock_guard<std::mutex> lock(connect_mutex_);
+      if (pub_registered_.getNumSubscribers() == 0) {
+        sub_depth_image_.unsubscribe();
+        sub_depth_info_.unsubscribe();
+        sub_rgb_info_.unsubscribe();
+      } else if (!sub_depth_image_.getSubscriber()) {
+        image_transport::TransportHints hints(this, "raw");
+        sub_depth_image_.subscribe(this, "depth/image_rect", hints.getTransport());
+        sub_depth_info_.subscribe(this, "depth/camera_info");
+        sub_rgb_info_.subscribe(this, "rgb/camera_info");
+      }
+    };
+  pub_registered_ =
+    image_transport::create_camera_publisher(this, "depth_registered/image_rect",
+      rmw_qos_profile_default, pub_options);
 }
 
 void RegisterNode::imageCb(
