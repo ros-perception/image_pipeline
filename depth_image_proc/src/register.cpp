@@ -135,8 +135,9 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
       }
     };
   pub_registered_ =
-    image_transport::create_camera_publisher(this, "depth_registered/image_rect",
-      rmw_qos_profile_default, pub_options);
+    image_transport::create_camera_publisher(
+    this, "depth_registered/image_rect",
+    rmw_qos_profile_default, pub_options);
 }
 
 void RegisterNode::imageCb(
