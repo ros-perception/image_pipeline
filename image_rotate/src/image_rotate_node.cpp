@@ -69,7 +69,7 @@
 namespace image_rotate
 {
 
-ImageRotateNode::ImageRotateNode(const rclcpp::NodeOptions& options)
+ImageRotateNode::ImageRotateNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("ImageRotateNode", options)
 {
   config_.target_frame_id = this->declare_parameter("target_frame_id", std::string(""));
