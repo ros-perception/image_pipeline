@@ -107,10 +107,6 @@ ImageRotateNode::ImageRotateNode(const rclcpp::NodeOptions & options)
       source_vector_.vector.y = config_.source_y;
       source_vector_.vector.z = config_.source_z;
 
-      if (subscriber_count_) {  // @todo: Could do this without an interruption at some point.
-        unsubscribe();
-        subscribe();
-      }
       return result;
     };
   on_set_parameters_callback_handle_ = this->add_on_set_parameters_callback(reconfigureCallback);
@@ -286,55 +282,6 @@ void ImageRotateNode::do_work(
   prev_stamp_ = tf2_ros::fromMsg(msg->header.stamp);
 }
 
-void ImageRotateNode::subscribe()
-{
-  RCUTILS_LOG_DEBUG("Subscribing to image topic.");
-  if (config_.use_camera_info && config_.input_frame_id.empty()) {
-    auto custom_qos = rmw_qos_profile_system_default;
-    custom_qos.depth = 3;
-
-    cam_sub_ = image_transport::create_camera_subscription(
-      this,
-      "image",
-      std::bind(
-        &ImageRotateNode::imageCallbackWithInfo, this,
-        std::placeholders::_1, std::placeholders::_2),
-      "raw",
-      custom_qos);
-  } else {
-    auto custom_qos = rmw_qos_profile_system_default;
-    custom_qos.depth = 3;
-    img_sub_ = image_transport::create_subscription(
-      this,
-      "image",
-      std::bind(&ImageRotateNode::imageCallback, this, std::placeholders::_1),
-      "raw",
-      custom_qos);
-  }
-}
-
-void ImageRotateNode::unsubscribe()
-{
-  RCUTILS_LOG_DEBUG("Unsubscribing from image topic.");
-  img_sub_.shutdown();
-  cam_sub_.shutdown();
-}
-
-void ImageRotateNode::connectCb()
-{
-  if (subscriber_count_++ == 0) {
-    subscribe();
-  }
-}
-
-void ImageRotateNode::disconnectCb()
-{
-  subscriber_count_--;
-  if (subscriber_count_ == 0) {
-    unsubscribe();
-  }
-}
-
 void ImageRotateNode::onInit()
 {
   subscriber_count_ = 0;
@@ -343,18 +290,50 @@ void ImageRotateNode::onInit()
   rclcpp::Clock::SharedPtr clock = this->get_clock();
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(clock);
   tf_sub_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-  // TODO(yechun1): Implement when SubscriberStatusCallback is available
-  // image_transport::SubscriberStatusCallback connect_cb =
-  //   boost::bind(&ImageRotateNode::connectCb, this, _1);
-  // image_transport::SubscriberStatusCallback connect_cb =
-  //   std::bind(&CropForemostNode::connectCb, this);
-  // image_transport::SubscriberStatusCallback disconnect_cb =
-  //   boost::bind(&ImageRotateNode::disconnectCb, this, _1);
-  // img_pub_ = image_transport::ImageTransport(ros::NodeHandle(nh_, "rotated")).advertise(
-  //  "image", 1, connect_cb, disconnect_cb);
-  connectCb();
-  img_pub_ = image_transport::create_publisher(this, "rotated/image");
   tf_pub_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
+
+  // Create publisher with connect callback
+  rclcpp::PublisherOptions pub_options;
+  pub_options.event_callbacks.matched_callback =
+    [this](rclcpp::MatchedInfo &)
+    {
+      //std::lock_guard<std::mutex> lock(connect_mutex_);
+      if (img_pub_.getNumSubscribers() == 0) {
+        RCUTILS_LOG_DEBUG("Unsubscribing from image topic.");
+        img_sub_.shutdown();
+        cam_sub_.shutdown();
+      } else {
+        // For compressed topics to remap appropriately, we need to pass a
+        // fully expanded and remapped topic name to image_transport
+        auto node_base = this->get_node_base_interface();
+        std::string topic_name = node_base->resolve_topic_or_service_name("image", false);
+
+        RCUTILS_LOG_INFO("Subscribing to %s topic.", topic_name.c_str());
+
+        if (config_.use_camera_info && config_.input_frame_id.empty()) {
+          auto custom_qos = rmw_qos_profile_system_default;
+          custom_qos.depth = 3;
+          cam_sub_ = image_transport::create_camera_subscription(
+            this,
+            topic_name,
+            std::bind(
+              &ImageRotateNode::imageCallbackWithInfo, this,
+              std::placeholders::_1, std::placeholders::_2),
+            "raw",
+            custom_qos);
+        } else {
+          auto custom_qos = rmw_qos_profile_system_default;
+          custom_qos.depth = 3;
+          img_sub_ = image_transport::create_subscription(
+            this,
+            topic_name,
+            std::bind(&ImageRotateNode::imageCallback, this, std::placeholders::_1),
+            "raw",
+            custom_qos);
+        }
+      }
+    };
+  img_pub_ = image_transport::create_publisher(this, "rotated/image", rmw_qos_profile_default, pub_options);
 }
 }  // namespace image_rotate
 

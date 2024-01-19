@@ -82,10 +82,6 @@ private:
   void do_work(
     const sensor_msgs::msg::Image::ConstSharedPtr & msg,
     const std::string input_frame_from_msg);
-  void subscribe();
-  void unsubscribe();
-  void connectCb();
-  void disconnectCb();
   void onInit();
 
   rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
