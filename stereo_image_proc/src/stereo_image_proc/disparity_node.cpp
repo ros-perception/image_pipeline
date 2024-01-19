@@ -48,6 +48,7 @@
 
 #include <stereo_image_proc/stereo_processor.hpp>
 
+#include <image_transport/camera_common.hpp>
 #include <image_transport/image_transport.hpp>
 #include <image_transport/subscriber_filter.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -107,8 +108,6 @@ private:
   // contains scratch buffers for block matching
   stereo_image_proc::StereoProcessor block_matcher_;
 
-  void connectCb();
-
   void imageCb(
     const sensor_msgs::msg::Image::ConstSharedPtr & l_image_msg,
     const sensor_msgs::msg::CameraInfo::ConstSharedPtr & l_info_msg,
@@ -162,6 +161,9 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("disparity_node", options)
 {
   using namespace std::placeholders;
+
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
 
   // Declare/read parameters
   int queue_size = this->declare_parameter("queue_size", 5);
@@ -287,35 +289,58 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
   this->declare_parameters("", double_params);
   this->declare_parameters("", bool_params);
 
-  // Update the publisher options to allow reconfigurable qos settings.
+  // Publisher options to allow reconfigurable qos settings and connect callback
   rclcpp::PublisherOptions pub_opts;
   pub_opts.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
+  pub_opts.event_callbacks.matched_callback =
+    [this](rclcpp::MatchedInfo & s)
+    {
+      if (s.current_count == 0) {
+        sub_l_image_.unsubscribe();
+        sub_l_info_.unsubscribe();
+        sub_r_image_.unsubscribe();
+        sub_r_info_.unsubscribe();
+      } else if (!sub_l_image_.getSubscriber()) {
+        // Optionally switch between system/sensor defaults
+        // TODO(fergs): remove and conform to REP-2003?
+        const bool use_system_default_qos =
+          this->get_parameter("use_system_default_qos").as_bool();
+        rclcpp::QoS image_sub_qos = rclcpp::SensorDataQoS();
+        if (use_system_default_qos) {
+          image_sub_qos = rclcpp::SystemDefaultsQoS();
+        }
+        const auto image_sub_rmw_qos = image_sub_qos.get_rmw_qos_profile();
+        auto sub_opts = rclcpp::SubscriptionOptions();
+
+        // For compressed topics to remap appropriately, we need to pass a
+        // fully expanded and remapped topic name to image_transport
+        auto node_base = this->get_node_base_interface();
+        std::string left_topic =
+          node_base->resolve_topic_or_service_name("left/image_rect", false);
+        std::string right_topic =
+          node_base->resolve_topic_or_service_name("right/image_rect", false);
+        // Allow also remapping camera_info to something different than default
+        std::string left_info_topic =
+          node_base->resolve_topic_or_service_name(
+          image_transport::getCameraInfoTopic(left_topic), false);
+        std::string right_info_topic =
+          node_base->resolve_topic_or_service_name(
+          image_transport::getCameraInfoTopic(right_topic), false);
+
+        // Setup hints and QoS overrides
+        image_transport::TransportHints hints(this);
+        sub_opts.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
+
+        sub_l_image_.subscribe(
+          this, left_topic, hints.getTransport(), image_sub_rmw_qos, sub_opts);
+        sub_l_info_.subscribe(this, left_info_topic, image_sub_rmw_qos, sub_opts);
+        sub_r_image_.subscribe(
+          this, right_topic, hints.getTransport(), image_sub_rmw_qos, sub_opts);
+        sub_r_info_.subscribe(this, right_info_topic, image_sub_rmw_qos, sub_opts);
+      }
+    };
+
   pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>("disparity", 1, pub_opts);
-
-  // TODO(jacobperron): Replace this with a graph event.
-  //                    Only subscribe if there's a subscription listening to our publisher.
-  connectCb();
-}
-
-// Handles (un)subscribing when clients (un)subscribe
-void DisparityNode::connectCb()
-{
-  // TODO(jacobperron): Add unsubscribe logic when we use graph events
-  image_transport::TransportHints hints(this, "raw");
-  const bool use_system_default_qos = this->get_parameter("use_system_default_qos").as_bool();
-  rclcpp::QoS image_sub_qos = rclcpp::SensorDataQoS();
-  if (use_system_default_qos) {
-    image_sub_qos = rclcpp::SystemDefaultsQoS();
-  }
-  const auto image_sub_rmw_qos = image_sub_qos.get_rmw_qos_profile();
-  auto sub_opts = rclcpp::SubscriptionOptions();
-  sub_opts.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-  sub_l_image_.subscribe(
-    this, "left/image_rect", hints.getTransport(), image_sub_rmw_qos, sub_opts);
-  sub_l_info_.subscribe(this, "left/camera_info", image_sub_rmw_qos, sub_opts);
-  sub_r_image_.subscribe(
-    this, "right/image_rect", hints.getTransport(), image_sub_rmw_qos, sub_opts);
-  sub_r_info_.subscribe(this, "right/camera_info", image_sub_rmw_qos, sub_opts);
 }
 
 void DisparityNode::imageCb(
