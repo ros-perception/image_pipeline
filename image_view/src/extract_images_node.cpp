@@ -75,13 +75,15 @@ ExtractImagesNode::ExtractImagesNode(const rclcpp::NodeOptions & options)
   auto node_base = this->get_node_base_interface();
   std::string topic = node_base->resolve_topic_or_service_name("image", false);
 
-  this->declare_parameter<std::string>("transport", std::string("raw"));
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
+  image_transport::TransportHints hints(this);
   std::string transport = this->get_parameter("transport").as_string();
 
   sub_ = image_transport::create_subscription(
     this, topic, std::bind(
       &ExtractImagesNode::image_cb, this, std::placeholders::_1),
-    transport);
+    hints.getTransport());
 
   auto topics = this->get_topic_names_and_types();
 
