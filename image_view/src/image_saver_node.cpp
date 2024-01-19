@@ -71,6 +71,10 @@ namespace image_view
 ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("image_saver_node", options)
 {
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
+  image_transport::TransportHints hints(this);
+
   // For compressed topics to remap appropriately, we need to pass a
   // fully expanded and remapped topic name to image_transport
   auto node_base = this->get_node_base_interface();
@@ -80,13 +84,13 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
   cam_sub_ = image_transport::create_camera_subscription(
     this, topic, std::bind(
       &ImageSaverNode::callbackWithCameraInfo, this, std::placeholders::_1, std::placeholders::_2),
-    "raw");
+    hints.getTransport());
 
   // Useful when CameraInfo is not being published
   image_sub_ = image_transport::create_subscription(
     this, topic, std::bind(
       &ImageSaverNode::callbackWithoutCameraInfo, this, std::placeholders::_1),
-    "raw");
+    hints.getTransport());
 
   std::string format_string;
   format_string = this->declare_parameter("filename_format", std::string("left%04i.%s"));

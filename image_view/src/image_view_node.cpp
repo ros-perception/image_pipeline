@@ -104,15 +104,16 @@ cv_bridge::CvImageConstPtr ThreadSafeImage::pop()
 ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("image_view_node", options)
 {
-  auto transport = this->declare_parameter("image_transport", "raw");
-  RCLCPP_INFO(this->get_logger(), "Using transport \"%s\"", transport.c_str());
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
+  image_transport::TransportHints hints(this);
+  RCLCPP_INFO(this->get_logger(), "Using transport \"%s\"", hints.getTransport().c_str());
 
   // For compressed topics to remap appropriately, we need to pass a
   // fully expanded and remapped topic name to image_transport
   auto node_base = this->get_node_base_interface();
   std::string topic = node_base->resolve_topic_or_service_name("image", false);
 
-  image_transport::TransportHints hints(this, transport);
   pub_ = this->create_publisher<sensor_msgs::msg::Image>("output", 1);
   sub_ = image_transport::create_subscription(
     this, topic, std::bind(
