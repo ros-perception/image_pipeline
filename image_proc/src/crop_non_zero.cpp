@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <functional>
 #include <iterator>
+#include <string>
 #include <vector>
 
 #include "cv_bridge/cv_bridge.hpp"

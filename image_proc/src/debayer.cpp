@@ -32,6 +32,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 #include <opencv2/imgproc/imgproc.hpp>
 
