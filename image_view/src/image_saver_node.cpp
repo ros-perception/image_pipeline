@@ -48,6 +48,7 @@
 
 #include <chrono>
 #include <memory>
+#include <sstream>
 #include <string>
 
 #include "cv_bridge/cv_bridge.hpp"
@@ -89,6 +90,7 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
   format_string = this->declare_parameter("filename_format", std::string("left%04i.%s"));
   encoding_ = this->declare_parameter("encoding", std::string("bgr8"));
   save_all_image_ = this->declare_parameter("save_all_image", true);
+  stamped_filename_ = this->declare_parameter("stamped_filename", false);
   request_start_end_ = this->declare_parameter("request_start_end", false);
   g_format.parse(format_string);
 
@@ -142,6 +144,13 @@ bool ImageSaverNode::saveImage(
     }
 
     if (save_all_image_ || save_image_service_) {
+      if (stamped_filename_) {
+        std::stringstream ss;
+        ss << this->now().nanoseconds();
+        std::string timestamp_str = ss.str();
+        filename.insert(0, timestamp_str);
+      }
+
       if (cv::imwrite(filename, image)) {
         RCLCPP_INFO(this->get_logger(), "Saved image %s", filename.c_str());
       } else {
