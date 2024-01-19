@@ -185,6 +185,10 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
           node_base->resolve_topic_or_service_name("right/camera_info", false);
         std::string disparity_topic =
           node_base->resolve_topic_or_service_name("disparity", false);
+        // Allow also remapping camera_info to something different than default
+        std::string left_info_topic =
+          node_base->resolve_topic_or_service_name(
+            image_transport::getCameraInfoTopic(left_topic), false);
 
         // Setup hints and QoS overrides
         image_transport::TransportHints hints(this);
@@ -193,8 +197,7 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
 
         sub_l_image_.subscribe(
           this, left_topic, hints.getTransport(), image_sub_rmw_qos, sub_opts);
-        sub_l_info_.subscribe(
-          this, image_transport::getCameraInfoTopic(left_topic), image_sub_rmw_qos, sub_opts);
+        sub_l_info_.subscribe(this, left_info_topic, image_sub_rmw_qos, sub_opts);
         sub_r_info_.subscribe(this, right_topic, image_sub_rmw_qos, sub_opts);
         sub_disparity_.subscribe(this, disparity_topic, image_sub_rmw_qos, sub_opts);
       }

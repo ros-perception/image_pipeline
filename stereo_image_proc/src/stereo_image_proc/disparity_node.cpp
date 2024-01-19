@@ -319,6 +319,13 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
           node_base->resolve_topic_or_service_name("left/image_rect", false);
         std::string right_topic =
           node_base->resolve_topic_or_service_name("right/image_rect", false);
+        // Allow also remapping camera_info to something different than default
+        std::string left_info_topic =
+          node_base->resolve_topic_or_service_name(
+            image_transport::getCameraInfoTopic(left_topic), false);
+        std::string right_info_topic =
+          node_base->resolve_topic_or_service_name(
+            image_transport::getCameraInfoTopic(right_topic), false);
 
         // Setup hints and QoS overrides
         image_transport::TransportHints hints(this);
@@ -326,12 +333,10 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
 
         sub_l_image_.subscribe(
           this, left_topic, hints.getTransport(), image_sub_rmw_qos, sub_opts);
-        sub_l_info_.subscribe(
-          this, image_transport::getCameraInfoTopic(left_topic), image_sub_rmw_qos, sub_opts);
+        sub_l_info_.subscribe(this, left_info_topic, image_sub_rmw_qos, sub_opts);
         sub_r_image_.subscribe(
           this, right_topic, hints.getTransport(), image_sub_rmw_qos, sub_opts);
-        sub_r_info_.subscribe(
-          this, image_transport::getCameraInfoTopic(right_topic), image_sub_rmw_qos, sub_opts);
+        sub_r_info_.subscribe(this, right_info_topic, image_sub_rmw_qos, sub_opts);
       }
     };
 
