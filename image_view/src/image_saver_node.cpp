@@ -48,6 +48,7 @@
 
 #include <chrono>
 #include <memory>
+#include <sstream>
 #include <string>
 
 #include "cv_bridge/cv_bridge.hpp"
