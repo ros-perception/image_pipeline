@@ -42,7 +42,7 @@ VideoRecorderNode::VideoRecorderNode(const rclcpp::NodeOptions & options)
 
   filename = this->declare_parameter("filename", std::string("output.avi"));
   stamped_filename = this->declare_parameter("stamped_filename", false);
-  fps = this->declare_parameter("fps", 15);
+  fps = this->declare_parameter("fps", 15.0);
   codec = this->declare_parameter("codec", std::string("MJPG"));
   encoding = this->declare_parameter("encoding", std::string("bgr8"));
   // cv_bridge::CvtColorForDisplayOptions
@@ -108,7 +108,7 @@ void VideoRecorderNode::callback(const sensor_msgs::msg::Image::ConstSharedPtr &
 
     RCLCPP_INFO(
       this->get_logger(),
-      "Starting to record %s video at %ix%i@%i fps. Press Ctrl+C to stop recording.",
+      "Starting to record %s video at %ix%i@%.2f fps. Press Ctrl+C to stop recording.",
       codec.c_str(), size.height, size.width, fps);
   }
 
