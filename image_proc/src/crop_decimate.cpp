@@ -108,7 +108,13 @@ void decimate(const cv::Mat & src, cv::Mat & dst, int decimation_x, int decimati
 CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
 : Node("CropNonZeroNode", options)
 {
-  auto qos_profile = getTopicQosProfile(this, "in/image_raw");
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
+
+  // For compressed topics to remap appropriately, we need to pass a
+  // fully expanded and remapped topic name to image_transport
+  auto node_base = this->get_node_base_interface();
+  image_topic_ = node_base->resolve_topic_or_service_name("in/image_raw", false);
 
   queue_size_ = this->declare_parameter("queue_size", 5);
   target_frame_id_ = this->declare_parameter("target_frame_id", std::string());
@@ -135,13 +141,17 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
       if (pub_.getNumSubscribers() == 0) {
         sub_.shutdown();
       } else if (!sub_) {
-        auto qos_profile = getTopicQosProfile(this, "in/image_raw");
+        auto qos_profile = getTopicQosProfile(this, image_topic_);
+        image_transport::TransportHints hints(this);
         sub_ = image_transport::create_camera_subscription(
-          this, "in/image_raw", std::bind(
+          this, image_topic_, std::bind(
             &CropDecimateNode::imageCb, this,
-            std::placeholders::_1, std::placeholders::_2), "raw", qos_profile);
+            std::placeholders::_1, std::placeholders::_2), hints.getTransport(), qos_profile);
       }
     };
+
+  // Create publisher with same QoS as subscribed topic
+  auto qos_profile = getTopicQosProfile(this, image_topic_);
   pub_ = image_transport::create_camera_publisher(this, "out/image_raw", qos_profile, pub_options);
 }
 

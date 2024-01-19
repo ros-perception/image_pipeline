@@ -33,6 +33,7 @@
 #ifndef IMAGE_PROC__DEBAYER_HPP_
 #define IMAGE_PROC__DEBAYER_HPP_
 
+#include <string>
 #include <image_transport/image_transport.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
@@ -50,6 +51,7 @@ private:
   image_transport::Subscriber sub_raw_;
 
   int debayer_;
+  std::string image_topic_;
 
   int debayer_bilinear_ = 0;
   int debayer_edgeaware_ = 1;
