@@ -42,7 +42,7 @@ VideoRecorderNode::VideoRecorderNode(const rclcpp::NodeOptions & options)
 
   filename = this->declare_parameter("filename", std::string("output.avi"));
   stamped_filename = this->declare_parameter("stamped_filename", false);
-  fps = this->declare_parameter("fps", 15);
+  fps = this->declare_parameter("fps", 15.0);
   codec = this->declare_parameter("codec", std::string("MJPG"));
   encoding = this->declare_parameter("encoding", std::string("bgr8"));
   // cv_bridge::CvtColorForDisplayOptions
