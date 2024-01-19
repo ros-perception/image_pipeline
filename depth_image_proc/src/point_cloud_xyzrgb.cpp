@@ -207,11 +207,21 @@ void PointCloudXyzrgbNode::imageCb(
     green_offset = 1;
     blue_offset = 2;
     color_step = 3;
+  } else if (rgb_msg->encoding == sensor_msgs::image_encodings::RGBA8) {
+    red_offset = 0;
+    green_offset = 1;
+    blue_offset = 2;
+    color_step = 4;
   } else if (rgb_msg->encoding == sensor_msgs::image_encodings::BGR8) {
     red_offset = 2;
     green_offset = 1;
     blue_offset = 0;
     color_step = 3;
+  } else if (rgb_msg->encoding == sensor_msgs::image_encodings::BGRA8) {
+    red_offset = 2;
+    green_offset = 1;
+    blue_offset = 0;
+    color_step = 4;
   } else if (rgb_msg->encoding == sensor_msgs::image_encodings::MONO8) {
     red_offset = 0;
     green_offset = 0;
