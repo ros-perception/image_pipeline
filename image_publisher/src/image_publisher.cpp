@@ -49,8 +49,9 @@ namespace image_publisher
 
 using namespace std::chrono_literals;
 
-ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options,
-                               const std::string & filename)
+ImagePublisher::ImagePublisher(
+  const rclcpp::NodeOptions & options,
+  const std::string & filename)
 : rclcpp::Node("ImagePublisher", options)
 {
   // For compressed topics to remap appropriately, we need to pass a
@@ -70,35 +71,33 @@ ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options,
   auto param_change_callback =
     [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
     {
-      RCLCPP_INFO(get_logger(), "Updating parameters:");
-
       auto result = rcl_interfaces::msg::SetParametersResult();
       result.successful = true;
       for (auto parameter : parameters) {
         if (parameter.get_name() == "filename") {
           filename_ = parameter.as_string();
-          RCLCPP_INFO(get_logger(), "Update filename to '%s'", filename_.c_str());
+          RCLCPP_INFO(get_logger(), "Reset filename as '%s'", filename_.c_str());
           ImagePublisher::onInit();
           return result;
         } else if (parameter.get_name() == "flip_horizontal") {
           flip_horizontal_ = parameter.as_bool();
-          RCLCPP_INFO(get_logger(), "Update flip_horizontal to '%d'", flip_horizontal_);
+          RCLCPP_INFO(get_logger(), "Reset flip_horizontal as '%d'", flip_horizontal_);
           ImagePublisher::onInit();
           return result;
         } else if (parameter.get_name() == "flip_vertical") {
           flip_vertical_ = parameter.as_bool();
-          RCLCPP_INFO(get_logger(), "Update flip_vertical to '%d'", flip_vertical_);
+          RCLCPP_INFO(get_logger(), "Reset flip_vertical as '%d'", flip_vertical_);
           ImagePublisher::onInit();
           return result;
         } else if (parameter.get_name() == "frame_id") {
           frame_id_ = parameter.as_string();
-          RCLCPP_INFO(get_logger(), "Update frame_id to '%s'", frame_id_.c_str());
+          RCLCPP_INFO(get_logger(), "Reset frame_id as '%s'", frame_id_.c_str());
         } else if (parameter.get_name() == "publish_rate") {
           publish_rate_ = parameter.as_double();
-          RCLCPP_INFO(get_logger(), "Update publish_rate to '%lf'", publish_rate_);
+          RCLCPP_INFO(get_logger(), "Reset publish_rate as '%lf'", publish_rate_);
         } else if (parameter.get_name() == "camera_info_url") {
           camera_info_url_ = parameter.as_string();
-          RCLCPP_INFO(get_logger(), "Update camera_info_url to '%s'", camera_info_url_.c_str());
+          RCLCPP_INFO(get_logger(), "Reset camera_info_url as '%s'", camera_info_url_.c_str());
         }
       }
       ImagePublisher::reconfigureCallback();
