@@ -11,13 +11,14 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake_auto REQUIRED)
+find_package(camera_info_manager REQUIRED)
 ament_auto_find_build_dependencies()
 
 find_package(OpenCV REQUIRED COMPONENTS core imgcodecs videoio)
 message(STATUS "opencv version ${OpenCV_VERSION}")
 
 ament_auto_add_library(image_publisher SHARED src/image_publisher.cpp)
-target_link_libraries(image_publisher ${OpenCV_LIBRARIES})
+target_link_libraries(image_publisher ${OpenCV_LIBRARIES} camera_info_manager::camera_info_manager)
 rclcpp_components_register_nodes(image_publisher "${PROJECT_NAME}::ImagePublisher")
 set(node_plugins "${node_plugins}${PROJECT_NAME}::ImagePublisher;$<TARGET_FILE:ImagePublisher>\n")
 
