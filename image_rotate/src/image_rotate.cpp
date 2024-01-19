@@ -46,7 +46,8 @@ int main(int argc, char ** argv)
   }
 
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<image_rotate::ImageRotateNode>();
+  rclcpp::NodeOptions options;
+  auto node = std::make_shared<image_rotate::ImageRotateNode>(options);
 
   rclcpp::spin(node);
   rclcpp::shutdown();
