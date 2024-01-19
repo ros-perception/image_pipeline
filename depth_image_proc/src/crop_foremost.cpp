@@ -32,6 +32,7 @@
 
 #include <functional>
 #include <mutex>
+#include <string>
 
 #include "cv_bridge/cv_bridge.hpp"
 #include "depth_image_proc/visibility.h"
@@ -68,6 +69,9 @@ private:
 CropForemostNode::CropForemostNode(const rclcpp::NodeOptions & options)
 : Node("CropForemostNode", options)
 {
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
+
   distance_ = this->declare_parameter("distance", 0.0);
 
   // Create publisher with connect callback
@@ -79,9 +83,14 @@ CropForemostNode::CropForemostNode(const rclcpp::NodeOptions & options)
       if (pub_depth_.getNumSubscribers() == 0) {
         sub_raw_.shutdown();
       } else if (!sub_raw_) {
-        image_transport::TransportHints hints(this, "raw");
+        // For compressed topics to remap appropriately, we need to pass a
+        // fully expanded and remapped topic name to image_transport
+        auto node_base = this->get_node_base_interface();
+        std::string topic = node_base->resolve_topic_or_service_name("image_raw", false);
+        // Get transport hints
+        image_transport::TransportHints hints(this);
         sub_raw_ = image_transport::create_subscription(
-          this, "image_raw",
+          this, topic,
           std::bind(&CropForemostNode::depthCb, this, std::placeholders::_1),
           hints.getTransport());
       }

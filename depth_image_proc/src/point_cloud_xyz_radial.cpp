@@ -33,6 +33,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <string>
 
 #include "image_geometry/pinhole_camera_model.hpp"
 
@@ -46,10 +47,12 @@
 namespace depth_image_proc
 {
 
-
 PointCloudXyzRadialNode::PointCloudXyzRadialNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("PointCloudXyzRadialNode", options)
 {
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
+
   // Read parameters
   queue_size_ = this->declare_parameter<int>("queue_size", 5);
 
@@ -62,16 +65,22 @@ PointCloudXyzRadialNode::PointCloudXyzRadialNode(const rclcpp::NodeOptions & opt
       if (s.current_count == 0) {
         sub_depth_.shutdown();
       } else if (!sub_depth_) {
+        // For compressed topics to remap appropriately, we need to pass a
+        // fully expanded and remapped topic name to image_transport
+        auto node_base = this->get_node_base_interface();
+        std::string topic = node_base->resolve_topic_or_service_name("image_raw", false);
+        // Get transport and QoS
+        image_transport::TransportHints hints(this);
         auto custom_qos = rmw_qos_profile_system_default;
         custom_qos.depth = queue_size_;
-
+        // Create subscriber
         sub_depth_ = image_transport::create_camera_subscription(
           this,
-          "image_raw",
+          topic,
           std::bind(
             &PointCloudXyzRadialNode::depthCb, this, std::placeholders::_1,
             std::placeholders::_2),
-          "raw",
+          hints.getTransport(),
           custom_qos);
       }
     };

@@ -50,10 +50,13 @@
 namespace depth_image_proc
 {
 
-
 PointCloudXyziNode::PointCloudXyziNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("PointCloudXyziNode", options)
 {
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
+  this->declare_parameter<std::string>("depth_image_transport", "raw");
+
   // Read parameters
   int queue_size = this->declare_parameter<int>("queue_size", 5);
 
@@ -82,16 +85,21 @@ PointCloudXyziNode::PointCloudXyziNode(const rclcpp::NodeOptions & options)
         sub_intensity_.unsubscribe();
         sub_info_.unsubscribe();
       } else if (!sub_depth_.getSubscriber()) {
-        // parameter for depth_image_transport hint
-        std::string depth_image_transport_param = "depth_image_transport";
+        // For compressed topics to remap appropriately, we need to pass a
+        // fully expanded and remapped topic name to image_transport
+        auto node_base = this->get_node_base_interface();
+        std::string depth_topic =
+          node_base->resolve_topic_or_service_name("depth/image_rect", false);
+        std::string intensity_topic =
+          node_base->resolve_topic_or_service_name("intensity/image_rect", false);
 
         // depth image can use different transport.(e.g. compressedDepth)
-        image_transport::TransportHints depth_hints(this, "raw", depth_image_transport_param);
-        sub_depth_.subscribe(this, "depth/image_rect", depth_hints.getTransport());
+        image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
+        sub_depth_.subscribe(this, depth_topic, depth_hints.getTransport());
 
         // intensity uses normal ros transport hints.
         image_transport::TransportHints hints(this, "raw");
-        sub_intensity_.subscribe(this, "intensity/image_rect", hints.getTransport());
+        sub_intensity_.subscribe(this, intensity_topic, hints.getTransport());
         sub_info_.subscribe(this, "intensity/camera_info");
       }
     };

@@ -34,6 +34,7 @@
 #include <limits>
 #include <memory>
 #include <mutex>
+#include <string>
 
 #include "depth_image_proc/visibility.h"
 #include "message_filters/subscriber.h"
@@ -82,6 +83,9 @@ private:
 DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("DisparityNode", options)
 {
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
+
   // Read parameters
   int queue_size = this->declare_parameter<int>("queue_size", 5);
   min_range_ = this->declare_parameter<double>("min_range", 0.0);
@@ -106,8 +110,12 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
         sub_depth_image_.unsubscribe();
         sub_info_.unsubscribe();
       } else if (!sub_depth_image_.getSubscriber()) {
-        image_transport::TransportHints hints(this, "raw");
-        sub_depth_image_.subscribe(this, "left/image_rect", hints.getTransport());
+        // For compressed topics to remap appropriately, we need to pass a
+        // fully expanded and remapped topic name to image_transport
+        auto node_base = this->get_node_base_interface();
+        std::string topic = node_base->resolve_topic_or_service_name("left/image_rect", false);
+        image_transport::TransportHints hints(this);
+        sub_depth_image_.subscribe(this, topic, hints.getTransport());
         sub_info_.subscribe(this, "right/camera_info");
       }
     };
