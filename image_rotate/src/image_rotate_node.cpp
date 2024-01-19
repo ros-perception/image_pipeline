@@ -267,7 +267,8 @@ void ImageRotateNode::do_work(
     out_img->header.frame_id = transform.child_frame_id;
     img_pub_.publish(out_img);
   } catch (const cv::Exception & e) {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(
+      get_logger(),
       "Image processing error: %s %s %s %i",
       e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
   }
@@ -290,7 +291,6 @@ void ImageRotateNode::onInit()
   pub_options.event_callbacks.matched_callback =
     [this](rclcpp::MatchedInfo &)
     {
-      //std::lock_guard<std::mutex> lock(connect_mutex_);
       if (img_pub_.getNumSubscribers() == 0) {
         RCLCPP_DEBUG(get_logger(), "Unsubscribing from image topic.");
         img_sub_.shutdown();
@@ -304,7 +304,8 @@ void ImageRotateNode::onInit()
         // Check that remapping appears to be correct
         auto topics = this->get_topic_names_and_types();
         if (topics.find(topic_name) == topics.end()) {
-          RCLCPP_WARN(get_logger(),
+          RCLCPP_WARN(
+            get_logger(),
             "Topic %s is not connected! Typical command-line usage:\n"
             "\t$ ros2 run image_rotate image_rotate --ros-args -r image:=<image topic>",
             topic_name.c_str());
@@ -335,7 +336,8 @@ void ImageRotateNode::onInit()
         }
       }
     };
-  img_pub_ = image_transport::create_publisher(this, "rotated/image", rmw_qos_profile_default, pub_options);
+  img_pub_ = image_transport::create_publisher(
+    this, "rotated/image", rmw_qos_profile_default, pub_options);
 }
 }  // namespace image_rotate
 
