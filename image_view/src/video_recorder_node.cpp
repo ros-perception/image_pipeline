@@ -111,7 +111,7 @@ void VideoRecorderNode::callback(const sensor_msgs::msg::Image::ConstSharedPtr &
 
     RCLCPP_INFO(
       this->get_logger(),
-      "Starting to record %s video at %ix%i@%i fps. Press Ctrl+C to stop recording.",
+      "Starting to record %s video at %ix%i@%.2f fps. Press Ctrl+C to stop recording.",
       codec.c_str(), size.height, size.width, fps);
   }
 
