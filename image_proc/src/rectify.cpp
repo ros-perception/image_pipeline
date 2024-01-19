@@ -32,6 +32,7 @@
 
 #include <functional>
 #include <mutex>
+#include <string>
 
 #include "cv_bridge/cv_bridge.hpp"
 #include "tracetools_image_pipeline/tracetools.h"
@@ -51,9 +52,16 @@ namespace image_proc
 RectifyNode::RectifyNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("RectifyNode", options)
 {
-  auto qos_profile = getTopicQosProfile(this, "image");
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
+
+  // For compressed topics to remap appropriately, we need to pass a
+  // fully expanded and remapped topic name to image_transport
+  auto node_base = this->get_node_base_interface();
+  image_topic_ = node_base->resolve_topic_or_service_name("image", false);
+
   queue_size_ = this->declare_parameter("queue_size", 5);
-  interpolation = this->declare_parameter("interpolation", 1);
+  interpolation_ = this->declare_parameter("interpolation", 1);
 
   // Create publisher with connect callback
   rclcpp::PublisherOptions pub_options;
@@ -63,13 +71,17 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions & options)
       if (pub_rect_.getNumSubscribers() == 0) {
         sub_camera_.shutdown();
       } else if (!sub_camera_) {
-        auto qos_profile = getTopicQosProfile(this, "image");
+        auto qos_profile = getTopicQosProfile(this, image_topic_);
+        image_transport::TransportHints hints(this);
         sub_camera_ = image_transport::create_camera_subscription(
-          this, "image", std::bind(
+          this, image_topic_, std::bind(
             &RectifyNode::imageCb,
-            this, std::placeholders::_1, std::placeholders::_2), "raw", qos_profile);
+            this, std::placeholders::_1, std::placeholders::_2), hints.getTransport(), qos_profile);
       }
     };
+
+  // Create publisher with same QoS as subscribed topic
+  auto qos_profile = getTopicQosProfile(this, image_topic_);
   pub_rect_ = image_transport::create_publisher(this, "image_rect", qos_profile, pub_options);
 }
 
@@ -135,7 +147,7 @@ void RectifyNode::imageCb(
   cv::Mat rect;
 
   // Rectify and publish
-  model_.rectifyImage(image, rect, interpolation);
+  model_.rectifyImage(image, rect, interpolation_);
 
   // Allocate new rectified image message
   sensor_msgs::msg::Image::SharedPtr rect_msg =

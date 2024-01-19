@@ -34,6 +34,7 @@
 #define IMAGE_PROC__RECTIFY_HPP_
 
 #include <mutex>
+#include <string>
 
 #include "image_geometry/pinhole_camera_model.hpp"
 
@@ -55,7 +56,8 @@ private:
   image_transport::CameraSubscriber sub_camera_;
 
   int queue_size_;
-  int interpolation;
+  int interpolation_;
+  std::string image_topic_;
   image_transport::Publisher pub_rect_;
 
   // Processing state (note: only safe because we're using single-threaded NodeHandle!)
