@@ -157,6 +157,8 @@ void PointCloudXyziRadialNode::imageCb(
     convertIntensity<uint16_t>(intensity_msg, cloud_msg);
   } else if (intensity_msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
     convertIntensity<uint16_t>(intensity_msg, cloud_msg);
+  } else if (intensity_msg->encoding == sensor_msgs::image_encodings::TYPE_32FC1) {
+    convertIntensity<float>(intensity_msg, cloud_msg);
   } else {
     RCLCPP_ERROR(
       get_logger(), "Intensity image has unsupported encoding [%s]",
