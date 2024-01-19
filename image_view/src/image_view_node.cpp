@@ -259,7 +259,7 @@ void ImageViewNode::windowThread()
     }
   }
 
-  cv::destroyWindow(window_name_);
+  cv::destroyAllWindows();
 
   if (rclcpp::ok()) {
     rclcpp::shutdown();
