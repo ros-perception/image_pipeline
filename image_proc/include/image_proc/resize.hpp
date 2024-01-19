@@ -34,6 +34,7 @@
 #define IMAGE_PROC__RESIZE_HPP_
 
 #include <mutex>
+#include <string>
 
 #include <image_transport/image_transport.hpp>
 #include <rclcpp/rclcpp.hpp>
