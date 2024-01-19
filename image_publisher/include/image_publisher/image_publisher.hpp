@@ -46,7 +46,8 @@ namespace image_publisher
 class ImagePublisher : public rclcpp::Node
 {
 public:
-  explicit ImagePublisher(const rclcpp::NodeOptions & options);
+  explicit ImagePublisher(const rclcpp::NodeOptions & options,
+                          const std::string & filename = "");
 
 protected:
   void onInit();
