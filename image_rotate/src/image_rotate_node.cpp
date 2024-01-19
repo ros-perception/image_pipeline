@@ -128,6 +128,9 @@ ImageRotateNode::ImageRotateNode(const rclcpp::NodeOptions & options)
   config_.max_angular_rate = this->declare_parameter("max_angular_rate", 10.0);
   config_.output_image_size = this->declare_parameter("output_image_size", 2.0);
 
+  // Allow overriding the SUBSCRIBER transport
+  config_.transport = this->declare_parameter("image_transport", "raw");
+
   onInit();
 }
 
@@ -319,7 +322,7 @@ void ImageRotateNode::onInit()
             std::bind(
               &ImageRotateNode::imageCallbackWithInfo, this,
               std::placeholders::_1, std::placeholders::_2),
-            "raw",
+            config_.transport,
             custom_qos);
         } else {
           auto custom_qos = rmw_qos_profile_system_default;
@@ -328,7 +331,7 @@ void ImageRotateNode::onInit()
             this,
             topic_name,
             std::bind(&ImageRotateNode::imageCallback, this, std::placeholders::_1),
-            "raw",
+            config_.transport,
             custom_qos);
         }
       }
