@@ -39,6 +39,7 @@
 
 #include <depth_image_proc/conversions.hpp>
 #include <depth_image_proc/point_cloud_xyzrgb.hpp>
+#include <image_transport/camera_common.hpp>
 #include <image_transport/image_transport.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -47,10 +48,13 @@
 namespace depth_image_proc
 {
 
-
 PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("PointCloudXyzrgbNode", options)
 {
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
+  this->declare_parameter<std::string>("depth_image_transport", "raw");
+
   // Read parameters
   int queue_size = this->declare_parameter<int>("queue_size", 5);
   bool use_exact_sync = this->declare_parameter<bool>("exact_sync", false);
@@ -91,9 +95,20 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
         sub_rgb_.unsubscribe();
         sub_info_.unsubscribe();
       } else if (!sub_depth_.getSubscriber()) {
+        // For compressed topics to remap appropriately, we need to pass a
+        // fully expanded and remapped topic name to image_transport
+        auto node_base = this->get_node_base_interface();
+        std::string depth_topic =
+          node_base->resolve_topic_or_service_name("depth_registered/image_rect", false);
+        std::string rgb_topic =
+          node_base->resolve_topic_or_service_name("rgb/image_rect_color", false);
+        // Allow also remapping camera_info to something different than default
+        std::string rgb_info_topic =
+          node_base->resolve_topic_or_service_name(
+          image_transport::getCameraInfoTopic(rgb_topic), false);
+
         // parameter for depth_image_transport hint
-        std::string depth_image_transport_param = "depth_image_transport";
-        image_transport::TransportHints depth_hints(this, "raw", depth_image_transport_param);
+        image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
 
         rclcpp::SubscriptionOptions sub_opts;
         // Update the subscription options to allow reconfigurable qos settings.
@@ -108,15 +123,15 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
 
         // depth image can use different transport.(e.g. compressedDepth)
         sub_depth_.subscribe(
-          this, "depth_registered/image_rect",
+          this, depth_topic,
           depth_hints.getTransport(), rmw_qos_profile_default, sub_opts);
 
         // rgb uses normal ros transport hints.
-        image_transport::TransportHints hints(this, "raw");
+        image_transport::TransportHints hints(this);
         sub_rgb_.subscribe(
-          this, "rgb/image_rect_color",
+          this, rgb_topic,
           hints.getTransport(), rmw_qos_profile_default, sub_opts);
-        sub_info_.subscribe(this, "rgb/camera_info");
+        sub_info_.subscribe(this, rgb_info_topic);
       }
     };
   pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SensorDataQoS(), pub_options);
