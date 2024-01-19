@@ -26,16 +26,18 @@ target_link_libraries(${PROJECT_NAME}
   ${OpenCV_LIBRARIES}
 )
 
-# rectify library
+# rectify component and node
 ament_auto_add_library(rectify SHARED
   src/rectify.cpp)
 target_compile_definitions(rectify
   PRIVATE "COMPOSITION_BUILDING_DLL"
 )
-rclcpp_components_register_nodes(rectify "image_proc::RectifyNode")
-set(node_plugins "${node_plugins}image_proc::RectifyNode;$<TARGET_FILE:rectify>\n")
+rclcpp_components_register_node(rectify
+  PLUGIN "image_proc::RectifyNode"
+  EXECUTABLE rectify_node
+)
 
-# debayer library
+# debayer component and node
 ament_auto_add_library(debayer SHARED
   src/debayer.cpp
   src/edge_aware.cpp
@@ -43,38 +45,46 @@ ament_auto_add_library(debayer SHARED
 target_compile_definitions(debayer
   PRIVATE "COMPOSITION_BUILDING_DLL"
 )
-rclcpp_components_register_nodes(debayer "image_proc::DebayerNode")
-set(node_plugins "${node_plugins}image_proc::DebayerNode;$<TARGET_FILE:debayer>\n")
+rclcpp_components_register_node(debayer
+  PLUGIN "image_proc::DebayerNode"
+  EXECUTABLE debayer_node
+)
 
-# resize library
+# resize component and node
 ament_auto_add_library(resize SHARED
   src/resize.cpp
 )
 target_compile_definitions(resize
   PRIVATE "COMPOSITION_BUILDING_DLL"
 )
-rclcpp_components_register_nodes(resize "image_proc::ResizeNode")
-set(node_plugins "${node_plugins}image_proc::ResizeNode;$<TARGET_FILE:resize>\n")
+rclcpp_components_register_node(resize
+  PLUGIN "image_proc::ResizeNode"
+  EXECUTABLE resize_node
+)
 
-# crop_decimate library
+# crop_decimate component and node
 ament_auto_add_library(crop_decimate SHARED
   src/crop_decimate.cpp
 )
 target_compile_definitions(crop_decimate
   PRIVATE "COMPOSITION_BUILDING_DLL"
 )
-rclcpp_components_register_nodes(crop_decimate "image_proc::CropDecimateNode")
-set(node_plugins "${node_plugins}image_proc::CropDecimateNode;$<TARGET_FILE:crop_decimate>\n")
+rclcpp_components_register_node(crop_decimate
+  PLUGIN "image_proc::CropDecimateNode"
+  EXECUTABLE crop_decimate_node
+)
 
-# crop_non_zero library
+# crop_non_zero component and node
 ament_auto_add_library(crop_non_zero SHARED
   src/crop_non_zero.cpp
 )
 target_compile_definitions(crop_non_zero
   PRIVATE "COMPOSITION_BUILDING_DLL"
 )
-rclcpp_components_register_nodes(crop_non_zero "image_proc::CropNonZeroNode")
-set(node_plugins "${node_plugins}image_proc::CropNonZeroNode;$<TARGET_FILE:crop_non_zero>\n")
+rclcpp_components_register_node(crop_non_zero
+  PLUGIN "image_proc::CropNonZeroNode"
+  EXECUTABLE crop_non_zero_node
+)
 
 # image_proc example node
 ament_auto_add_executable(image_proc_exe
