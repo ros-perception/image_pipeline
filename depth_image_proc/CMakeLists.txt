@@ -36,17 +36,46 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
   src/register.cpp
 )
 
-rclcpp_components_register_nodes(${PROJECT_NAME}
-  "${PROJECT_NAME}::ConvertMetricNode"
-  "${PROJECT_NAME}::CropForemostNode"
-  "${PROJECT_NAME}::DisparityNode"
-  "${PROJECT_NAME}::PointCloudXyzNode"
-  "${PROJECT_NAME}::PointCloudXyzRadialNode"
-  "${PROJECT_NAME}::PointCloudXyziNode"
-  "${PROJECT_NAME}::PointCloudXyziRadialNode"
-  "${PROJECT_NAME}::PointCloudXyzrgbNode"
-  "${PROJECT_NAME}::PointCloudXyzrgbRadialNode"
-  "${PROJECT_NAME}::RegisterNode"
+# Register individual components and also build standalone nodes for each
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "depth_image_proc::ConvertMetricNode"
+  EXECUTABLE convert_metric_node
+)
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "depth_image_proc::CropForemostNode"
+  EXECUTABLE crop_foremost_node
+)
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "depth_image_proc::DisparityNode"
+  EXECUTABLE disparity_node
+)
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "depth_image_proc::PointCloudXyzNode"
+  EXECUTABLE point_cloud_xyz_node
+)
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "depth_image_proc::PointCloudXyzrgbNode"
+  EXECUTABLE point_cloud_xyzrgb_node
+)
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "depth_image_proc::PointCloudXyziNode"
+  EXECUTABLE point_cloud_xyzi_node
+)
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "depth_image_proc::PointCloudXyzRadialNode"
+  EXECUTABLE point_cloud_xyz_radial_node
+)
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "depth_image_proc::PointCloudXyziRadialNode"
+  EXECUTABLE point_cloud_xyzi_radial_node
+)
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "depth_image_proc::PointCloudXyziRadialNode"
+  EXECUTABLE point_cloud_xyzrgb_radial_node
+)
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "depth_image_proc::RegisterNode"
+  EXECUTABLE register_node
 )
 
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})

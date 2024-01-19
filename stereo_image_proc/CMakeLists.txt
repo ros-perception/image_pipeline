@@ -26,6 +26,7 @@ target_link_libraries(${PROJECT_NAME}
   ${OpenCV_LIBRARIES}
 )
 
+# Register individual components and also build standalone nodes for each
 rclcpp_components_register_node(${PROJECT_NAME}
   PLUGIN "stereo_image_proc::DisparityNode"
   EXECUTABLE disparity_node
