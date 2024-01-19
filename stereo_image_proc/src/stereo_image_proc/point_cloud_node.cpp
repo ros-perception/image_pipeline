@@ -188,7 +188,7 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
         // Allow also remapping camera_info to something different than default
         std::string left_info_topic =
           node_base->resolve_topic_or_service_name(
-            image_transport::getCameraInfoTopic(left_topic), false);
+          image_transport::getCameraInfoTopic(left_topic), false);
 
         // Setup hints and QoS overrides
         image_transport::TransportHints hints(this);
