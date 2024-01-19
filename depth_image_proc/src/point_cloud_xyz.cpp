@@ -53,7 +53,7 @@ PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
 : Node("PointCloudXyzNode", options)
 {
   // TransportHints does not actually declare the parameter
-  this->declare_parameter<std::string>("image_transport", "raw");
+  this->declare_parameter<std::string>("depth_image_transport", "raw");
 
   // Read parameters
   queue_size_ = this->declare_parameter<int>("queue_size", 5);
@@ -73,7 +73,7 @@ PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
         std::string topic = node_base->resolve_topic_or_service_name("image_rect", false);
 
         // Get transport and QoS
-        image_transport::TransportHints hints(this);
+        image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
         auto custom_qos = rmw_qos_profile_system_default;
         custom_qos.depth = queue_size_;
 
@@ -83,7 +83,7 @@ PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
           std::bind(
             &PointCloudXyzNode::depthCb, this, std::placeholders::_1,
             std::placeholders::_2),
-          hints.getTransport(),
+          depth_hints.getTransport(),
           custom_qos);
       }
     };

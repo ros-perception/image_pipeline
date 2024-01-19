@@ -95,8 +95,12 @@ CropForemostNode::CropForemostNode(const rclcpp::NodeOptions & options)
           hints.getTransport());
       }
     };
+  // For compressed topics to remap appropriately, we need to pass a
+  // fully expanded and remapped topic name to image_transport
+  auto node_base = this->get_node_base_interface();
+  std::string topic = node_base->resolve_topic_or_service_name("image", false);
   pub_depth_ =
-    image_transport::create_publisher(this, "image", rmw_qos_profile_default, pub_options);
+    image_transport::create_publisher(this, topic, rmw_qos_profile_default, pub_options);
 }
 
 void CropForemostNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)

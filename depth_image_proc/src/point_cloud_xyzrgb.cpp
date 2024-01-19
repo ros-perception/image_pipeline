@@ -39,6 +39,7 @@
 
 #include <depth_image_proc/conversions.hpp>
 #include <depth_image_proc/point_cloud_xyzrgb.hpp>
+#include <image_transport/camera_common.hpp>
 #include <image_transport/image_transport.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -101,6 +102,10 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
           node_base->resolve_topic_or_service_name("depth_registered/image_rect", false);
         std::string rgb_topic =
           node_base->resolve_topic_or_service_name("rgb/image_rect_color", false);
+        // Allow also remapping camera_info to something different than default
+        std::string rgb_info_topic =
+          node_base->resolve_topic_or_service_name(
+          image_transport::getCameraInfoTopic(rgb_topic), false);
 
         // parameter for depth_image_transport hint
         image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
@@ -126,7 +131,7 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
         sub_rgb_.subscribe(
           this, rgb_topic,
           hints.getTransport(), rmw_qos_profile_default, sub_opts);
-        sub_info_.subscribe(this, "rgb/camera_info");
+        sub_info_.subscribe(this, rgb_info_topic);
       }
     };
   pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SensorDataQoS(), pub_options);
