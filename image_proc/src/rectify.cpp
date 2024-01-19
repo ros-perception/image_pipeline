@@ -32,6 +32,7 @@
 
 #include <functional>
 #include <mutex>
+#include <string>
 
 #include "cv_bridge/cv_bridge.hpp"
 #include "tracetools_image_pipeline/tracetools.h"
