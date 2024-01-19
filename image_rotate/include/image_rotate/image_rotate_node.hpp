@@ -66,7 +66,6 @@ struct ImageRotateConfig
   bool use_camera_info;
   double max_angular_rate;
   double output_image_size;
-  std::string transport;
 };
 
 class ImageRotateNode : public rclcpp::Node

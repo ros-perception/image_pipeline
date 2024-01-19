@@ -128,8 +128,8 @@ ImageRotateNode::ImageRotateNode(const rclcpp::NodeOptions & options)
   config_.max_angular_rate = this->declare_parameter("max_angular_rate", 10.0);
   config_.output_image_size = this->declare_parameter("output_image_size", 2.0);
 
-  // Allow overriding the SUBSCRIBER transport
-  config_.transport = this->declare_parameter("image_transport", "raw");
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
 
   onInit();
 }
@@ -300,6 +300,7 @@ void ImageRotateNode::onInit()
         // fully expanded and remapped topic name to image_transport
         auto node_base = this->get_node_base_interface();
         std::string topic_name = node_base->resolve_topic_or_service_name("image", false);
+        RCLCPP_INFO(get_logger(), "Subscribing to %s topic.", topic_name.c_str());
 
         // Check that remapping appears to be correct
         auto topics = this->get_topic_names_and_types();
@@ -311,7 +312,8 @@ void ImageRotateNode::onInit()
             topic_name.c_str());
         }
 
-        RCLCPP_INFO(get_logger(), "Subscribing to %s topic.", topic_name.c_str());
+        // This will check image_transport parameter to get proper transport
+        image_transport::TransportHints transport_hint(this, "raw");
 
         if (config_.use_camera_info && config_.input_frame_id.empty()) {
           auto custom_qos = rmw_qos_profile_system_default;
@@ -322,7 +324,7 @@ void ImageRotateNode::onInit()
             std::bind(
               &ImageRotateNode::imageCallbackWithInfo, this,
               std::placeholders::_1, std::placeholders::_2),
-            config_.transport,
+            transport_hint.getTransport(),
             custom_qos);
         } else {
           auto custom_qos = rmw_qos_profile_system_default;
@@ -331,7 +333,7 @@ void ImageRotateNode::onInit()
             this,
             topic_name,
             std::bind(&ImageRotateNode::imageCallback, this, std::placeholders::_1),
-            config_.transport,
+            transport_hint.getTransport(),
             custom_qos);
         }
       }
