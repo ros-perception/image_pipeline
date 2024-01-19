@@ -41,6 +41,7 @@ private:
   static unsigned char colormap[];
 
   std::string window_name_;
+  bool autosize_;
   rclcpp::Subscription<stereo_msgs::msg::DisparityImage>::SharedPtr sub_;
   cv::Mat_<cv::Vec3b> disparity_color_;
   bool initialized;
