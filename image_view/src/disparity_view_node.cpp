@@ -88,7 +88,7 @@ DisparityViewNode::DisparityViewNode(const rclcpp::NodeOptions & options)
 
 DisparityViewNode::~DisparityViewNode()
 {
-  cv::destroyWindow(window_name_);
+  cv::destroyAllWindows();
 }
 
 void DisparityViewNode::imageCb(const stereo_msgs::msg::DisparityImage::SharedPtr msg)
