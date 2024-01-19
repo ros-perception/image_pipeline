@@ -59,6 +59,7 @@ protected:
   double scale_width_;
   int height_;
   int width_;
+  std::string image_topic_;
 
   cv_bridge::CvImage scaled_cv_;
 
