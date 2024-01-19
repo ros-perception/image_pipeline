@@ -52,14 +52,34 @@ namespace image_proc
 CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions & options)
 : Node("CropNonZeroNode", options)
 {
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
+
+  // For compressed topics to remap appropriately, we need to pass a
+  // fully expanded and remapped topic name to image_transport
+  auto node_base = this->get_node_base_interface();
+  image_topic_ = node_base->resolve_topic_or_service_name("image_raw", false);
+
+  // Create image pub with connection callback
+  rclcpp::PublisherOptions pub_options;
+  pub_options.event_callbacks.matched_callback =
+    [this](rclcpp::MatchedInfo &)
+    {
+      if (pub_.getNumSubscribers() == 0) {
+        sub_raw_.shutdown();
+      } else if (!sub_raw_) {
+        auto qos_profile = getTopicQosProfile(this, image_topic_);
+        image_transport::TransportHints hints(this);
+        sub_raw_ = image_transport::create_subscription(
+          this, image_topic_, std::bind(
+            &CropNonZeroNode::imageCb, this,
+            std::placeholders::_1), hints.getTransport(), qos_profile);
+      }
+    };
+
+  // Create publisher with same QoS as subscribed topic
   auto qos_profile = getTopicQosProfile(this, "image_raw");
-  pub_ = image_transport::create_publisher(this, "image", qos_profile);
-  RCLCPP_INFO(this->get_logger(), "subscribe: %s", "image_raw");
-  sub_raw_ = image_transport::create_subscription(
-    this, "image_raw",
-    std::bind(
-      &CropNonZeroNode::imageCb,
-      this, std::placeholders::_1), "raw", qos_profile);
+  pub_ = image_transport::create_publisher(this, "image", qos_profile, pub_options);
 }
 
 void CropNonZeroNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)
