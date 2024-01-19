@@ -82,6 +82,7 @@ private:
 
   // Parameters
   bool fill_upsampling_holes_;
+  bool use_rgb_timestamp_;  // use source time stamp from RGB camera
 
   void connectCb();
 
@@ -107,6 +108,7 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
   // Read parameters
   int queue_size = this->declare_parameter<int>("queue_size", 5);
   fill_upsampling_holes_ = this->declare_parameter<bool>("fill_upsampling_holes", false);
+  use_rgb_timestamp_ = this->declare_parameter<bool>("use_rgb_timestamp", false);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   sync_ = std::make_shared<Synchronizer>(
@@ -180,7 +182,8 @@ void RegisterNode::imageCb(
   }
 
   auto registered_msg = std::make_shared<Image>();
-  registered_msg->header.stamp = depth_image_msg->header.stamp;
+  registered_msg->header.stamp =
+    use_rgb_timestamp_ ? rgb_info_msg->header.stamp : depth_image_msg->header.stamp;
   registered_msg->header.frame_id = rgb_info_msg->header.frame_id;
   registered_msg->encoding = depth_image_msg->encoding;
 
