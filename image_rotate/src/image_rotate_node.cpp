@@ -183,13 +183,6 @@ void ImageRotateNode::do_work(
       source_frame_id, input_frame_id, tf2_time, tf2_time - prev_stamp_);
     tf2::doTransform(source_vector_, source_vector_transformed, transform);
 
-    // RCUTILS_LOG_INFO("target: %f %f %f", target_vector_.x, target_vector_.y, target_vector_.z);
-    // RCUTILS_LOG_INFO("target_transformed: %f %f %f", target_vector_transformed.x, "
-    //  "target_vector_transformed.y, target_vector_transformed.z");
-    // RCUTILS_LOG_INFO("source: %f %f %f", source_vector_.x, source_vector_.y, source_vector_.z);
-    // RCUTILS_LOG_INFO("source_transformed: %f %f %f", source_vector_transformed.x, "
-    //  "source_vector_transformed.y, source_vector_transformed.z");
-
     // Calculate the angle of the rotation.
     double angle = angle_;
     if ((target_vector_transformed.vector.x != 0 || target_vector_transformed.vector.y != 0) &&
@@ -222,10 +215,8 @@ void ImageRotateNode::do_work(
     }
     angle_ = fmod(angle_, 2.0 * M_PI);
   } catch (const tf2::TransformException & e) {
-    RCUTILS_LOG_ERROR("Transform error: %s", e.what());
+    RCLCPP_ERROR(get_logger(), "Transform error: %s", e.what());
   }
-
-  // RCUTILS_LOG_INFO("angle: %f", 180 * angle_ / M_PI);
 
   // Publish the transform.
   geometry_msgs::msg::TransformStamped transform;
@@ -258,7 +249,6 @@ void ImageRotateNode::do_work(
     int step = config_.output_image_size;
     out_size = candidates[step] + (candidates[step + 1] - candidates[step]) *
       (config_.output_image_size - step);
-    // RCUTILS_LOG_INFO("out_size: %d", out_size);
 
     // Compute the rotation matrix.
     cv::Mat rot_matrix = cv::getRotationMatrix2D(
@@ -277,7 +267,7 @@ void ImageRotateNode::do_work(
     out_img->header.frame_id = transform.child_frame_id;
     img_pub_.publish(out_img);
   } catch (const cv::Exception & e) {
-    RCUTILS_LOG_ERROR(
+    RCLCPP_ERROR(get_logger(),
       "Image processing error: %s %s %s %i",
       e.err.c_str(), e.func.c_str(), e.file.c_str(), e.line);
   }
@@ -302,7 +292,7 @@ void ImageRotateNode::onInit()
     {
       //std::lock_guard<std::mutex> lock(connect_mutex_);
       if (img_pub_.getNumSubscribers() == 0) {
-        RCUTILS_LOG_DEBUG("Unsubscribing from image topic.");
+        RCLCPP_DEBUG(get_logger(), "Unsubscribing from image topic.");
         img_sub_.shutdown();
         cam_sub_.shutdown();
       } else {
@@ -311,7 +301,16 @@ void ImageRotateNode::onInit()
         auto node_base = this->get_node_base_interface();
         std::string topic_name = node_base->resolve_topic_or_service_name("image", false);
 
-        RCUTILS_LOG_INFO("Subscribing to %s topic.", topic_name.c_str());
+        // Check that remapping appears to be correct
+        auto topics = this->get_topic_names_and_types();
+        if (topics.find(topic_name) == topics.end()) {
+          RCLCPP_WARN(get_logger(),
+            "Topic %s is not connected! Typical command-line usage:\n"
+            "\t$ ros2 run image_rotate image_rotate --ros-args -r image:=<image topic>",
+            topic_name.c_str());
+        }
+
+        RCLCPP_INFO(get_logger(), "Subscribing to %s topic.", topic_name.c_str());
 
         if (config_.use_camera_info && config_.input_frame_id.empty()) {
           auto custom_qos = rmw_qos_profile_system_default;
