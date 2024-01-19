@@ -72,31 +72,9 @@ namespace image_rotate
 ImageRotateNode::ImageRotateNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("ImageRotateNode", options)
 {
-  config_.target_frame_id = this->declare_parameter("target_frame_id", std::string(""));
-  config_.target_x = this->declare_parameter("target_x", 0.0);
-  config_.target_y = this->declare_parameter("target_y", 0.0);
-  config_.target_z = this->declare_parameter("target_z", 1.0);
-
-  config_.source_frame_id = this->declare_parameter("source_frame_id", std::string(""));
-  config_.source_x = this->declare_parameter("source_x", 0.0);
-  config_.source_y = this->declare_parameter("source_y", -1.0);
-  config_.source_z = this->declare_parameter("source_z", 0.0);
-
-  config_.output_frame_id = this->declare_parameter("output_frame_id", std::string(""));
-  config_.input_frame_id = this->declare_parameter("input_frame_id", std::string(""));
-  config_.use_camera_info = this->declare_parameter("use_camera_info", true);
-  config_.max_angular_rate = this->declare_parameter(
-    "max_angular_rate",
-    10.0);
-  config_.output_image_size = this->declare_parameter(
-    "output_image_size",
-    2.0);
-
   auto reconfigureCallback =
     [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
     {
-      RCLCPP_INFO(get_logger(), "reconfigureCallback");
-
       auto result = rcl_interfaces::msg::SetParametersResult();
       result.successful = true;
       for (auto parameter : parameters) {
@@ -128,6 +106,7 @@ ImageRotateNode::ImageRotateNode(const rclcpp::NodeOptions & options)
       source_vector_.vector.x = config_.source_x;
       source_vector_.vector.y = config_.source_y;
       source_vector_.vector.z = config_.source_z;
+
       if (subscriber_count_) {  // @todo: Could do this without an interruption at some point.
         unsubscribe();
         subscribe();
@@ -135,6 +114,24 @@ ImageRotateNode::ImageRotateNode(const rclcpp::NodeOptions & options)
       return result;
     };
   on_set_parameters_callback_handle_ = this->add_on_set_parameters_callback(reconfigureCallback);
+
+  // Set parameters AFTER add_on_set_parameters_callback
+  config_.target_frame_id = this->declare_parameter("target_frame_id", std::string(""));
+  config_.target_x = this->declare_parameter("target_x", 0.0);
+  config_.target_y = this->declare_parameter("target_y", 0.0);
+  config_.target_z = this->declare_parameter("target_z", 1.0);
+
+  config_.source_frame_id = this->declare_parameter("source_frame_id", std::string(""));
+  config_.source_x = this->declare_parameter("source_x", 0.0);
+  config_.source_y = this->declare_parameter("source_y", -1.0);
+  config_.source_z = this->declare_parameter("source_z", 0.0);
+
+  config_.output_frame_id = this->declare_parameter("output_frame_id", std::string(""));
+  config_.input_frame_id = this->declare_parameter("input_frame_id", std::string(""));
+  config_.use_camera_info = this->declare_parameter("use_camera_info", true);
+  config_.max_angular_rate = this->declare_parameter("max_angular_rate", 10.0);
+  config_.output_image_size = this->declare_parameter("output_image_size", 2.0);
+
   onInit();
 }
 
