@@ -43,7 +43,7 @@ private:
   rclcpp::Time g_last_wrote_time;
   std::string encoding;
   std::string codec;
-  int fps;
+  double fps;
   double min_depth_range;
   double max_depth_range;
   bool use_dynamic_range;
