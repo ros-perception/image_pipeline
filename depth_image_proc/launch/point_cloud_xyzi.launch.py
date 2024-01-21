@@ -63,7 +63,6 @@ def generate_launch_description():
                     name='point_cloud_xyzi',
                     remappings=[('depth/image_rect', '/camera/aligned_depth_to_color/image_raw'),
                                 ('intensity/image_rect', '/camera/color/image_raw'),
-                                ('intensity/camera_info', '/camera/color/camera_info'),
                                 ('points', '/camera/depth/points')]
                 ),
             ],

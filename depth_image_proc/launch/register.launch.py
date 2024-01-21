@@ -61,7 +61,6 @@ def generate_launch_description():
                     plugin='depth_image_proc::RegisterNode',
                     name='register_node',
                     remappings=[('depth/image_rect', '/camera/depth/image_rect_raw'),
-                                ('depth/camera_info', '/camera/depth/camera_info'),
                                 ('rgb/camera_info', '/camera/color/camera_info'),
                                 ('depth_registered/image_rect',
                                  '/camera/depth_registered/image_rect'),
