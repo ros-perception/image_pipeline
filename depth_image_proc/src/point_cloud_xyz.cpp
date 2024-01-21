@@ -90,7 +90,6 @@ PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
   pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SensorDataQoS(), pub_options);
 }
 
-
 void PointCloudXyzNode::depthCb(
   const Image::ConstSharedPtr & depth_msg,
   const CameraInfo::ConstSharedPtr & info_msg)

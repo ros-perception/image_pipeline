@@ -48,7 +48,7 @@ def generate_launch_description():
             package='realsense_ros2_camera', node_executable='realsense_ros2_camera',
             output='screen'),
 
-        # TODO: Realsense camera do not support intensity message,
+        # NOTE: Realsense camera do not support intensity message,
         # use depth instead of intensity only for interface test
         launch_ros.actions.ComposableNodeContainer(
             name='container',

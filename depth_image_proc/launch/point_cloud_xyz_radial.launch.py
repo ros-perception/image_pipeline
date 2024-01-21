@@ -60,8 +60,7 @@ def generate_launch_description():
                     package='depth_image_proc',
                     plugin='depth_image_proc::PointCloudXyzRadialNode',
                     name='point_cloud_xyz_radial_node',
-                    remappings=[('image_raw', '/camera/depth/image_rect_raw'),
-                                ('camera_info', '/camera/depth/camera_info'),
+                    remappings=[('depth/image_raw', '/camera/depth/image_rect_raw'),
                                 ('image', '/camera/depth/converted_image')]
                 ),
             ],

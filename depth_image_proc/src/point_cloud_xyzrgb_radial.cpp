@@ -103,9 +103,9 @@ PointCloudXyzrgbRadialNode::PointCloudXyzrgbRadialNode(const rclcpp::NodeOptions
         // fully expanded and remapped topic name to image_transport
         auto node_base = this->get_node_base_interface();
         std::string depth_topic =
-          node_base->resolve_topic_or_service_name("depth_registered/image_rect", false);
+          node_base->resolve_topic_or_service_name("depth/image_raw", false);
         std::string rgb_topic =
-          node_base->resolve_topic_or_service_name("rgb/image_rect_color", false);
+          node_base->resolve_topic_or_service_name("rgb/image_raw", false);
         // Allow also remapping camera_info to something different than default
         std::string rgb_info_topic =
           node_base->resolve_topic_or_service_name(
