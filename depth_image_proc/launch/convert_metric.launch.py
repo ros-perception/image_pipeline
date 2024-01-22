@@ -61,7 +61,6 @@ def generate_launch_description():
                     plugin='depth_image_proc::ConvertMetricNode',
                     name='convert_metric_node',
                     remappings=[('image_raw', '/camera/depth/image_rect_raw'),
-                                ('camera_info', '/camera/depth/camera_info'),
                                 ('image', '/camera/depth/converted_image')]
                 ),
             ],
