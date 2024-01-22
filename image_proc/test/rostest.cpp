@@ -30,11 +30,12 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <gtest/gtest.h>
+
 #include <memory>
 #include <string>
 
 #include <rclcpp/rclcpp.hpp>
-#include <gtest/gtest.h>
 #include <cv_bridge/cv_bridge.hpp>
 
 #include <camera_calibration_parsers/parse.hpp>
@@ -107,6 +108,7 @@ protected:
   {
     cam_pub.publish(*raw_image, cam_info);
   }
+
 public:
   bool has_new_image_{false};
   void callback(const sensor_msgs::msg::Image::ConstSharedPtr & /*msg*/)
@@ -125,7 +127,7 @@ TEST_F(ImageProcTest, monoSubscription)
   RCLCPP_INFO(node->get_logger(), "Publishing");
 
   RCLCPP_INFO(node->get_logger(), "Spinning");
-  while(!has_new_image_) {
+  while (!has_new_image_) {
     publishRaw();
     rclcpp::spin_some(node);
   }

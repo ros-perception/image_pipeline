@@ -30,13 +30,14 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <gtest/gtest.h>
+
 #include <algorithm>
 #include <chrono>
 #include <string>
 #include <thread>
 
 #include <rclcpp/rclcpp.hpp>
-#include <gtest/gtest.h>
 #include <cv_bridge/cv_bridge.hpp>
 
 #include <camera_calibration_parsers/parse.hpp>
@@ -132,14 +133,16 @@ protected:
       std_msgs::msg::Header(), "bgr8", distorted_image_).toImageMsg();
 
     rclcpp::NodeOptions options;
-    options.arguments({
+    options.arguments(
+    {
       "--ros-args", "-r", std::string("__ns:=") + "/camera",
       "-r", "/camera/image:=/camera/image_raw"});
     node_rectify = std::make_shared<image_proc::RectifyNode>(options);
 
-    spin_rectify_thread = std::thread([this](){
-      rclcpp::spin(node_rectify);
-    });
+    spin_rectify_thread = std::thread(
+      [this]() {
+        rclcpp::spin(node_rectify);
+      });
 
     // Create raw camera subscriber and publisher
     image_transport::ImageTransport it(node);
@@ -193,7 +196,8 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
   RCLCPP_INFO(node->get_logger(), "In test. Subscribing.");
   image_transport::ImageTransport it(node);
   cam_sub_ = it.subscribe(
-    topic_rect_, 1, &ImageProcRectifyTest::imageCallback,
+    topic_rect_, rclcpp::SensorDataQoS().get_rmw_qos_profile(),
+    &ImageProcRectifyTest::imageCallback,
     dynamic_cast<ImageProcRectifyTest *>(this));
 
   // Wait for image_proc to be operational
