@@ -59,9 +59,8 @@
 #include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
-#include <boost/format.hpp>
-
 #include "image_view/extract_images_node.hpp"
+#include "utils.hpp"
 
 namespace image_view
 {
@@ -95,8 +94,7 @@ ExtractImagesNode::ExtractImagesNode(const rclcpp::NodeOptions & options)
   }
 
   this->declare_parameter<std::string>("filename_format", std::string("frame%04i.jpg"));
-  std::string format_string = this->get_parameter("filename_format").as_string();
-  filename_format_.parse(format_string);
+  filename_format_ = this->get_parameter("filename_format").as_string();
 
   this->declare_parameter<double>("sec_per_frame", 0.1);
   sec_per_frame_ = this->get_parameter("sec_per_frame").as_double();
@@ -130,7 +128,7 @@ void ExtractImagesNode::image_cb(const sensor_msgs::msg::Image::ConstSharedPtr &
     _time = this->now();
 
     if (!image.empty()) {
-      std::string filename = (filename_format_ % count_).str();
+      std::string filename = string_format(filename_format_, count_);
 
       cv::imwrite(filename, image);
 
