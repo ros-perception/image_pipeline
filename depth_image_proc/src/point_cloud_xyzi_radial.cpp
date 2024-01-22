@@ -88,7 +88,7 @@ PointCloudXyziRadialNode::PointCloudXyziRadialNode(const rclcpp::NodeOptions & o
         // fully expanded and remapped topic name to image_transport
         auto node_base = this->get_node_base_interface();
         std::string depth_topic =
-          node_base->resolve_topic_or_service_name("depth/image_rect", false);
+          node_base->resolve_topic_or_service_name("depth/image_raw", false);
         std::string intensity_topic =
           node_base->resolve_topic_or_service_name("intensity/image_raw", false);
         // Allow also remapping camera_info to something different than default

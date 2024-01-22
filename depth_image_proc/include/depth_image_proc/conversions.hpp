@@ -60,7 +60,7 @@ void convertDepth(
   float center_y = model.cy();
 
   // Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
-  double unit_scaling = DepthTraits<T>::toMeters(T(1) );
+  double unit_scaling = DepthTraits<T>::toMeters(T(1));
   float constant_x = unit_scaling / model.fx();
   float constant_y = unit_scaling / model.fy();
   float bad_point = std::numeric_limits<float>::quiet_NaN();

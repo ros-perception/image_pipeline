@@ -68,7 +68,7 @@ PointCloudXyzRadialNode::PointCloudXyzRadialNode(const rclcpp::NodeOptions & opt
         // For compressed topics to remap appropriately, we need to pass a
         // fully expanded and remapped topic name to image_transport
         auto node_base = this->get_node_base_interface();
-        std::string topic = node_base->resolve_topic_or_service_name("image_rect", false);
+        std::string topic = node_base->resolve_topic_or_service_name("depth/image_raw", false);
         // Get transport and QoS
         image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
         auto custom_qos = rmw_qos_profile_system_default;
