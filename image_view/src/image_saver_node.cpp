@@ -130,7 +130,7 @@ bool ImageSaverNode::saveImage(
   }
 
   if (!image.empty()) {
-    std::string filename = string_format(g_format, count_, "jpg");
+    filename = string_format(g_format, count_, "jpg");
 
     if (save_all_image_ || save_image_service_) {
       if (stamped_filename_) {
