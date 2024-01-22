@@ -58,13 +58,14 @@
 
 #include "image_view/image_view_node.hpp"
 
-#include <boost/format.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <std_msgs/msg/header.hpp>
+
+#include "utils.hpp"
 
 namespace image_view
 {
@@ -135,9 +136,8 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
   autosize_ = this->declare_parameter("autosize", false);
   window_height_ = this->declare_parameter("height", -1);
   window_width_ = this->declare_parameter("width", -1);
-  std::string format_string =
+  filename_format_ =
     this->declare_parameter("filename_format", std::string("frame%04i.jpg"));
-  filename_format_.parse(format_string);
 
   rcl_interfaces::msg::ParameterDescriptor colormap_paramDescriptor;
   colormap_paramDescriptor.name = "colormap";
@@ -253,7 +253,7 @@ void ImageViewNode::mouseCb(int event, int /* x */, int /* y */, int /* flags */
     return;
   }
 
-  std::string filename = (this_->filename_format_ % this_->count_).str();
+  std::string filename = string_format(this_->filename_format_, this_->count_);
 
   if (cv::imwrite(filename, image->image)) {
     RCLCPP_INFO(this_->get_logger(), "Saved image %s", filename.c_str());

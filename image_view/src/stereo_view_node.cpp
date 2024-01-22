@@ -60,7 +60,6 @@
 
 #include "image_view/stereo_view_node.hpp"
 
-#include <boost/format.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 #include <rclcpp/rclcpp.hpp>
@@ -69,6 +68,8 @@
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <stereo_msgs/msg/disparity_image.hpp>
+
+#include "utils.hpp"
 
 namespace image_view
 {
@@ -94,8 +95,7 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
   bool autosize = this->declare_parameter("autosize", true);
 
   this->declare_parameter<std::string>("filename_format", std::string("frame%04i.jpg"));
-  std::string format_string = this->get_parameter("filename_format").as_string();
-  filename_format_.parse(format_string);
+  filename_format_ = this->get_parameter("filename_format").as_string();
 
   // TransportHints does not actually declare the parameter
   this->declare_parameter<std::string>("image_transport", std::string("raw"));
@@ -265,7 +265,7 @@ void StereoViewNode::imageCb(
 void StereoViewNode::saveImage(const char * prefix, const cv::Mat & image)
 {
   if (!image.empty()) {
-    std::string filename = (filename_format_ % prefix % save_count_).str();
+    std::string filename = string_format(filename_format_, prefix, save_count_);
     cv::imwrite(filename, image);
     RCLCPP_INFO(this->get_logger(), "Saved image %s", filename.c_str());
   } else {

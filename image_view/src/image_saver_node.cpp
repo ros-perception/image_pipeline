@@ -55,7 +55,6 @@
 
 #include "image_view/image_saver_node.hpp"
 
-#include <boost/format.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 #include <rclcpp/rclcpp.hpp>
@@ -64,6 +63,8 @@
 #include <rclcpp_components/register_node_macro.hpp>
 #include <std_srvs/srv/empty.hpp>
 #include <std_srvs/srv/trigger.hpp>
+
+#include "utils.hpp"
 
 namespace image_view
 {
@@ -92,13 +93,11 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
       &ImageSaverNode::callbackWithoutCameraInfo, this, std::placeholders::_1),
     hints.getTransport());
 
-  std::string format_string;
-  format_string = this->declare_parameter("filename_format", std::string("left%04i.%s"));
+  g_format = this->declare_parameter("filename_format", std::string("left%04i.%s"));
   encoding_ = this->declare_parameter("encoding", std::string("bgr8"));
   save_all_image_ = this->declare_parameter("save_all_image", true);
   stamped_filename_ = this->declare_parameter("stamped_filename", false);
   request_start_end_ = this->declare_parameter("request_start_end", false);
-  g_format.parse(format_string);
 
   save_srv_ = this->create_service<std_srvs::srv::Empty>(
     "save",
@@ -131,23 +130,7 @@ bool ImageSaverNode::saveImage(
   }
 
   if (!image.empty()) {
-    try {
-      filename = (g_format).str();
-    } catch (...) {
-      g_format.clear();
-    }
-
-    try {
-      filename = (g_format % count_).str();
-    } catch (...) {
-      g_format.clear();
-    }
-
-    try {
-      filename = (g_format % count_ % "jpg").str();
-    } catch (...) {
-      g_format.clear();
-    }
+    std::string filename = string_format(g_format, count_, "jpg");
 
     if (save_all_image_ || save_image_service_) {
       if (stamped_filename_) {
