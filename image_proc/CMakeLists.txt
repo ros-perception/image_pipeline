@@ -110,6 +110,14 @@ install(TARGETS image_proc_exe
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+
+  add_definitions(-D_SRC_RESOURCES_DIR_PATH="${CMAKE_CURRENT_SOURCE_DIR}/test/resources")
+
+  find_package(ament_cmake_gtest)
+  ament_auto_add_gtest(test_rectify test/test_rectify.cpp)
+
+  find_package(ament_cmake_gtest)
+  ament_auto_add_gtest(rostest test/rostest.cpp)
 endif()
 
 ament_auto_package(INSTALL_TO_SHARE launch)
