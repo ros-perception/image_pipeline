@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="depth" default="1.0" />
+  <arg name="offset" default="10.0" />
+
+  <node name="station1_tf" pkg="tf" type="static_transform_publisher"
+    args="0.0 0.0 0.0 0 0 0 map station1 15"
+    output="screen" />
+
+  <node name="station2_tf" pkg="tf" type="static_transform_publisher"
+    args="0.0 0.0 -$(arg offset) 0 0 0 map station2 15"
+    output="screen" />
+
+  <node name="station3_tf" pkg="tf" type="static_transform_publisher"
+    args="1.5 0.0 1.5 0 -1.5707963 0 map station3 15"
+    output="screen" />
+
+  <node name="nodelet_manager" pkg="nodelet" type="nodelet" args="manager"
+    output="screen" />
+
+  <node name="reprojected_depth_nodelet" pkg="nodelet" type="nodelet"
+    args="load depth_image_proc/register nodelet_manager"
+    output="screen">
+  <!--
+    <remap from="depth/camera_info" to="$(arg depth_camera_info_in)" />
+    <remap from="depth/image_rect" to="$(arg depth_in)" />
+    <remap from="rgb/camera_info" to="$(arg camera_info_in)" />
+
+    <remap from="depth_registered/image_rect" to="$(arg depth_out)" />
+    <remap from="depth_registered/camera_info" to="$(arg depth_camera_info_out)" />
+  -->
+
+    <param name="fill_upsampling_holes" value="true" />
+    <param name="queue_size" value="10" />
+  </node>
+
+  <group ns="depth_registered/image_rect" >
+    <rosparam param="disable_pub_plugins">
+      - 'image_transport/compressed'
+      - 'image_transport/theora'
+      - 'image_transport/compressedDepth'
+    </rosparam>
+    <param name="compressedDepth/png_level" value="1" />
+    <!-- TODO(lucasw) compression takes a lot of cpu, even with png_level all the way down -->
+    <!--
+    -->
+  </group>
+
+  <test test-name="test_register" pkg="depth_image_proc" type="test_register.py">
+    <param name="output_depth" value="$(arg depth)" />
+    <param name="expected_depth" value="$(eval arg('depth') + arg('offset'))" />
+  </test>
+</launch>

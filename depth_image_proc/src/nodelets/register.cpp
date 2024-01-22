@@ -198,6 +198,58 @@ void RegisterNodelet::imageCb(const sensor_msgs::ImageConstPtr& depth_image_msg,
 }
 
 template<typename T>
+bool transform_depth(
+    const Eigen::Affine3d& depth_to_rgb,
+    const double u, const double v,
+    const image_geometry::PinholeCameraModel& depth_model_,
+    const image_geometry::PinholeCameraModel& rgb_model_,
+    const double inv_depth_fx, const double inv_depth_fy,
+    const int width, const int height,
+    const double depth,
+    int& u_rgb, int& v_rgb,
+    T& new_depth)
+{
+  // TODO(lucasw) pulling these out shouldn't cost anything
+  const auto depth_cx = depth_model_.cx(), depth_cy = depth_model_.cy();
+  const auto depth_Tx = depth_model_.Tx(), depth_Ty = depth_model_.Ty();
+  const auto rgb_fx = rgb_model_.fx(), rgb_fy = rgb_model_.fy();
+  const auto rgb_cx = rgb_model_.cx(), rgb_cy = rgb_model_.cy();
+  const auto rgb_Tx = rgb_model_.Tx(), rgb_Ty = rgb_model_.Ty();
+
+  /// @todo Combine all operations into one matrix multiply on (u,v,d)
+  // Reproject (u,v,Z) to (X,Y,Z,1) in depth camera frame
+  Eigen::Vector4d xyz_depth;
+  xyz_depth << ((u - depth_cx)*depth - depth_Tx) * inv_depth_fx,
+               ((v - depth_cy)*depth - depth_Ty) * inv_depth_fy,
+               depth,
+               1;
+
+  // Transform to RGB camera frame
+  Eigen::Vector4d xyz_rgb = depth_to_rgb * xyz_depth;
+  new_depth = static_cast<T>(xyz_rgb.z());
+  // TODO(lucasw) is the intent to simulate what a real depth camera would see?  If so reject negative depth
+  // but if want to preserve as much data as possible it may make sense to pass through negative values
+  // (though don't overwrite positive values, use abs in the z buffer test)
+  if (new_depth < 0.0)
+  {
+    return false;
+  }
+
+  // Project to (u,v) in RGB image
+  const double inv_Z = 1.0 / new_depth;
+
+  u_rgb = (rgb_fx*xyz_rgb.x() + rgb_Tx)*inv_Z + rgb_cx + 0.5;
+  if (u_rgb < 0 || u_rgb >= width)
+    return false;
+
+  v_rgb = (rgb_fy*xyz_rgb.y() + rgb_Ty)*inv_Z + rgb_cy + 0.5;
+  if (v_rgb < 0 || v_rgb >= height)
+    return false;
+
+  return true;
+}
+
+template<typename T>
 void RegisterNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
                               const sensor_msgs::ImagePtr& registered_msg,
                               const Eigen::Affine3d& depth_to_rgb)
@@ -209,93 +261,100 @@ void RegisterNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
   DepthTraits<T>::initializeBuffer(registered_msg->data);
 
   // Extract all the parameters we need
-  double inv_depth_fx = 1.0 / depth_model_.fx();
-  double inv_depth_fy = 1.0 / depth_model_.fy();
-  double depth_cx = depth_model_.cx(), depth_cy = depth_model_.cy();
-  double depth_Tx = depth_model_.Tx(), depth_Ty = depth_model_.Ty();
-  double rgb_fx = rgb_model_.fx(), rgb_fy = rgb_model_.fy();
-  double rgb_cx = rgb_model_.cx(), rgb_cy = rgb_model_.cy();
-  double rgb_Tx = rgb_model_.Tx(), rgb_Ty = rgb_model_.Ty();
-  
+  const double inv_depth_fx = 1.0 / depth_model_.fx();
+  const double inv_depth_fy = 1.0 / depth_model_.fy();
+
+  const int dst_width = static_cast<int>(registered_msg->width);
+  const int dst_height = static_cast<int>(registered_msg->height);
+
   // Transform the depth values into the RGB frame
   /// @todo When RGB is higher res, interpolate by rasterizing depth triangles onto the registered image  
   const T* depth_row = reinterpret_cast<const T*>(&depth_msg->data[0]);
-  int row_step = depth_msg->step / sizeof(T);
+  const int row_step = depth_msg->step / sizeof(T);
   T* registered_data = reinterpret_cast<T*>(&registered_msg->data[0]);
-  int raw_index = 0;
+  // TODO(lucasw) this isn't used
+  // int raw_index = 0;
   for (unsigned v = 0; v < depth_msg->height; ++v, depth_row += row_step)
   {
-    for (unsigned u = 0; u < depth_msg->width; ++u, ++raw_index)
+    for (unsigned u = 0; u < depth_msg->width; ++u  /* , ++raw_index */)
     {
-      T raw_depth = depth_row[u];
+      const T raw_depth = depth_row[u];
       if (!DepthTraits<T>::valid(raw_depth))
         continue;
-      
-      double depth = DepthTraits<T>::toMeters(raw_depth);
+
+      const double depth = DepthTraits<T>::toMeters(raw_depth);
 
       if (fill_upsampling_holes_ == false)
       {
-        /// @todo Combine all operations into one matrix multiply on (u,v,d)
-        // Reproject (u,v,Z) to (X,Y,Z,1) in depth camera frame
-        Eigen::Vector4d xyz_depth;
-        xyz_depth << ((u - depth_cx)*depth - depth_Tx) * inv_depth_fx,
-                     ((v - depth_cy)*depth - depth_Ty) * inv_depth_fy,
-                     depth,
-                     1;
-
-        // Transform to RGB camera frame
-        Eigen::Vector4d xyz_rgb = depth_to_rgb * xyz_depth;
-
-        // Project to (u,v) in RGB image
-        double inv_Z = 1.0 / xyz_rgb.z();
-        int u_rgb = (rgb_fx*xyz_rgb.x() + rgb_Tx)*inv_Z + rgb_cx + 0.5;
-        int v_rgb = (rgb_fy*xyz_rgb.y() + rgb_Ty)*inv_Z + rgb_cy + 0.5;
-      
-        if (u_rgb < 0 || u_rgb >= (int)registered_msg->width ||
-            v_rgb < 0 || v_rgb >= (int)registered_msg->height)
+        int u_rgb;
+        int v_rgb;
+        T new_depth;
+        if (!transform_depth(depth_to_rgb, u, v,
+            depth_model_, rgb_model_,
+            inv_depth_fx, inv_depth_fy,
+            dst_width, dst_height,
+            depth,
+            u_rgb, v_rgb, new_depth)) {
           continue;
-      
-        T& reg_depth = registered_data[v_rgb*registered_msg->width + u_rgb];
-        T  new_depth = DepthTraits<T>::fromMeters(xyz_rgb.z());
+        }
+
+        T& reg_depth = registered_data[v_rgb*dst_width + u_rgb];
         // Validity and Z-buffer checks
         if (!DepthTraits<T>::valid(reg_depth) || reg_depth > new_depth)
           reg_depth = new_depth;
+
       }
       else
       {
-        // Reproject (u,v,Z) to (X,Y,Z,1) in depth camera frame
-        Eigen::Vector4d xyz_depth_1, xyz_depth_2;
-        xyz_depth_1 << ((u-0.5f - depth_cx)*depth - depth_Tx) * inv_depth_fx,
-                       ((v-0.5f - depth_cy)*depth - depth_Ty) * inv_depth_fy,
-                       depth,
-                       1;
-        xyz_depth_2 << ((u+0.5f - depth_cx)*depth - depth_Tx) * inv_depth_fx,
-                       ((v+0.5f - depth_cy)*depth - depth_Ty) * inv_depth_fy,
-                       depth,
-                       1;
+        // TODO(lucasw) loop on two -0.5, 0.5 vectors, keep track of u_min/max and v_min/max
+        // as it goes
+        int u_rgb_min, u_rgb_max;
+        int v_rgb_min, v_rgb_max;
+        size_t count = 0;
+        T new_depth_sum = 0.0;
+        const std::array<double, 2> uv_offsets = {-0.5, 0.5};
+        for (const auto& v_offset : uv_offsets) {
+          for (const auto& u_offset : uv_offsets) {
+            int u_rgb;
+            int v_rgb;
+            T new_depth;
+            if (!transform_depth(depth_to_rgb,
+                u + u_offset, v + v_offset,
+                depth_model_, rgb_model_,
+                inv_depth_fx, inv_depth_fy,
+                dst_width, dst_height,
+                depth,
+                u_rgb, v_rgb, new_depth)) {
+              // TODO(lucasw) need to be able to handle partiall out of bounds squares here
+              continue;
+            }
+            if (count == 0) {
+              u_rgb_min = u_rgb;
+              u_rgb_max = u_rgb;
+              v_rgb_min = v_rgb;
+              v_rgb_max = v_rgb;
+            } else {
+              u_rgb_min = std::min(u_rgb, u_rgb_min);
+              u_rgb_max = std::max(u_rgb, u_rgb_max);
+              v_rgb_min = std::min(v_rgb, v_rgb_min);
+              v_rgb_max = std::max(v_rgb, v_rgb_max);
+            }
+            new_depth_sum += new_depth;
+            count++;
+          }
+        }
 
-        // Transform to RGB camera frame
-        Eigen::Vector4d xyz_rgb_1 = depth_to_rgb * xyz_depth_1;
-        Eigen::Vector4d xyz_rgb_2 = depth_to_rgb * xyz_depth_2;
-
-        // Project to (u,v) in RGB image
-        double inv_Z = 1.0 / xyz_rgb_1.z();
-        int u_rgb_1 = (rgb_fx*xyz_rgb_1.x() + rgb_Tx)*inv_Z + rgb_cx + 0.5;
-        int v_rgb_1 = (rgb_fy*xyz_rgb_1.y() + rgb_Ty)*inv_Z + rgb_cy + 0.5;
-        inv_Z = 1.0 / xyz_rgb_2.z();
-        int u_rgb_2 = (rgb_fx*xyz_rgb_2.x() + rgb_Tx)*inv_Z + rgb_cx + 0.5;
-        int v_rgb_2 = (rgb_fy*xyz_rgb_2.y() + rgb_Ty)*inv_Z + rgb_cy + 0.5;
-
-        if (u_rgb_1 < 0 || u_rgb_2 >= (int)registered_msg->width ||
-            v_rgb_1 < 0 || v_rgb_2 >= (int)registered_msg->height)
+        if (count == 0) {
           continue;
+        }
 
-        for (int nv=v_rgb_1; nv<=v_rgb_2; ++nv)
+        // fill in the square defined by uv range
+        const T new_depth = DepthTraits<T>::fromMeters(new_depth_sum / static_cast<double>(count));
+        for (int nv=v_rgb_min; nv<=v_rgb_max; ++nv)
         {
-          for (int nu=u_rgb_1; nu<=u_rgb_2; ++nu)
+          for (int nu=u_rgb_min; nu<=u_rgb_max; ++nu)
           {
-            T& reg_depth = registered_data[nv*registered_msg->width + nu];
-            T  new_depth = DepthTraits<T>::fromMeters(0.5*(xyz_rgb_1.z()+xyz_rgb_2.z()));
+            T& reg_depth = registered_data[nv*dst_width + nu];
             // Validity and Z-buffer checks
             if (!DepthTraits<T>::valid(reg_depth) || reg_depth > new_depth)
               reg_depth = new_depth;
