@@ -75,6 +75,14 @@ class PointCloudXyziNodelet : public nodelet::Nodelet
 
   image_geometry::PinholeCameraModel model_;
 
+	// range crop 
+	double max_x ;
+	double max_y ;
+	double max_z ;
+	double min_x ;
+	double min_y ;
+	double min_z ;
+
   virtual void onInit();
 
   void connectCb();
@@ -102,6 +110,14 @@ void PointCloudXyziNodelet::onInit()
   int queue_size;
   private_nh.param("queue_size", queue_size, 5);
 
+	// min/max ranges for crop
+	private_nh.param("max_x", max_x, std::numeric_limits<double>::infinity());
+	private_nh.param("max_y", max_y, std::numeric_limits<double>::infinity());
+	private_nh.param("max_z", max_z, std::numeric_limits<double>::infinity());
+	private_nh.param("min_x", min_x, -1*std::numeric_limits<double>::infinity());
+	private_nh.param("min_y", min_y, -1*std::numeric_limits<double>::infinity());
+	private_nh.param("min_z", min_z, -1*std::numeric_limits<double>::infinity());
+	
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   sync_.reset( new Synchronizer(SyncPolicy(queue_size), sub_depth_, sub_intensity_, sub_info_) );
   sync_->registerCallback(boost::bind(&PointCloudXyziNodelet::imageCb, this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3));
@@ -307,10 +323,25 @@ void PointCloudXyziNodelet::convert(const sensor_msgs::ImageConstPtr& depth_msg,
       }
       else
       {
-        // Fill in XYZ
-        *iter_x = (u - center_x) * depth * constant_x;
-        *iter_y = (v - center_y) * depth * constant_y;
-        *iter_z = DepthTraits<T>::toMeters(depth);
+        // test if the point is in the XYZ range
+        if ( 
+            ( (u - center_x) * depth * constant_x ) < max_x &&
+            ( (v - center_y) * depth * constant_y ) < max_y &&
+            ( DepthTraits<T>::toMeters(depth) ) < max_z && 
+            ( (u - center_x) * depth * constant_x ) > min_x &&
+            ( (v - center_y) * depth * constant_y ) > min_y &&
+            ( DepthTraits<T>::toMeters(depth) ) > min_z 
+          )
+          {
+            // Fill in XYZ
+            *iter_x = (u - center_x) * depth * constant_x;
+            *iter_y = (v - center_y) * depth * constant_y;
+            *iter_z = DepthTraits<T>::toMeters(depth);
+          }
+          else 
+          {
+            *iter_x = *iter_y = *iter_z = bad_point;
+          }
       }
 
       // Fill in intensity
