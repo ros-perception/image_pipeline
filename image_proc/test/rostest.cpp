@@ -30,17 +30,18 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <memory>
 #include <string>
 
-#include "ros/ros.h>"
-#include "gtest/gtest.h"
-#include "cv_bridge/cv_bridge.hpp"
+#include <rclcpp/rclcpp.hpp>
+#include <gtest/gtest.h>
+#include <cv_bridge/cv_bridge.hpp>
 
 #include <camera_calibration_parsers/parse.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <image_transport/image_transport.hpp>
 
-#include <boost/foreach.hpp>
+using std::placeholders::_1;
 
 class ImageProcTest
   : public testing::Test
@@ -48,10 +49,10 @@ class ImageProcTest
 protected:
   virtual void SetUp()
   {
-    ros::NodeHandle local_nh("~");
+    node = rclcpp::Node::make_shared("image_proc_Test");
 
     // Determine topic names
-    std::string camera_ns = nh.resolveName("camera") + "/";
+    std::string camera_ns = node->get_node_topics_interface()->resolve_topic_name("camera") + "/";
 
     if (camera_ns == "/camera") {
       throw "Must remap 'camera' to the camera namespace.";
@@ -63,84 +64,78 @@ protected:
     topic_color = camera_ns + "image_color";
     topic_rect_color = camera_ns + "image_rect_color";
 
-    // Load raw image and cam info
-    /// @todo Make these cmd-line args instead?
-    std::string raw_image_file, cam_info_file;
-
-    if (!local_nh.getParam("raw_image_file", raw_image_file)) {
-      throw "Must set parameter ~raw_image_file.";
-    }
-
-    if (!local_nh.getParam("camera_info_file", cam_info_file)) {
-      throw "Must set parameter ~camera_info_file.";
-    }
+    const rcpputils::fs::path base{_SRC_RESOURCES_DIR_PATH};
+    const rcpputils::fs::path raw_image_file = base / "logo.png";
+    const rcpputils::fs::path cam_info_file = base / "calibration_file.ini";
 
     /// @todo Test variety of encodings for raw image (bayer, mono, color)
-    cv::Mat img = cv::imread(raw_image_file, 0);
-    raw_image = cv_bridge::CvImage(std_msgs::Header(), "mono8", img).toImageMsg();
+    cv::Mat img = cv::imread(raw_image_file.string(), 0);
+    raw_image = cv_bridge::CvImage(std_msgs::msg::Header(), "mono8", img).toImageMsg();
     std::string cam_name;
 
-    if (!camera_calibration_parsers::readCalibration(cam_info_file, cam_name, cam_info)) {
+    if (!camera_calibration_parsers::readCalibration(cam_info_file.string(), cam_name, cam_info)) {
       throw "Failed to read camera info file.";
     }
 
     // Create raw camera publisher
-    image_transport::ImageTransport it(nh);
+    image_transport::ImageTransport it(this->node);
     cam_pub = it.advertiseCamera(topic_raw, 1);
 
-    // Wait for image_proc to be operational
-    ros::master::V_TopicInfo topics;
     while (true) {
-      if (ros::master::getTopics(topics)) {
-        BOOST_FOREACH(ros::master::TopicInfo & topic, topics) {
-          if (topic.name == topic_rect_color) {
-            return;
-          }
+      // Wait for image_proc to be operational
+      auto topic_names_and_types = this->node->get_topic_names_and_types();
+      for (const auto & map_pair : topic_names_and_types) {
+        if (map_pair.first == topic_raw) {
+          return;
         }
       }
-
-      ros::Duration(0.5).sleep();
     }
   }
 
-  ros::NodeHandle nh;
+  rclcpp::Node::SharedPtr node;
   std::string topic_raw;
   std::string topic_mono;
   std::string topic_rect;
   std::string topic_color;
   std::string topic_rect_color;
 
-  sensor_msgs::ImagePtr raw_image;
-  sensor_msgs::CameraInfo cam_info;
+  sensor_msgs::msg::Image::SharedPtr raw_image;
+  sensor_msgs::msg::CameraInfo cam_info;
   image_transport::CameraPublisher cam_pub;
 
   void publishRaw()
   {
     cam_pub.publish(*raw_image, cam_info);
   }
+public:
+  bool has_new_image_{false};
+  void callback(const sensor_msgs::msg::Image::ConstSharedPtr & /*msg*/)
+  {
+    RCLCPP_INFO(node->get_logger(), "Got an image");
+    has_new_image_ = true;
+  }
 };
-
-void callback(const sensor_msgs::ImageConstPtr & msg)
-{
-  ROS_FATAL("Got an image");
-  ros::shutdown();
-}
 
 TEST_F(ImageProcTest, monoSubscription)
 {
-  ROS_INFO("In test. Subscribing.");
-  ros::Subscriber mono_sub = nh.subscribe(topic_mono, 1, callback);
-  ROS_INFO("Publishing.");
-  publishRaw();
+  RCLCPP_INFO(node->get_logger(), "In test. Subscribing.");
+  auto mono_sub = node->create_subscription<sensor_msgs::msg::Image>(
+    topic_raw, 1, std::bind(&ImageProcTest::callback, this, _1));
 
-  ROS_INFO("Spinning.");
-  ros::spin();
-  ROS_INFO("Done.");
+  RCLCPP_INFO(node->get_logger(), "Publishing");
+
+  RCLCPP_INFO(node->get_logger(), "Spinning");
+  while(!has_new_image_) {
+    publishRaw();
+    rclcpp::spin_some(node);
+  }
+  rclcpp::shutdown();
+  RCLCPP_INFO(node->get_logger(), "Done");
 }
 
 int main(int argc, char ** argv)
 {
-  ros::init(argc, argv, "imageproc_rostest");
+  rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

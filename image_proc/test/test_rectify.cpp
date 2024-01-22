@@ -31,17 +31,23 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <algorithm>
+#include <chrono>
 #include <string>
+#include <thread>
 
-#include "ros/ros.h"
-#include "gtest/gtest.h"
-#include "cv_bridge/cv_bridge.hpp"
+#include <rclcpp/rclcpp.hpp>
+#include <gtest/gtest.h>
+#include <cv_bridge/cv_bridge.hpp>
 
 #include <camera_calibration_parsers/parse.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <image_transport/image_transport.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
-#include <sensor_msgs/msg/distortion_models.hpp>
+#include <sensor_msgs/distortion_models.hpp>
+
+#include "image_proc/rectify.hpp"
+
+using namespace std::chrono_literals;
 
 class ImageProcRectifyTest
   : public testing::Test
@@ -49,8 +55,9 @@ class ImageProcRectifyTest
 protected:
   virtual void SetUp()
   {
+    node = rclcpp::Node::make_shared("test_rectify_node_test");
     // Determine topic names
-    std::string camera_ns = nh_.resolveName("camera") + "/";
+    std::string camera_ns = node->get_node_topics_interface()->resolve_topic_name("camera") + "/";
 
     if (camera_ns == "/camera") {
       throw "Must remap 'camera' to the camera namespace.";
@@ -94,11 +101,11 @@ protected:
     cam_info_.height = 480;
     cam_info_.width = 640;
     // No ROI
-    cam_info_.D.resize(5);
-    std::copy(D, D + 5, cam_info_.D.begin());
-    std::copy(K, K + 9, cam_info_.K.begin());
-    std::copy(R, R + 9, cam_info_.R.begin());
-    std::copy(P, P + 12, cam_info_.P.begin());
+    cam_info_.d.resize(5);
+    std::copy(D, D + 5, cam_info_.d.begin());
+    std::copy(K, K + 9, cam_info_.k.begin());
+    std::copy(R, R + 9, cam_info_.r.begin());
+    std::copy(P, P + 12, cam_info_.p.begin());
     cam_info_.distortion_model = sensor_msgs::distortion_models::PLUMB_BOB;
 
     distorted_image_ = cv::Mat(cv::Size(cam_info_.width, cam_info_.height), CV_8UC3);
@@ -122,14 +129,26 @@ protected:
     }
 
     raw_image_ = cv_bridge::CvImage(
-      std_msgs::Header(), "bgr8", distorted_image_).toImageMsg();
+      std_msgs::msg::Header(), "bgr8", distorted_image_).toImageMsg();
+
+    rclcpp::NodeOptions options;
+    options.arguments({
+      "--ros-args", "-r", std::string("__ns:=") + "/camera",
+      "-r", "/camera/image:=/camera/image_raw"});
+    node_rectify = std::make_shared<image_proc::RectifyNode>(options);
+
+    spin_rectify_thread = std::thread([this](){
+      rclcpp::spin(node_rectify);
+    });
 
     // Create raw camera subscriber and publisher
-    image_transport::ImageTransport it(nh_);
+    image_transport::ImageTransport it(node);
     cam_pub_ = it.advertiseCamera(topic_raw_, 1);
   }
 
-  ros::NodeHandle nh_;
+  rclcpp::Node::SharedPtr node;
+  rclcpp::Node::SharedPtr node_rectify;
+  std::thread spin_rectify_thread;
   std::string topic_raw_;
   std::string topic_mono_;
   std::string topic_rect_;
@@ -137,22 +156,22 @@ protected:
   std::string topic_rect_color_;
 
   cv::Mat distorted_image_;
-  sensor_msgs::ImagePtr raw_image_;
+  sensor_msgs::msg::Image::SharedPtr raw_image_;
   bool has_new_image_;
   cv::Mat received_image_;
-  sensor_msgs::CameraInfo cam_info_;
+  sensor_msgs::msg::CameraInfo cam_info_;
   image_transport::CameraPublisher cam_pub_;
   image_transport::Subscriber cam_sub_;
 
 public:
-  void imageCallback(const sensor_msgs::ImageConstPtr & msg)
+  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
   {
     cv_bridge::CvImageConstPtr cv_ptr;
 
     try {
       cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
     } catch (cv_bridge::Exception & e) {
-      ROS_FATAL("cv_bridge exception: %s", e.what());
+      RCLCPP_INFO(node->get_logger(), "cv_bridge exception: '%s'", e.what());
       return;
     }
 
@@ -163,20 +182,24 @@ public:
   void publishRaw()
   {
     has_new_image_ = false;
+    raw_image_->header.stamp = this->node->now();
+    cam_info_.header.stamp = raw_image_->header.stamp;
     cam_pub_.publish(*raw_image_, cam_info_);
   }
 };
 
 TEST_F(ImageProcRectifyTest, rectifyTest)
 {
-  ROS_INFO("In test. Subscribing.");
-  image_transport::ImageTransport it(nh_);
+  RCLCPP_INFO(node->get_logger(), "In test. Subscribing.");
+  image_transport::ImageTransport it(node);
   cam_sub_ = it.subscribe(
     topic_rect_, 1, &ImageProcRectifyTest::imageCallback,
     dynamic_cast<ImageProcRectifyTest *>(this));
 
   // Wait for image_proc to be operational
   bool wait_for_topic = true;
+
+  rclcpp::WallRate loop_rate(500ms);
 
   while (wait_for_topic) {
     // @todo this fails without the additional 0.5 second sleep after the
@@ -186,8 +209,7 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
     if (cam_sub_.getNumPublishers() > 0) {
       wait_for_topic = false;
     }
-
-    ros::Duration(0.5).sleep();
+    loop_rate.sleep();
   }
 
   // All the tests are the same as from
@@ -203,8 +225,8 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
   // use original cam_info
   publishRaw();
   while (!has_new_image_) {
-    ros::spinOnce();
-    ros::Duration(0.5).sleep();
+    rclcpp::spin_some(node);
+    loop_rate.sleep();
   }
 
   // Test that rectified image is sufficiently different
@@ -216,37 +238,37 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
   // Test that rectified image is sufficiently different
   // using default distortion but with first element zeroed
   // out.
-  sensor_msgs::CameraInfo cam_info_orig = cam_info_;
-  cam_info_.D[0] = 0.0;
+  sensor_msgs::msg::CameraInfo cam_info_orig = cam_info_;
+  cam_info_.d[0] = 0.0;
   publishRaw();
 
   while (!has_new_image_) {
-    ros::spinOnce();
-    ros::Duration(0.5).sleep();
+    rclcpp::spin_some(node);
+    loop_rate.sleep();
   }
 
   error = cv::norm(distorted_image_, received_image_, cv::NORM_L1);
   EXPECT_GT(error, diff_threshold);
 
   // Test that rectified image is the same using zero distortion
-  cam_info_.D.assign(cam_info_.D.size(), 0);
+  cam_info_.d.assign(cam_info_.d.size(), 0);
   publishRaw();
 
   while (!has_new_image_) {
-    ros::spinOnce();
-    ros::Duration(0.5).sleep();
+    rclcpp::spin_some(node);
+    loop_rate.sleep();
   }
 
   error = cv::norm(distorted_image_, received_image_, cv::NORM_L1);
   EXPECT_EQ(error, 0);
 
   // Test that rectified image is the same using empty distortion
-  cam_info_.D.clear();
+  cam_info_.d.clear();
   publishRaw();
 
   while (!has_new_image_) {
-    ros::spinOnce();
-    ros::Duration(0.5).sleep();
+    rclcpp::spin_some(node);
+    loop_rate.sleep();
   }
 
   error = cv::norm(distorted_image_, received_image_, cv::NORM_L1);
@@ -255,11 +277,14 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
 
   // restore the original cam_info for other tests added in the future
   cam_info_ = cam_info_orig;
+
+  rclcpp::shutdown();
+  spin_rectify_thread.join();
 }
 
 int main(int argc, char ** argv)
 {
-  ros::init(argc, argv, "image_proc_test_rectify");
+  rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
