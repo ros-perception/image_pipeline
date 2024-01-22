@@ -24,7 +24,6 @@
   <depend>camera_calibration_parsers</depend>
   <depend>cv_bridge</depend>
   <depend>image_transport</depend>
-  <depend>libboost-dev</depend>
   <depend>message_filters</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
