@@ -174,7 +174,7 @@ public:
     try {
       cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
     } catch (cv_bridge::Exception & e) {
-      RCLCPP_INFO(node->get_logger(), "cv_bridge exception: '%s'", e.what());
+      RCLCPP_ERROR(node->get_logger(), "cv_bridge exception: '%s'", e.what());
       return;
     }
 

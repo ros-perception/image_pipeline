@@ -50,7 +50,7 @@ class ImageProcTest
 protected:
   virtual void SetUp()
   {
-    node = rclcpp::Node::make_shared("image_proc_Test");
+    node = rclcpp::Node::make_shared("image_proc_test");
 
     // Determine topic names
     std::string camera_ns = node->get_node_topics_interface()->resolve_topic_name("camera") + "/";
