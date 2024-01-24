@@ -265,6 +265,10 @@ void PointCloudXyzrgbRadialNode::imageCb(
     convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
   } else if (rgb_msg->encoding == sensor_msgs::image_encodings::BGR8) {
     convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
+  } else if (rgb_msg->encoding == sensor_msgs::image_encodings::BGRA8) {
+    convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
+  } else if (rgb_msg->encoding == sensor_msgs::image_encodings::RGBA8) {
+    convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
   } else if (rgb_msg->encoding == sensor_msgs::image_encodings::MONO8) {
     convertRgb(rgb_msg, cloud_msg, red_offset, green_offset, blue_offset, color_step);
   } else {
