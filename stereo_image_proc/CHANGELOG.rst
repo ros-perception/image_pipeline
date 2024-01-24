@@ -2,6 +2,54 @@
 Changelog for package stereo_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.0 (2024-01-24)
+------------------
+* stereo_image_proc: cleanup cmake (`#904 <https://github.com/ros-perception/image_pipeline/issues/904>`_)
+  This was supposed to be switched over when e-turtle rolled out. J-turtle
+  ain't that late...
+* stereo_image_proc: consistent image_transport (`#903 <https://github.com/ros-perception/image_pipeline/issues/903>`_)
+  * make image_transport work
+  * make remap work as expected with image_transport
+  * make subscribers lazy
+* support rgba8 and bgra8 encodings by skipping alpha channel (`#869 <https://github.com/ros-perception/image_pipeline/issues/869>`_)
+  Related with the change in ROS 1
+  https://github.com/ros-perception/image_pipeline/pull/671/files
+  ---------
+* allow use as component or node (`#852 <https://github.com/ros-perception/image_pipeline/issues/852>`_)
+  This addresses
+  https://github.com/ros-perception/image_pipeline/issues/823:
+  * depth_image_proc was never implemented properly this way
+  * image_proc might have once worked this way, but it appears upstream
+  has changed over time and it was no longer doing the job.
+  * stereo_image_proc is actually implemented correctly - I just added a
+  comment
+  With this PR:
+  ```
+  $ ros2 pkg executables image_proc
+  image_proc crop_decimate_node
+  image_proc crop_non_zero_node
+  image_proc debayer_node
+  image_proc image_proc
+  image_proc rectify_node
+  image_proc resize_node
+  ```
+  ```
+  $ ros2 pkg executables depth_image_proc
+  depth_image_proc convert_metric_node
+  depth_image_proc crop_foremost_node
+  depth_image_proc disparity_node
+  depth_image_proc point_cloud_xyz_node
+  depth_image_proc point_cloud_xyz_radial_node
+  depth_image_proc point_cloud_xyzi_node
+  depth_image_proc point_cloud_xyzi_radial_node
+  depth_image_proc point_cloud_xyzrgb_node
+  depth_image_proc point_cloud_xyzrgb_radial_node
+  depth_image_proc register_node
+  ```
+* fix: change type for epsilon (`#822 <https://github.com/ros-perception/image_pipeline/issues/822>`_)
+* add myself as a maintainer (`#846 <https://github.com/ros-perception/image_pipeline/issues/846>`_)
+* Contributors: Alejandro Hernández Cordero, Daisuke Nishimatsu, Michael Ferguson
+
 3.0.1 (2022-12-04)
 ------------------
 * Replace deprecated headers

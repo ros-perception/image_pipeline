@@ -2,6 +2,92 @@
 Changelog for package depth_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.0 (2024-01-24)
+------------------
+* radial nodes: should all sub to raw topics (`#906 <https://github.com/ros-perception/image_pipeline/issues/906>`_)
+  Per findings in
+  https://github.com/ros-perception/image_pipeline/issues/388#issuecomment-1902487162
+  - instead of renaming xyz_radial and xyzi_radial to image_rect, I should
+  have made the xyzrgb_radial use image_raw (since these nodes use
+  matrices K & D):
+  * Revert the change in xyzi_radial - topic is depth/image_raw as it has
+  always been
+  * Revert the change in xyz_radial, although it is still changed slightly
+  from the old "image_raw" -> "depth/image_raw" for consistency with the
+  other nodes.
+  * Update xyzrgb_radial:
+  * depth_registered/image_rect -> depth/image_raw
+  * rgb/image_rect_color -> rgb/image_raw
+  * update launch files accordingly (and remove camera_info since it no
+  longer needs to be renamed, happens automagically). Note: these launch
+  files are probably epically bad since realsense doesn't output radial
+  images... but we'll leave them as documentation for these nodes.
+* depth_image_proc: update launch files (`#905 <https://github.com/ros-perception/image_pipeline/issues/905>`_)
+  * follow up to `#900 <https://github.com/ros-perception/image_pipeline/issues/900>`_ - had not noticed these launch files at the time
+  * remove camera_info topics that auto remap now
+* depth_image_proc: consistent image_transport (`#900 <https://github.com/ros-perception/image_pipeline/issues/900>`_)
+  * all node support image_transport and/or depth_image_transport parameters.
+  * point cloud nodes use depth_image_transport parameter for all depth inputs
+  * fixes so that remapping works appropriately for image topics, even when using transports other than raw
+  * fixes so that remapping works appropriately for image_transport outputs (crop/convert nodes)
+  * support remapping camera_info topics
+* support rgba8 and bgra8 encodings by skipping alpha channel (`#869 <https://github.com/ros-perception/image_pipeline/issues/869>`_)
+  Related with the change in ROS 1
+  https://github.com/ros-perception/image_pipeline/pull/671/files
+  ---------
+* ROS 2: Add option to use the RGB image timestamp for the registered depth image (`#872 <https://github.com/ros-perception/image_pipeline/issues/872>`_)
+  Related with this PR in ROS 1
+  https://github.com/ros-perception/image_pipeline/pull/871
+* Support MONO16 image encodings: point_cloud_xyz (`#868 <https://github.com/ros-perception/image_pipeline/issues/868>`_)
+  Related with this change in ROS 1
+  https://github.com/ros-perception/image_pipeline/pull/630
+* ROS 2: depth_image_proc/point_cloud_xyzi_radial Add intensity conversion (copy) for float (`#867 <https://github.com/ros-perception/image_pipeline/issues/867>`_)
+  Ported from ROS 1
+  https://github.com/ros-perception/image_pipeline/pull/336/files
+* make remaining components lazy (`#853 <https://github.com/ros-perception/image_pipeline/issues/853>`_)
+  missed a few components in `#815 <https://github.com/ros-perception/image_pipeline/issues/815>`_
+* allow use as component or node (`#852 <https://github.com/ros-perception/image_pipeline/issues/852>`_)
+  This addresses
+  https://github.com/ros-perception/image_pipeline/issues/823:
+  * depth_image_proc was never implemented properly this way
+  * image_proc might have once worked this way, but it appears upstream
+  has changed over time and it was no longer doing the job.
+  * stereo_image_proc is actually implemented correctly - I just added a
+  comment
+  With this PR:
+  ```
+  $ ros2 pkg executables image_proc
+  image_proc crop_decimate_node
+  image_proc crop_non_zero_node
+  image_proc debayer_node
+  image_proc image_proc
+  image_proc rectify_node
+  image_proc resize_node
+  ```
+  ```
+  $ ros2 pkg executables depth_image_proc
+  depth_image_proc convert_metric_node
+  depth_image_proc crop_foremost_node
+  depth_image_proc disparity_node
+  depth_image_proc point_cloud_xyz_node
+  depth_image_proc point_cloud_xyz_radial_node
+  depth_image_proc point_cloud_xyzi_node
+  depth_image_proc point_cloud_xyzi_radial_node
+  depth_image_proc point_cloud_xyzrgb_node
+  depth_image_proc point_cloud_xyzrgb_radial_node
+  depth_image_proc register_node
+  ```
+* add support for lazy subscribers (`#815 <https://github.com/ros-perception/image_pipeline/issues/815>`_)
+  This implements `#780 <https://github.com/ros-perception/image_pipeline/issues/780>`_ for ROS 2 distributions after Iron, where we have:
+  * Connect/disconnect callbacks, per https://github.com/ros2/rmw/issues/330 (this made it into Iron)
+  * Updated APIs in https://github.com/ros-perception/image_common/pull/272 (this is only in Rolling currently)
+* add myself as a maintainer (`#846 <https://github.com/ros-perception/image_pipeline/issues/846>`_)
+* Depth image transport configure susbcribers (`#844 <https://github.com/ros-perception/image_pipeline/issues/844>`_) (`#845 <https://github.com/ros-perception/image_pipeline/issues/845>`_)
+* Updated depth_image_proc for ros2
+  Instantiated template for convertDepth, added options to register, and
+  changed register from a class loader to an RCLPP component.
+* Contributors: Alejandro Hernández Cordero, Michael Ferguson, ksommerkohrt
+
 3.0.1 (2022-12-04)
 ------------------
 * Replace deprecated headers

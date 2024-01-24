@@ -2,6 +2,45 @@
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.0 (2024-01-24)
+------------------
+* Removed cfg files related with ROS 1 parameters (`#911 <https://github.com/ros-perception/image_pipeline/issues/911>`_)
+  Removed cfg files related with ROS 1 parameters
+* ROS 2: Fixed CMake (`#899 <https://github.com/ros-perception/image_pipeline/issues/899>`_)
+* image_publisher: functional component (`#861 <https://github.com/ros-perception/image_pipeline/issues/861>`_)
+  * filename now functions when using a component
+  * parameter callback gets called at startup when using the component
+  * cleanup a bit of the logging
+  * add launch file to test component more easily
+* properly remap compressed topics (`#851 <https://github.com/ros-perception/image_pipeline/issues/851>`_)
+  ## Before:
+  Pushing into namespace is broken, only image_raw changes (camera_info
+  and transport topics should change):
+  ```
+  ros2 run image_publisher image_publisher_node --ros-args -p filename:=test.png -r image_raw:=foo/image_raw
+  ---
+  ros2 topic list
+  /camera_info
+  /foo/image_raw
+  /image_raw/compressed
+  /image_raw/compressedDepth
+  /image_raw/theora
+  ```
+  ## After:
+  Pushing into namespace now works:
+  ```
+  ros2 run image_publisher image_publisher_node --ros-args -p filename:=test.png -r image_raw:=foo/image_raw
+  ---
+  ros2 topic list
+  /foo/camera_info
+  /foo/image_raw
+  /foo/image_raw/compressed
+  /foo/image_raw/compressedDepth
+  /foo/image_raw/theora
+  ```
+* add myself as a maintainer (`#846 <https://github.com/ros-perception/image_pipeline/issues/846>`_)
+* Contributors: Alejandro Hernández Cordero, Michael Ferguson
+
 3.0.1 (2022-12-04)
 ------------------
 * Replace deprecated headers

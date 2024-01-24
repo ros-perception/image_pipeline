@@ -2,6 +2,67 @@
 Changelog for package image_view
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.0 (2024-01-24)
+------------------
+* remove the last bit of boost (`#912 <https://github.com/ros-perception/image_pipeline/issues/912>`_)
+  Last bit of `#407 <https://github.com/ros-perception/image_pipeline/issues/407>`_ - every other occurrence of "boost" when grepping the
+  repo is in the changelog
+* Removed Boost dependency (`#909 <https://github.com/ros-perception/image_pipeline/issues/909>`_)
+  Removed Boost dependency. Related with
+  https://github.com/ros-perception/image_pipeline/issues/407
+  ---------
+* Removed cfg files related with ROS 1 parameters (`#911 <https://github.com/ros-perception/image_pipeline/issues/911>`_)
+  Removed cfg files related with ROS 1 parameters
+* image_view: consistent image_transport (`#876 <https://github.com/ros-perception/image_pipeline/issues/876>`_)
+  All of these nodes already have the proper remapping support - but
+  image_transport parameter support was scattered
+* enable autosize parameter in disparity view (`#875 <https://github.com/ros-perception/image_pipeline/issues/875>`_)
+  appears to be bug left over from ROS 2 port
+* ROS 2: Add option to prepend timestamp to image filename in image_saver node (`#870 <https://github.com/ros-perception/image_pipeline/issues/870>`_)
+  Related to this PR in ROS 1
+  https://github.com/ros-perception/image_pipeline/pull/806/files
+  ---------
+* Add support for floating point fps (`#866 <https://github.com/ros-perception/image_pipeline/issues/866>`_)
+  Related with this PR
+  https://github.com/ros-perception/image_pipeline/pull/723
+  ---------
+* use cv::DestroyAllWindows (`#863 <https://github.com/ros-perception/image_pipeline/issues/863>`_)
+  This ports `#816 <https://github.com/ros-perception/image_pipeline/issues/816>`_ to ROS 2 and prevents weird exit conditions if you
+  already closed the window
+* properly remap compressed topics (`#851 <https://github.com/ros-perception/image_pipeline/issues/851>`_)
+  ## Before:
+  Pushing into namespace is broken, only image_raw changes (camera_info
+  and transport topics should change):
+  ```
+  ros2 run image_publisher image_publisher_node --ros-args -p filename:=test.png -r image_raw:=foo/image_raw
+  ---
+  ros2 topic list
+  /camera_info
+  /foo/image_raw
+  /image_raw/compressed
+  /image_raw/compressedDepth
+  /image_raw/theora
+  ```
+  ## After:
+  Pushing into namespace now works:
+  ```
+  ros2 run image_publisher image_publisher_node --ros-args -p filename:=test.png -r image_raw:=foo/image_raw
+  ---
+  ros2 topic list
+  /foo/camera_info
+  /foo/image_raw
+  /foo/image_raw/compressed
+  /foo/image_raw/compressedDepth
+  /foo/image_raw/theora
+  ```
+* image_view: fix encoding, help string (`#850 <https://github.com/ros-perception/image_pipeline/issues/850>`_)
+  * encoding shouldn't be hard coded, pull it from the message
+  * help string needs to be updated to proper parameter format
+* Improved Image view dynamic parameters description (`#829 <https://github.com/ros-perception/image_pipeline/issues/829>`_)
+* add myself as a maintainer (`#846 <https://github.com/ros-perception/image_pipeline/issues/846>`_)
+* feat: image_saver reports an error on file save
+* Contributors: Alejandro Hernández Cordero, Michael Ferguson, Russ Webber
+
 3.0.1 (2022-12-04)
 ------------------
 * Replace deprecated headers
