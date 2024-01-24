@@ -2,6 +2,19 @@
 Changelog for package stereo_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.3 (2022-01-24)
+------------------
+* [backport humble] stereo_image_proc: cleanup cmake (`#904 <https://github.com/ros-perception/image_pipeline/issues/904>`_) (`#907 <https://github.com/ros-perception/image_pipeline/issues/907>`_)
+  This was supposed to be switched over when e-turtle rolled out. J-turtle
+  ain't that late...
+  Backported https://github.com/ros-perception/image_pipeline/pull/904
+  Co-authored-by: Michael Ferguson <mfergs7@gmail.com>
+* [backport humble] upport rgba8 and bgra8 encodings by skipping alpha channel (`#869 <https://github.com/ros-perception/image_pipeline/issues/869>`_) (`#895 <https://github.com/ros-perception/image_pipeline/issues/895>`_)
+  backport `#869 <https://github.com/ros-perception/image_pipeline/issues/869>`_
+* allow use as component or node (`#859 <https://github.com/ros-perception/image_pipeline/issues/859>`_)
+  backport `#852 <https://github.com/ros-perception/image_pipeline/issues/852>`_ to humble
+* Contributors: Alejandro Hernández Cordero, Michael Ferguson
+
 3.0.2 (2022-01-17)
 ------------------
 * Forward container namespace from stereo_image_proc -> image_proc (`#752 <https://github.com/ros-perception/image_pipeline/issues/752>`_)

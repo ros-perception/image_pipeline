@@ -2,6 +2,15 @@
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.3 (2022-01-24)
+------------------
+* [backport Humble] Removed cfg files related with ROS 1 parameters (`#911 <https://github.com/ros-perception/image_pipeline/issues/911>`_) (`#913 <https://github.com/ros-perception/image_pipeline/issues/913>`_)
+  Removed cfg files related with ROS 1 parameters. Backport
+  https://github.com/ros-perception/image_pipeline/pull/911
+* ROS 2: Fixed CMake (`#899 <https://github.com/ros-perception/image_pipeline/issues/899>`_) (`#901 <https://github.com/ros-perception/image_pipeline/issues/901>`_)
+  backport `#899 <https://github.com/ros-perception/image_pipeline/issues/899>`_
+* Contributors: Alejandro Hernández Cordero
+
 3.0.2 (2022-01-17)
 ------------------
 
