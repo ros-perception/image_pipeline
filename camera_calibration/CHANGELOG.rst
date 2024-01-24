@@ -2,6 +2,23 @@
 Changelog for package camera_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.0.0 (2022-12-24)
+------------------
+* [backport iron] ROS 2: Added more aruco dicts, fixed aruco linerror bug (`#873 <https://github.com/ros-perception/image_pipeline/issues/873>`_) (`#890 <https://github.com/ros-perception/image_pipeline/issues/890>`_)
+  backport `#873 <https://github.com/ros-perception/image_pipeline/issues/873>`_
+* [backport iron] ROS 2: Fixing thrown Exception in camerachecker.py (`#871 <https://github.com/ros-perception/image_pipeline/issues/871>`_) (`#888 <https://github.com/ros-perception/image_pipeline/issues/888>`_)
+  backport #`#871 <https://github.com/ros-perception/image_pipeline/issues/871>`_
+* add myself as a maintainer (`#846 <https://github.com/ros-perception/image_pipeline/issues/846>`_)
+* fix threading shutdown
+* use correct synchronous service call
+* use remap rules instead of parameters for services
+* remove duplicated definition of on_model_change
+* fix service check
+* remove commented code
+* Fix QoS incompatibility camera_calibration ROS2
+* perform calibration in another thread
+* Contributors: Alejandro Hernández Cordero, Christian Rauch, Kenji Brameld, Michael Ferguson, Michal Wojcik
+
 3.0.1 (2022-12-04)
 ------------------
 * add python3-opencv to camera calibration dependency

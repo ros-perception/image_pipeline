@@ -2,6 +2,16 @@
 Changelog for package image_rotate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.0.0 (2022-12-24)
+------------------
+* [backport iron] Removed cfg files related with ROS 1 parameters (`#911 <https://github.com/ros-perception/image_pipeline/issues/911>`_) (`#914 <https://github.com/ros-perception/image_pipeline/issues/914>`_)
+  Removed cfg files related with ROS 1 parameters. Backport
+  https://github.com/ros-perception/image_pipeline/pull/911
+* load image_rotate::ImageRotateNode as component (`#856 <https://github.com/ros-perception/image_pipeline/issues/856>`_)
+  This is a fixed version of `#820 <https://github.com/ros-perception/image_pipeline/issues/820>`_ - targeting iron
+* add myself as a maintainer (`#846 <https://github.com/ros-perception/image_pipeline/issues/846>`_)
+* Contributors: Alejandro Hernández Cordero, Michael Ferguson
+
 3.0.1 (2022-12-04)
 ------------------
 * Replace deprecated headers

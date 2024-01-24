@@ -2,6 +2,20 @@
 Changelog for package image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.0.0 (2022-12-24)
+------------------
+* [backport iron] Removed cfg files related with ROS 1 parameters (`#911 <https://github.com/ros-perception/image_pipeline/issues/911>`_) (`#914 <https://github.com/ros-perception/image_pipeline/issues/914>`_)
+  Removed cfg files related with ROS 1 parameters. Backport
+  https://github.com/ros-perception/image_pipeline/pull/911
+* [backport iron] ROS 2: Merged resize.cpp: fix memory leak (`#874 <https://github.com/ros-perception/image_pipeline/issues/874>`_) (`#892 <https://github.com/ros-perception/image_pipeline/issues/892>`_)
+  backport `#874 <https://github.com/ros-perception/image_pipeline/issues/874>`_
+* allow use as component or node (`#858 <https://github.com/ros-perception/image_pipeline/issues/858>`_)
+  Backport `#852 <https://github.com/ros-perception/image_pipeline/issues/852>`_ to Iron
+* add myself as a maintainer (`#846 <https://github.com/ros-perception/image_pipeline/issues/846>`_)
+* Use the same QoS profiles as publishers in image_proc
+* fix to allow remapping resize and image topics
+* Contributors: Alejandro Hernández Cordero, Joe Schornak, Michael Ferguson, Michal Wojcik
+
 3.0.1 (2022-12-04)
 ------------------
 * Replace deprecated headers

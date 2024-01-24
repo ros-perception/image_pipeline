@@ -2,6 +2,22 @@
 Changelog for package stereo_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.0.0 (2022-12-24)
+------------------
+* [backport iron] stereo_image_proc: cleanup cmake (`#904 <https://github.com/ros-perception/image_pipeline/issues/904>`_) (`#908 <https://github.com/ros-perception/image_pipeline/issues/908>`_)
+  This was supposed to be switched over when e-turtle rolled out. J-turtle
+  ain't that late...
+  backport https://github.com/ros-perception/image_pipeline/pull/904
+  Co-authored-by: Michael Ferguson <mfergs7@gmail.com>
+* [backport iron] support rgba8 and bgra8 encodings by skipping alpha channel (`#869 <https://github.com/ros-perception/image_pipeline/issues/869>`_) (`#896 <https://github.com/ros-perception/image_pipeline/issues/896>`_)
+  backport `#869 <https://github.com/ros-perception/image_pipeline/issues/869>`_
+* allow use as component or node (`#858 <https://github.com/ros-perception/image_pipeline/issues/858>`_)
+  Backport `#852 <https://github.com/ros-perception/image_pipeline/issues/852>`_ to Iron
+* fix: change type for epsilon (`#822 <https://github.com/ros-perception/image_pipeline/issues/822>`_) (`#849 <https://github.com/ros-perception/image_pipeline/issues/849>`_)
+  Co-authored-by: Daisuke Nishimatsu <42202095+wep21@users.noreply.github.com>
+* add myself as a maintainer (`#846 <https://github.com/ros-perception/image_pipeline/issues/846>`_)
+* Contributors: Alejandro Hernández Cordero, Michael Ferguson
+
 3.0.1 (2022-12-04)
 ------------------
 * Replace deprecated headers
