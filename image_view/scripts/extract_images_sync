@@ -87,7 +87,7 @@ Typical command-line usage:
             channels = img.shape[2] if img.ndim == 3 else 1
             encoding_in = bridge.dtype_with_channels_to_cvtype2(
                 img.dtype, channels)
-            img = cv_bridge.cvtColor_for_display(
+            img = cv_bridge.cvtColorForDisplay(
                 img, encoding_in=encoding_in, encoding_out='',
                 do_dynamic_scaling=self.do_dynamic_scaling)
             fname = self.fname_fmt % (seq, i)
