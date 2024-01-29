@@ -33,7 +33,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 """Save images of multiple topics with timestamp synchronization.
 
-Usage: ros2 run image_view extract_images_sync _inputs:='[<topic_0>, <topic_1>]'
+Usage: ros2 run image_view extract_images_sync --ros-args -p inputs:='[<topic_0>, <topic_1>]'
 """
 
 import sys
@@ -55,15 +55,14 @@ class ExtractImagesSync(Node):
             'filename_format', 'frame%04i_%i.jpg').value   
         self.do_dynamic_scaling = self.declare_parameter(
             'do_dynamic_scaling', False).value
-        img_topics = self.declare_parameter('_inputs', None).value
+        img_topics = self.declare_parameter('inputs', None).value
 
         if img_topics is None:
             self.get_logger().warn("""\
-extract_images_sync: Parameter '_inputs' has not been specified! \
+extract_images_sync: Parameter 'inputs' has not been specified! \
 Typical command-line usage:
-\t$ ros2 run image_view extract_images_sync _inputs:=<image_topic>
-\t$ ros2 run image_view extract_images_sync \
-_inputs:='[<image_topic>, <image_topic>]'""")
+\t$ ros2 run image_view extract_images_sync --ros-args -p inputs:=<image_topic>
+\t$ ros2 run image_view extract_images_sync --ros-args -p inputs:='[<image_topic>, <image_topic>]'""")
             sys.exit(1)
 
         if not isinstance(img_topics, list):
@@ -74,7 +73,7 @@ _inputs:='[<image_topic>, <image_topic>]'""")
             subs.append(Subscriber(self, Image, t))
 
         self.approximate_sync = self.declare_parameter('approximate_sync', False).value;
-        if not self.approximate_sync:
+        if self.approximate_sync:
             sync = ApproximateTimeSynchronizer(subs, 100, slop=0.1)
         else:
             sync = TimeSynchronizer(subs, 100)
