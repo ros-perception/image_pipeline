@@ -42,6 +42,7 @@ import cv_bridge
 import rclpy
 
 from rclpy.node import Node
+from rclpy.duration import Duration
 from sensor_msgs.msg import Image
 from message_filters import ApproximateTimeSynchronizer, TimeSynchronizer, Subscriber
 
@@ -62,7 +63,7 @@ class ExtractImagesSync(Node):
 
         # Limit the throughput to 10fps by default.
         self.sec_per_frame = self.declare_parameter(
-            'sec_per_frame', 0).value
+            'sec_per_frame', 0.0).value
 
         img_topics = self.declare_parameter('inputs', None).value
 
@@ -94,7 +95,7 @@ Typical command-line usage:
         # Decimation is enabled if it is set to greater than
         # zero. If it is enabled, exit if delay is less than
         # the decimation rate specified.
-        if (self.sec_per_frame > 0) and (delay.to_sec() < self.sec_per_frame):
+        if (self.sec_per_frame > 0) and (delay < Duration(seconds=self.sec_per_frame)):
             return
         
         # Update the current time
