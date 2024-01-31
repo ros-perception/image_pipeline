@@ -94,7 +94,7 @@ Typical command-line usage:
         # Decimation is enabled if it is set to greater than
         # zero. If it is enabled, exit if delay is less than
         # the decimation rate specified.
-        if (self.sec_per_frame > 0) and (delay < self.sec_per_frame):
+        if (self.sec_per_frame > 0) and (delay.to_sec() < self.sec_per_frame):
             return
         
         # Update the current time
