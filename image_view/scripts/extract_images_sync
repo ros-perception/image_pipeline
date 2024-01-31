@@ -51,10 +51,19 @@ class ExtractImagesSync(Node):
         super().__init__('extract_images_sync')
         self.get_logger().info('Extract_Images_Sync Node has been started')
         self.seq = 0
+        self.time = self.get_clock().now()
+
         self.fname_fmt = self.declare_parameter(
-            'filename_format', 'frame%04i_%i.jpg').value   
+            'filename_format', 'frame%04i_%i.jpg').value
+
+        # Do not scale dynamically by default.
         self.do_dynamic_scaling = self.declare_parameter(
             'do_dynamic_scaling', False).value
+
+        # Limit the throughput to 10fps by default.
+        self.sec_per_frame = self.declare_parameter(
+            'sec_per_frame', 0.1).value
+
         img_topics = self.declare_parameter('inputs', None).value
 
         if img_topics is None:
@@ -80,6 +89,17 @@ Typical command-line usage:
         sync.registerCallback(self.save)
 
     def save(self, *imgmsgs):
+        delay = self.get_clock().now() - self.time
+
+        # Decimation is enabled if it is set to greater than
+        # zero. If it is enabled, exit if delay is less than
+        # the decimation rate specified.
+        if (self.sec_per_frame > 0) and (delay < self.sec_per_frame):
+            return
+        
+        # Update the current time
+        self.time = self.get_clock().now()
+
         seq = self.seq
         bridge = cv_bridge.CvBridge()
         for i, imgmsg in enumerate(imgmsgs):
