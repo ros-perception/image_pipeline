@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Software License Agreement (BSD License)
 #
@@ -33,47 +33,50 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 """Save images of multiple topics with timestamp synchronization.
 
-Usage: rosrun image_view extract_images_sync _inputs:='[<topic_0>, <topic_1>]'
+Usage: ros2 run image_view extract_images_sync --ros-args -p inputs:='[<topic_0>, <topic_1>]'
 """
 
 import sys
-
 import cv2
-
 import cv_bridge
-import message_filters
-import rospy
+import rclpy
+
+from rclpy.node import Node
 from sensor_msgs.msg import Image
+from message_filters import ApproximateTimeSynchronizer, TimeSynchronizer, Subscriber
 
-
-class ExtractImagesSync(object):
+class ExtractImagesSync(Node):
 
     def __init__(self):
+        super().__init__('extract_images_sync')
+        self.get_logger().info('Extract_Images_Sync Node has been started')
         self.seq = 0
-        self.fname_fmt = rospy.get_param(
-            '~filename_format', 'frame%04i_%i.jpg')
-        self.do_dynamic_scaling = rospy.get_param(
-            '~do_dynamic_scaling', False)
-        img_topics = rospy.get_param('~inputs', None)
+        self.fname_fmt = self.declare_parameter(
+            'filename_format', 'frame%04i_%i.jpg').value   
+        self.do_dynamic_scaling = self.declare_parameter(
+            'do_dynamic_scaling', False).value
+        img_topics = self.declare_parameter('inputs', None).value
+
         if img_topics is None:
-            rospy.logwarn("""\
-extract_images_sync: rosparam '~inputs' has not been specified! \
+            self.get_logger().warn("""\
+extract_images_sync: Parameter 'inputs' has not been specified! \
 Typical command-line usage:
-\t$ rosrun image_view extract_images_sync _inputs:=<image_topic>
-\t$ rosrun image_view extract_images_sync \
-_inputs:='[<image_topic>, <image_topic>]'""")
+\t$ ros2 run image_view extract_images_sync --ros-args -p inputs:=<image_topic>
+\t$ ros2 run image_view extract_images_sync --ros-args -p inputs:='[<image_topic>, <image_topic>]'""")
             sys.exit(1)
+
         if not isinstance(img_topics, list):
             img_topics = [img_topics]
+
         subs = []
         for t in img_topics:
-            subs.append(message_filters.Subscriber(t, Image))
-        if rospy.get_param('~approximate_sync', False):
-            sync = message_filters.ApproximateTimeSynchronizer(
-                subs, queue_size=100, slop=.1)
+            subs.append(Subscriber(self, Image, t))
+
+        self.approximate_sync = self.declare_parameter('approximate_sync', False).value;
+        if self.approximate_sync:
+            sync = ApproximateTimeSynchronizer(subs, 100, slop=0.1)
         else:
-            sync = message_filters.TimeSynchronizer(
-                subs, queue_size=100)
+            sync = TimeSynchronizer(subs, 100)
         sync.registerCallback(self.save)
 
     def save(self, *imgmsgs):
@@ -92,8 +95,11 @@ _inputs:='[<image_topic>, <image_topic>]'""")
             cv2.imwrite(fname, img)
         self.seq = seq + 1
 
+def main(args=None):
+    rclpy.init(args=args)
+    extractor = ExtractImagesSync()
+    rclpy.spin(extractor)
+    rclpy.shutdown()
 
 if __name__ == '__main__':
-    rospy.init_node('extract_images_sync')
-    extractor = ExtractImagesSync()
-    rospy.spin()
+    main()

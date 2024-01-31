@@ -109,4 +109,9 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+install(
+  PROGRAMS scripts/extract_images_sync
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_auto_package()
