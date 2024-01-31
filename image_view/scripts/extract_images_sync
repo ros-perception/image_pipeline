@@ -105,9 +105,13 @@ Typical command-line usage:
         bridge = cv_bridge.CvBridge()
         for i, imgmsg in enumerate(imgmsgs):
             img = bridge.imgmsg_to_cv2(imgmsg)
-            channels = img.shape[2] if img.ndim == 3 else 1
-            encoding_in = bridge.dtype_with_channels_to_cvtype2(
-                img.dtype, channels)
+            # Default to the encoding in the image message
+            encoding_in = imgmsg.encoding
+            if not encoding_in:
+                # Encoding is not specified, try to automatically determine
+                channels = img.shape[2] if img.ndim == 3 else 1
+                encoding_in = bridge.dtype_with_channels_to_cvtype2(
+                    img.dtype, channels)
             img = cv_bridge.cvtColorForDisplay(
                 img, encoding_in=encoding_in, encoding_out='',
                 do_dynamic_scaling=self.do_dynamic_scaling)
