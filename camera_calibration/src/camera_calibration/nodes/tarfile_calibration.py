@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Software License Agreement (BSD License)
 #
@@ -148,7 +148,7 @@ def cal_from_tarfile(boards, tarname, mono = False, upload = False, calib_flags 
                     display(l+" "+r,vis)    
 
 
-if __name__ == '__main__':
+def main():
     from optparse import OptionParser
     parser = OptionParser("%prog TARFILE [ opts ]")
     parser.add_option("--mono", default=False, action="store_true", dest="mono",
@@ -226,3 +226,7 @@ if __name__ == '__main__':
         calib_flags |= cv2.CALIB_FIX_K1
 
     cal_from_tarfile(boards, tarname, options.mono, options.upload, calib_flags, options.visualize, options.alpha)
+
+
+if __name__ == '__main__':
+    main()
