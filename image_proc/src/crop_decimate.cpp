@@ -141,7 +141,7 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
       if (pub_.getNumSubscribers() == 0) {
         sub_.shutdown();
       } else if (!sub_) {
-        // Create subscriber with QoS matched to publisher
+        // Create subscriber with QoS matched to subscribed topic publisher
         auto qos_profile = getTopicQosProfile(this, image_topic_);
         image_transport::TransportHints hints(this);
         sub_ = image_transport::create_camera_subscription(
@@ -154,7 +154,7 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
   // Allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
 
-  // Create publisher with same QoS as subscribed topic
+  // Create publisher with QoS matched to subscribed topic publisher
   auto qos_profile = getTopicQosProfile(this, image_topic_);
   pub_ = image_transport::create_camera_publisher(this, "out/image_raw", qos_profile, pub_options);
 }
