@@ -113,7 +113,6 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
   int queue_size = this->declare_parameter("queue_size", 5);
   bool approx = this->declare_parameter("approximate_sync", false);
   double approx_sync_epsilon = this->declare_parameter("approximate_sync_tolerance_seconds", 0.0);
-  this->declare_parameter("use_system_default_qos", false);
   rcl_interfaces::msg::ParameterDescriptor descriptor;
   // TODO(ivanpauno): Confirm if using point cloud padding in `sensor_msgs::msg::PointCloud2`
   // can improve performance in some cases or not.
@@ -166,16 +165,6 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
         sub_r_info_.unsubscribe();
         sub_disparity_.unsubscribe();
       } else if (!sub_l_image_.getSubscriber()) {
-        // Optionally switch between system/sensor defaults
-        // TODO(fergs): remove and conform to REP-2003?
-        const bool use_system_default_qos =
-          this->get_parameter("use_system_default_qos").as_bool();
-        rclcpp::QoS image_sub_qos = rclcpp::SensorDataQoS();
-        if (use_system_default_qos) {
-          image_sub_qos = rclcpp::SystemDefaultsQoS();
-        }
-        const auto image_sub_rmw_qos = image_sub_qos.get_rmw_qos_profile();
-
         // For compressed topics to remap appropriately, we need to pass a
         // fully expanded and remapped topic name to image_transport
         auto node_base = this->get_node_base_interface();
@@ -190,16 +179,21 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
           node_base->resolve_topic_or_service_name(
           image_transport::getCameraInfoTopic(left_topic), false);
 
-        // Setup hints and QoS overrides
+        // REP-2003 specifies that subscriber should be SensorDataQoS
+        const auto sensor_data_qos = rclcpp::SensorDataQoS().get_rmw_qos_profile();
+
+        // Support image transport for compression
         image_transport::TransportHints hints(this);
+
+        // Allow overriding QoS settings (history, depth, reliability)
         auto sub_opts = rclcpp::SubscriptionOptions();
         sub_opts.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
 
         sub_l_image_.subscribe(
-          this, left_topic, hints.getTransport(), image_sub_rmw_qos, sub_opts);
-        sub_l_info_.subscribe(this, left_info_topic, image_sub_rmw_qos, sub_opts);
-        sub_r_info_.subscribe(this, right_topic, image_sub_rmw_qos, sub_opts);
-        sub_disparity_.subscribe(this, disparity_topic, image_sub_rmw_qos, sub_opts);
+          this, left_topic, hints.getTransport(), sensor_data_qos, sub_opts);
+        sub_l_info_.subscribe(this, left_info_topic, sensor_data_qos, sub_opts);
+        sub_r_info_.subscribe(this, right_topic, sensor_data_qos, sub_opts);
+        sub_disparity_.subscribe(this, disparity_topic, sensor_data_qos, sub_opts);
       }
     };
   pub_points2_ = create_publisher<sensor_msgs::msg::PointCloud2>("points2", 1, pub_opts);
