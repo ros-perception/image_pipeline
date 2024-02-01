@@ -55,7 +55,6 @@ def generate_launch_description():
             plugin='stereo_image_proc::DisparityNode',
             parameters=[{
                 'approximate_sync': LaunchConfiguration('approximate_sync'),
-                'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
                 'stereo_algorithm': LaunchConfiguration('stereo_algorithm'),
                 'prefilter_size': LaunchConfiguration('prefilter_size'),
                 'prefilter_cap': LaunchConfiguration('prefilter_cap'),
@@ -85,7 +84,6 @@ def generate_launch_description():
                 'approximate_sync': LaunchConfiguration('approximate_sync'),
                 'avoid_point_cloud_padding': LaunchConfiguration('avoid_point_cloud_padding'),
                 'use_color': LaunchConfiguration('use_color'),
-                'use_system_default_qos': LaunchConfiguration('use_system_default_qos'),
             }],
             remappings=[
                 ('left/camera_info', [LaunchConfiguration('left_namespace'), '/camera_info']),
@@ -93,6 +91,10 @@ def generate_launch_description():
                 (
                     'left/image_rect_color',
                     [LaunchConfiguration('left_namespace'), '/image_rect_color']
+                ),
+                (
+                    'right/image_rect_color',
+                    [LaunchConfiguration('right_namespace'), '/image_rect_color']
                 ),
             ]
         ),
@@ -114,10 +116,6 @@ def generate_launch_description():
         DeclareLaunchArgument(
             name='use_color', default_value='True',
             description='Generate point cloud with rgb data.'
-        ),
-        DeclareLaunchArgument(
-            name='use_system_default_qos', default_value='False',
-            description='Use the RMW QoS settings for the image and camera info subscriptions.'
         ),
         DeclareLaunchArgument(
             name='launch_image_proc', default_value='True',
