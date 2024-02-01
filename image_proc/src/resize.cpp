@@ -68,7 +68,7 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
   height_ = this->declare_parameter("height", -1);
   width_ = this->declare_parameter("width", -1);
 
-  // Create image pub with connection callback
+  // Setup lazy subscriber using publisher connection callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
     [this](rclcpp::MatchedInfo &)
@@ -76,7 +76,7 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
       if (pub_image_.getNumSubscribers() == 0) {
         sub_image_.shutdown();
       } else if (!sub_image_) {
-        // Match the subscriber QoS
+        // Create subscriber with QoS matched to publisher
         auto qos_profile = getTopicQosProfile(this, image_topic_);
         image_transport::TransportHints hints(this);
         sub_image_ = image_transport::create_camera_subscription(
@@ -87,6 +87,11 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
             std::placeholders::_2), hints.getTransport(), qos_profile);
       }
     };
+
+  // Allow overriding QoS settings (history, depth, reliability)
+  pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
+
+  // Create publisher with same QoS as subscribed topic
   auto qos_profile = getTopicQosProfile(this, image_topic_);
   pub_image_ = image_transport::create_camera_publisher(
     this, "resize/image_raw", qos_profile, pub_options);

@@ -133,7 +133,7 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
   int interpolation = this->declare_parameter("interpolation", 0);
   interpolation_ = static_cast<CropDecimateModes>(interpolation);
 
-  // Create image pub with connection callback
+  // Setup lazy subscriber using publisher connection callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
     [this](rclcpp::MatchedInfo &)
@@ -141,6 +141,7 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
       if (pub_.getNumSubscribers() == 0) {
         sub_.shutdown();
       } else if (!sub_) {
+        // Create subscriber with QoS matched to publisher
         auto qos_profile = getTopicQosProfile(this, image_topic_);
         image_transport::TransportHints hints(this);
         sub_ = image_transport::create_camera_subscription(
@@ -149,6 +150,9 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
             std::placeholders::_1, std::placeholders::_2), hints.getTransport(), qos_profile);
       }
     };
+
+  // Allow overriding QoS settings (history, depth, reliability)
+  pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
 
   // Create publisher with same QoS as subscribed topic
   auto qos_profile = getTopicQosProfile(this, image_topic_);
