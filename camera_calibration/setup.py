@@ -32,6 +32,7 @@ setup(
         'console_scripts': [
             'cameracalibrator = camera_calibration.nodes.cameracalibrator:main',
             'cameracheck = camera_calibration.nodes.cameracheck:main',
+            'tarfile_calibration = camera_calibration.nodes.tarfile_calibration:main',
         ],
     },
 )
