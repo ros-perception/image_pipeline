@@ -61,7 +61,7 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
   auto node_base = this->get_node_base_interface();
   image_topic_ = node_base->resolve_topic_or_service_name("image_raw", false);
 
-  // Create publisher options to setup callback
+  // Setup lazy subscriber using publisher connection callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
     [this](rclcpp::MatchedInfo &)
@@ -69,6 +69,7 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
       if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0) {
         sub_raw_.shutdown();
       } else if (!sub_raw_) {
+        // Create subscriber with QoS matched to subscribed topic publisher
         auto qos_profile = getTopicQosProfile(this, image_topic_);
         image_transport::TransportHints hints(this);
         sub_raw_ = image_transport::create_subscription(
@@ -79,7 +80,10 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
       }
     };
 
-  // Create publisher with same QoS as subscribed topic
+  // Allow overriding QoS settings (history, depth, reliability)
+  pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
+
+  // Create publisher with QoS matched to subscribed topic publisher
   auto qos_profile = getTopicQosProfile(this, image_topic_);
   pub_mono_ = image_transport::create_publisher(this, "image_mono", qos_profile, pub_options);
   pub_color_ = image_transport::create_publisher(this, "image_color", qos_profile, pub_options);
