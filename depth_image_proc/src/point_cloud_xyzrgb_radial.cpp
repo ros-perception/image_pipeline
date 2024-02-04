@@ -121,7 +121,8 @@ PointCloudXyzrgbRadialNode::PointCloudXyzrgbRadialNode(const rclcpp::NodeOptions
         sub_info_.subscribe(this, rgb_info_topic, rclcpp::QoS(10));
       }
     };
-  pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SensorDataQoS(), pub_options);
+  pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SystemDefaultsQoS(),
+      pub_options);
 }
 
 void PointCloudXyzrgbRadialNode::imageCb(

@@ -86,10 +86,8 @@ TrackMarkerNode::TrackMarkerNode(const rclcpp::NodeOptions & options)
       }
     };
 
-  // Allow overriding QoS settings (history, depth, reliability)
+  // Create publisher - allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-
-  // Create publisher
   pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(
     "tracked_pose", 10, pub_options);
 }

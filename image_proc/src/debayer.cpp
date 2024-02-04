@@ -84,13 +84,12 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
       }
     };
 
-  // Allow overriding QoS settings (history, depth, reliability)
+  // Create publisher - allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-
-  // Create publisher with QoS matched to subscribed topic publisher
-  auto qos_profile = getTopicQosProfile(this, image_topic_);
-  pub_mono_ = image_transport::create_publisher(this, mono_topic, qos_profile, pub_options);
-  pub_color_ = image_transport::create_publisher(this, color_topic, qos_profile, pub_options);
+  pub_mono_ = image_transport::create_publisher(this, mono_topic, rmw_qos_profile_default,
+      pub_options);
+  pub_color_ = image_transport::create_publisher(this, color_topic, rmw_qos_profile_default,
+      pub_options);
 }
 
 void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)

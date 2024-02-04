@@ -39,6 +39,7 @@
 
 #include <depth_image_proc/point_cloud_xyz_radial.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <image_proc/utils.hpp>
 #include <image_transport/image_transport.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <depth_image_proc/depth_traits.hpp>
@@ -56,7 +57,7 @@ PointCloudXyzRadialNode::PointCloudXyzRadialNode(const rclcpp::NodeOptions & opt
   // Read parameters
   queue_size_ = this->declare_parameter<int>("queue_size", 5);
 
-  // Create publisher with connect callback
+  // Setup lazy subscriber using publisher connection callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
     [this](rclcpp::MatchedInfo & s)
@@ -69,10 +70,11 @@ PointCloudXyzRadialNode::PointCloudXyzRadialNode(const rclcpp::NodeOptions & opt
         // fully expanded and remapped topic name to image_transport
         auto node_base = this->get_node_base_interface();
         std::string topic = node_base->resolve_topic_or_service_name("depth/image_raw", false);
-        // Get transport and QoS
+        // Get transport hints
         image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
-        auto custom_qos = rmw_qos_profile_system_default;
-        custom_qos.depth = queue_size_;
+        // Create subscriber with QoS matched to subscribed topic publisher
+        auto qos_profile = image_proc::getTopicQosProfile(this, topic);
+        qos_profile.depth = queue_size_;
         // Create subscriber
         sub_depth_ = image_transport::create_camera_subscription(
           this,
@@ -81,11 +83,14 @@ PointCloudXyzRadialNode::PointCloudXyzRadialNode(const rclcpp::NodeOptions & opt
             &PointCloudXyzRadialNode::depthCb, this, std::placeholders::_1,
             std::placeholders::_2),
           depth_hints.getTransport(),
-          custom_qos);
+          qos_profile);
       }
     };
+
+  // Allow overriding QoS settings (history, depth, reliability)
+  pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   pub_point_cloud_ = create_publisher<sensor_msgs::msg::PointCloud2>(
-    "points", rclcpp::SensorDataQoS(), pub_options);
+    "points", rclcpp::SystemDefaultsQoS(), pub_options);
 }
 
 void PointCloudXyzRadialNode::depthCb(
