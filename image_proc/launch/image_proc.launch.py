@@ -41,20 +41,27 @@ from launch_ros.descriptions import ComposableNode
 
 
 def generate_launch_description():
+
+    arg_namespace = DeclareLaunchArgument(
+        name='namespace', default_value='',
+        description=('namespace for all components loaded')
+    )
+
     composable_nodes = [
         ComposableNode(
             package='image_proc',
             plugin='image_proc::DebayerNode',
             name='debayer_node',
+            namespace=LaunchConfiguration('namespace'),
         ),
         ComposableNode(
             package='image_proc',
             plugin='image_proc::RectifyNode',
             name='rectify_mono_node',
+            namespace=LaunchConfiguration('namespace'),
             # Remap subscribers and publishers
             remappings=[
                 ('image', 'image_mono'),
-                ('camera_info', 'camera_info'),
                 ('image_rect', 'image_rect')
             ],
         ),
@@ -62,6 +69,7 @@ def generate_launch_description():
             package='image_proc',
             plugin='image_proc::RectifyNode',
             name='rectify_color_node',
+            namespace=LaunchConfiguration('namespace'),
             # Remap subscribers and publishers
             remappings=[
                 ('image', 'image_color'),
@@ -82,7 +90,7 @@ def generate_launch_description():
     image_processing_container = ComposableNodeContainer(
         condition=LaunchConfigurationEquals('container', ''),
         name='image_proc_container',
-        namespace='',
+        namespace=LaunchConfiguration('namespace'),
         package='rclcpp_components',
         executable='component_container',
         composable_node_descriptions=composable_nodes,
@@ -98,6 +106,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        arg_namespace,
         arg_container,
         image_processing_container,
         load_composable_nodes,
