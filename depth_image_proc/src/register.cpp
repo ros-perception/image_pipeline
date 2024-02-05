@@ -100,7 +100,7 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("RegisterNode", options)
 {
   // TransportHints does not actually declare the parameter
-  this->declare_parameter<std::string>("image_transport", "raw");
+  this->declare_parameter<std::string>("depth_image_transport", "raw");
 
   rclcpp::Clock::SharedPtr clock = this->get_clock();
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(clock);
@@ -137,7 +137,7 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
         // fully expanded and remapped topic name to image_transport
         auto node_base = this->get_node_base_interface();
         std::string topic = node_base->resolve_topic_or_service_name("depth/image_rect", false);
-        image_transport::TransportHints hints(this);
+        image_transport::TransportHints hints(this, "raw", "depth_image_transport");
         sub_depth_image_.subscribe(this, topic, hints.getTransport());
         sub_depth_info_.subscribe(this, "depth/camera_info");
         sub_rgb_info_.subscribe(this, "rgb/camera_info");
