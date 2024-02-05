@@ -59,35 +59,40 @@ The example below creates two composable nodes:
 
         return LaunchDescription([container])
 
-Using image_proc Launch File
+Using Compressed Image Transport
+--------------------------------
+All of the components and nodes in ``depth_image_proc`` support
+``image_transport``. This allows a subscriber to specify the transport to
+be used. By default, this is ``raw``, which means an uncompressed
+``sensor_msgs/Image``. When transmitting images over limited bandwidth
+networks, such as WiFi, it can be helpful to use ``compressed`` format.
+
+For the depth images, use the ``depth_image_transport`` parameter. For
+setting the transport for intensity or rgb images, the ``image_transport``
+parameter is used:
+
+.. code-block:: bash
+
+    $ ros2 run depth_image_proc point_cloud_xyz_node --ros-args -p depth_image_transport:=compressed
+
+Remapping camera_info Topics
 ----------------------------
-Make sure your camera driver is running. To see the available raw
-image topics from compatible drivers you can check:
+When a ``camera_info`` topic is needed, an image_transport camera subscriber
+is typically used. ROS 2 convention for naming ``camera_info`` topics is:
 
-```
-ros2 topic list | grep image_raw
-```
+ * camera/image - an image in namespace ``camera``.
+ * camera/camera_info - the associated camera info
 
-Normally the raw image from the camera driver is not what you want
-for visual processing, but rather an undistorted and (if necessary)
-debayered image. This is the job of ``image_proc``. If you are
-running on a robot, it's probably best to run ``image_proc`` there.
-For example, if the driver is publishing topics ``/my_camera/image_raw``
-and ``/my_camera/camera_info`` you would do:
+So if a node subscribes to a topic called ``image``, and the user remaps this
+ to ``my_camera/image``, then the associated camera info will be automatically
+ remapped to ``mycamera/camera_info``.
 
-```
-$ ros2 launch image_proc image_proc.launch.py namespace:=my_camera
-```
+Most ROS 2 camera drivers will follow the convention, but occasionally they do
+not. In this case, you will have to manually remap the camera_info - but due
+to the way that ROS 2 remapping works you have to use the fully resolved
+camera info topic. An example:
 
-Notice that we push our ``image_proc`` launch file down into the
-``/my_camera`` namespace, in which it subscribes to the ``image_raw``
-and ``camera_info`` topics. All output topics are likewise published
-within the ``/my_camera`` namespace.
-
-In a separate terminal (on your home machine, if you are running on a robot):
-
-```
-$ ros2 run image_view image_view --ros-args -r image:=my_camera/image_rect_color
-```
-
-This will display an undistorted color image from ``my_camera``.
+ * ``image`` is remapped to ``my_camera/image``.
+ * The fully resolved name for the camera info is now ``my_camera/camera_info``.
+ * If your camera driver actually publishes ``another_ns/camera_info``, then
+   you would have to remap ``my_camera/camera_info`` to ``another_ns/camera_info``.
