@@ -9,18 +9,19 @@ Alternatively, each component can be run as a standalone node.
 
 depth_image_proc::ConvertMetricNode
 -----------------------------------
-Component to convert raw uint16 depth image in mm to float depth image in m.
+Component to convert raw uint16 depth image in millimeters to
+float depth image in meters.
 Also available as a standalone node with the name ``convert_metric_node``.
 
 Subscribed Topics
 ^^^^^^^^^^^^^^^^^
- * **image_raw** (sensor_msgs/Image): ``uint16`` depth image in mm, the native
-   OpenNI format.
+ * **image_raw** (sensor_msgs/Image): ``uint16`` depth image in millimeters,
+   the native OpenNI format.
 
 Published Topics
 ^^^^^^^^^^^^^^^^
- * **image** (sensor_msgs/Image): ``float`` depth image in m, the recommended
-   format for processing in ROS.
+ * **image** (sensor_msgs/Image): ``float`` depth image in meters, the
+   recommended format for processing in ROS 2.
 
 Parameters
 ^^^^^^^^^^
@@ -28,11 +29,30 @@ Parameters
 
 depth_image_proc::CropForemostNode
 ----------------------------------
-TODO
+Takes a depth image and crops the closest element. The node will find the
+minimum depth value in the image and then set all pixels farther than
+``min + distance`` to 0. Also available as a standalone node
+``crop_foremost_node``.
+
+Subscribed Topics
+^^^^^^^^^^^^^^^^^
+ * **image_raw** (sensor_msgs/Image): Must be a depth (single channel) image.
+
+Published Topics
+^^^^^^^^^^^^^^^^
+ * **image** (sensor_msgs/Image): Cropped image.
+
+Parameters
+^^^^^^^^^^
+ * **distance** (float, default: 0.0): The depth tolerance to use when
+   thresholding the image. Pixels farther than ``min + distance`` will be
+   set to 0.
+ * **image_transport** (string, default: raw): Image transport to use.
 
 depth_image_proc::DisparityNode
 -------------------------------
-Comoonent to convert depth image to disparity image.
+Converts a depth image to disparity image. Also available as a standalone
+node ``disparity_node``.
 
 TODO: copy images in here
 
@@ -61,14 +81,14 @@ Parameters
 
 depth_image_proc::PointCloudXyzNode
 -----------------------------------
-Component to convert depth image to XYZ point cloud.
+Converts a depth image to XYZ point cloud. Also available as a standalone
+node ``point_cloud_xyz_node``.
 
 TODO: copy images
 
 Subscribed Topics
 ^^^^^^^^^^^^^^^^^
- * **depth/image_rect** (sensor_msgs/Image): Rectified depth image.
- * **intensity/image_rect** (sensor_msgs/Image): Rectified intensity image.
+ * **image_rect** (sensor_msgs/Image): Rectified depth image.
  * **camera_info** (sensor_msgs/CameraInfo): Camera calibration and metadata.
 
 Published Topics
@@ -80,23 +100,43 @@ Parameters
 ^^^^^^^^^^
  * **depth_image_transport** (string, default: raw): Image transport to use
    for the depth topic subscriber.
- * **image_transport** (string, default: raw): Image transport to use for
-   the intensity image subscriber.
  * **queue_size** (int, default: 5): Size of message queue for synchronizing
    subscribed topics.
 
 depth_image_proc::PointCloudXyzRadialNode
 -----------------------------------------
-TODO
-
-depth_image_proc::PointCloudXyziNode
-------------------------------------
-Component to convert depth image to XYZI point cloud.
+Converts a radial depth image to an XYZ point cloud. Note that radial nodes
+assume an unrectified radial image, and therefore use the K and D matrices
+of the camera info message, rather than the P matrix. Also available as a
+standalone node ``point_cloud_xyz_radial_node``.
 
 Subscribed Topics
 ^^^^^^^^^^^^^^^^^
- * **image_rect** (sensor_msgs/Image): Rectified depth image.
- * **camera_info** (sensor_msgs/CameraInfo): Camera calibration and metadata.
+ * **depth/image_raw** (sensor_msgs/Image): Unrectified radial depth image.
+ * **depth/camera_info** (sensor_msgs/CameraInfo): Camera calibration and metadata.
+
+Published Topics
+^^^^^^^^^^^^^^^^
+ * **points** (sensor_msgs/PointCloud2): XYZ point cloud. If using PCL,
+   subscribe as PointCloud<PointXYZ>.
+
+Parameters
+^^^^^^^^^^
+ * **depth_image_transport** (string, default: raw): Image transport to use
+   for the depth topic subscriber.
+ * **queue_size** (int, default: 5): Size of message queue for synchronizing
+   subscribed topics.
+
+depth_image_proc::PointCloudXyziNode
+------------------------------------
+Component to convert depth image to XYZI point cloud. Also available as a
+standalone node ``point_cloud_xyzi_node``.
+
+Subscribed Topics
+^^^^^^^^^^^^^^^^^
+ * **depth/image_rect** (sensor_msgs/Image): Rectified depth image.
+ * **intensity/image_rect** (sensor_msgs/Image): Rectified intensity image.
+ * **intensity/camera_info** (sensor_msgs/CameraInfo): Camera calibration and metadata.
 
 Published Topics
 ^^^^^^^^^^^^^^^^
@@ -105,17 +145,44 @@ Published Topics
 
 Parameters
 ^^^^^^^^^^
- * **depth_image_transport** (string, default: raw): Image transport to use.
+ * **depth_image_transport** (string, default: raw): Image transport to use
+   for the depth topic subscriber.
+ * **image_transport** (string, default: raw): Image transport to use for
+   the intensity image subscriber.
  * **queue_size** (int, default: 5): Size of message queue for synchronizing
    subscribed topics.
 
 depth_image_proc::PointCloudXyziRadialNode
 ------------------------------------------
-TODO  
+Converts a radial depth image and an intensity image to an XYZI point cloud.
+Note that radial nodes assume an unrectified radial image, and therefore
+use the K and D matrices of the camera info message, rather than the P matrix.
+Also available as a standalone node ``point_cloud_xyzi_radial_node``.
+
+Subscribed Topics
+^^^^^^^^^^^^^^^^^
+ * **depth/image_raw** (sensor_msgs/Image): Unrectified radial depth image.
+ * **intensity/image_raw** (sensor_msgs/Image): Unrectified intensity image.
+ * **intensity/camera_info** (sensor_msgs/CameraInfo): Camera calibration and metadata.
+
+Published Topics
+^^^^^^^^^^^^^^^^
+ * **points** (sensor_msgs/PointCloud2): XYZI point cloud. If using PCL,
+   subscribe as PointCloud<PointXYZI>.
+
+Parameters
+^^^^^^^^^^
+ * **depth_image_transport** (string, default: raw): Image transport to use
+   for the depth topic subscriber.
+ * **image_transport** (string, default: raw): Image transport to use for
+   the intensity image subscriber.
+ * **queue_size** (int, default: 5): Size of message queue for synchronizing
+   subscribed topics.
 
 depth_image_proc::PointCloudXyzrgbNode
 --------------------------------------
-Component combine registered depth image and RGB image into XYZRGB point cloud.
+Combines a registered depth image and an RGB image into XYZRGB point cloud.
+Also available as a standalone node ``point_cloud_xyzrgb_node``.
 
 TODO: copy images
 
@@ -143,7 +210,30 @@ Parameters
 
 depth_image_proc::PointCloudXyzrgbRadialNode
 --------------------------------------------
-TODO
+Converts a radial depth image and an rgb image to an XYZRGB point cloud.
+Note that radial nodes assume an unrectified radial image, and therefore
+use the K and D matrices of the camera info message, rather than the P matrix.
+Also available as a standalone node ``point_cloud_xyzrgb_radial_node``.
+
+Subscribed Topics
+^^^^^^^^^^^^^^^^^
+ * **depth/image_raw** (sensor_msgs/Image): Unrectified radial depth image.
+ * **rgb/image_raw** (sensor_msgs/Image): Unrectified rgb image.
+ * **rgb/camera_info** (sensor_msgs/CameraInfo): Camera calibration and metadata.
+
+Published Topics
+^^^^^^^^^^^^^^^^
+ * **points** (sensor_msgs/PointCloud2): XYZRGB point cloud. If using PCL,
+   subscribe as PointCloud<PointXYZRGB>.
+
+Parameters
+^^^^^^^^^^
+ * **depth_image_transport** (string, default: raw): Image transport to use
+   for the depth topic subscriber.
+ * **image_transport** (string, default: raw): Image transport to use for
+   the rgb image subscriber.
+ * **queue_size** (int, default: 5): Size of message queue for synchronizing
+   subscribed topics.
 
 depth_image_proc::RegisterNode
 ------------------------------
