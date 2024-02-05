@@ -86,26 +86,9 @@ rclcpp_components_register_node(crop_non_zero
   EXECUTABLE crop_non_zero_node
 )
 
-# image_proc example node
-ament_auto_add_executable(image_proc_exe
-  src/image_proc.cpp
-)
-target_link_libraries(image_proc_exe
-  debayer
-  rectify
-  ament_index_cpp::ament_index_cpp
-)
-set_target_properties(image_proc_exe PROPERTIES OUTPUT_NAME image_proc)
-
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   target_link_libraries(image_proc "stdc++fs")
 endif()
-
-install(TARGETS image_proc_exe
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
