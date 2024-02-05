@@ -1,5 +1,5 @@
-image_proc
-==========
+Overview
+========
 
 This package contains a number of ROS 2 components and nodes for image processing.
 
@@ -21,6 +21,7 @@ The images above were produced using the tutorial :ref:`Using image_proc Launch 
 .. toctree::
    :maxdepth: 2
 
+   self
    components
    tutorials
    changes
