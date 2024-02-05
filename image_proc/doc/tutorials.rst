@@ -93,6 +93,8 @@ camera info topic. An example:
  * If your camera driver actually publishes ``another_ns/camera_info``, then
    you would have to remap ``my_camera/camera_info`` to ``another_ns/camera_info``.
 
+.. _Using image_proc Launch File:
+
 Using image_proc Launch File
 ----------------------------
 Make sure your camera driver is running. To see the available raw

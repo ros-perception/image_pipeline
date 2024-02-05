@@ -53,8 +53,17 @@ depth_image_proc::DisparityNode
 -------------------------------
 Converts a depth image to disparity image. Also available as a standalone
 node ``disparity_node``.
+The images below show the raw depth image, and the output disparity image.
+The output disparity image is being colorized using the ``disparity_view``
+node from the ``image_view`` package.
 
-TODO: copy images in here
+|depth| |disparity|
+
+.. |depth| image:: images/depth.png
+   :width: 49%
+
+.. |disparity| image:: images/disparity.png
+   :width: 49%
 
 Subscribed Topics
 ^^^^^^^^^^^^^^^^^
@@ -83,8 +92,13 @@ depth_image_proc::PointCloudXyzNode
 -----------------------------------
 Converts a depth image to XYZ point cloud. Also available as a standalone
 node ``point_cloud_xyz_node``.
+The images below show the raw depth image, and the output point cloud,
+colorized along the Z-axis.
 
-TODO: copy images
+|depth| |cloud_xyz|
+
+.. |cloud_xyz| image:: images/rviz_xyz.png
+   :width: 49%
 
 Subscribed Topics
 ^^^^^^^^^^^^^^^^^
@@ -184,7 +198,21 @@ depth_image_proc::PointCloudXyzrgbNode
 Combines a registered depth image and an RGB image into XYZRGB point cloud.
 Also available as a standalone node ``point_cloud_xyzrgb_node``.
 
-TODO: copy images
+|depth_reg| |rgb|
+
+.. |depth_reg| image:: images/depth_reg.png
+   :width: 49%
+
+.. |rgb| image:: images/rgb.jpg
+   :width: 49%
+
+The node can convert the registered depth and rgb images (above) into a colorized
+point cloud (below):
+
+|cloud_xyzrgb|
+
+.. |cloud_xyzrgb| image:: images/rviz_xyzrgb.png
+   :width: 60%
 
 Subscribed Topics
 ^^^^^^^^^^^^^^^^^
@@ -239,7 +267,10 @@ depth_image_proc::RegisterNode
 ------------------------------
 Component to "register" a depth image to another camera frame. Reprojecting the
 depths requires the calibration parameters of both cameras and, from tf, and the
-extrinsic transform between them.
+extrinsic transform between them. The images below show the depth image before
+and after apply registration:
+
+|depth| |depth_reg|
 
 Subscribed Topics
 ^^^^^^^^^^^^^^^^^
