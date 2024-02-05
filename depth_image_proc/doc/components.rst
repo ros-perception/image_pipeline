@@ -274,7 +274,9 @@ and after apply registration:
 
 Subscribed Topics
 ^^^^^^^^^^^^^^^^^
- * **depth/image_rect** (sensor_msgs/Image): Rectified depth image.
+ * **depth/image_rect** (sensor_msgs/Image): Rectified depth image. The image should
+   be either 16UC1 (which is interpreted as millimeters) or 32FC1 (which is interpreted
+   as meters).
  * **depth/camera_info** (sensor_msgs/CameraInfo): Depth camera calibration and metadata.
  * **rgb/camera_info** (sensor_msgs/CameraInfo): RGB camera calibration and metadata.
 
