@@ -64,8 +64,8 @@ Using image_proc Launch File
 Make sure your camera driver is running. To see the available raw
 image topics from compatible drivers you can check:
 
-```
-ros2 topic list | grep image_raw
+```bash
+$ ros2 topic list | grep image_raw
 ```
 
 Normally the raw image from the camera driver is not what you want
@@ -75,7 +75,7 @@ running on a robot, it's probably best to run ``image_proc`` there.
 For example, if the driver is publishing topics ``/my_camera/image_raw``
 and ``/my_camera/camera_info`` you would do:
 
-```
+```bash
 $ ros2 launch image_proc image_proc.launch.py namespace:=my_camera
 ```
 
@@ -86,7 +86,7 @@ within the ``/my_camera`` namespace.
 
 In a separate terminal (on your home machine, if you are running on a robot):
 
-```
+```bash
 $ ros2 run image_view image_view --ros-args -r image:=my_camera/image_rect_color
 ```
 
