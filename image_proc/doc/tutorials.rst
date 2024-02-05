@@ -80,8 +80,8 @@ is typically used. ROS 2 convention for naming ``camera_info`` topics is:
  * camera/camera_info - the associated camera info
 
 So if a node subscribes to a topic called ``image``, and the user remaps this
- to ``my_camera/image``, then the associated camera info will be automatically
- remapped to ``mycamera/camera_info``.
+to ``my_camera/image``, then the associated camera info will be automatically
+remapped to ``mycamera/camera_info``.
 
 Most ROS 2 camera drivers will follow the convention, but occasionally they do
 not. In this case, you will have to manually remap the camera_info - but due
