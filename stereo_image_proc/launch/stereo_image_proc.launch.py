@@ -53,6 +53,7 @@ def generate_launch_description():
         ComposableNode(
             package='stereo_image_proc',
             plugin='stereo_image_proc::DisparityNode',
+            namespace=LaunchConfiguration('namespace'),
             parameters=[{
                 'approximate_sync': LaunchConfiguration('approximate_sync'),
                 'stereo_algorithm': LaunchConfiguration('stereo_algorithm'),
@@ -80,6 +81,7 @@ def generate_launch_description():
         ComposableNode(
             package='stereo_image_proc',
             plugin='stereo_image_proc::PointCloudNode',
+            namespace=LaunchConfiguration('namespace'),
             parameters=[{
                 'approximate_sync': LaunchConfiguration('approximate_sync'),
                 'avoid_point_cloud_padding': LaunchConfiguration('avoid_point_cloud_padding'),
@@ -120,6 +122,10 @@ def generate_launch_description():
         DeclareLaunchArgument(
             name='launch_image_proc', default_value='True',
             description='Whether to launch debayer and rectify nodes from image_proc.'
+        ),
+        DeclareLaunchArgument(
+            name='namespace', default_value='',
+            description='Namespace for all components loaded'
         ),
         DeclareLaunchArgument(
             name='left_namespace', default_value='left',
@@ -223,24 +229,26 @@ def generate_launch_description():
         ),
         GroupAction(
             [
-                PushRosNamespace(LaunchConfiguration('left_namespace')),
+                PushRosNamespace(LaunchConfiguration('namespace')),
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource([
                         FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
                     ]),
-                    launch_arguments={'container': LaunchConfiguration('container')}.items()
+                    launch_arguments={'container': LaunchConfiguration('container'),
+                                      'namespace': LaunchConfiguration('left_namespace')}.items()
                 ),
             ],
             condition=IfCondition(LaunchConfiguration('launch_image_proc')),
         ),
         GroupAction(
             [
-                PushRosNamespace(LaunchConfiguration('right_namespace')),
+                PushRosNamespace(LaunchConfiguration('namespace')),
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource([
                         FindPackageShare('image_proc'), '/launch/image_proc.launch.py'
                     ]),
-                    launch_arguments={'container': LaunchConfiguration('container')}.items()
+                    launch_arguments={'container': LaunchConfiguration('container'),
+                                      'namespace': LaunchConfiguration('right_namespace')}.items()
                 ),
             ],
             condition=IfCondition(LaunchConfiguration('launch_image_proc')),
