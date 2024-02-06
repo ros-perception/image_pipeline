@@ -33,6 +33,8 @@ stereo disparity images, and stereo point clouds. Components include:
    camera_calibration <../camera_calibration/index.html#http://>
    depth_image_proc <../depth_image_proc/index.html#http://>
    image_proc <../image_proc/index.html#http://>
+   image_publisher <../image_publisher/index.html#http://>
+   image_rotate <../image_rotate/index.html#http://>
    image_view <../depth/image_view/index.html#http://>
    stereo_image_proc <../depth/stereo_image_proc/index.html#http://>
 
