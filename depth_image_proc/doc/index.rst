@@ -1,5 +1,5 @@
-depth_image_proc
-================
+Overview
+========
 
 ``depth_image_proc`` provides basic processing for depth images, much as
 ``image_proc`` does for traditional 2D images. The two packages are
@@ -28,6 +28,7 @@ For an example of ``depth_image_proc`` in practice, examine the contents of
 .. toctree::
    :maxdepth: 2
 
+   self
    components
    tutorials
    changes
