@@ -114,14 +114,15 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
   // fully expanded and remapped topic name to image_transport
   auto node_base = this->get_node_base_interface();
   std::string stereo_ns = node_base->resolve_topic_or_service_name("stereo", false);
+  std::string image = node_base->resolve_topic_or_service_name("image", false);
 
   std::string left_topic = rclcpp::expand_topic_or_service_name(
     stereo_ns + "/left" + rclcpp::expand_topic_or_service_name(
-      "image", this->get_name(), this->get_namespace()),
+      image, this->get_name(), this->get_namespace()),
     this->get_name(), this->get_namespace());
   std::string right_topic = rclcpp::expand_topic_or_service_name(
     stereo_ns + "/right" + rclcpp::expand_topic_or_service_name(
-      "image", this->get_name(), this->get_namespace()),
+      image, this->get_name(), this->get_namespace()),
     this->get_name(), this->get_namespace());
   std::string disparity_topic = rclcpp::expand_topic_or_service_name(
     stereo_ns + "/disparity", this->get_name(), this->get_namespace());

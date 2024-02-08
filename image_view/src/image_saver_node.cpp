@@ -104,16 +104,20 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
     std::bind(
       &ImageSaverNode::service, this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
-  start_srv_ = this->create_service<std_srvs::srv::Trigger>(
-    "start",
-    std::bind(
-      &ImageSaverNode::callbackStartSave, this, std::placeholders::_1, std::placeholders::_2,
-      std::placeholders::_3));
-  end_srv_ = this->create_service<std_srvs::srv::Trigger>(
-    "end",
-    std::bind(
-      &ImageSaverNode::callbackEndSave, this, std::placeholders::_1, std::placeholders::_2,
-      std::placeholders::_3));
+
+  // Advertise start/end services if the feature is enabled
+  if (request_start_end_) {
+    start_srv_ = this->create_service<std_srvs::srv::Trigger>(
+      "start",
+      std::bind(
+        &ImageSaverNode::callbackStartSave, this, std::placeholders::_1, std::placeholders::_2,
+        std::placeholders::_3));
+    end_srv_ = this->create_service<std_srvs::srv::Trigger>(
+      "end",
+      std::bind(
+        &ImageSaverNode::callbackEndSave, this, std::placeholders::_1, std::placeholders::_2,
+        std::placeholders::_3));
+  }
 }
 
 bool ImageSaverNode::saveImage(
