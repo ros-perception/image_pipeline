@@ -106,8 +106,7 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
       std::placeholders::_3));
 
   // Advertise start/end services if the feature is enabled
-  if (request_start_end_)
-  {
+  if (request_start_end_) {
     start_srv_ = this->create_service<std_srvs::srv::Trigger>(
       "start",
       std::bind(
