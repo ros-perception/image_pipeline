@@ -127,3 +127,21 @@ In a separate terminal (on your home machine, if you are running on a robot):
     $ ros2 run image_view image_view --ros-args -r image:=my_camera/image_rect_color
 
 This will display an undistorted color image from ``my_camera``.
+
+Using the TrackMarkerNode
+-------------------------
+When generating markers, be sure to pay attention to the selection
+of the dictionary. The default dictionary is ``DICT_6X6_250`` which
+means you want your marker to be of the 6X6 size, with an ID of 0-249.
+
+There are two ways to generate markers:
+
+ * The `OpenCV Tutorial <https://docs.opencv.org/4.5.4/d5/dae/tutorial_aruco_detection.html>`_
+   shows programmatic ways to generate markers.
+ * There are a variety of online Aruco marker generation webpages,
+   `this one <https://chev.me/arucogen/>` is very easy to generate
+   individual markers.
+
+Once the marker is printed, be sure to set the ``marker_id`` and
+``marker_size`` parameters for the node. It is recommended to measure
+the marker size as printing the marker could incur scaling.

@@ -122,7 +122,7 @@ Parameters
 
 image_proc::ResizeNode
 ----------------------
-Takes image and/or camera info and resize them. Also available as 
+Takes image and camera info and resize them. Also available as
 standalone node with the name ``resize_node``.
 
 Subscribed Topics
@@ -150,3 +150,28 @@ Parameters
  * **scale_width** (float, default: 1.0): Width scaling of image.
  * **height** (float): Absolute height of resized image, if ``use_scale`` is false.
  * **width** (float): Absolute width of resized image, if ``use_scale`` is false.
+
+image_proc::TrackMarkerNode
+---------------------------
+Takes an image, detects an Aruco marker and publishes a ``geometry_msgs/PoseStamped``
+of where the marker is located. Also available as standalone node with the name
+``track_marker_node``.
+
+Subscribed Topics
+^^^^^^^^^^^^^^^^^
+ * **image** (sensor_msgs/Image): Image topic to process.
+ * **camera_info** (sensor_msgs/CameraInfo): Camera metadata.
+
+Published Topics
+^^^^^^^^^^^^^^^^
+ * **tracked_pose** (geometry_msgs/PoseStamped): Pose of the marker.
+
+Parameters
+^^^^^^^^^^
+ * **dictionary** (int, default: 10): Marker dictionary to use.
+   Values correspond to cv.aruco enum.
+   The default of 10 corresponds to the DICT_6X6_250 dictionary.
+ * **image_transport** (string, default: raw): Image transport to use.
+ * **marker_id** (int, default: 0): The ID of the marker to use.
+ * **marker_size** (double, default: 0.05): Size of the marker edge,
+   in meters.

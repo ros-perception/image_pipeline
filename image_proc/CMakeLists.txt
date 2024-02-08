@@ -86,6 +86,18 @@ rclcpp_components_register_node(crop_non_zero
   EXECUTABLE crop_non_zero_node
 )
 
+# track_marker component and node
+ament_auto_add_library(track_marker SHARED
+  src/track_marker.cpp
+)
+target_compile_definitions(track_marker
+  PRIVATE "COMPOSITION_BUILDING_DLL"
+)
+rclcpp_components_register_node(track_marker
+  PLUGIN "image_proc::TrackMarkerNode"
+  EXECUTABLE track_marker_node
+)
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   target_link_libraries(image_proc "stdc++fs")
 endif()
