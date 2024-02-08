@@ -1,22 +1,20 @@
-stereo_image_proc
-=================
+Overview
+========
 
 This package contains a number of ROS 2 components, nodes, and launch files
 for stereo image processing.
 
-stereo_image_proc performs the duties of image_proc for both cameras,
-undistorting and colorizing the raw images. Note that for properly
-calibrated stereo cameras, undistortion is actually combined with
-rectification, transforming the images so that their scanlines
-line up for fast stereo processing.
+If porting from ROS 1, please note that the ``stereo_image_proc`` node no
+longer exists and instead you should use ``stereo_image_proc.launch.py``.
+See the :ref:`Configuration` page for more detail.
 
-stereo_image_proc will also compute disparity images from incoming stereo
+``DisparityNode`` can compute disparity images from incoming stereo
 pairs using
 `OpenCV's block matching <https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html#stereobm>`_
 algorithm. These are best inspected
 using ``stereo_view`` which is available in the ``image_view`` package.
 
-The node will also produce point clouds, which you can view in ``rviz``,
+``PointCloudNode`` can produce point clouds, which you can view in ``rviz``,
 and process with PCL.
 
 The image below shows the **left/image_raw** and **right_image_raw**.
@@ -46,6 +44,7 @@ viewed with ``stereo_view`` from the ``image_view`` package.
 .. toctree::
    :maxdepth: 2
 
+   self
    components
    configuration
    tutorials
