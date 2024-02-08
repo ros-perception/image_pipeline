@@ -20,6 +20,12 @@ Parameters
 
 image_view::ExtractImagesNode
 -----------------------------
+This tool also allows you to save images as jpg/png file from
+streaming (ROS sensor_msgs/Image topic) to a file.
+``image_saver`` node provide very similar functionalities,
+such as providing service call to trigger the node to save
+images, save images other than JPEG format, etc.
+
 This tool allows you to save images as jpg/png file from streaming
 (ROS sensor_msgs/Image topic) to a file. From command line, you
 can run with:
@@ -34,20 +40,12 @@ Subscribed Topics
 ^^^^^^^^^^^^^^^^^
  * **image** (sensor_msgs/Image): Image topic to visualize.
 
-Services
-^^^^^^^^
- * **save** (std_srvs/Empty): Save images, you need to set
-   the ``save_all_images`` parameter to false.
-
 Parameters
 ----------
-
-~filename_format (string, default: left%04d.%s)
-File name for saved images, you can use '%04i' for sequence number, and '%s' for default file format, you can use 'jpg' ,'png', 'pgm' as filename suffixes.
-~encoding (string, default: 'bgr8')
-Encoding type of input image topic.
-~save_all_image (bool, default: true)
-If you set false, images are only saved when 'save' service is called
+ * **filename_format** (string, default: "frame%04i.jpg"): File name for
+   saved images, you must add use '%04i' for sequence number.
+ * **image_transport** (string, default: raw): Image transport to use.
+ * **sec_per_frame** (double, default: 0.1): Seconds between saved frames.
 
 image_view::ImageViewNode
 -------------------------
