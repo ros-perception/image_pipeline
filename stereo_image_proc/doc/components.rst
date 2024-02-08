@@ -72,15 +72,14 @@ Parameters
  * **approximate_sync** (bool, default: false): Whether to use approximate
    synchronization. Set to true if the left and right cameras do not produce
    exactly synced timestamps.
+ * **approximate_sync_tolerance_seconds** (double, default: 0.0): Tolerance
+   when using approximate sync.
  * **image_transport** (string, default: raw): Image transport to use for left
    image subscriber.
  * **queue size** (int, default: 5): Size of message queue for each synchronized
    topic. You may need to raise this if images take significantly longer to travel
    over the network than camera info and/or the delay from disparity processing
    is too long.
-
-approximate_sync_tolerance_seconds
-
 
 stereo_image_proc::PointCloudNode
 ---------------------------------
