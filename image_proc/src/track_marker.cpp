@@ -57,11 +57,13 @@ TrackMarkerNode::TrackMarkerNode(const rclcpp::NodeOptions & options)
   image_topic_ = node_base->resolve_topic_or_service_name("image", false);
 
   // Declare parameters before we setup any publishers or subscribers
-  marker_id_ = this->declare_parameter("marker_id", 1);
+  marker_id_ = this->declare_parameter("marker_id", 0);
   marker_size_ = this->declare_parameter("marker_size", 0.05);
+  // Default dictionary is cv::aruco::DICT_6X6_250
+  int dict_id = this->declare_parameter("dictionary", 10);
 
   detector_params_ = cv::aruco::DetectorParameters::create();
-  dictionary_ = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250);
+  dictionary_ = cv::aruco::getPredefinedDictionary(dict_id);
 
   // Setup lazy subscriber using publisher connection callback
   rclcpp::PublisherOptions pub_options;
