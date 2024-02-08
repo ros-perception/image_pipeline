@@ -35,8 +35,8 @@ stereo disparity images, and stereo point clouds. Components include:
    image_proc <../image_proc/index.html#http://>
    image_publisher <../image_publisher/index.html#http://>
    image_rotate <../image_rotate/index.html#http://>
-   image_view <../depth/image_view/index.html#http://>
-   stereo_image_proc <../depth/stereo_image_proc/index.html#http://>
+   image_view <../image_view/index.html#http://>
+   stereo_image_proc <../stereo_image_proc/index.html#http://>
 
 Indices and tables
 ==================
