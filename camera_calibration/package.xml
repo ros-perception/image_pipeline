@@ -36,5 +36,6 @@
 
   <export>
     <build_type>ament_python</build_type>
+    <rosdoc2>rosdoc2.yaml</rosdoc2>
   </export>
 </package>

@@ -22,7 +22,13 @@ import sys, os
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.intersphinx', 'sphinx.ext.pngmath']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
+    'sphinx.ext.coverage',
+    'sphinx_rtd_theme',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -40,12 +46,6 @@ master_doc = 'index'
 project = 'camera_calibration'
 copyright = '2009, Willow Garage, Inc.'
 
-# The version info for the project you're documenting, acts as replacement for
-# |version| and |release|, also used in various other places throughout the
-# built documents.
-#
-# The short X.Y version.
-version = '0.1'
 # The full version, including alpha/beta/rc tags.
 release = '0.1.0'
 
@@ -195,7 +195,6 @@ latex_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'http://docs.python.org/': None,
-    'http://docs.scipy.org/doc/numpy' : None,
-    'http://www.ros.org/doc/api/tf/html/python/' : None
-    }
+    'python': ('http://docs.python.org/', None),
+    'numpy': ('http://docs.scipy.org/doc/numpy', None)
+}

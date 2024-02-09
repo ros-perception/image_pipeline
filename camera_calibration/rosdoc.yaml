@@ -1,4 +1,0 @@
- - builder: sphinx
-   name: Python API
-   output_dir: python
-   sphinx_root_dir: doc
