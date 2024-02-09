@@ -20,7 +20,8 @@ Finally make sure your camera is publishing images. For instance:
 
 .. code-block:: bash
 
-    ros2 topic list | grep camera
+    $ ros2 topic list | grep camera
+
     /camera/camera_info
     /camera/image_raw
 
