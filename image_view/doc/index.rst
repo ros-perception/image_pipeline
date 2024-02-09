@@ -59,7 +59,6 @@ parameter.
 
    self
    components
-   changes
    image_view <generated/index>
 
 Indices and tables

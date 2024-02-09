@@ -31,7 +31,6 @@ For an example of ``depth_image_proc`` in practice, examine the contents of
    self
    components
    tutorials
-   changes
    image_proc <generated/index>
 
 Indices and tables
