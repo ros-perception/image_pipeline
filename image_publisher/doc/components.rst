@@ -3,7 +3,7 @@ Nodes and Components
 
 image_publisher::ImagePublisher
 -------------------------------
-component to publish sensor_msgs/Image, requires filename argument.
+Component to publish sensor_msgs/Image, requires filename argument.
 Also avialable as a ROS 2 node named ``image_publisher``.
 
 Published Topics
