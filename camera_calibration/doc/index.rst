@@ -2,7 +2,7 @@ Overview
 ========
 
 This package uses OpenCV camera calibration, described
-`here <https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html>`_.
+`here <https://docs.opencv.org/4.5.4/d9/d0c/group__calib3d.html>`_.
 For detailed information on the parameters produced by the calibration, see this
 `description <http://docs.ros.org/en/rolling/p/image_pipeline/camera_info.html>`_.
 

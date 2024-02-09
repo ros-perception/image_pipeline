@@ -164,7 +164,7 @@ The recommended value for the slider is 0.0.
 
 For more details on the stereo camera model - including interpretation
 of these results - see
-`OpenCV <https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html>`_
+`OpenCV <https://docs.opencv.org/4.5.4/d9/d0c/group__calib3d.html>`_
 and image_geometry.
 
 .. code-block:: bash
