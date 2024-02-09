@@ -24,7 +24,6 @@ The images above were produced using the tutorial :ref:`Using image_proc Launch 
    self
    components
    tutorials
-   changes
    image_proc <generated/index>
 
 Indices and tables

@@ -26,7 +26,6 @@ borders, and does not output a ``camera_info``.
 
    self
    components
-   changes
    image_rotate <generated/index>
 
 Indices and tables

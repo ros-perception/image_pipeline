@@ -6,7 +6,7 @@ as a ROS 2 image topic.
 
 Simplest example is:
 
-.. code-block: bash
+.. code-block:: bash
 
    ros2 run image_publisher image_publisher /opt/ros/rolling/share/rviz/images/splash.png
 
@@ -15,7 +15,6 @@ Simplest example is:
 
    self
    components
-   changes
    image_publisher <generated/index>
 
 Indices and tables
