@@ -30,6 +30,7 @@ stereo disparity images, and stereo point clouds. Components include:
 
    self
    camera_info
+   tutorials
    changelog
    camera_calibration <../camera_calibration/index.html#http://>
    depth_image_proc <../depth_image_proc/index.html#http://>
