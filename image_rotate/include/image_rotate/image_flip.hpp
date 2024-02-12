@@ -30,8 +30,9 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifndef IMAGE_FLIP__IMAGE_FLIP_NODE_HPP_
-#define IMAGE_FLIP__IMAGE_FLIP_NODE_HPP_
+
+#ifndef IMAGE_ROTATE__IMAGE_FLIP_HPP_
+#define IMAGE_ROTATE__IMAGE_FLIP_HPP_
 
 #include <math.h>
 
@@ -47,9 +48,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-#include "image_flip/visibility.h"
+#include "image_rotate/visibility.h"
 
-namespace image_flip
+namespace image_rotate
 {
 
 struct ImageFlipConfig
@@ -57,14 +58,12 @@ struct ImageFlipConfig
   std::string output_frame_id;
   int rotation_steps;
   bool use_camera_info;
-  rmw_qos_profile_t input_qos;  // "default", "sensor_data", etc ..
-  rmw_qos_profile_t output_qos;
 };
 
 class ImageFlipNode : public rclcpp::Node
 {
 public:
-  IMAGE_FLIP_PUBLIC ImageFlipNode(rclcpp::NodeOptions options);
+  IMAGE_ROTATE_PUBLIC ImageFlipNode(rclcpp::NodeOptions options);
 
 private:
   const std::string frameWithDefault(const std::string & frame, const std::string & image_frame);
@@ -76,10 +75,6 @@ private:
     const sensor_msgs::msg::Image::ConstSharedPtr & msg,
     const sensor_msgs::msg::CameraInfo::ConstSharedPtr & cam_info,
     const std::string input_frame_from_msg);
-  void subscribe();
-  void unsubscribe();
-  void connectCb();
-  void disconnectCb();
   void onInit();
 
   rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
@@ -89,18 +84,20 @@ private:
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_pub_;
   bool tf_unpublished_;
 
-  image_flip::ImageFlipConfig config_;
+  ImageFlipConfig config_;
 
-  image_transport::Publisher img_pub_;
+  // Subscriber - only one is used at a time - depends on use_camera_info
   image_transport::Subscriber img_sub_;
   image_transport::CameraSubscriber cam_sub_;
+
+  // Publisher - only one is used at a time - depends on use_camera_info
+  image_transport::Publisher img_pub_;
   image_transport::CameraPublisher cam_pub_;
 
-  int subscriber_count_;
   double angle_;
   tf2::TimePoint prev_stamp_;
   geometry_msgs::msg::TransformStamped transform_;
 };
-}  // namespace image_flip
+}  // namespace image_rotate
 
-#endif  // IMAGE_FLIP__IMAGE_FLIP_NODE_HPP_
+#endif  // IMAGE_ROTATE__IMAGE_FLIP_HPP_

@@ -24,6 +24,13 @@ ament_auto_add_executable(image_rotate_bin src/image_rotate.cpp)
 set_target_properties(image_rotate_bin PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 target_link_libraries(image_rotate_bin ${OpenCV_LIBRARIES} ${PROJECT_NAME})
 
+ament_auto_add_library(image_flip SHARED src/image_flip.cpp)
+target_link_libraries(image_flip ${OpenCV_LIBRARIES})
+rclcpp_components_register_node(image_flip
+  PLUGIN "${PROJECT_NAME}::ImageFlipNode"
+  EXECUTABLE image_flip_node
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()

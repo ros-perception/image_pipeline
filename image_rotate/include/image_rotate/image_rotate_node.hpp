@@ -93,13 +93,14 @@ private:
   image_rotate::ImageRotateConfig config_;
 
   image_transport::Publisher img_pub_;
+
+  // Subscriber - only one is used at a time - depends on use_camera_info
   image_transport::Subscriber img_sub_;
   image_transport::CameraSubscriber cam_sub_;
 
   geometry_msgs::msg::Vector3Stamped target_vector_;
   geometry_msgs::msg::Vector3Stamped source_vector_;
 
-  int subscriber_count_;
   double angle_;
   tf2::TimePoint prev_stamp_;
 };

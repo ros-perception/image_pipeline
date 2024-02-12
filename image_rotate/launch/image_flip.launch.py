@@ -32,32 +32,19 @@
 
 """Demonstration of basic launch of the image_flip_node with remappings."""
 
-import launch_ros.actions
 from launch import LaunchDescription
+import launch_ros.actions
 
 
 def generate_launch_description():
-    """
-    Launch description for basic launch of the image_flip_node.
-
-    Launch description for basic launch of the image_flip_node,
-    which includes parameters and topic remappings.
-    """
+    """Launch description for basic launch of the image_flip."""
     return LaunchDescription([
         launch_ros.actions.Node(
-            package='image_flip', executable='image_flip_node',
+            package='image_rotate', executable='image_flip',
             output='screen', name='camera_flip',
-            remappings=[("image",                'camera/rgb/image_raw'),
-                        ('camera_info',          'camera/rgb/camera_info'),
-                        ('rotated/image',        'camera_rotated/image_rotated'),
-                        ('rotated/camera_info',  'camera_rotated/camera_info'),
-                        ('rotated/image/compressed',
-                            'camera_rotated/image_rotated/compressed'),
-                        ('rotated/image/compressedDepth',
-                            'camera_rotated/image_rotated/compressedDepth'),
-                        ('rotated/image/theora',
-                            'camera_rotated/image_rotated/theora')],
-            parameters=[{'output_frame_id': "camera_rotated",
+            remappings=[('image',                'camera/rgb/image_raw'),
+                        ('rotated/image',        'camera_rotated/image_rotated')],
+            parameters=[{'output_frame_id': 'camera_rotated',
                          'rotation_steps': 2,
                          'use_camera_info': True,
                          'input_qos': 'best_effort',

@@ -278,7 +278,6 @@ void ImageRotateNode::do_work(
 
 void ImageRotateNode::onInit()
 {
-  subscriber_count_ = 0;
   angle_ = 0;
   prev_stamp_ = tf2::get_now();
   rclcpp::Clock::SharedPtr clock = this->get_clock();
@@ -348,6 +347,7 @@ void ImageRotateNode::onInit()
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   img_pub_ = image_transport::create_publisher(this, topic, rmw_qos_profile_default, pub_options);
 }
+
 }  // namespace image_rotate
 
 #include "rclcpp_components/register_node_macro.hpp"

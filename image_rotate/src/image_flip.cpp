@@ -32,22 +32,14 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-/********************************************************************
-* image_flip_node.cpp
-* this is a forked version of image_flip.
-* this image_flip_node supports:
-*  1) node
-*  2) tf and tf2
-*********************************************************************/
-
-#include "image_flip/image_flip_node.hpp"
+#include "image_rotate/image_flip.hpp"
 
 #include <vector>
 #include <string>
 #include <memory>
 #include <opencv2/core/core.hpp>
 
-namespace image_flip
+namespace image_rotate
 {
 
 ImageFlipNode::ImageFlipNode(rclcpp::NodeOptions options)
@@ -57,29 +49,12 @@ ImageFlipNode::ImageFlipNode(rclcpp::NodeOptions options)
   config_.rotation_steps = this->declare_parameter("rotation_steps", 2);
   config_.use_camera_info = this->declare_parameter("use_camera_info", true);
 
-  // Assume best_effort (sensor_data) on subscriber
-  //    which is compatible with reliable publisher
-  // Assume default reliable on publisher so it will be compatible with both
-  //    reliable and best_effort subscriptions
-  std::string qos_type = this->declare_parameter("input_qos", "sensor_data");
-  if (qos_type == "sensor_data") {
-    config_.input_qos = rmw_qos_profile_sensor_data;
-  } else {
-    config_.input_qos = rmw_qos_profile_default;
-  }
-
-  qos_type = this->declare_parameter("output_qos", "default");
-  if (qos_type == "sensor_data") {
-    config_.output_qos = rmw_qos_profile_sensor_data;
-  } else {
-    config_.output_qos = rmw_qos_profile_default;
-  }
+  // TransportHints does not actually declare the parameter
+  this->declare_parameter<std::string>("image_transport", "raw");
 
   auto reconfigureCallback =
     [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
     {
-      RCLCPP_INFO(get_logger(), "reconfigureCallback");
-
       auto result = rcl_interfaces::msg::SetParametersResult();
       result.successful = true;
       for (auto parameter : parameters) {
@@ -94,11 +69,6 @@ ImageFlipNode::ImageFlipNode(rclcpp::NodeOptions options)
             tf2::toMsg(tf2::Quaternion(tf2::Vector3(0.0, 0.0, 1.0), angle_));
           tf_unpublished_ = true;
         }
-      }
-
-      if (subscriber_count_) {  // @todo: Could do this without an interruption at some point.
-        unsubscribe();
-        subscribe();
       }
       return result;
     };
@@ -125,11 +95,11 @@ void ImageFlipNode::imageCallbackWithInfo(
   const sensor_msgs::msg::Image::ConstSharedPtr & msg,
   const sensor_msgs::msg::CameraInfo::ConstSharedPtr & cam_info)
 {
-  std::string frame_id = cam_info->header.frame_id;
-  if (frame_id.length() == 0) {
-    frame_id = msg->header.frame_id;
+  std::string frame = cam_info->header.frame_id;
+  if (frame.empty()) {
+    frame = msg->header.frame_id;
   }
-  do_work(msg, cam_info, frame_id);
+  do_work(msg, cam_info, frame);
 }
 
 void ImageFlipNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
@@ -204,92 +174,88 @@ void ImageFlipNode::do_work(
   prev_stamp_ = tf2_ros::fromMsg(msg->header.stamp);
 }
 
-void ImageFlipNode::subscribe()
-{
-  std::string image_topic = "image";
-  auto custom_qos = config_.input_qos;
-
-  RCUTILS_LOG_INFO("Subscribing to image topic %s.", image_topic.c_str());
-
-  if (config_.use_camera_info) {
-    cam_sub_ = image_transport::create_camera_subscription(
-      this,
-      image_topic,  // "image",
-      std::bind(
-        &ImageFlipNode::imageCallbackWithInfo, this,
-        std::placeholders::_1, std::placeholders::_2),
-      "raw",
-      custom_qos);
-  } else {
-    img_sub_ = image_transport::create_subscription(
-      this,
-      image_topic,  // "image",
-      std::bind(&ImageFlipNode::imageCallback, this, std::placeholders::_1),
-      "raw",
-      custom_qos);
-  }
-}
-
-void ImageFlipNode::unsubscribe()
-{
-  RCUTILS_LOG_DEBUG("Unsubscribing from image topic.");
-  img_sub_.shutdown();
-  cam_sub_.shutdown();
-}
-
-void ImageFlipNode::connectCb()
-{
-  if (subscriber_count_++ == 0) {
-    subscribe();
-  }
-}
-
-void ImageFlipNode::disconnectCb()
-{
-  subscriber_count_--;
-  if (subscriber_count_ == 0) {
-    unsubscribe();
-  }
-}
-
 void ImageFlipNode::onInit()
 {
-  subscriber_count_ = 0;
   angle_ = 0;
   prev_stamp_ = tf2::get_now();
   rclcpp::Clock::SharedPtr clock = this->get_clock();
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(clock);
   tf_sub_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-  // --- Note: From image_rotate (rolling branch 19-Dec-22))
-  // TODO(yechun1): Implement when SubscriberStatusCallback is available
-  // image_transport::SubscriberStatusCallback connect_cb =
-  //   boost::bind(&ImageFlipNode::connectCb, this, _1);
-  // image_transport::SubscriberStatusCallback connect_cb =
-  //   std::bind(&CropForemostNode::connectCb, this);
-  // image_transport::SubscriberStatusCallback disconnect_cb =
-  //   boost::bind(&ImageFlipNode::disconnectCb, this, _1);
-  // img_pub_ = image_transport::ImageTransport(ros::NodeHandle(nh_, "rotated")).advertise(
-  //  "image", 1, connect_cb, disconnect_cb);
-  //----------------------------------------------------
+  // Create publisher with connect callback
+  rclcpp::PublisherOptions pub_options;
+  pub_options.event_callbacks.matched_callback =
+    [this](rclcpp::MatchedInfo &)
+    {
+      if (img_pub_ && img_pub_.getNumSubscribers() == 0) {
+        RCLCPP_DEBUG(get_logger(), "Unsubscribing from image topic.");
+        img_sub_.shutdown();
+        cam_sub_.shutdown();
+      } else if (cam_pub_ && cam_pub_.getNumSubscribers() == 0) {
+        RCLCPP_DEBUG(get_logger(), "Unsubscribing from image topic.");
+        img_sub_.shutdown();
+        cam_sub_.shutdown();
+      } else {
+        // For compressed topics to remap appropriately, we need to pass a
+        // fully expanded and remapped topic name to image_transport
+        auto node_base = this->get_node_base_interface();
+        std::string topic_name = node_base->resolve_topic_or_service_name("image", false);
+        RCLCPP_INFO(get_logger(), "Subscribing to %s topic.", topic_name.c_str());
 
-  connectCb();
+        // Check that remapping appears to be correct
+        auto topics = this->get_topic_names_and_types();
+        if (topics.find(topic_name) == topics.end()) {
+          RCLCPP_WARN(
+            get_logger(),
+            "Topic %s is not connected! Typical command-line usage:\n"
+            "\t$ ros2 run image_rotate image_flip --ros-args -r image:=<image topic>",
+            topic_name.c_str());
+        }
 
-  std::string out_image_topic = "rotated/image";
-  RCUTILS_LOG_DEBUG("Advertising to image topic %s.", out_image_topic.c_str());
-  auto custom_qos = config_.output_qos;
+        // This will check image_transport parameter to get proper transport
+        image_transport::TransportHints transport_hint(this, "raw");
 
+        if (config_.use_camera_info) {
+          auto custom_qos = rmw_qos_profile_system_default;
+          custom_qos.depth = 3;
+          cam_sub_ = image_transport::create_camera_subscription(
+            this,
+            topic_name,
+            std::bind(
+              &ImageFlipNode::imageCallbackWithInfo, this,
+              std::placeholders::_1, std::placeholders::_2),
+            transport_hint.getTransport(),
+            custom_qos);
+        } else {
+          auto custom_qos = rmw_qos_profile_system_default;
+          custom_qos.depth = 3;
+          img_sub_ = image_transport::create_subscription(
+            this,
+            topic_name,
+            std::bind(&ImageFlipNode::imageCallback, this, std::placeholders::_1),
+            transport_hint.getTransport(),
+            custom_qos);
+        }
+      }
+    };
+
+  // For compressed topics to remap appropriately, we need to pass a
+  // fully expanded and remapped topic name to image_transport
+  auto node_base = this->get_node_base_interface();
+  std::string topic = node_base->resolve_topic_or_service_name("rotated/image", false);
+
+  auto custom_qos = rmw_qos_profile_default;
   if (config_.use_camera_info) {
-    cam_pub_ = image_transport::create_camera_publisher(this, out_image_topic, custom_qos);
+    cam_pub_ = image_transport::create_camera_publisher(this, topic, custom_qos, pub_options);
   } else {
-    img_pub_ = image_transport::create_publisher(this, out_image_topic, custom_qos);
+    img_pub_ = image_transport::create_publisher(this, topic, custom_qos, pub_options);
   }
 
   tf_pub_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(*this);
   tf_unpublished_ = true;
 }
-}  // namespace image_flip
+}  // namespace image_rotate
 
 // Register the component with class_loader.
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(image_flip::ImageFlipNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(image_rotate::ImageFlipNode)
