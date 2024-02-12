@@ -143,9 +143,15 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
         sub_rgb_info_.subscribe(this, "rgb/camera_info");
       }
     };
+  // For compressed topics to remap appropriately, we need to pass a
+  // fully expanded and remapped topic name to image_transport
+  auto node_base = this->get_node_base_interface();
+  std::string topic =
+    node_base->resolve_topic_or_service_name("depth_registered/image_rect", false);
+
   pub_registered_ =
     image_transport::create_camera_publisher(
-    this, "depth_registered/image_rect",
+    this, topic,
     rmw_qos_profile_default, pub_options);
 }
 
