@@ -115,6 +115,7 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
   // fully expanded and remapped topic name to image_transport
   auto node_base = this->get_node_base_interface();
   image_topic_ = node_base->resolve_topic_or_service_name("in/image_raw", false);
+  std::string pub_topic = node_base->resolve_topic_or_service_name("out/image_raw", false);
 
   queue_size_ = this->declare_parameter("queue_size", 5);
   target_frame_id_ = this->declare_parameter("target_frame_id", std::string());
@@ -156,7 +157,7 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
 
   // Create publisher with QoS matched to subscribed topic publisher
   auto qos_profile = getTopicQosProfile(this, image_topic_);
-  pub_ = image_transport::create_camera_publisher(this, "out/image_raw", qos_profile, pub_options);
+  pub_ = image_transport::create_camera_publisher(this, pub_topic, qos_profile, pub_options);
 }
 
 void CropDecimateNode::imageCb(

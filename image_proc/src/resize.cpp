@@ -59,6 +59,7 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
   // fully expanded and remapped topic name to image_transport
   auto node_base = this->get_node_base_interface();
   image_topic_ = node_base->resolve_topic_or_service_name("image/image_raw", false);
+  std::string pub_topic = node_base->resolve_topic_or_service_name("resize/image_raw", false);
 
   // Declare parameters before we setup any publishers or subscribers
   interpolation_ = this->declare_parameter("interpolation", 1);
@@ -93,8 +94,8 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
 
   // Create publisher with QoS matched to subscribed topic publisher
   auto qos_profile = getTopicQosProfile(this, image_topic_);
-  pub_image_ = image_transport::create_camera_publisher(
-    this, "resize/image_raw", qos_profile, pub_options);
+  pub_image_ =
+    image_transport::create_camera_publisher(this, pub_topic, qos_profile, pub_options);
 }
 
 void ResizeNode::imageCb(

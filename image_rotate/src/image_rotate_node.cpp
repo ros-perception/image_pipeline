@@ -338,8 +338,13 @@ void ImageRotateNode::onInit()
         }
       }
     };
-  img_pub_ = image_transport::create_publisher(
-    this, "rotated/image", rmw_qos_profile_default, pub_options);
+
+  // For compressed topics to remap appropriately, we need to pass a
+  // fully expanded and remapped topic name to image_transport
+  auto node_base = this->get_node_base_interface();
+  std::string topic = node_base->resolve_topic_or_service_name("rotated/image", false);
+
+  img_pub_ = image_transport::create_publisher(this, topic, rmw_qos_profile_default, pub_options);
 }
 }  // namespace image_rotate
 
