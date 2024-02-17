@@ -67,6 +67,9 @@ private:
   image_transport::CameraSubscriber sub_depth_;
   int queue_size_;
 
+  // Parameters
+  double invalid_depth_;
+
   // Publications
   std::mutex connect_mutex_;
   rclcpp::Publisher<PointCloud2>::SharedPtr pub_point_cloud_;
