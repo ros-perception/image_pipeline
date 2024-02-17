@@ -51,9 +51,9 @@ namespace depth_image_proc
 template<typename T>
 void convertDepth(
   const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-  sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
+  const sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
   const image_geometry::PinholeCameraModel & model,
-  double default_depth = 0.0)
+  double invalid_depth = 0.0)
 {
   // Use correct principal point from calibration
   float center_x = model.cx();
@@ -64,18 +64,18 @@ void convertDepth(
   float constant_x = unit_scaling / model.fx();
   float constant_y = unit_scaling / model.fy();
   float bad_point = std::numeric_limits<float>::quiet_NaN();
-  
-  // the following lines ensure that the computation only happens in case we have a default depth
-  const T default_depth_cvt;
-  bool use_default_depth = default_depth != 0.0;
-  if (use_default_depth) {
-    default_depth_cvt=DepthTraits<T>::fromMeters(default_depth);
+
+  // ensure that the computation only happens in case we have a default depth
+  T invalid_depth_cvt = T(0);
+  bool use_invalid_depth = invalid_depth != 0.0;
+  if (use_invalid_depth) {
+    invalid_depth_cvt = DepthTraits<T>::fromMeters(invalid_depth);
   }
   sensor_msgs::PointCloud2Iterator<float> iter_x(*cloud_msg, "x");
   sensor_msgs::PointCloud2Iterator<float> iter_y(*cloud_msg, "y");
   sensor_msgs::PointCloud2Iterator<float> iter_z(*cloud_msg, "z");
 
-  // TODO: i think this is undefined behaviour we should favor memcpy? https://stackoverflow.com/questions/55150001/vector-with-reinterpret-cast
+  // TODO(philipppolterauer): i think this is undefined behaviour we should favor memcpy? https://stackoverflow.com/questions/55150001/vector-with-reinterpret-cast
   const T * depth_row = reinterpret_cast<const T *>(&depth_msg->data[0]);
   uint32_t row_step = depth_msg->step / sizeof(T);
   for (uint32_t v = 0; v < cloud_msg->height; ++v, depth_row += row_step) {
@@ -84,8 +84,8 @@ void convertDepth(
 
       // Missing points denoted by NaNs
       if (!DepthTraits<T>::valid(depth)) {
-        if (use_default_depth) {
-          depth = default_depth_cvt;
+        if (use_invalid_depth) {
+          depth = invalid_depth_cvt;
         } else {
           *iter_x = *iter_y = *iter_z = bad_point;
           continue;
@@ -104,8 +104,8 @@ void convertDepth(
 template<typename T>
 void convertDepthRadial(
   const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-  sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
-  cv::Mat & transform)
+  const sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
+  const cv::Mat & transform)
 {
   // Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
   float bad_point = std::numeric_limits<float>::quiet_NaN();
@@ -137,7 +137,7 @@ void convertDepthRadial(
 template<typename T>
 void convertIntensity(
   const sensor_msgs::msg::Image::ConstSharedPtr & intensity_msg,
-  sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg)
+  const sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg)
 {
   sensor_msgs::PointCloud2Iterator<float> iter_i(*cloud_msg, "intensity");
   const T * inten_row = reinterpret_cast<const T *>(&intensity_msg->data[0]);
@@ -153,7 +153,7 @@ void convertIntensity(
 // Handles RGB8, BGR8, and MONO8
 void convertRgb(
   const sensor_msgs::msg::Image::ConstSharedPtr & rgb_msg,
-  sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
+  sensor_msgs::msg::PointCloud2::SharedPtr cloud_msg,
   int red_offset, int green_offset, int blue_offset, int color_step);
 
 cv::Mat initMatrix(cv::Mat cameraMatrix, cv::Mat distCoeffs, int width, int height, bool radial);

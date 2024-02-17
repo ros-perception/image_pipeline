@@ -59,8 +59,8 @@ PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
   queue_size_ = this->declare_parameter<int>("queue_size", 5);
 
   // values used for invalid points for pcd conversion
-  invalid_depth_ = this->declare_parameter<double>("invalid_depth_", 0.0);
-  
+  invalid_depth_ = this->declare_parameter<double>("invalid_depth", 0.0);
+
   // Create publisher with connect callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
@@ -97,7 +97,7 @@ void PointCloudXyzNode::depthCb(
   const Image::ConstSharedPtr & depth_msg,
   const CameraInfo::ConstSharedPtr & info_msg)
 {
-  auto cloud_msg = std::make_shared<PointCloud2>();
+  const PointCloud2::SharedPtr cloud_msg = std::make_shared<PointCloud2>();
   cloud_msg->header = depth_msg->header;
   cloud_msg->height = depth_msg->height;
   cloud_msg->width = depth_msg->width;
