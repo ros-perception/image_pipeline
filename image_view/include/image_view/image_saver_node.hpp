@@ -68,6 +68,7 @@ public:
 
 private:
   std::string g_format;
+  double fps_;
   bool stamped_filename_;
   bool save_all_image_{false};
   bool save_image_service_{false};

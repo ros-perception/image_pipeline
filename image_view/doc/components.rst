@@ -31,7 +31,7 @@ This tool allows you to save images as jpg/png file from streaming
 can run with:
 
 .. code-block:: bash
-    
+
     ros2 run image_view image_saver --ros-args -r image:=[your topic]
 
 or see this answer to control the timing of capture.
@@ -74,7 +74,7 @@ This tool allows you to save images as jpg/png file from streaming
 can run with:
 
 .. code-block:: bash
-    
+
     ros2 run image_view image_saver --ros-args -r image:=[your topic]
 
 or see this answer to control the timing of capture.
@@ -93,7 +93,7 @@ Services
 Parameters
 ----------
  * **encoding** (string, default:"bgr8"): Encoding type of input image topic.
- * **filename_format** (string, default: "left%04i.jpg"): File name for
+ * **filename_format** (string, default: "frame%04i.jpg"): File name for
    saved images, you can use '%04i' for sequence number, and '%s' for default
    file format, you can use 'jpg' ,'png', 'pgm' as filename suffixes.
  * **image_transport** (string, default: raw): Image transport to use.

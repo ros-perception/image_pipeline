@@ -93,7 +93,8 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
       &ImageSaverNode::callbackWithoutCameraInfo, this, std::placeholders::_1),
     hints.getTransport());
 
-  g_format = this->declare_parameter("filename_format", std::string("left%04i.%s"));
+  g_format = this->declare_parameter("filename_format", std::string("frame%04i.%s"));
+  fps_ = this->declare_parameter("fps", 0.1);
   encoding_ = this->declare_parameter("encoding", std::string("bgr8"));
   save_all_image_ = this->declare_parameter("save_all_image", true);
   stamped_filename_ = this->declare_parameter("stamped_filename", false);
@@ -125,6 +126,7 @@ bool ImageSaverNode::saveImage(
 {
   cv::Mat image;
   try {
+    encoding_ = image_msg->encoding;
     image = cv_bridge::toCvShare(image_msg, encoding_)->image;
   } catch (const cv_bridge::Exception &) {
     RCLCPP_ERROR(
