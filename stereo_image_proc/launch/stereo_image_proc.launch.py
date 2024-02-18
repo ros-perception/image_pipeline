@@ -69,7 +69,7 @@ def generate_launch_description():
                 'uniqueness_ratio': LaunchConfiguration('uniqueness_ratio'),
                 'P1': LaunchConfiguration('P1'),
                 'P2': LaunchConfiguration('P2'),
-                'full_dp': LaunchConfiguration('full_dp'),
+                'sgbm_mode': LaunchConfiguration('sgbm_mode'),
             }],
             remappings=[
                 ('left/image_rect', [LaunchConfiguration('left_namespace'), '/image_rect']),
@@ -199,8 +199,8 @@ def generate_launch_description():
                         '(Semi-Global Block Matching only)'
         ),
         DeclareLaunchArgument(
-            name='full_dp', default_value='False',
-            description='Run the full variant of the algorithm (Semi-Global Block Matching only)'
+            name='sgbm_mode', default_value='0',
+            description='The mode of the SGBM matcher to be used'
         ),
         ComposableNodeContainer(
             condition=LaunchConfigurationEquals('container', ''),
