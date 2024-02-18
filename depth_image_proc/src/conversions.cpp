@@ -79,7 +79,7 @@ cv::Mat initMatrix(
 
 void convertRgb(
   const sensor_msgs::msg::Image::ConstSharedPtr & rgb_msg,
-  sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
+  const sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
   int red_offset, int green_offset, int blue_offset, int color_step)
 {
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(*cloud_msg, "r");
@@ -101,8 +101,8 @@ void convertRgb(
 // force template instantiation
 template void convertDepth<uint16_t>(
   const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-  sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
+  const sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
   const image_geometry::PinholeCameraModel & model,
-  double range_max);
+  double invalid_depth);
 
 }  // namespace depth_image_proc

@@ -75,6 +75,9 @@ private:
   std::shared_ptr<Synchronizer> sync_;
   std::shared_ptr<ExactSynchronizer> exact_sync_;
 
+  // parameters
+  float invalid_depth_;
+
   // Publications
   std::mutex connect_mutex_;
   rclcpp::Publisher<PointCloud2>::SharedPtr pub_point_cloud_;

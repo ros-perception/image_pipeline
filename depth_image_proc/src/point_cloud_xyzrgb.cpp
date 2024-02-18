@@ -55,6 +55,9 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
   this->declare_parameter<std::string>("image_transport", "raw");
   this->declare_parameter<std::string>("depth_image_transport", "raw");
 
+  // value used for invalid points for pcd conversion
+  invalid_depth_ = this->declare_parameter<double>("invalid_depth", 0.0);
+
   // Read parameters
   int queue_size = this->declare_parameter<int>("queue_size", 5);
   bool use_exact_sync = this->declare_parameter<bool>("exact_sync", false);
@@ -256,9 +259,9 @@ void PointCloudXyzrgbNode::imageCb(
 
   // Convert Depth Image to Pointcloud
   if (depth_msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
-    convertDepth<uint16_t>(depth_msg, cloud_msg, model_);
+    convertDepth<uint16_t>(depth_msg, cloud_msg, model_, invalid_depth_);
   } else if (depth_msg->encoding == sensor_msgs::image_encodings::TYPE_32FC1) {
-    convertDepth<float>(depth_msg, cloud_msg, model_);
+    convertDepth<float>(depth_msg, cloud_msg, model_, invalid_depth_);
   } else {
     RCLCPP_ERROR(
       get_logger(), "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
