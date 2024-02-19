@@ -258,6 +258,12 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
     "Maximum allowed difference in the left-right disparity check in pixels"
     " (Semi-Global Block Matching only)",
     0, 0, 128, 1);
+  add_param_to_map(
+    int_params,
+    "sgbm_mode",
+    "Mode of the SGBM stereo matcher."
+    "",
+    0, 0, 3, 1);
 
   // Describe double parameters
   std::map<std::string, std::pair<double, rcl_interfaces::msg::ParameterDescriptor>> double_params;
@@ -277,17 +283,9 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
     "The second parameter ccontrolling the disparity smoothness (Semi-Global Block Matching only)",
     400.0, 0.0, 4000.0, 0.0);
 
-  // Describe bool parameters
-  std::map<std::string, std::pair<bool, rcl_interfaces::msg::ParameterDescriptor>> bool_params;
-  rcl_interfaces::msg::ParameterDescriptor full_dp_descriptor;
-  full_dp_descriptor.description =
-    "Run the full variant of the algorithm (Semi-Global Block Matching only)";
-  bool_params["full_dp"] = std::make_pair(false, full_dp_descriptor);
-
   // Declaring parameters triggers the previously registered callback
   this->declare_parameters("", int_params);
   this->declare_parameters("", double_params);
-  this->declare_parameters("", bool_params);
 
   // Publisher options to allow reconfigurable qos settings and connect callback
   rclcpp::PublisherOptions pub_opts;
@@ -424,8 +422,8 @@ rcl_interfaces::msg::SetParametersResult DisparityNode::parameterSetCb(
       block_matcher_.setSpeckleSize(param.as_int());
     } else if ("speckle_range" == param_name) {
       block_matcher_.setSpeckleRange(param.as_int());
-    } else if ("full_dp" == param_name) {
-      block_matcher_.setSgbmMode(param.as_bool());
+    } else if ("sgbm_mode" == param_name) {
+      block_matcher_.setSgbmMode(param.as_int());
     } else if ("P1" == param_name) {
       block_matcher_.setP1(param.as_double());
     } else if ("P2" == param_name) {
