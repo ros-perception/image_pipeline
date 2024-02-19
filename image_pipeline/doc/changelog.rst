@@ -38,3 +38,7 @@ There are several major change between ``Iron`` and ``Jazzy``:
    ``rgb/image_rect_color`` to ``rgb/image_raw`` to make clear that the
    unrectified camera projection matrix is used, and for consistency with
    other radial nodes.
+ * The boolen parameter ``full_dp`` from the DisparityNode has been deleted
+   and a new integer parameter ``sgbm_mode`` added to enable all the 
+   variations of the stereo matching algorithm SGBM available from the
+   OpenCV library.
