@@ -103,6 +103,6 @@ template void convertDepth<uint16_t>(
   const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
   const sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
   const image_geometry::PinholeCameraModel & model,
-  double range_max);
+  double invalid_depth);
 
 }  // namespace depth_image_proc
