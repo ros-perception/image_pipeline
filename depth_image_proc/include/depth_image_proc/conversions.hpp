@@ -75,7 +75,6 @@ void convertDepth(
   sensor_msgs::PointCloud2Iterator<float> iter_y(*cloud_msg, "y");
   sensor_msgs::PointCloud2Iterator<float> iter_z(*cloud_msg, "z");
 
-  // TODO(philipppolterauer): i think this is undefined behaviour we should favor memcpy? https://stackoverflow.com/questions/55150001/vector-with-reinterpret-cast
   const T * depth_row = reinterpret_cast<const T *>(&depth_msg->data[0]);
   uint32_t row_step = depth_msg->step / sizeof(T);
   for (uint32_t v = 0; v < cloud_msg->height; ++v, depth_row += row_step) {
