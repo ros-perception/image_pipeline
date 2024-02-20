@@ -30,6 +30,14 @@ Published Topics
 Parameters
 ^^^^^^^^^^
 
+*Disparity algorithm variant*
+ * **sgbm_mode** (int, default: 0): Stereo matching algorithm variation:
+
+   * SGBM (0)
+   * HH (1)
+   * SGBM_3WAY (2)
+   * HH4 (3)
+
 *Disparity pre-filtering* 
 
  * **prefilter_size** (int, default: 9): Normalization window size, pixels.
