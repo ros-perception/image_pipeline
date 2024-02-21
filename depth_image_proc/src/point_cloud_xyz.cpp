@@ -58,6 +58,9 @@ PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
   // Read parameters
   queue_size_ = this->declare_parameter<int>("queue_size", 5);
 
+  // values used for invalid points for pcd conversion
+  invalid_depth_ = this->declare_parameter<double>("invalid_depth", 0.0);
+
   // Create publisher with connect callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
@@ -94,7 +97,7 @@ void PointCloudXyzNode::depthCb(
   const Image::ConstSharedPtr & depth_msg,
   const CameraInfo::ConstSharedPtr & info_msg)
 {
-  auto cloud_msg = std::make_shared<PointCloud2>();
+  const PointCloud2::SharedPtr cloud_msg = std::make_shared<PointCloud2>();
   cloud_msg->header = depth_msg->header;
   cloud_msg->height = depth_msg->height;
   cloud_msg->width = depth_msg->width;
@@ -109,9 +112,9 @@ void PointCloudXyzNode::depthCb(
 
   // Convert Depth Image to Pointcloud
   if (depth_msg->encoding == enc::TYPE_16UC1 || depth_msg->encoding == enc::MONO16) {
-    convertDepth<uint16_t>(depth_msg, cloud_msg, model_);
+    convertDepth<uint16_t>(depth_msg, cloud_msg, model_, invalid_depth_);
   } else if (depth_msg->encoding == enc::TYPE_32FC1) {
-    convertDepth<float>(depth_msg, cloud_msg, model_);
+    convertDepth<float>(depth_msg, cloud_msg, model_, invalid_depth_);
   } else {
     RCLCPP_ERROR(
       get_logger(), "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
