@@ -67,7 +67,7 @@ namespace image_view
 
 ExtractImagesNode::ExtractImagesNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("extract_images_node", options),
-  filename_format_(""), count_(0), _time(this->now())
+  filename_format_(""), count_(0), _time(0.0)
 {
   // For compressed topics to remap appropriately, we need to pass a
   // fully expanded and remapped topic name to image_transport
@@ -96,6 +96,14 @@ ExtractImagesNode::ExtractImagesNode(const rclcpp::NodeOptions & options)
   this->declare_parameter<std::string>("filename_format", std::string("frame%04i.jpg"));
   filename_format_ = this->get_parameter("filename_format").as_string();
 
+  this->declare_parameter<double>("downsample_rate", 1.0);
+  downsample_rate_ = this->get_parameter("downsample_rate").as_double();
+
+  if (downsample_rate_ < 1.0) {
+    RCLCPP_WARN(
+      this->get_logger(), "extract_images: downsample_rate < 1 does not make any sense.");
+  }
+
   this->declare_parameter<double>("sec_per_frame", 0.1);
   sec_per_frame_ = this->get_parameter("sec_per_frame").as_double();
 
@@ -122,10 +130,10 @@ void ExtractImagesNode::image_cb(const sensor_msgs::msg::Image::ConstSharedPtr &
     RCLCPP_ERROR(this->get_logger(), "Unable to convert %s image to bgr8", msg->encoding.c_str());
   }
 
-  rclcpp::Duration delay = this->now() - _time;
+  double delay = msg->header.stamp.sec - _time.seconds();
 
-  if (delay.seconds() >= sec_per_frame_) {
-    _time = this->now();
+  if (delay >= downsample_rate_ * sec_per_frame_) {
+    _time = msg->header.stamp;
 
     if (!image.empty()) {
       std::string filename = string_format(filename_format_, count_);
