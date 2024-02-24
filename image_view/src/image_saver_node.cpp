@@ -66,6 +66,8 @@
 
 #include "utils.hpp"
 
+using namespace std::chrono_literals;
+
 namespace image_view
 {
 
@@ -88,13 +90,14 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
     hints.getTransport());
 
   // Useful when CameraInfo is not being published
+
   image_sub_ = image_transport::create_subscription(
     this, topic, std::bind(
       &ImageSaverNode::callbackWithoutCameraInfo, this, std::placeholders::_1),
     hints.getTransport());
 
   g_format = this->declare_parameter("filename_format", std::string("frame%04i.%s"));
-  fps_ = this->declare_parameter("fps", 0.0);
+  fps_ = this->declare_parameter("fps", 0);
   encoding_ = this->declare_parameter("encoding", std::string("bgr8"));
   save_all_image_ = this->declare_parameter("save_all_image", true);
   stamped_filename_ = this->declare_parameter("stamped_filename", false);
@@ -119,6 +122,22 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
         &ImageSaverNode::callbackEndSave, this, std::placeholders::_1, std::placeholders::_2,
         std::placeholders::_3));
   }
+
+  if(fps_ != 0) {
+    using fps_timer = std::chrono::duration<int, std::ratio<1>>;
+    timer_ = this->create_wall_timer(fps_timer(fps_), std::bind(&ImageSaverNode::timerCallback, this));
+  }
+}
+
+void ImageSaverNode::timerCallback()
+{
+  // save the image
+  std::string filename;
+  if (!saveImage(latest_image_, filename)) {
+    return;
+  }
+
+  count_++;
 }
 
 bool ImageSaverNode::saveImage(
@@ -233,13 +252,19 @@ void ImageSaverNode::callbackWithoutCameraInfo(
     }
   }
 
-  // save the image
-  std::string filename;
-  if (!saveImage(image_msg, filename)) {
-    return;
+  if (fps_ != 0) {
+    std::lock_guard lock = std::lock_guard<std::mutex>(image_save_mutex_);
+    latest_image_ = image_msg;
   }
+  else {
+    // save the image
+    std::string filename;
+    if (!saveImage(image_msg, filename)) {
+      return;
+    }
 
-  count_++;
+    count_++;
+  }
 }
 
 void ImageSaverNode::callbackWithCameraInfo(
@@ -258,19 +283,25 @@ void ImageSaverNode::callbackWithCameraInfo(
     }
   }
 
-  // save the image
-  std::string filename;
-  if (!saveImage(image_msg, filename)) {
-    return;
+  if (fps_ != 0) {
+    std::lock_guard lock = std::lock_guard<std::mutex>(image_save_mutex_);
+    latest_image_ = image_msg;
+  }
+  else {
+    // save the image
+    std::string filename;
+    if (!saveImage(image_msg, filename)) {
+      return;
+    }
+    // save the CameraInfo
+    if (info) {
+      filename = filename.replace(filename.rfind("."), filename.length(), ".ini");
+      camera_calibration_parsers::writeCalibration(filename, "camera", *info);
+    }
+
+    count_++;
   }
 
-  // save the CameraInfo
-  if (info) {
-    filename = filename.replace(filename.rfind("."), filename.length(), ".ini");
-    camera_calibration_parsers::writeCalibration(filename, "camera", *info);
-  }
-
-  count_++;
 }
 
 }  // namespace image_view
