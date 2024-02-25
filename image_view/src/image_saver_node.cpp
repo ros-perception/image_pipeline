@@ -123,9 +123,10 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
         std::placeholders::_3));
   }
 
-  if(fps_ != 0) {
+  if (fps_ != 0) {
     using fps_timer = std::chrono::duration<int, std::ratio<1>>;
-    timer_ = this->create_wall_timer(fps_timer(fps_), std::bind(&ImageSaverNode::timerCallback, this));
+    timer_ = this->create_wall_timer(
+      fps_timer(fps_), std::bind(&ImageSaverNode::timerCallback, this));
   }
 }
 
@@ -255,8 +256,7 @@ void ImageSaverNode::callbackWithoutCameraInfo(
   if (fps_ != 0) {
     std::lock_guard lock = std::lock_guard<std::mutex>(image_save_mutex_);
     latest_image_ = image_msg;
-  }
-  else {
+  } else {
     // save the image
     std::string filename;
     if (!saveImage(image_msg, filename)) {
@@ -286,8 +286,7 @@ void ImageSaverNode::callbackWithCameraInfo(
   if (fps_ != 0) {
     std::lock_guard lock = std::lock_guard<std::mutex>(image_save_mutex_);
     latest_image_ = image_msg;
-  }
-  else {
+  } else {
     // save the image
     std::string filename;
     if (!saveImage(image_msg, filename)) {
@@ -301,7 +300,6 @@ void ImageSaverNode::callbackWithCameraInfo(
 
     count_++;
   }
-
 }
 
 }  // namespace image_view
