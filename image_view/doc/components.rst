@@ -64,7 +64,7 @@ Services
 Parameters
 ----------
  * **encoding** (string, default:"bgr8"): Encoding type of input image topic.
- * **fps** (double, default:"0.0"): Seconds between saved frames.
+ * **fps** (int, default:"0"): Seconds between saved frames.
  * **filename_format** (string, default: "frame%04i.jpg"): File name for
    saved images, you can use '%04i' for sequence number, and '%s' for default
    file format, you can use 'jpg' ,'png', 'pgm' as filename suffixes.
