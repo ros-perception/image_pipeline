@@ -46,7 +46,7 @@ def generate_launch_description():
         name='namespace', default_value='',
         description=('namespace for all components loaded')
     )
-
+    
     composable_nodes = [
         ComposableNode(
             package='image_proc',
@@ -62,6 +62,7 @@ def generate_launch_description():
             # Remap subscribers and publishers
             remappings=[
                 ('image', 'image_mono'),
+                ('camera_info', 'camera_info'),
                 ('image_rect', 'image_rect')
             ],
         ),
