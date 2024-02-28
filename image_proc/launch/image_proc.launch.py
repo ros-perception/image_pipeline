@@ -46,7 +46,7 @@ def generate_launch_description():
         name='namespace', default_value='',
         description=('namespace for all components loaded')
     )
-    
+
     composable_nodes = [
         ComposableNode(
             package='image_proc',
