@@ -14,3 +14,5 @@ and links to the documentation for each individual package.
 Not every aspect has been ported to the new ROS 2 API documentation yet, so
 there is still additional (partially outdated) information
 in [the ROS wiki entry](http://wiki.ros.org/image_pipeline).
+
+If you are using an Nvidia Jetson platform, consider using modules from [Isaac Image Proc](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_image_pipeline) - a collection of hardware accelerated `image_proc` features for the Jetsons.
