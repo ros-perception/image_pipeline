@@ -2,6 +2,13 @@
 Changelog for package depth_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [backport humble] Fixed image types in depth_image_proc (`#916 <https://github.com/ros-perception/image_pipeline/issues/916>`_)
+  backport humble
+  https://github.com/ros-perception/image_pipeline/pull/915#event-11585393591
+* Contributors: Alejandro Hernández Cordero
+
 3.0.3 (2022-01-24)
 ------------------
 * [backport humble] upport rgba8 and bgra8 encodings by skipping alpha channel (`#869 <https://github.com/ros-perception/image_pipeline/issues/869>`_) (`#895 <https://github.com/ros-perception/image_pipeline/issues/895>`_)
