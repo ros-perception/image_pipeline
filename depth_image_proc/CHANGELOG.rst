@@ -2,8 +2,8 @@
 Changelog for package depth_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.0.4 (2024-03-01)
+------------------
 * [backport humble] Fixed image types in depth_image_proc (`#916 <https://github.com/ros-perception/image_pipeline/issues/916>`_)
   backport humble
   https://github.com/ros-perception/image_pipeline/pull/915#event-11585393591
