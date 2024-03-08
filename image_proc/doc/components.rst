@@ -42,8 +42,8 @@ Parameters
  * **queue_size** (int, default: 5): Size of message queue for synchronizing
    image and camera_info topics. You may need to raise this if images take
    significantly longer to travel over the network than camera info.
- * **x_offset** (int, default: 0): X offset of the region of interest. Range: 0 to 2447
- * **y_offset** (int, default: 0): Y offset of the region of interest. Range: 0 to 2049
+ * **offset_x** (int, default: 0): X offset of the region of interest. Range: 0 to 2447
+ * **offset_y** (int, default: 0): Y offset of the region of interest. Range: 0 to 2049
  * **width** (int, default: 0): Width of the region of interest. Range: 0 to 2448
  * **height** (int, default: 0): Height of the region of interest. Range: 0 to 2050
 
