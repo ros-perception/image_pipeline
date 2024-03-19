@@ -80,14 +80,14 @@ class ChessboardInfo():
                 "5x5_100"    : cv2.aruco.DICT_5X5_100,
                 "5x5_250"    : cv2.aruco.DICT_5X5_250,
                 "5x5_1000"    : cv2.aruco.DICT_5X5_1000,
-                "6x6_50"    : cv2.aruco.DICT_6x6_50,
-                "6x6_100"    : cv2.aruco.DICT_6x6_100,
-                "6x6_250"    : cv2.aruco.DICT_6x6_250,
-                "6x6_1000"    : cv2.aruco.DICT_6x6_1000,
-                "7x7_50"    : cv2.aruco.DICT_7x7_50,
-                "7x7_100"    : cv2.aruco.DICT_7x7_100,
-                "7x7_250"    : cv2.aruco.DICT_7x7_250,
-                "7x7_1000"    : cv2.aruco.DICT_7x7_1000}[aruco_dict])
+                "6x6_50"    : cv2.aruco.DICT_6X6_50,
+                "6x6_100"    : cv2.aruco.DICT_6X6_100,
+                "6x6_250"    : cv2.aruco.DICT_6X6_250,
+                "6x6_1000"    : cv2.aruco.DICT_6X6_1000,
+                "7x7_50"    : cv2.aruco.DICT_7X7_50,
+                "7x7_100"    : cv2.aruco.DICT_7X7_100,
+                "7x7_250"    : cv2.aruco.DICT_7X7_250,
+                "7x7_1000"    : cv2.aruco.DICT_7X7_1000}[aruco_dict])
             self.charuco_board = cv2.aruco.CharucoBoard_create(self.n_cols, self.n_rows, self.dim, self.marker_size,
                     self.aruco_dict)
 
