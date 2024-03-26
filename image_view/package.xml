@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>image_view</name>
-  <version>5.0.0</version>
+  <version>5.0.1</version>
   <description>
   A simple viewer for ROS image topics. Includes a specialized viewer
   for stereo + disparity images.
