@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>camera_calibration</name>
-  <version>4.0.0</version>
+  <version>4.0.1</version>
   <description>
      camera_calibration allows easy calibration of monocular or stereo
      cameras using a checkerboard calibration target.

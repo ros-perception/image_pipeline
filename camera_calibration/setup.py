@@ -5,7 +5,7 @@ PACKAGE_NAME = "camera_calibration"
 
 setup(
     name=PACKAGE_NAME,
-    version='4.0.0',
+    version='4.0.1',
     packages=["camera_calibration", "camera_calibration.nodes"],
     data_files=[
     ('share/ament_index/resource_index/packages',

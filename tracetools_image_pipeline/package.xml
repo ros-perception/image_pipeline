@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="2">
   <name>tracetools_image_pipeline</name>
-  <version>4.0.0</version>
+  <version>4.0.1</version>
   <description>
     LTTng tracing provider wrapper for image_pipeline ROS 2 meta-package.
   </description>
