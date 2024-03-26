@@ -2,6 +2,18 @@
 Changelog for package image_rotate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.1 (2024-03-26)
+------------------
+* fix image publisher remapping (`#941 <https://github.com/ros-perception/image_pipeline/issues/941>`_)
+  Addresses `#940 <https://github.com/ros-perception/image_pipeline/issues/940>`_ - fixes the compressed/etc topic remapping for publishers
+* unified changelog, add missing image, deduplicate tutorials (`#938 <https://github.com/ros-perception/image_pipeline/issues/938>`_)
+  Last bit of documentation updates - putting together a single changelog
+  summary for the whole release (rather than scattering among packages).
+  Unified the camera_info tutorial so it isn't duplicated. Added a missing
+  image from image_rotate (was on local disk, but hadn't committed it)
+* add docs for image_rotate/publisher (`#936 <https://github.com/ros-perception/image_pipeline/issues/936>`_)
+* Contributors: Michael Ferguson
+
 5.0.0 (2024-01-24)
 ------------------
 * Removed cfg files related with ROS 1 parameters (`#911 <https://github.com/ros-perception/image_pipeline/issues/911>`_)

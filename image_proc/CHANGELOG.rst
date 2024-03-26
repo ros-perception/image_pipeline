@@ -2,6 +2,46 @@
 Changelog for package image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.1 (2024-03-26)
+------------------
+* Fix parameter names in components.rst (`#959 <https://github.com/ros-perception/image_pipeline/issues/959>`_)
+  In the docs for `image_proc::CropDecimateNode` , change the parameter
+  names `x_offset` and `y_offset` to `offset_x` and `offset_y`, matching
+  the actual names of parameters defined in crop_decimate.cpp
+* fix image publisher remapping (`#941 <https://github.com/ros-perception/image_pipeline/issues/941>`_)
+  Addresses `#940 <https://github.com/ros-perception/image_pipeline/issues/940>`_ - fixes the compressed/etc topic remapping for publishers
+* unified changelog, add missing image, deduplicate tutorials (`#938 <https://github.com/ros-perception/image_pipeline/issues/938>`_)
+  Last bit of documentation updates - putting together a single changelog
+  summary for the whole release (rather than scattering among packages).
+  Unified the camera_info tutorial so it isn't duplicated. Added a missing
+  image from image_rotate (was on local disk, but hadn't committed it)
+* Add TrackMarkerNode to image_proc (`#930 <https://github.com/ros-perception/image_pipeline/issues/930>`_)
+  Converts sensors_msgs/Image into geometry_msg/PoseStamped using OpenCV Aruco marker detection.
+* migrate image_pipeline docs (`#929 <https://github.com/ros-perception/image_pipeline/issues/929>`_)
+  * Migrates image_pipeline overview page
+  * Migrates CameraInfo wiki page
+  * Adds links to the other packages in this stack
+  * Updates depth_image_proc and image_proc to have the overview page properly named and in the TOC
+* migrate depth_image_proc docs (`#926 <https://github.com/ros-perception/image_pipeline/issues/926>`_)
+* fixup bash command rendering (`#927 <https://github.com/ros-perception/image_pipeline/issues/927>`_)
+  I didn't actually rebuild with the suggestions in `#925 <https://github.com/ros-perception/image_pipeline/issues/925>`_ - but this is
+  actually proper rendering (even my three-ticks version wasn't quite
+  pretty)
+* migrate and update image_proc docs (`#925 <https://github.com/ros-perception/image_pipeline/issues/925>`_)
+  * move component documentation from ros wiki, update for various changes
+  * add tutorial on how to run components
+  * update tutorial on debayer/rectify to use launch file
+  * remove image_proc node, it has always been completely broken and the
+  launch file has the same (but working) functionality
+  * update launch file to support namespace parameter for tutorial
+* QoS improvements for image_proc and stereo_image_proc (`#922 <https://github.com/ros-perception/image_pipeline/issues/922>`_)
+  First part of `#847 <https://github.com/ros-perception/image_pipeline/issues/847>`_
+  * Add QoS overrides for all publishers (in the new, standard way)
+  * stereo_image_proc: Default subscriber QoS to SensorDataQoS
+  * Clean up some of the comments around lazy subscribers, make them more
+  consistent across nodes
+* Contributors: Michael Ferguson, Noah Mollerstuen
+
 5.0.0 (2024-01-24)
 ------------------
 * Port image_proc test to ROS 2 (`#910 <https://github.com/ros-perception/image_pipeline/issues/910>`_)

@@ -2,6 +2,24 @@
 Changelog for package camera_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.1 (2024-03-26)
+------------------
+* Fix spelling error for cv2.aruco.DICT from 6x6_50 to 7x7_1000 (`#961 <https://github.com/ros-perception/image_pipeline/issues/961>`_)
+  There was mismatch of capitalisation of "X" for OpenCV
+  cv2.aruco.DICT_n**X**n\_ in camera_calibration package for dicts 6x6_50
+  to 7x7_1000
+  Co-authored-by: Vishal Balaji <vishal.balaji@schanzer-racing.de>
+* unified changelog, add missing image, deduplicate tutorials (`#938 <https://github.com/ros-perception/image_pipeline/issues/938>`_)
+  Last bit of documentation updates - putting together a single changelog
+  summary for the whole release (rather than scattering among packages).
+  Unified the camera_info tutorial so it isn't duplicated. Added a missing
+  image from image_rotate (was on local disk, but hadn't committed it)
+* migrate camera_calibration documentation (`#937 <https://github.com/ros-perception/image_pipeline/issues/937>`_)
+* install tarfile_calibration (`#923 <https://github.com/ros-perception/image_pipeline/issues/923>`_)
+  otherwise, it can't be run easily
+* calibration: better warnings around board configuration `#713 <https://github.com/ros-perception/image_pipeline/issues/713>`_ (`#724 <https://github.com/ros-perception/image_pipeline/issues/724>`_)
+* Contributors: Michael Ferguson, Vishal Balaji, jonathanTIE
+
 5.0.0 (2024-01-24)
 ------------------
 * ROS 2: Added more aruco dicts, fixed aruco linerror bug (`#873 <https://github.com/ros-perception/image_pipeline/issues/873>`_)

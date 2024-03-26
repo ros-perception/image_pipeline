@@ -2,6 +2,43 @@
 Changelog for package image_view
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.1 (2024-03-26)
+------------------
+* unified changelog, add missing image, deduplicate tutorials (`#938 <https://github.com/ros-perception/image_pipeline/issues/938>`_)
+  Last bit of documentation updates - putting together a single changelog
+  summary for the whole release (rather than scattering among packages).
+  Unified the camera_info tutorial so it isn't duplicated. Added a missing
+  image from image_rotate (was on local disk, but hadn't committed it)
+* add docs for image_rotate/publisher (`#936 <https://github.com/ros-perception/image_pipeline/issues/936>`_)
+* migrate image_view docs (`#934 <https://github.com/ros-perception/image_pipeline/issues/934>`_)
+  * migrate docs from ROS wiki
+  * FIX: video recorder start/end services should only be advertised when
+  feature is enabled
+  * FIX: image remapping didn't work as expected/documented in
+  stereo_image_proc
+* default to encoding in the image message (`#921 <https://github.com/ros-perception/image_pipeline/issues/921>`_)
+  My camera is publishing rgb8 encoding - the existing code throws an
+  error that 8UC3 is not a valid encoding, but if we pass rgb8 from the
+  message then things work fine. The encoding in the image should always
+  be more descriptive than just the bit and channel size.
+  If encoding is not filled in, the existing behavior is used as a
+  fallback
+* Update extract_images_sync to add sec_per_frame parameter (`#920 <https://github.com/ros-perception/image_pipeline/issues/920>`_)
+  Added sec_per_frame parameter to allow decimation of frames being
+  synchronized and captured.
+  fixes `#726 <https://github.com/ros-perception/image_pipeline/issues/726>`_
+  ---------
+  Co-authored-by: Michael Ferguson <mfergs7@gmail.com>
+* Port extract_images_sync script to ROS 2 (`#919 <https://github.com/ros-perception/image_pipeline/issues/919>`_)
+  Change Description: The extract_images_sync python script was upgraded
+  to ROS 2.
+  Testing: Upgraded node tested against Iron on Ubuntu 22.04.3 LTS
+  Issue: fixes `#860 <https://github.com/ros-perception/image_pipeline/issues/860>`_
+  ---------
+  Co-authored-by: Alejandro Hernández Cordero <ahcorde@gmail.com>
+  Co-authored-by: Michael Ferguson <mfergs7@gmail.com>
+* Contributors: Michael Ferguson, Siddharth Vaghela
+
 5.0.0 (2024-01-24)
 ------------------
 * remove the last bit of boost (`#912 <https://github.com/ros-perception/image_pipeline/issues/912>`_)

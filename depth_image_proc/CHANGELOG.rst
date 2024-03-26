@@ -2,6 +2,32 @@
 Changelog for package depth_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.1 (2024-03-26)
+------------------
+* Update depth_image_proc::RegisterNode documentation (`#957 <https://github.com/ros-perception/image_pipeline/issues/957>`_)
+  Adding missing parameters from register node of depth_image_proc
+  package.
+  Related to Issue `#956 <https://github.com/ros-perception/image_pipeline/issues/956>`_
+* add invalid_depth param (`#943 <https://github.com/ros-perception/image_pipeline/issues/943>`_)
+  Add option to set all invalid depth pixels to a specified value, typically the maximum range.
+  * Updates convertDepth parameter name and optimizes use of the parameter.
+  * Updates PointCloudXYZ, PointCloudXYZI, and PointCloudXYZRGB with new invalid_depth parameter
+* fix image publisher remapping (`#941 <https://github.com/ros-perception/image_pipeline/issues/941>`_)
+  Addresses `#940 <https://github.com/ros-perception/image_pipeline/issues/940>`_ - fixes the compressed/etc topic remapping for publishers
+* unified changelog, add missing image, deduplicate tutorials (`#938 <https://github.com/ros-perception/image_pipeline/issues/938>`_)
+  Last bit of documentation updates - putting together a single changelog
+  summary for the whole release (rather than scattering among packages).
+  Unified the camera_info tutorial so it isn't duplicated. Added a missing
+  image from image_rotate (was on local disk, but hadn't committed it)
+* migrate image_pipeline docs (`#929 <https://github.com/ros-perception/image_pipeline/issues/929>`_)
+  * Migrates image_pipeline overview page
+  * Migrates CameraInfo wiki page
+  * Adds links to the other packages in this stack
+  * Updates depth_image_proc and image_proc to have the overview page properly named and in the TOC
+* migrate depth_image_proc docs (`#926 <https://github.com/ros-perception/image_pipeline/issues/926>`_)
+* Fixed image types in depth_image_proc
+* Contributors: Alejandro Hernández Cordero, Alessio Parmeggiani, Michael Ferguson, philipp.polterauer
+
 5.0.0 (2024-01-24)
 ------------------
 * radial nodes: should all sub to raw topics (`#906 <https://github.com/ros-perception/image_pipeline/issues/906>`_)
