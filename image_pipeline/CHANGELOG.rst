@@ -2,6 +2,9 @@
 Changelog for package image_pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.0.1 (2024-03-26)
+------------------
+
 4.0.0 (2022-12-24)
 ------------------
 * add myself as a maintainer (`#846 <https://github.com/ros-perception/image_pipeline/issues/846>`_)

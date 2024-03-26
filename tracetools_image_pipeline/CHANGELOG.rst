@@ -2,6 +2,9 @@
 Changelog for package tracetools_image_pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.0.1 (2024-03-26)
+------------------
+
 4.0.0 (2022-12-24)
 ------------------
 * ROS 2: Fixed CMake (`#899 <https://github.com/ros-perception/image_pipeline/issues/899>`_) (`#902 <https://github.com/ros-perception/image_pipeline/issues/902>`_)

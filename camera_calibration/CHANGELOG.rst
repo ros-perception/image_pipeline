@@ -2,6 +2,9 @@
 Changelog for package camera_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.0.1 (2024-03-26)
+------------------
+
 4.0.0 (2022-12-24)
 ------------------
 * [backport iron] ROS 2: Added more aruco dicts, fixed aruco linerror bug (`#873 <https://github.com/ros-perception/image_pipeline/issues/873>`_) (`#890 <https://github.com/ros-perception/image_pipeline/issues/890>`_)

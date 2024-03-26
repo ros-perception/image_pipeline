@@ -2,6 +2,9 @@
 Changelog for package image_view
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.0.1 (2024-03-26)
+------------------
+
 4.0.0 (2022-12-24)
 ------------------
 * [backport iron] Removed cfg files related with ROS 1 parameters (`#911 <https://github.com/ros-perception/image_pipeline/issues/911>`_) (`#914 <https://github.com/ros-perception/image_pipeline/issues/914>`_)

@@ -2,6 +2,13 @@
 Changelog for package image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.0.1 (2024-03-26)
+------------------
+* [backport iron] Node namespace parameter (`#953 <https://github.com/ros-perception/image_pipeline/issues/953>`_)
+  Backport pull request `#925 <https://github.com/ros-perception/image_pipeline/issues/925>`_ which solves issue `#952 <https://github.com/ros-perception/image_pipeline/issues/952>`_ by adding the
+  `namespace` parameter to the `image_proc` launch file
+* Contributors: Lucas Wendland
+
 4.0.0 (2022-12-24)
 ------------------
 * [backport iron] Removed cfg files related with ROS 1 parameters (`#911 <https://github.com/ros-perception/image_pipeline/issues/911>`_) (`#914 <https://github.com/ros-perception/image_pipeline/issues/914>`_)

@@ -2,6 +2,13 @@
 Changelog for package depth_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.0.1 (2024-03-26)
+------------------
+* [backport iron] Fixed image types in depth_image_proc (`#917 <https://github.com/ros-perception/image_pipeline/issues/917>`_)
+  backport iron
+  https://github.com/ros-perception/image_pipeline/pull/915#event-11585393591
+* Contributors: Alejandro Hernández Cordero
+
 4.0.0 (2022-12-24)
 ------------------
 * [backport iron] support rgba8 and bgra8 encodings by skipping alpha channel (`#869 <https://github.com/ros-perception/image_pipeline/issues/869>`_) (`#896 <https://github.com/ros-perception/image_pipeline/issues/896>`_)
