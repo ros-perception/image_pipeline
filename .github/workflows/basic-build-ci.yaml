@@ -24,7 +24,7 @@ jobs:
     - name: Install Prerequisites
       run: |
         bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
-        apt-get update && apt-get upgrade -y && apt-get install ros-dev-tools -y && rosdep update; \
+        apt-get update && apt-get upgrade -y && apt-get install ros-dev-tools -y && rosdep init && rosdep update; \
         rosdep install --from-paths src --ignore-src -y'
     - name: Build Workspace
       run: |
