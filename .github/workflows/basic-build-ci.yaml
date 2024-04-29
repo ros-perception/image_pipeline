@@ -2,20 +2,20 @@ name: Basic Build Workflow
 
 on:
   push:
-    branches: [rolling]
+    branches: [iron]
   pull_request:
     types: [opened, reopened, synchronize]
 
 jobs:
-  build-rolling:
+  build-iron:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
     container:
-      image: osrf/ros2:testing
+      image: ros:iron-ros-core
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Create Workspace
       run: |
         mkdir src_tmp
