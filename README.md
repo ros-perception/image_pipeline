@@ -1,7 +1,7 @@
 image_pipeline
 ==============
 
-[![Build Status](https://build.ros2.org/buildStatus/icon?job=Rdev__image_pipeline__ubuntu_jammy_amd64)](https://build.ros2.org/job/Rdev__image_pipeline__ubuntu_jammy_amd64/)
+[![Build Status](https://build.ros2.org/buildStatus/icon?job=Rdev__image_pipeline__ubuntu_noble_amd64)](https://build.ros2.org/job/Rdev__image_pipeline__ubuntu_noble_amd64/)
 
 This package fills the gap between getting raw images from a camera driver and higher-level vision processing.
 
