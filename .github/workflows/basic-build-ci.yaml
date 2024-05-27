@@ -2,17 +2,17 @@ name: Basic Build Workflow
 
 on:
   push:
-    branches: [rolling]
+    branches: [humble]
   pull_request:
     types: [opened, reopened, synchronize]
 
 jobs:
-  build-rolling:
+  build-humble:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
     container:
-      image: osrf/ros2:testing
+      image: ros:humble-ros-core
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
@@ -24,7 +24,7 @@ jobs:
     - name: Install Prerequisites
       run: |
         bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
-        apt-get update && rosdep update; \
+        apt-get update && apt-get upgrade -y && apt-get install ros-dev-tools -y && rosdep init && rosdep update; \
         rosdep install --from-paths src --ignore-src -y'
     - name: Build Workspace
       run: |
