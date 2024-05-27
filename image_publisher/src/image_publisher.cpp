@@ -137,9 +137,11 @@ void ImagePublisher::doWork()
       if (!cap_.read(image_)) {
         cap_.set(cv::CAP_PROP_POS_FRAMES, 0);
       }
+      image_flipped_ = false;
     }
-    if (flip_image_) {
+    if (flip_image_ && !image_flipped_) {
       cv::flip(image_, image_, flip_value_);
+      image_flipped_ = true;
     }
 
     sensor_msgs::msg::Image::SharedPtr out_img =
@@ -206,6 +208,7 @@ void ImagePublisher::onInit()
   } else {
     flip_image_ = false;
   }
+  image_flipped_ = false;  // Image newly read, needs to be flipped
 
   camera_info_.width = image_.cols;
   camera_info_.height = image_.rows;
