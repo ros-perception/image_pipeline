@@ -63,6 +63,7 @@ private:
   rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
 
   std::string filename_;
+  double field_of_view_;
   bool flip_horizontal_;
   bool flip_vertical_;
   bool image_flipped_;
