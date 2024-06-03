@@ -355,6 +355,7 @@ class Calibrator():
         self.pattern = pattern
         self.br = cv_bridge.CvBridge()
         self.camera_model = CAMERA_MODEL.PINHOLE
+        self.vga_scale = 0
         # self.db is list of (parameters, image) samples for use in calibration. parameters has form
         # (X, Y, size, skew) all normalized to [0,1], to keep track of what sort of samples we've taken
         # and ensure enough variety.
@@ -416,6 +417,9 @@ class Calibrator():
 
     def set_cammodel(self, modeltype):
         self.camera_model = modeltype
+
+    def set_vga_scale(self, scale):
+        self.vga_scale = scale
 
     def is_slow_moving(self, corners, ids, last_frame_corners, last_frame_ids):
         """
@@ -550,7 +554,11 @@ class Calibrator():
         # Scale the input image down to ~VGA size
         height = img.shape[0]
         width = img.shape[1]
-        scale = math.sqrt( (width*height) / (640.*480.) )
+        if self.vga_scale == 0:
+            scale = math.sqrt((width * height) / (640. * 480.))
+        else:
+            scale = self.vga_scale
+
         if scale > 1.0:
             scrib = cv2.resize(img, (int(width / scale), int(height / scale)))
         else:
