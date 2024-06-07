@@ -8,9 +8,9 @@ setup(
     version='6.0.0',
     packages=["camera_calibration", "camera_calibration.nodes"],
     data_files=[
-    ('share/ament_index/resource_index/packages',
-      ['resource/' + PACKAGE_NAME]),
-    ('share/' + PACKAGE_NAME, ['package.xml']),
+        ('share/ament_index/resource_index/packages',
+         ['resource/' + PACKAGE_NAME]),
+        ('share/' + PACKAGE_NAME, ['package.xml']),
     ],
     py_modules=[],
     package_dir={'': 'src'},
