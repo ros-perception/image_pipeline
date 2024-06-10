@@ -68,12 +68,8 @@ ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options)
   auto param_change_callback =
     [this](std::vector<rclcpp::Parameter> parameters) -> rcl_interfaces::msg::SetParametersResult
     {
-<<<<<<< HEAD
-      RCLCPP_INFO(get_logger(), "param_change_callback");
-=======
       bool call_init = false;
       bool call_reconfigure = false;
->>>>>>> 847920b ([rolling] image_publisher: Fix loading of the camera info parameters on startup (#983))
 
       auto result = rcl_interfaces::msg::SetParametersResult();
       result.successful = true;
@@ -103,11 +99,8 @@ ImagePublisher::ImagePublisher(const rclcpp::NodeOptions & options)
           call_reconfigure = true;
         } else if (parameter.get_name() == "camera_info_url") {
           camera_info_url_ = parameter.as_string();
-          RCLCPP_INFO(get_logger(), "Reset camera_info_rul as '%s'", camera_info_url_.c_str());
-<<<<<<< HEAD
-=======
+          RCLCPP_INFO(get_logger(), "Reset camera_info_url as '%s'", camera_info_url_.c_str());
           call_reconfigure = true;
->>>>>>> 847920b ([rolling] image_publisher: Fix loading of the camera info parameters on startup (#983))
         }
       }
       // reconfigureCallback() is called within onInit() so there is no need to call it twice
