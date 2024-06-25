@@ -164,10 +164,18 @@ class CameraCheckerNode(Node):
             image_points = C
             object_points = self.mc.mk_object_points([self.board], use_board_size=True)[0]
             dist_coeffs = numpy.zeros((4, 1))
+<<<<<<< HEAD
             camera_matrix = numpy.array( [ [ camera.P[0], camera.P[1], camera.P[2]  ],
                                            [ camera.P[4], camera.P[5], camera.P[6]  ],
                                            [ camera.P[8], camera.P[9], camera.P[10] ] ] )
             ok, rot, trans = cv2.solvePnP(object_points, image_points, camera_matrix, dist_coeffs)
+=======
+            camera_matrix = numpy.array([[camera.p[0], camera.p[1], camera.p[2]],
+                                         [camera.p[4], camera.p[5], camera.p[6]],
+                                         [camera.p[8], camera.p[9], camera.p[10]]])
+            ok, rot, trans = cv2.solvePnP(
+                object_points, image_points, camera_matrix, dist_coeffs)
+>>>>>>> bc5cab9 (Change camera info message to lower case (#1005))
             # Convert rotation into a 3x3 Rotation Matrix
             rot3x3, _ = cv2.Rodrigues(rot)
             # Reproject model points into image
