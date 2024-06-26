@@ -133,8 +133,10 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
         image_transport::TransportHints hints(this);
         sub_rgb_.subscribe(
           this, rgb_topic,
-          hints.getTransport(), rmw_qos_profile_default, sub_opts);
-        sub_info_.subscribe(this, rgb_info_topic);
+          hints.getTransport(),
+          rmw_qos_profile_default, sub_opts);
+        sub_info_.subscribe(this, rgb_info_topic,
+          rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)));
       }
     };
   pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SensorDataQoS(), pub_options);

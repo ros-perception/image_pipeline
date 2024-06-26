@@ -30,10 +30,8 @@ class DisparityViewNode
 {
 public:
   explicit DisparityViewNode(const rclcpp::NodeOptions & options);
-  explicit DisparityViewNode(const DisparityViewNode &) = default;
-  explicit DisparityViewNode(DisparityViewNode &&) = default;
-  DisparityViewNode & operator=(const DisparityViewNode &) = default;
-  DisparityViewNode & operator=(DisparityViewNode &&) = default;
+  explicit DisparityViewNode(const DisparityViewNode &) = delete;
+  explicit DisparityViewNode(DisparityViewNode &&) = delete;
   ~DisparityViewNode();
 
 private:

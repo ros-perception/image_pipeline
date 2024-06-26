@@ -48,10 +48,10 @@ class ImageViewNode
 {
 public:
   explicit ImageViewNode(const rclcpp::NodeOptions & options);
-  explicit ImageViewNode(const ImageViewNode &) = default;
-  explicit ImageViewNode(ImageViewNode &&) = default;
-  ImageViewNode & operator=(const ImageViewNode &) = default;
-  ImageViewNode & operator=(ImageViewNode &&) = default;
+  explicit ImageViewNode(const ImageViewNode &) = delete;
+  explicit ImageViewNode(ImageViewNode &&) = delete;
+  ImageViewNode & operator=(const ImageViewNode &) = delete;
+  ImageViewNode & operator=(ImageViewNode &&) = delete;
   ~ImageViewNode();
 
 private:

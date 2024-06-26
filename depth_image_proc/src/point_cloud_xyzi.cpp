@@ -108,7 +108,8 @@ PointCloudXyziNode::PointCloudXyziNode(const rclcpp::NodeOptions & options)
         // intensity uses normal ros transport hints.
         image_transport::TransportHints hints(this, "raw");
         sub_intensity_.subscribe(this, intensity_topic, hints.getTransport());
-        sub_info_.subscribe(this, intensity_info_topic);
+        sub_info_.subscribe(this, intensity_info_topic,
+          rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)));
       }
     };
   pub_point_cloud_ = create_publisher<PointCloud>("points", rclcpp::SensorDataQoS(), pub_options);

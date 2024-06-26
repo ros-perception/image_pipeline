@@ -139,8 +139,10 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
         std::string topic = node_base->resolve_topic_or_service_name("depth/image_rect", false);
         image_transport::TransportHints hints(this, "raw", "depth_image_transport");
         sub_depth_image_.subscribe(this, topic, hints.getTransport());
-        sub_depth_info_.subscribe(this, "depth/camera_info");
-        sub_rgb_info_.subscribe(this, "rgb/camera_info");
+        sub_depth_info_.subscribe(this, "depth/camera_info",
+          rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)));
+        sub_rgb_info_.subscribe(this, "rgb/camera_info",
+          rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)));
       }
     };
   // For compressed topics to remap appropriately, we need to pass a
