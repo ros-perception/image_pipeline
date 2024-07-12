@@ -77,10 +77,10 @@ class StereoViewNode
 {
 public:
   explicit StereoViewNode(const rclcpp::NodeOptions & options);
-  explicit StereoViewNode(const StereoViewNode &) = delete;
-  explicit StereoViewNode(StereoViewNode &&) = delete;
-  StereoViewNode & operator=(const StereoViewNode &) = delete;
-  StereoViewNode & operator=(StereoViewNode &&) = delete;
+  explicit StereoViewNode(const StereoViewNode &) = default;
+  explicit StereoViewNode(StereoViewNode &&) = default;
+  StereoViewNode & operator=(const StereoViewNode &) = default;
+  StereoViewNode & operator=(StereoViewNode &&) = default;
   ~StereoViewNode();
 
 private:

@@ -30,10 +30,10 @@ class VideoRecorderNode
 {
 public:
   explicit VideoRecorderNode(const rclcpp::NodeOptions & options);
-  explicit VideoRecorderNode(const VideoRecorderNode &) = delete;
-  explicit VideoRecorderNode(VideoRecorderNode &&) = delete;
-  VideoRecorderNode & operator=(const VideoRecorderNode &) = delete;
-  VideoRecorderNode & operator=(VideoRecorderNode &&) = delete;
+  explicit VideoRecorderNode(const VideoRecorderNode &) = default;
+  explicit VideoRecorderNode(VideoRecorderNode &&) = default;
+  VideoRecorderNode & operator=(const VideoRecorderNode &) = default;
+  VideoRecorderNode & operator=(VideoRecorderNode &&) = default;
   ~VideoRecorderNode();
 
 private:
