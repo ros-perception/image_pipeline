@@ -130,8 +130,7 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
   // Subscribe to three input topics.
   left_sub_.subscribe(this, left_topic, hints.getTransport());
   right_sub_.subscribe(this, right_topic, hints.getTransport());
-  disparity_sub_.subscribe(this, disparity_topic,
-    rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)));
+  disparity_sub_.subscribe(this, disparity_topic, rclcpp::QoS(10));
 
   RCLCPP_INFO(
     this->get_logger(),

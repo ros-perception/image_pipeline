@@ -116,8 +116,7 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
         std::string topic = node_base->resolve_topic_or_service_name("left/image_rect", false);
         image_transport::TransportHints hints(this);
         sub_depth_image_.subscribe(this, topic, hints.getTransport());
-        sub_info_.subscribe(this, "right/camera_info",
-          rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)));
+        sub_info_.subscribe(this, "right/camera_info", rclcpp::QoS(10));
       }
     };
   pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>(

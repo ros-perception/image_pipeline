@@ -118,8 +118,7 @@ PointCloudXyzrgbRadialNode::PointCloudXyzrgbRadialNode(const rclcpp::NodeOptions
         // rgb uses normal ros transport hints.
         image_transport::TransportHints hints(this, "raw");
         sub_rgb_.subscribe(this, rgb_topic, hints.getTransport());
-        sub_info_.subscribe(this, rgb_info_topic,
-          rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)));
+        sub_info_.subscribe(this, rgb_info_topic, rclcpp::QoS(10));
       }
     };
   pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SensorDataQoS(), pub_options);
