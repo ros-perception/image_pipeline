@@ -315,7 +315,7 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
           image_transport::getCameraInfoTopic(right_topic), false);
 
         // REP-2003 specifies that subscriber should be SensorDataQoS
-        const auto sensor_data_qos = rclcpp::SensorDataQoS().get_rmw_qos_profile();
+        const auto sensor_data_qos = rclcpp::SensorDataQoS();
 
         // Support image transport for compression
         image_transport::TransportHints hints(this);
@@ -327,11 +327,11 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
         sub_l_image_.subscribe(
           this, left_topic, hints.getTransport(), sensor_data_qos, sub_opts);
         sub_l_info_.subscribe(this, left_info_topic,
-          sensor_data_qos.get_rmw_qos_profile(), sub_opts);
+          sensor_data_qos, sub_opts);
         sub_r_image_.subscribe(
           this, right_topic, hints.getTransport(), sensor_data_qos, sub_opts);
         sub_r_info_.subscribe(this, right_info_topic,
-          sensor_data_qos.get_rmw_qos_profile(), sub_opts);
+          sensor_data_qos, sub_opts);
       }
     };
 
