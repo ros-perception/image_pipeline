@@ -327,11 +327,11 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
         sub_l_image_.subscribe(
           this, left_topic, hints.getTransport(), sensor_data_qos, sub_opts);
         sub_l_info_.subscribe(this, left_info_topic,
-          rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(sensor_data_qos)), sub_opts);
+          sensor_data_qos.get_rmw_qos_profile(), sub_opts);
         sub_r_image_.subscribe(
           this, right_topic, hints.getTransport(), sensor_data_qos, sub_opts);
         sub_r_info_.subscribe(this, right_info_topic,
-          rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(sensor_data_qos)), sub_opts);
+          sensor_data_qos.get_rmw_qos_profile(), sub_opts);
       }
     };
 
