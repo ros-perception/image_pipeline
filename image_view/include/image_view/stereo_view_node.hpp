@@ -53,9 +53,9 @@
 #include <mutex>
 #include <string>
 
-#include "message_filters/subscriber.h"
-#include "message_filters/sync_policies/approximate_time.h"
-#include "message_filters/sync_policies/exact_time.h"
+#include "message_filters/subscriber.hpp"
+#include "message_filters/sync_policies/approximate_time.hpp"
+#include "message_filters/sync_policies/exact_time.hpp"
 
 #include <opencv2/highgui/highgui.hpp>
 

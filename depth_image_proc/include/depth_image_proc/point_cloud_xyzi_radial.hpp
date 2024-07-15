@@ -39,9 +39,9 @@
 #include <vector>
 
 #include "depth_image_proc/visibility.h"
-#include "message_filters/subscriber.h"
-#include "message_filters/synchronizer.h"
-#include "message_filters/sync_policies/exact_time.h"
+#include "message_filters/subscriber.hpp"
+#include "message_filters/synchronizer.hpp"
+#include "message_filters/sync_policies/exact_time.hpp"
 
 #include <image_transport/subscriber_filter.hpp>
 #include <opencv2/core/mat.hpp>

@@ -40,11 +40,11 @@
 
 #include "cv_bridge/cv_bridge.hpp"
 #include "image_geometry/stereo_camera_model.hpp"
-#include "message_filters/subscriber.h"
-#include "message_filters/synchronizer.h"
-#include "message_filters/sync_policies/approximate_time.h"
-#include "message_filters/sync_policies/approximate_epsilon_time.h"
-#include "message_filters/sync_policies/exact_time.h"
+#include "message_filters/subscriber.hpp"
+#include "message_filters/synchronizer.hpp"
+#include "message_filters/sync_policies/approximate_time.hpp"
+#include "message_filters/sync_policies/approximate_epsilon_time.hpp"
+#include "message_filters/sync_policies/exact_time.hpp"
 
 #include <stereo_image_proc/stereo_processor.hpp>
 
