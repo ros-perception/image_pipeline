@@ -53,10 +53,10 @@
 #include <string>
 
 #include "cv_bridge/cv_bridge.hpp"
-#include "message_filters/subscriber.h"
-#include "message_filters/sync_policies/approximate_time.h"
-#include "message_filters/sync_policies/exact_time.h"
-#include "message_filters/synchronizer.h"
+#include "message_filters/subscriber.hpp"
+#include "message_filters/sync_policies/approximate_time.hpp"
+#include "message_filters/sync_policies/exact_time.hpp"
+#include "message_filters/synchronizer.hpp"
 
 #include "image_view/stereo_view_node.hpp"
 

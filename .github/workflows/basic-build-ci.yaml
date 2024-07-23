@@ -15,7 +15,7 @@ jobs:
       image: osrf/ros2:testing
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Create Workspace
       run: |
         mkdir src_tmp
@@ -23,6 +23,39 @@ jobs:
         mv src_tmp/ src/
     - name: Install Prerequisites
       run: |
+        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        apt-get update && apt-get upgrade -y && rosdep update; \
+        rosdep install --from-paths src --ignore-src -y'
+    - name: Build Workspace
+      run: |
+        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        colcon build'
+    - name: Run Tests
+      run: |
+        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        colcon test; \
+        colcon test-result --verbose'
+  build-rolling-testing:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    container:
+      image: osrf/ros2:testing
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+    - name: Create Workspace
+      run: |
+        mkdir src_tmp
+        mv `find -maxdepth 1 -not -name . -not -name src_tmp` src_tmp/
+        mv src_tmp/ src/
+    - name: Install Prerequisites
+      run: |
+        apt update -qq
+        apt install -qq -y lsb-release wget curl gnupg2 git
+        curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros2-testing-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros2-testing-archive-keyring.gpg] http://packages.ros.org/ros2-testing/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
+        apt-get update && apt-get upgrade -q -y
         bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
         apt-get update && apt-get upgrade -y && rosdep update; \
         rosdep install --from-paths src --ignore-src -y'

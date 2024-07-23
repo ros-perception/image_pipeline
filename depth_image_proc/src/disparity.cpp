@@ -37,8 +37,8 @@
 #include <string>
 
 #include "depth_image_proc/visibility.h"
-#include "message_filters/subscriber.h"
-#include "message_filters/time_synchronizer.h"
+#include "message_filters/subscriber.hpp"
+#include "message_filters/time_synchronizer.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>

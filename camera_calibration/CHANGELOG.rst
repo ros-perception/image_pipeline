@@ -2,6 +2,29 @@
 Changelog for package camera_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+6.0.1 (2024-07-22)
+------------------
+* Change camera info message to lower case (`#1005 <https://github.com/ros-perception/image_pipeline/issues/1005>`_)
+  Change camera info message to lower case since message type had been
+  change in rolling and humble.
+  [](https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/msg/CameraInfo.msg)
+* Formatting calib code before refactoring (`#999 <https://github.com/ros-perception/image_pipeline/issues/999>`_)
+  As discussed in `#975 <https://github.com/ros-perception/image_pipeline/issues/975>`_ and `#973 <https://github.com/ros-perception/image_pipeline/issues/973>`_
+  doing the linting first.
+  using style from
+  [here](https://github.com/ament/ament_lint/blob/rolling/ament_pycodestyle/ament_pycodestyle/configuration/ament_pycodestyle.ini)
+* Added stereo calibration using charuco board (`#976 <https://github.com/ros-perception/image_pipeline/issues/976>`_)
+  From `#972 <https://github.com/ros-perception/image_pipeline/issues/972>`_
+  Doing this first for rolling.
+  This was a TODO in the repository, opening this PR to add this feature.
+  - The main issue why this wasn't possible imo is the way `mk_obj_points`
+  works. I'm using the inbuilt opencv function to get the points there.
+  - The other is a condition when aruco markers are detected they are
+  added as good points, This is fine in case of mono but in stereo these
+  have to be the same number as the object points to find matches although
+  this should be possible with aruco.
+* Contributors: Myron Rodrigues, SFhmichael
+
 6.0.0 (2024-05-27)
 ------------------
 * fix: cv2.aruco.interpolateCornersCharuco is deprecated (`#979 <https://github.com/ros-perception/image_pipeline/issues/979>`_)
