@@ -32,6 +32,7 @@
 
 #include <gtest/gtest.h>
 
+#include <filesystem>
 #include <memory>
 #include <string>
 
@@ -65,9 +66,9 @@ protected:
     topic_color = camera_ns + "image_color";
     topic_rect_color = camera_ns + "image_rect_color";
 
-    const rcpputils::fs::path base{_SRC_RESOURCES_DIR_PATH};
-    const rcpputils::fs::path raw_image_file = base / "logo.png";
-    const rcpputils::fs::path cam_info_file = base / "calibration_file.ini";
+    const std::filesystem::path base{_SRC_RESOURCES_DIR_PATH};
+    const std::filesystem::path raw_image_file = base / "logo.png";
+    const std::filesystem::path cam_info_file = base / "calibration_file.ini";
 
     /// @todo Test variety of encodings for raw image (bayer, mono, color)
     cv::Mat img = cv::imread(raw_image_file.string(), 0);
