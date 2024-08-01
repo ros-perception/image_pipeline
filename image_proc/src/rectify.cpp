@@ -154,9 +154,9 @@ void RectifyNode::imageCb(
   model_.rectifyImage(image, rect, interpolation_);
 
   // Allocate new rectified image message
-  sensor_msgs::msg::Image::SharedPtr rect_msg =
-    cv_bridge::CvImage(image_msg->header, image_msg->encoding, rect).toImageMsg();
-  pub_rect_.publish(rect_msg);
+  auto rect_msg = std::make_unique<sensor_msgs::msg::Image>();
+  cv_bridge::CvImage(image_msg->header, image_msg->encoding, rect).toImageMsg(*rect_msg);
+  pub_rect_.publish(std::move(rect_msg));
 
   TRACEPOINT(
     image_proc_rectify_fini,

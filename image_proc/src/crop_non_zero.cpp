@@ -90,9 +90,9 @@ CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions & options)
 
 void CropNonZeroNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)
 {
-  cv_bridge::CvImagePtr cv_ptr;
+  cv_bridge::CvImageConstPtr cv_ptr;
   try {
-    cv_ptr = cv_bridge::toCvCopy(raw_msg);
+    cv_ptr = cv_bridge::toCvShare(raw_msg);
   } catch (cv_bridge::Exception & e) {
     RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
     return;
@@ -135,7 +135,10 @@ void CropNonZeroNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & ra
   out_msg.encoding = raw_msg->encoding;
   out_msg.image = cv_ptr->image(r);
 
-  pub_.publish(out_msg.toImageMsg());
+  auto out_image = std::make_unique<sensor_msgs::msg::Image>();
+  out_msg.toImageMsg(*out_image);
+
+  pub_.publish(std::move(out_image));
 }
 
 }  // namespace image_proc
