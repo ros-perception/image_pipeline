@@ -235,7 +235,7 @@ void PointCloudNode::imageCb(
   cv::Mat_<cv::Vec3f> mat = points_mat_;
 
   // Fill in new PointCloud2 message (2D image-like layout)
-  auto points_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
+  auto points_msg = std::make_unique<sensor_msgs::msg::PointCloud2>();
   points_msg->header = disp_msg->header;
   points_msg->height = mat.rows;
   points_msg->width = mat.cols;
@@ -351,7 +351,7 @@ void PointCloudNode::imageCb(
     }
   }
 
-  pub_points2_->publish(*points_msg);
+  pub_points2_->publish(std::move(points_msg));
 }
 
 }  // namespace stereo_image_proc

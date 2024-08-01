@@ -353,7 +353,7 @@ void DisparityNode::imageCb(
   model_.fromCameraInfo(l_info_msg, r_info_msg);
 
   // Allocate new disparity image message
-  auto disp_msg = std::make_shared<stereo_msgs::msg::DisparityImage>();
+  auto disp_msg = std::make_unique<stereo_msgs::msg::DisparityImage>();
   disp_msg->header = l_info_msg->header;
   disp_msg->image.header = l_info_msg->header;
 
@@ -384,7 +384,7 @@ void DisparityNode::imageCb(
   // Perform block matching to find the disparities
   block_matcher_.processDisparity(l_image, r_image, model_, *disp_msg);
 
-  pub_disparity_->publish(*disp_msg);
+  pub_disparity_->publish(std::move(disp_msg));
 }
 
 rcl_interfaces::msg::SetParametersResult DisparityNode::parameterSetCb(
