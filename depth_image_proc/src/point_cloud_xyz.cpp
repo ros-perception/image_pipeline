@@ -97,7 +97,7 @@ void PointCloudXyzNode::depthCb(
   const Image::ConstSharedPtr & depth_msg,
   const CameraInfo::ConstSharedPtr & info_msg)
 {
-  const PointCloud2::SharedPtr cloud_msg = std::make_shared<PointCloud2>();
+  auto cloud_msg = std::make_unique<PointCloud2>();
   cloud_msg->header = depth_msg->header;
   cloud_msg->height = depth_msg->height;
   cloud_msg->width = depth_msg->width;
@@ -112,16 +112,16 @@ void PointCloudXyzNode::depthCb(
 
   // Convert Depth Image to Pointcloud
   if (depth_msg->encoding == enc::TYPE_16UC1 || depth_msg->encoding == enc::MONO16) {
-    convertDepth<uint16_t>(depth_msg, cloud_msg, model_, invalid_depth_);
+    convertDepth<uint16_t>(depth_msg, *cloud_msg, model_, invalid_depth_);
   } else if (depth_msg->encoding == enc::TYPE_32FC1) {
-    convertDepth<float>(depth_msg, cloud_msg, model_, invalid_depth_);
+    convertDepth<float>(depth_msg, *cloud_msg, model_, invalid_depth_);
   } else {
     RCLCPP_ERROR(
       get_logger(), "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
     return;
   }
 
-  pub_point_cloud_->publish(*cloud_msg);
+  pub_point_cloud_->publish(std::move(cloud_msg));
 }
 
 }  // namespace depth_image_proc

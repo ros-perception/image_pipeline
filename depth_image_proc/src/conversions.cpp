@@ -79,16 +79,16 @@ cv::Mat initMatrix(
 
 void convertRgb(
   const sensor_msgs::msg::Image::ConstSharedPtr & rgb_msg,
-  const sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
+  sensor_msgs::msg::PointCloud2 & cloud_msg,
   int red_offset, int green_offset, int blue_offset, int color_step)
 {
-  sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(*cloud_msg, "r");
-  sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(*cloud_msg, "g");
-  sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*cloud_msg, "b");
+  sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(cloud_msg, "r");
+  sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(cloud_msg, "g");
+  sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(cloud_msg, "b");
   const uint8_t * rgb = &rgb_msg->data[0];
   int rgb_skip = rgb_msg->step - rgb_msg->width * color_step;
-  for (int v = 0; v < static_cast<int>(cloud_msg->height); ++v, rgb += rgb_skip) {
-    for (int u = 0; u < static_cast<int>(cloud_msg->width); ++u,
+  for (int v = 0; v < static_cast<int>(cloud_msg.height); ++v, rgb += rgb_skip) {
+    for (int u = 0; u < static_cast<int>(cloud_msg.width); ++u,
       rgb += color_step, ++iter_r, ++iter_g, ++iter_b)
     {
       *iter_r = rgb[red_offset];
@@ -101,7 +101,7 @@ void convertRgb(
 // force template instantiation
 template void convertDepth<uint16_t>(
   const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
-  const sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
+  sensor_msgs::msg::PointCloud2 & cloud_msg,
   const image_geometry::PinholeCameraModel & model,
   double invalid_depth);
 

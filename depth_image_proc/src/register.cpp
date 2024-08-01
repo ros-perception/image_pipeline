@@ -92,7 +92,7 @@ private:
   template<typename T>
   void convert(
     const Image::ConstSharedPtr & depth_msg,
-    const Image::SharedPtr & registered_msg,
+    Image & registered_msg,
     const Eigen::Affine3d & depth_to_rgb);
 };
 
@@ -183,7 +183,7 @@ void RegisterNode::imageCb(
     /// don't call publish() in this cb. What's going on roscpp?
   }
 
-  auto registered_msg = std::make_shared<Image>();
+  auto registered_msg = std::make_unique<Image>();
   registered_msg->header.stamp =
     use_rgb_timestamp_ ? rgb_info_msg->header.stamp : depth_image_msg->header.stamp;
   registered_msg->header.frame_id = rgb_info_msg->header.frame_id;
@@ -195,9 +195,9 @@ void RegisterNode::imageCb(
   // step and data set in convert(), depend on depth data type
 
   if (depth_image_msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
-    convert<uint16_t>(depth_image_msg, registered_msg, depth_to_rgb);
+    convert<uint16_t>(depth_image_msg, *registered_msg, depth_to_rgb);
   } else if (depth_image_msg->encoding == sensor_msgs::image_encodings::TYPE_32FC1) {
-    convert<float>(depth_image_msg, registered_msg, depth_to_rgb);
+    convert<float>(depth_image_msg, *registered_msg, depth_to_rgb);
   } else {
     RCLCPP_ERROR(
       get_logger(), "Depth image has unsupported encoding [%s]",
@@ -206,24 +206,24 @@ void RegisterNode::imageCb(
   }
 
   // Registered camera info is the same as the RGB info, but uses the depth timestamp
-  auto registered_info_msg = std::make_shared<CameraInfo>(*rgb_info_msg);
+  auto registered_info_msg = std::make_unique<CameraInfo>(*rgb_info_msg);
   registered_info_msg->header.stamp = registered_msg->header.stamp;
 
-  pub_registered_.publish(registered_msg, registered_info_msg);
+  pub_registered_.publish(std::move(registered_msg), std::move(registered_info_msg));
 }
 
 template<typename T>
 void RegisterNode::convert(
   const Image::ConstSharedPtr & depth_msg,
-  const Image::SharedPtr & registered_msg,
+  Image & registered_msg,
   const Eigen::Affine3d & depth_to_rgb)
 {
   // Allocate memory for registered depth image
-  registered_msg->step = registered_msg->width * sizeof(T);
-  registered_msg->data.resize(registered_msg->height * registered_msg->step);
+  registered_msg.step = registered_msg.width * sizeof(T);
+  registered_msg.data.resize(registered_msg.height * registered_msg.step);
   // data is already zero-filled in the uint16 case,
   //   but for floats we want to initialize everything to NaN.
-  DepthTraits<T>::initializeBuffer(registered_msg->data);
+  DepthTraits<T>::initializeBuffer(registered_msg.data);
 
   // Extract all the parameters we need
   double inv_depth_fx = 1.0 / depth_model_.fx();
@@ -239,7 +239,7 @@ void RegisterNode::convert(
   //   registered image
   const T * depth_row = reinterpret_cast<const T *>(&depth_msg->data[0]);
   int row_step = depth_msg->step / sizeof(T);
-  T * registered_data = reinterpret_cast<T *>(&registered_msg->data[0]);
+  T * registered_data = reinterpret_cast<T *>(&registered_msg.data[0]);
   int raw_index = 0;
   for (unsigned v = 0; v < depth_msg->height; ++v, depth_row += row_step) {
     for (unsigned u = 0; u < depth_msg->width; ++u, ++raw_index) {
@@ -267,13 +267,13 @@ void RegisterNode::convert(
         int u_rgb = (rgb_fx * xyz_rgb.x() + rgb_Tx) * inv_Z + rgb_cx + 0.5;
         int v_rgb = (rgb_fy * xyz_rgb.y() + rgb_Ty) * inv_Z + rgb_cy + 0.5;
 
-        if (u_rgb < 0 || u_rgb >= static_cast<int>(registered_msg->width) ||
-          v_rgb < 0 || v_rgb >= static_cast<int>(registered_msg->height))
+        if (u_rgb < 0 || u_rgb >= static_cast<int>(registered_msg.width) ||
+          v_rgb < 0 || v_rgb >= static_cast<int>(registered_msg.height))
         {
           continue;
         }
 
-        T & reg_depth = registered_data[v_rgb * registered_msg->width + u_rgb];
+        T & reg_depth = registered_data[v_rgb * registered_msg.width + u_rgb];
         T new_depth = DepthTraits<T>::fromMeters(xyz_rgb.z());
         // Validity and Z-buffer checks
         if (!DepthTraits<T>::valid(reg_depth) || reg_depth > new_depth) {
@@ -303,15 +303,15 @@ void RegisterNode::convert(
         int u_rgb_2 = (rgb_fx * xyz_rgb_2.x() + rgb_Tx) * inv_Z + rgb_cx + 0.5;
         int v_rgb_2 = (rgb_fy * xyz_rgb_2.y() + rgb_Ty) * inv_Z + rgb_cy + 0.5;
 
-        if (u_rgb_1 < 0 || u_rgb_2 >= static_cast<int>(registered_msg->width) ||
-          v_rgb_1 < 0 || v_rgb_2 >= static_cast<int>(registered_msg->height))
+        if (u_rgb_1 < 0 || u_rgb_2 >= static_cast<int>(registered_msg.width) ||
+          v_rgb_1 < 0 || v_rgb_2 >= static_cast<int>(registered_msg.height))
         {
           continue;
         }
 
         for (int nv = v_rgb_1; nv <= v_rgb_2; ++nv) {
           for (int nu = u_rgb_1; nu <= u_rgb_2; ++nu) {
-            T & reg_depth = registered_data[nv * registered_msg->width + nu];
+            T & reg_depth = registered_data[nv * registered_msg.width + nu];
             T new_depth = DepthTraits<T>::fromMeters(0.5 * (xyz_rgb_1.z() + xyz_rgb_2.z()));
             // Validity and Z-buffer checks
             if (!DepthTraits<T>::valid(reg_depth) || reg_depth > new_depth) {

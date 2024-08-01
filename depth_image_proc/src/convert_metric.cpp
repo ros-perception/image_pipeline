@@ -99,7 +99,7 @@ ConvertMetricNode::ConvertMetricNode(const rclcpp::NodeOptions & options)
 
 void ConvertMetricNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)
 {
-  auto depth_msg = std::make_shared<sensor_msgs::msg::Image>();
+  auto depth_msg = std::make_unique<sensor_msgs::msg::Image>();
   depth_msg->header = raw_msg->header;
   depth_msg->height = raw_msg->height;
   depth_msg->width = raw_msg->width;
@@ -136,7 +136,7 @@ void ConvertMetricNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & 
     return;
   }
 
-  pub_depth_.publish(depth_msg);
+  pub_depth_.publish(std::move(depth_msg));
 }
 
 }  // namespace depth_image_proc
