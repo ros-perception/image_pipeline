@@ -166,14 +166,16 @@ void ImagePublisher::doWork()
       image_flipped_ = true;
     }
 
-    sensor_msgs::msg::Image::SharedPtr out_img =
-      cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", image_).toImageMsg();
+    auto out_img = std::make_unique<sensor_msgs::msg::Image>();
+    cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", image_).toImageMsg(*out_img);
     out_img->header.frame_id = frame_id_;
     out_img->header.stamp = this->now();
-    camera_info_.header.frame_id = out_img->header.frame_id;
-    camera_info_.header.stamp = out_img->header.stamp;
 
-    pub_.publish(*out_img, camera_info_);
+    auto cam_info = std::make_unique<sensor_msgs::msg::CameraInfo>(camera_info_);
+    cam_info->header.frame_id = out_img->header.frame_id;
+    cam_info->header.stamp = out_img->header.stamp;
+
+    pub_.publish(std::move(out_img), std::move(cam_info));
   } catch (cv::Exception & e) {
     RCLCPP_ERROR(
       this->get_logger(), "Image processing error: %s %s %s %i",
