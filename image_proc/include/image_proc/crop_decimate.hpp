@@ -34,10 +34,12 @@
 #define IMAGE_PROC__CROP_DECIMATE_HPP_
 
 #include <string>
+#include <vector>
 
 #include "cv_bridge/cv_bridge.hpp"
 
 #include <image_transport/image_transport.hpp>
+#include <rcl_interfaces/msg/set_parameters_result.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
@@ -66,6 +68,7 @@ public:
 private:
   image_transport::CameraSubscriber sub_;
   image_transport::CameraPublisher pub_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_cb_handle_;
   int queue_size_;
   std::string target_frame_id_;
   int decimation_x_, decimation_y_, offset_x_, offset_y_, width_, height_;
@@ -75,6 +78,8 @@ private:
   void imageCb(
     const sensor_msgs::msg::Image::ConstSharedPtr image_msg,
     const sensor_msgs::msg::CameraInfo::ConstSharedPtr info_msg);
+
+  rcl_interfaces::msg::SetParametersResult paramCb(const std::vector<rclcpp::Parameter> &);
 };
 
 }  // namespace image_proc

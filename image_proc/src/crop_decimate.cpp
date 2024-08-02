@@ -158,6 +158,10 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
   // Create publisher with QoS matched to subscribed topic publisher
   auto qos_profile = getTopicQosProfile(this, image_topic_);
   pub_ = image_transport::create_camera_publisher(this, pub_topic, qos_profile, pub_options);
+
+  // Create parameter callback handle
+  param_cb_handle_ = this->add_on_set_parameters_callback(
+    std::bind(&CropDecimateNode::paramCb, this, std::placeholders::_1));
 }
 
 void CropDecimateNode::imageCb(
@@ -354,6 +358,53 @@ void CropDecimateNode::imageCb(
   }
 
   pub_.publish(out_image, out_info);
+}
+
+rcl_interfaces::msg::SetParametersResult CropDecimateNode::paramCb(
+  const std::vector<rclcpp::Parameter>& parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  for (const auto & param : parameters) {
+    if (param.get_name() == "offset_x") {
+      if (param.as_int() < 0) {
+        result.reason = "offset_x must be non-negative";
+        RCLCPP_WARN(get_logger(), result.reason.c_str());
+        result.successful = false;
+        continue;
+      }
+      offset_x_ = param.as_int();
+      RCLCPP_INFO(get_logger(), "New offset_x: %d", offset_x_);
+    } else if (param.get_name() == "offset_y") {
+      if (param.as_int() < 0) {
+        result.reason = "offset_y must be non-negative";
+        RCLCPP_WARN(get_logger(), result.reason.c_str());
+        result.successful = false;
+        continue;
+      }
+      offset_y_ = param.as_int();
+      RCLCPP_INFO(get_logger(), "New offset_y: %d", offset_y_);
+    } else if (param.get_name() == "width") {
+      if (param.as_int() < 0) {
+        result.reason = "width must be non-negative";
+        RCLCPP_WARN(get_logger(), result.reason.c_str());
+        result.successful = false;
+        continue;
+      }
+      width_ = param.as_int();
+      RCLCPP_INFO(get_logger(), "New width: %d", width_);
+    } else if (param.get_name() == "height") {
+      if (param.as_int() < 0) {
+        result.reason = "height must be non-negative";
+        RCLCPP_WARN(get_logger(), result.reason.c_str());
+        result.successful = false;
+        continue;
+      }
+      height_ = param.as_int();
+      RCLCPP_INFO(get_logger(), "New height: %d", height_);
+    }
+  }
+  return result;
 }
 
 }  // namespace image_proc
