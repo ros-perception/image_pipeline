@@ -138,6 +138,8 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
         sub_info_.subscribe(this, rgb_info_topic, rclcpp::QoS(10));
       }
     };
+  // Allow overriding QoS settings (history, depth, reliability)
+  pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SystemDefaultsQoS(),
       pub_options);
 }

@@ -149,6 +149,8 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
   std::string topic =
     node_base->resolve_topic_or_service_name("depth_registered/image_rect", false);
 
+  // Allow overriding QoS settings (history, depth, reliability)
+  pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   pub_registered_ =
     image_transport::create_camera_publisher(
     this, topic,
