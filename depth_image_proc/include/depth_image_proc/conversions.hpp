@@ -152,7 +152,7 @@ void convertIntensity(
 // Handles RGB8, BGR8, and MONO8
 void convertRgb(
   const sensor_msgs::msg::Image::ConstSharedPtr & rgb_msg,
-  sensor_msgs::msg::PointCloud2::SharedPtr cloud_msg,
+  const sensor_msgs::msg::PointCloud2::SharedPtr & cloud_msg,
   int red_offset, int green_offset, int blue_offset, int color_step);
 
 cv::Mat initMatrix(cv::Mat cameraMatrix, cv::Mat distCoeffs, int width, int height, bool radial);
