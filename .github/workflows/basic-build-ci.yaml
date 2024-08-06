@@ -23,16 +23,16 @@ jobs:
         mv src_tmp/ src/
     - name: Install Prerequisites
       run: |
-        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        bash -c 'source /opt/ros/rolling/setup.bash; \
         apt-get update && apt-get upgrade -y && rosdep update; \
         rosdep install --from-paths src --ignore-src -y'
     - name: Build Workspace
       run: |
-        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        bash -c 'source /opt/ros/rolling/setup.bash; \
         colcon build'
     - name: Run Tests
       run: |
-        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        bash -c 'source /opt/ros/rolling/setup.bash; \
         colcon test; \
         colcon test-result --verbose'
   build-rolling-testing:
