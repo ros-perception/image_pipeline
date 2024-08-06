@@ -25,7 +25,7 @@ jobs:
       run: |
         bash -c 'source /opt/ros/rolling/setup.bash; \
         apt-get update && apt-get upgrade -y && rosdep update; \
-        rosdep install --from-paths src --ignore-src -y'
+        rosdep install --from-paths src --ignore-src --rosdistro=rolling -y'
     - name: Build Workspace
       run: |
         bash -c 'source /opt/ros/rolling/setup.bash; \
