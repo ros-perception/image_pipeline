@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
     container:
-      image: osrf/ros2:testing
+      image: osrf/ros2:devel
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
