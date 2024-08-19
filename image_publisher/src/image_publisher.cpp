@@ -60,7 +60,10 @@ ImagePublisher::ImagePublisher(
   // fully expanded and remapped topic name to image_transport
   auto node_base = this->get_node_base_interface();
   std::string topic_name = node_base->resolve_topic_or_service_name("image_raw", false);
-  pub_ = image_transport::create_camera_publisher(this, topic_name);
+  rclcpp::PublisherOptions pub_options;
+  pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
+  pub_ = image_transport::create_camera_publisher(this, topic_name, rmw_qos_profile_default,
+      pub_options);
 
   field_of_view_ = this->declare_parameter("field_of_view", static_cast<double>(0));
   flip_horizontal_ = this->declare_parameter("flip_horizontal", false);

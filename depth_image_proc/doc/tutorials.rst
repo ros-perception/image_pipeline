@@ -57,3 +57,7 @@ parameter is used:
 Remapping camera_info Topics
 ----------------------------
 See `tutorial in image_pipline <https://docs.ros.org/en/rolling/p/image_pipeline/tutorials.html#remapping-camera-info-topics>`_.
+
+Using QoS Overrides
+-------------------
+See `tutorial in image_pipline <https://docs.ros.org/en/rolling/p/image_pipeline/tutorials.html#using-qos-overrides>`_.

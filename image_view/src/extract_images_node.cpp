@@ -82,7 +82,7 @@ ExtractImagesNode::ExtractImagesNode(const rclcpp::NodeOptions & options)
   sub_ = image_transport::create_subscription(
     this, topic, std::bind(
       &ExtractImagesNode::image_cb, this, std::placeholders::_1),
-    hints.getTransport());
+    hints.getTransport(), rmw_qos_profile_sensor_data);
 
   auto topics = this->get_topic_names_and_types();
 

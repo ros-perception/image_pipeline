@@ -40,6 +40,7 @@
 namespace image_proc
 {
 
+inline
 rmw_qos_profile_t getTopicQosProfile(rclcpp::Node * node, const std::string & topic)
 {
   /**

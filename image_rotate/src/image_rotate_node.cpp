@@ -344,6 +344,8 @@ void ImageRotateNode::onInit()
   auto node_base = this->get_node_base_interface();
   std::string topic = node_base->resolve_topic_or_service_name("rotated/image", false);
 
+  // Allow overriding QoS settings (history, depth, reliability)
+  pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   img_pub_ = image_transport::create_publisher(this, topic, rmw_qos_profile_default, pub_options);
 }
 }  // namespace image_rotate

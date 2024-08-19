@@ -41,6 +41,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
+#include <image_proc/utils.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 
 namespace depth_image_proc
@@ -68,7 +69,7 @@ ConvertMetricNode::ConvertMetricNode(const rclcpp::NodeOptions & options)
   // TransportHints does not actually declare the parameter
   this->declare_parameter<std::string>("image_transport", "raw");
 
-  // Create publisher with connect callback
+  // Setup lazy subscriber using publisher connection callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
     [this](rclcpp::MatchedInfo &)
@@ -83,18 +84,24 @@ ConvertMetricNode::ConvertMetricNode(const rclcpp::NodeOptions & options)
         std::string topic = node_base->resolve_topic_or_service_name("image_raw", false);
         // Get transport hints
         image_transport::TransportHints hints(this);
+        // Create subscriber with QoS matched to subscribed topic publisher
+        auto qos_profile = image_proc::getTopicQosProfile(this, topic);
         sub_raw_ = image_transport::create_subscription(
           this, topic,
           std::bind(&ConvertMetricNode::depthCb, this, std::placeholders::_1),
-          hints.getTransport());
+          hints.getTransport(),
+          qos_profile);
       }
     };
   // For compressed topics to remap appropriately, we need to pass a
   // fully expanded and remapped topic name to image_transport
   auto node_base = this->get_node_base_interface();
   std::string topic = node_base->resolve_topic_or_service_name("image", false);
-  pub_depth_ =
-    image_transport::create_publisher(this, topic, rmw_qos_profile_default, pub_options);
+
+  // Create publisher - allow overriding QoS settings (history, depth, reliability)
+  pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
+  pub_depth_ = image_transport::create_publisher(this, topic, rmw_qos_profile_default,
+      pub_options);
 }
 
 void ConvertMetricNode::depthCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)
