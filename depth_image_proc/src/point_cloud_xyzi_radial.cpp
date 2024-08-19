@@ -37,6 +37,7 @@
 
 #include "depth_image_proc/visibility.h"
 
+#include <image_proc/utils.hpp>
 #include <image_transport/camera_common.hpp>
 #include <image_transport/image_transport.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -73,7 +74,7 @@ PointCloudXyziRadialNode::PointCloudXyziRadialNode(const rclcpp::NodeOptions & o
       std::placeholders::_2,
       std::placeholders::_3));
 
-  // Create publisher with connect callback
+  // Setup lazy subscriber using publisher connection callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
     [this](rclcpp::MatchedInfo & s)
@@ -98,16 +99,23 @@ PointCloudXyziRadialNode::PointCloudXyziRadialNode(const rclcpp::NodeOptions & o
 
         // depth image can use different transport.(e.g. compressedDepth)
         image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
-        sub_depth_.subscribe(this, depth_topic, depth_hints.getTransport());
+        // Create subscriber with QoS matched to subscribed topic publisher
+        auto depth_qos_profile = image_proc::getTopicQosProfile(this, depth_topic);
+        sub_depth_.subscribe(this, depth_topic, depth_hints.getTransport(), depth_qos_profile);
 
         // intensity uses normal ros transport hints.
         image_transport::TransportHints hints(this);
-        sub_intensity_.subscribe(this, intensity_topic, hints.getTransport());
+        // Create subscriber with QoS matched to subscribed topic publisher
+        auto qos_profile = image_proc::getTopicQosProfile(this, intensity_topic);
+        sub_intensity_.subscribe(this, intensity_topic, hints.getTransport(), qos_profile);
         sub_info_.subscribe(this, intensity_info_topic);
       }
     };
+
+  // Allow overriding QoS settings (history, depth, reliability)
+  pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   pub_point_cloud_ = create_publisher<sensor_msgs::msg::PointCloud2>(
-    "points", rclcpp::SensorDataQoS(), pub_options);
+    "points", rclcpp::SystemDefaultsQoS(), pub_options);
 }
 
 void PointCloudXyziRadialNode::imageCb(

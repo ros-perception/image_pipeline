@@ -117,8 +117,8 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
 
   pub_ = this->create_publisher<sensor_msgs::msg::Image>("output", 1);
   sub_ = image_transport::create_subscription(
-    this, topic, std::bind(
-      &ImageViewNode::imageCb, this, std::placeholders::_1), hints.getTransport());
+    this, topic, std::bind(&ImageViewNode::imageCb, this, std::placeholders::_1),
+    hints.getTransport(), rmw_qos_profile_sensor_data);
 
   auto topics = this->get_topic_names_and_types();
 

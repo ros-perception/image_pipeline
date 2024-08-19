@@ -152,12 +152,10 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
       }
     };
 
-  // Allow overriding QoS settings (history, depth, reliability)
+  // Create publisher - allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-
-  // Create publisher with QoS matched to subscribed topic publisher
-  auto qos_profile = getTopicQosProfile(this, image_topic_);
-  pub_ = image_transport::create_camera_publisher(this, pub_topic, qos_profile, pub_options);
+  pub_ = image_transport::create_camera_publisher(this, pub_topic, rmw_qos_profile_default,
+      pub_options);
 }
 
 void CropDecimateNode::imageCb(

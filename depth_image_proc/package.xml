@@ -32,6 +32,7 @@
   <depend>image_geometry</depend>
   <depend>image_transport</depend>
   <depend>libopencv-dev</depend>
+  <depend>image_proc</depend>
   <depend>message_filters</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>

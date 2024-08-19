@@ -119,8 +119,10 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
         sub_info_.subscribe(this, "right/camera_info");
       }
     };
+  // Allow overriding QoS settings (history, depth, reliability)
+  pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   pub_disparity_ = create_publisher<stereo_msgs::msg::DisparityImage>(
-    "left/disparity", rclcpp::SensorDataQoS(), pub_options);
+    "left/disparity", rclcpp::SystemDefaultsQoS(), pub_options);
 }
 
 void DisparityNode::depthCb(

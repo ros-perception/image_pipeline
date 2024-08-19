@@ -40,6 +40,7 @@
 
 #include <depth_image_proc/point_cloud_xyz.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <image_proc/utils.hpp>
 #include <image_transport/image_transport.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <depth_image_proc/conversions.hpp>
@@ -75,10 +76,12 @@ PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
         auto node_base = this->get_node_base_interface();
         std::string topic = node_base->resolve_topic_or_service_name("image_rect", false);
 
-        // Get transport and QoS
+        // Get transport hints
         image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
-        auto custom_qos = rmw_qos_profile_system_default;
-        custom_qos.depth = queue_size_;
+
+        // Create subscriber with QoS matched to subscribed topic publisher
+        auto qos_profile = image_proc::getTopicQosProfile(this, topic);
+        qos_profile.depth = queue_size_;
 
         sub_depth_ = image_transport::create_camera_subscription(
           this,
@@ -87,10 +90,14 @@ PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
             &PointCloudXyzNode::depthCb, this, std::placeholders::_1,
             std::placeholders::_2),
           depth_hints.getTransport(),
-          custom_qos);
+          qos_profile);
       }
     };
-  pub_point_cloud_ = create_publisher<PointCloud2>("points", rclcpp::SensorDataQoS(), pub_options);
+
+  // Allow overriding QoS settings (history, depth, reliability)
+  pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
+  pub_point_cloud_ =
+    create_publisher<PointCloud2>("points", rclcpp::SystemDefaultsQoS(), pub_options);
 }
 
 void PointCloudXyzNode::depthCb(
