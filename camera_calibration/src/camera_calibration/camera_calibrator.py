@@ -214,14 +214,12 @@ class CalibrationNode(Node):
         for i in range(10):
             print("!" * 80)
         print()
-        print("Attempt to set camera info failed: " + response.status_message
-              if response.status_message is not None else "Not available")
+        print(f"Attempt to set camera info failed: {response.status_message}")
         print()
         for i in range(10):
             print("!" * 80)
         print()
-        self.get_logger().error('Unable to set camera info for calibration. Failure message: %s' %
-                                response.status_message if response.status_message is not None else "Not available")
+        self.get_logger().error(f'Unable to set camera info for calibration. Failure message: {response.status_message}')
         return False
 
     def do_upload(self):
