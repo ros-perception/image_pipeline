@@ -133,14 +133,25 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
         sub_depth_info_.unsubscribe();
         sub_rgb_info_.unsubscribe();
       } else if (!sub_depth_image_.getSubscriber()) {
+        // Allow overriding QoS settings (history, depth, reliability)
+        rclcpp::SubscriptionOptions sub_options;
+        sub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
+
         // For compressed topics to remap appropriately, we need to pass a
         // fully expanded and remapped topic name to image_transport
         auto node_base = this->get_node_base_interface();
         std::string topic = node_base->resolve_topic_or_service_name("depth/image_rect", false);
         image_transport::TransportHints hints(this, "raw", "depth_image_transport");
+<<<<<<< HEAD
         sub_depth_image_.subscribe(this, topic, hints.getTransport());
         sub_depth_info_.subscribe(this, "depth/camera_info");
         sub_rgb_info_.subscribe(this, "rgb/camera_info");
+=======
+        sub_depth_image_.subscribe(this, topic, hints.getTransport(), rmw_qos_profile_default,
+          sub_options);
+        sub_depth_info_.subscribe(this, "depth/camera_info", rclcpp::QoS(10), sub_options);
+        sub_rgb_info_.subscribe(this, "rgb/camera_info", rclcpp::QoS(10), sub_options);
+>>>>>>> 0dd99bf (Support QoS override parameters in depth_image_proc/register (#1043))
       }
     };
   // For compressed topics to remap appropriately, we need to pass a
