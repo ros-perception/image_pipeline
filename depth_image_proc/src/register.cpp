@@ -144,8 +144,10 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
         image_transport::TransportHints hints(this, "raw", "depth_image_transport");
         sub_depth_image_.subscribe(this, topic, hints.getTransport(), rmw_qos_profile_default,
           sub_options);
-        sub_depth_info_.subscribe(this, "depth/camera_info", rclcpp::QoS(10), sub_options);
-        sub_rgb_info_.subscribe(this, "rgb/camera_info", rclcpp::QoS(10), sub_options);
+        auto qos = rmw_qos_profile_default;
+        qos.depth = 10;
+        sub_depth_info_.subscribe(this, "depth/camera_info", qos, sub_options);
+        sub_rgb_info_.subscribe(this, "rgb/camera_info", qos, sub_options);
       }
     };
   // For compressed topics to remap appropriately, we need to pass a
