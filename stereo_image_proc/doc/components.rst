@@ -106,7 +106,7 @@ Subscribed Topics
    image with metadata.
  * **left/camera_info** (sensor_msgs/CameraInfo): Left camera metadata.
  * **left/image_rect_color** (sensor_msgs/Image): Rectified image.
- * **rigtht/camera_info** (sensor_msgs/CameraInfo): Right camera metada.
+ * **right/camera_info** (sensor_msgs/CameraInfo): Right camera metada.
 
 Published Topics
 ^^^^^^^^^^^^^^^^
