@@ -72,6 +72,7 @@ private:
     BLOCK_MATCHING = 0,
     SEMI_GLOBAL_BLOCK_MATCHING
   };
+
   bool use_image_transport_camera_info;
   // Subscriptions
   image_transport::SubscriberFilter sub_l_image_, sub_r_image_;
@@ -161,14 +162,17 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("disparity_node", options)
 {
   using namespace std::placeholders;
+
   // TransportHints does not actually declare the parameter
   this->declare_parameter<std::string>("image_transport", "raw");
+
   // Declare/read parameters
   int queue_size = this->declare_parameter("queue_size", 5);
   bool approx = this->declare_parameter("approximate_sync", false);
   double approx_sync_epsilon = this->declare_parameter("approximate_sync_tolerance_seconds", 0.0);
   this->declare_parameter("use_system_default_qos", false);
   use_image_transport_camera_info = this->declare_parameter("use_image_transport_camera_info", true);
+
   // Synchronize callbacks
   if (approx) {
     if (0.0 == approx_sync_epsilon) {
