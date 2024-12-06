@@ -46,6 +46,4 @@ def generate_launch_description():
                         ('rotated/image',        'camera_rotated/image_rotated')],
             parameters=[{'output_frame_id': 'camera_rotated',
                          'rotation_steps': 2,
-                         'use_camera_info': True,
-                         'input_qos': 'best_effort',
-                         'output_qos': 'default'}])])
+                         'use_camera_info': True}])])
