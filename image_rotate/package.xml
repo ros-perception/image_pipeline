@@ -34,6 +34,7 @@
   <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>
   <url type="repository">https://github.com/ros-perception/image_pipeline</url>
   <author>Blaise Gassend</author>
+  <author email="robotics@cnu.edu">David Conner</author>
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 

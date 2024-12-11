@@ -1,6 +1,36 @@
 Nodes and Components
 ====================
 
+image_rotate::ImageFlipNode
+-----------------------------
+This is a simplified version image rotate which merely rotates/flips
+the images.
+
+Subscribed Topics
+^^^^^^^^^^^^^^^^^
+ * **image** (sensor_msgs/Image): Image to be rotated.
+ * **camera_info** (sensor_msgs/CameraInfo): Camera metadata, only
+   used if ``use_camera_info`` is set to true.
+
+Published Topics
+^^^^^^^^^^^^^^^^
+ * **rotated/image** (sensor_msgs/Image): Rotated image.
+ * **out/camera_info** (sensor_msgs/CameraInfo): Camera metadata, with binning and
+   ROI fields adjusted to match output raw image.
+
+Parameters
+^^^^^^^^^^
+ * **output_frame_id** (str, default: ""): Frame to publish for the image's
+   new orientation. Empty means add '_rotated' suffix to the image frame.
+ * **use_camera_info** (bool, default: True): Indicates that the camera_info
+   topic should be subscribed to to get the default input_frame_id.
+   Otherwise the frame from the image message will be used.
+ * **rotation_steps** (int, default: 2): Number of times to rotate the image:
+
+   * 1 is transpose and flip in CCW
+   * 2 is flip (180 mirroring)
+   * 3 is transpose and flip in CW
+
 image_rotate::ImageRotateNode
 -----------------------------
 Node to rotate an image for visualization. The node takes a source
