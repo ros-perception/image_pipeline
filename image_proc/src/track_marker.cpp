@@ -30,8 +30,6 @@
 // ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <tf2/LinearMath/Quaternion.hpp>
-
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -45,6 +43,7 @@
 #include <rclcpp/qos.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2/LinearMath/Quaternion.hpp>
 
 namespace image_proc
 {
