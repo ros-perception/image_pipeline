@@ -34,20 +34,33 @@ Finally make sure your camera is publishing images. For instance:
 If you have multiple cameras or are running the driver in its own
 namespace, your topic names may differ.
 
+Most cameras will also support a `set_camera_info` service:
+
+.. code-block:: bash
+
+    $ ros2 service list | grep stereo
+
+    /stereo/left/set_camera_info
+    /stereo/right/set_camera_info
+
 Start the Calibration
 ---------------------
-To start the calibration you will need to load the image topics
+To start the calibration you will need to remap the image topics
 that will be calibrated:
 
 .. code-block:: bash
 
-    $ ros2 run camera_calibration cameracalibrator --approximate 0.1 --size 8x6 --square 0.108 right:=/stereo/right/image_raw left:=/my_stereo/left/image_raw right_camera:=/my_stereo/right left_camera:=/my_stereo/left
+    $ ros2 run camera_calibration cameracalibrator --approximate 0.1 --size 8x6 --square 0.108 right:=/stereo/right/image_raw left:=/stereo/left/image_raw right_camera:=/stereo/right left_camera:=/stereo/left
 
 The ``--approximate`` option allows the camera calibrator to work
 with images that do not have the exact same timestamp. Currently
 it is set to 0.1 seconds. In this case, as long as the timestamp
 difference is less than 0.1 seconds, the calibrator will run with
 no problem.
+
+The `left` and `right` namespaces are used to remap the `image_raw`
+and `camera_info` topics, while the `left_camera` and `right_camera`
+namespaces are used for the optional `set_camera_info` service.
 
 This will open up the calibration window which will highlight the
 checkerboard, you will not see any images in the calibration
