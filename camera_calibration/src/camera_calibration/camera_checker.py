@@ -71,10 +71,10 @@ class ConsumerThread(threading.Thread):
 
     def run(self):
         while rclpy.ok():
-            m = self.queue.get()
             if self.queue.empty():
-                break
-        self.function(m)
+                continue
+            m = self.queue.get()
+            self.function(m)
 
 class CameraCheckerNode(Node):
 
