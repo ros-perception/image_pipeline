@@ -179,9 +179,9 @@ class CameraCheckerNode(Node):
             reprojection_rms = numpy.sqrt(numpy.sum(numpy.array(reprojection_errors) ** 2) / numpy.product(reprojection_errors.shape))
 
             # Print the results
-            print("Linearity RMS Error: %.3f Pixels      Reprojection RMS Error: %.3f Pixels" % (linearity_rms, reprojection_rms))
+            self.get_logger().info("Linearity RMS Error: %.3f Pixels      Reprojection RMS Error: %.3f Pixels" % (linearity_rms, reprojection_rms))
         else:
-            print('no chessboard')
+            self.get_logger().info('no chessboard')
 
     def handle_stereo(self, msg):
 
@@ -196,6 +196,6 @@ class CameraCheckerNode(Node):
 
             dimension = self.sc.chessboard_size(L, R, self.board, msg=(lcmsg, rcmsg))
 
-            print("epipolar error: %f pixels   dimension: %f m" % (epipolar, dimension))
+            self.get_logger().info("epipolar error: %f pixels   dimension: %f m" % (epipolar, dimension))
         else:
-            print("no chessboard")
+            self.get_logger().info("no chessboard")
