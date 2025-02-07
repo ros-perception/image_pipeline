@@ -76,10 +76,10 @@ class ConsumerThread(threading.Thread):
 
     def run(self):
         while rclpy.ok():
-            m = self.queue.get()
             if self.queue.empty():
-                break
-        self.function(m)
+                continue
+            m = self.queue.get()
+            self.function(m)
 
 
 class CameraCheckerNode(Node):
@@ -192,10 +192,14 @@ class CameraCheckerNode(Node):
                 reprojection_errors) ** 2) / numpy.product(reprojection_errors.shape))
 
             # Print the results
+<<<<<<< HEAD
             print("Linearity RMS Error: %.3f Pixels      Reprojection RMS Error: %.3f Pixels" % (
                 linearity_rms, reprojection_rms))
+=======
+            self.get_logger().info("Linearity RMS Error: %.3f Pixels      Reprojection RMS Error: %.3f Pixels" % (linearity_rms, reprojection_rms))
+>>>>>>> 3e1a794 (Check repeatedly (#1066))
         else:
-            print('no chessboard')
+            self.get_logger().info('no chessboard')
 
     def handle_stereo(self, msg):
 
@@ -211,7 +215,11 @@ class CameraCheckerNode(Node):
             dimension = self.sc.chessboard_size(
                 L, R, self.board, msg=(lcmsg, rcmsg))
 
+<<<<<<< HEAD
             print("epipolar error: %f pixels   dimension: %f m" %
                   (epipolar, dimension))
+=======
+            self.get_logger().info("epipolar error: %f pixels   dimension: %f m" % (epipolar, dimension))
+>>>>>>> 3e1a794 (Check repeatedly (#1066))
         else:
-            print("no chessboard")
+            self.get_logger().info("no chessboard")
