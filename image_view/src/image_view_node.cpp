@@ -214,7 +214,7 @@ void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
       }
     }
 
-    std::string encoding = msg->encoding.empty() ? "bgr8" : msg->encoding;
+    std::string encoding = "bgr8";
 
     // May want to view raw bayer data
     if (encoding.find("bayer") != std::string::npos) {
