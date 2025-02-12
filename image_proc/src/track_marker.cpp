@@ -64,6 +64,7 @@ TrackMarkerNode::TrackMarkerNode(const rclcpp::NodeOptions & options)
   marker_size_ = this->declare_parameter("marker_size", 0.05);
   // Default dictionary is cv::aruco::DICT_6X6_250
   int dict_id = this->declare_parameter("dictionary", 10);
+
   #if CV_VERSION_MAJOR > 4 || CV_VERSION_MAJOR == 4 && CV_VERSION_MINOR >= 7
   detector_params_ = cv::makePtr<cv::aruco::DetectorParameters>();
   #else
