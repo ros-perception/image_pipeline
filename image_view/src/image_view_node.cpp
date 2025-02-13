@@ -214,11 +214,16 @@ void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
       }
     }
 
-    std::string encoding = "bgr8";
+    std::string encoding = msg->encoding.empty() ? "bgr8" : msg->encoding;
 
     // May want to view raw bayer data
     if (encoding.find("bayer") != std::string::npos) {
       encoding = "mono8";
+    }
+
+    // Add a special rule for YUV format
+    if (encoding.find("yuv") != std::string::npos) {
+      encoding = "bgr8";
     }
 
     queued_image_.set(
