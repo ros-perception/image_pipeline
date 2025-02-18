@@ -45,7 +45,10 @@ def generate_launch_description():
     return LaunchDescription([
         # install realsense from https://github.com/intel/ros2_intel_realsense
         launch_ros.actions.Node(
-            package='realsense_ros2_camera', node_executable='realsense_ros2_camera',
+            package='realsense2_camera',
+            executable='realsense2_camera_node',
+            namespace='',
+            parameters=[{'align_depth.enable': True},],
             output='screen'),
 
         # launch plugin through rclcpp_components container
@@ -71,6 +74,6 @@ def generate_launch_description():
 
         # rviz
         launch_ros.actions.Node(
-            package='rviz2', node_executable='rviz2', output='screen',
+            package='rviz2', executable='rviz2', output='screen',
             arguments=['--display-config', default_rviz]),
     ])
