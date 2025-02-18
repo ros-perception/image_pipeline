@@ -45,7 +45,9 @@ def generate_launch_description():
     return LaunchDescription([
         # install realsense from https://github.com/intel/ros2_intel_realsense
         launch_ros.actions.Node(
-            package='realsense2_camera', executable='realsense2_camera_node',
+            package='realsense2_camera',
+            executable='realsense2_camera_node',
+            namespace='',
             output='screen'),
 
         # NOTE: Realsense camera do not support intensity message,

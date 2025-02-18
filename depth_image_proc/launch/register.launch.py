@@ -45,7 +45,10 @@ def generate_launch_description():
     return LaunchDescription([
         # install realsense from https://github.com/intel/ros2_intel_realsense
         launch_ros.actions.Node(
-            package='realsense2_camera', executable='realsense2_camera_node',
+            package='realsense2_camera',
+            executable='realsense2_camera_node',
+            namespace='',
+            parameters=[{'align_depth.enable': True},],
             output='screen'),
 
         # launch plugin through rclcpp_components container
