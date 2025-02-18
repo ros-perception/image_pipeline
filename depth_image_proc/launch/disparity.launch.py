@@ -45,7 +45,7 @@ def generate_launch_description():
     return LaunchDescription([
         # install realsense from https://github.com/intel/ros2_intel_realsense
         launch_ros.actions.Node(
-            package='realsense_ros2_camera', executable='realsense_ros2_camera',
+            package='realsense2_camera', executable='realsense2_camera_node',
             output='screen'),
 
         # we use realsense camera for test, realsense not support left and right topic
