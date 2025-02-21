@@ -98,11 +98,15 @@ void PointCloudXyziNode::connectCb()
 
     // depth image can use different transport.(e.g. compressedDepth)
     image_transport::TransportHints depth_hints(this, "raw", depth_image_transport_param);
-    sub_depth_.subscribe(this, "depth/image_rect", depth_hints.getTransport(), rmw_qos_profile_sensor_data);
+    sub_depth_.subscribe(
+      this, "depth/image_rect",
+      depth_hints.getTransport(), rmw_qos_profile_sensor_data);
 
     // intensity uses normal ros transport hints.
     image_transport::TransportHints hints(this, "raw");
-    sub_intensity_.subscribe(this, "intensity/image_rect", hints.getTransport(), rmw_qos_profile_sensor_data);
+    sub_intensity_.subscribe(
+      this, "intensity/image_rect",
+      hints.getTransport(), rmw_qos_profile_sensor_data);
     sub_info_.subscribe(this, "intensity/camera_info", rmw_qos_profile_sensor_data);
   }
 }
