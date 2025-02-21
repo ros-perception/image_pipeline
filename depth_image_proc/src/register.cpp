@@ -132,7 +132,7 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
   // pub_registered_ = it_depth_reg.advertiseCamera("image_rect", 1,
   //                                               image_connect_cb, image_connect_cb,
   //                                               info_connect_cb, info_connect_cb);
-  pub_registered_ = image_transport::create_camera_publisher(this, "depth_registered/image_rect");
+  pub_registered_ = image_transport::create_camera_publisher(this, "depth_registered/image_rect", rmw_qos_profile_sensor_data);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -147,9 +147,9 @@ void RegisterNode::connectCb()
     sub_rgb_info_.unsubscribe();
   } else if (!sub_depth_image_.getSubscriber()) {
     image_transport::TransportHints hints(this, "raw");
-    sub_depth_image_.subscribe(this, "depth/image_rect", hints.getTransport());
-    sub_depth_info_.subscribe(this, "depth/camera_info");
-    sub_rgb_info_.subscribe(this, "rgb/camera_info");
+    sub_depth_image_.subscribe(this, "depth/image_rect", hints.getTransport(), rmw_qos_profile_sensor_data);
+    sub_depth_info_.subscribe(this, "depth/camera_info", rmw_qos_profile_sensor_data);
+    sub_rgb_info_.subscribe(this, "rgb/camera_info", rmw_qos_profile_sensor_data);
   }
 }
 
@@ -191,6 +191,7 @@ void RegisterNode::imageCb(
   registered_msg->height = resolution.height;
   registered_msg->width = resolution.width;
   // step and data set in convert(), depend on depth data type
+
 
   if (depth_image_msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
     convert<uint16_t>(depth_image_msg, registered_msg, depth_to_rgb);

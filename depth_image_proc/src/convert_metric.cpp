@@ -76,7 +76,7 @@ ConvertMetricNode::ConvertMetricNode(const rclcpp::NodeOptions & options)
   std::lock_guard<std::mutex> lock(connect_mutex_);
   // TODO(ros2) Implement when SubscriberStatusCallback is available
   // pub_depth_ = it_->advertise("image", 1, connect_cb, connect_cb);
-  pub_depth_ = image_transport::create_publisher(this, "image");
+  pub_depth_ = image_transport::create_publisher(this, "image", rmw_qos_profile_sensor_data);
 }
 
 // Handles (un)subscribing when clients (un)subscribe
@@ -92,7 +92,8 @@ void ConvertMetricNode::connectCb()
     sub_raw_ = image_transport::create_subscription(
       this, "image_raw",
       std::bind(&ConvertMetricNode::depthCb, this, std::placeholders::_1),
-      hints.getTransport());
+      hints.getTransport(),
+      rmw_qos_profile_sensor_data);
   }
 }
 
