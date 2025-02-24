@@ -296,6 +296,8 @@ void ImageViewNode::windowThread()
       cv::imshow(window_name_, image->image);
       shown_image_.set(image);
       cv::waitKey(1);
+    } else {
+      rclcpp::sleep_for(std::chrono::milliseconds(20));
     }
   }
 
