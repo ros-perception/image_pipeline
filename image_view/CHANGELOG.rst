@@ -2,6 +2,11 @@
 Changelog for package image_view
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.9 (2025-02-27)
+------------------
+* image_view: sleep if no new image (backport `#1082 <https://github.com/ros-perception/image_pipeline/issues/1082>`_) (`#1083 <https://github.com/ros-perception/image_pipeline/issues/1083>`_)
+* Contributors: mergify[bot]
+
 5.0.8 (2025-02-13)
 ------------------
 * image_view：set CvtColorForDisplay encoding as bgr8 (backport `#1071 <https://github.com/ros-perception/image_pipeline/issues/1071>`_) (`#1075 <https://github.com/ros-perception/image_pipeline/issues/1075>`_)
