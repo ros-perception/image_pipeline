@@ -39,6 +39,7 @@ import numpy.linalg
 import sensor_msgs.msg
 import tarfile
 from enum import Enum
+from semver import VersionInfo
 
 # Supported camera models
 
@@ -90,7 +91,7 @@ class ChessboardInfo():
                 "7x7_100": cv2.aruco.DICT_7X7_100,
                 "7x7_250": cv2.aruco.DICT_7X7_250,
                 "7x7_1000": cv2.aruco.DICT_7X7_1000}[aruco_dict])
-            if cv2.__version__ >= '4.8.0':
+            if VersionInfo.parse(cv2.__version__) >= VersionInfo.parse('4.8.0'):
                 self.charuco_board = cv2.aruco.CharucoBoard(
                     (self.n_cols, self.n_rows),
                     self.dim, self.marker_size, self.aruco_dict)
@@ -296,7 +297,7 @@ def _get_charuco_corners(img, board, refine):
     else:
         mono = img
 
-    if cv2.__version__ >= '4.8.0':
+    if VersionInfo.parse(cv2.__version__) >= VersionInfo.parse('4.8.0'):
         charucodetector = cv2.aruco.CharucoDetector(board.charuco_board)
         square_corners, ids, marker_corners, marker_ids = charucodetector.detectBoard(
             mono)
