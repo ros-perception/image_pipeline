@@ -72,7 +72,6 @@ class ChessboardInfo():
         self.charuco_board = None;
         if pattern=="charuco":
             self.aruco_dict = cv2.aruco.getPredefinedDictionary({
-<<<<<<< HEAD
                 "aruco_orig" : cv2.aruco.DICT_ARUCO_ORIGINAL,
                 "4x4_50"    : cv2.aruco.DICT_4X4_50,
                 "4x4_100"    : cv2.aruco.DICT_4X4_100,
@@ -90,36 +89,13 @@ class ChessboardInfo():
                 "7x7_100"    : cv2.aruco.DICT_7X7_100,
                 "7x7_250"    : cv2.aruco.DICT_7X7_250,
                 "7x7_1000"    : cv2.aruco.DICT_7X7_1000}[aruco_dict])
-            if cv2.__version__ >= '4.8.0':
+            if VersionInfo.parse(cv2.__version__) >= VersionInfo.parse('4.8.0'):
                 self.charuco_board = cv2.aruco.CharucoBoard((self.n_cols, self.n_rows), self.dim, self.marker_size,
                         self.aruco_dict)
-=======
-                "aruco_orig": cv2.aruco.DICT_ARUCO_ORIGINAL,
-                "4x4_50": cv2.aruco.DICT_4X4_50,
-                "4x4_100": cv2.aruco.DICT_4X4_100,
-                "4x4_250": cv2.aruco.DICT_4X4_250,
-                "4x4_1000": cv2.aruco.DICT_4X4_1000,
-                "5x5_50": cv2.aruco.DICT_5X5_50,
-                "5x5_100": cv2.aruco.DICT_5X5_100,
-                "5x5_250": cv2.aruco.DICT_5X5_250,
-                "5x5_1000": cv2.aruco.DICT_5X5_1000,
-                "6x6_50": cv2.aruco.DICT_6X6_50,
-                "6x6_100": cv2.aruco.DICT_6X6_100,
-                "6x6_250": cv2.aruco.DICT_6X6_250,
-                "6x6_1000": cv2.aruco.DICT_6X6_1000,
-                "7x7_50": cv2.aruco.DICT_7X7_50,
-                "7x7_100": cv2.aruco.DICT_7X7_100,
-                "7x7_250": cv2.aruco.DICT_7X7_250,
-                "7x7_1000": cv2.aruco.DICT_7X7_1000}[aruco_dict])
-            if VersionInfo.parse(cv2.__version__) >= VersionInfo.parse('4.8.0'):
-                self.charuco_board = cv2.aruco.CharucoBoard(
-                    (self.n_cols, self.n_rows),
-                    self.dim, self.marker_size, self.aruco_dict)
->>>>>>> 2e10964 (Replace OpenCV version string comparison with semver. (#1087))
             else:
                 self.charuco_board = cv2.aruco.CharucoBoard_create(self.n_cols, self.n_rows, self.dim, self.marker_size,
                         self.aruco_dict)
-            
+
 
 # Make all private!!!!!
 def lmin(seq1, seq2):
@@ -298,12 +274,7 @@ def _get_charuco_corners(img, board, refine):
     else:
         mono = img
 
-<<<<<<< HEAD
-
-    if cv2.__version__ >= '4.8.0':
-=======
     if VersionInfo.parse(cv2.__version__) >= VersionInfo.parse('4.8.0'):
->>>>>>> 2e10964 (Replace OpenCV version string comparison with semver. (#1087))
         charucodetector = cv2.aruco.CharucoDetector(board.charuco_board)
         square_corners, ids, marker_corners, marker_ids = charucodetector.detectBoard(mono)
     else:
