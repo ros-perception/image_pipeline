@@ -5,7 +5,7 @@
   <version>3.0.7</version>
   <description>
      camera_calibration allows easy calibration of monocular or stereo
-     cameras using a checkerboard calibration target. 
+     cameras using a checkerboard calibration target.
   </description>
 
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
@@ -25,6 +25,7 @@
   <depend>rclpy</depend>
   <depend>std_srvs</depend>
   <depend>sensor_msgs</depend>
+  <depend>python3-semver</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
