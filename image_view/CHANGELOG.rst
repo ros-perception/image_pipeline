@@ -2,6 +2,9 @@
 Changelog for package image_view
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.10 (2025-04-22)
+-------------------
+
 5.0.9 (2025-02-27)
 ------------------
 * image_view: sleep if no new image (backport `#1082 <https://github.com/ros-perception/image_pipeline/issues/1082>`_) (`#1083 <https://github.com/ros-perception/image_pipeline/issues/1083>`_)
