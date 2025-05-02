@@ -218,7 +218,7 @@ void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 
     // OpenCV uses BGR colour channel order
     if (encoding.find("rgb8") != std::string::npos) {
-        encoding = "bgr8";
+      encoding = "bgr8";
     }
 
     // May want to view raw bayer data
