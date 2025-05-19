@@ -21,7 +21,6 @@ endif()
 
 ament_auto_add_library(${PROJECT_NAME}_nodes SHARED
   src/disparity_view_node.cpp
-  src/extract_images_node.cpp
   src/image_view_node.cpp
   src/image_saver_node.cpp
   src/stereo_view_node.cpp
@@ -35,7 +34,6 @@ target_compile_definitions(${PROJECT_NAME}_nodes
 )
 rclcpp_components_register_nodes(${PROJECT_NAME}_nodes
   "${PROJECT_NAME}::DisparityViewNode"
-  "${PROJECT_NAME}::ExtractImagesNode"
   "${PROJECT_NAME}::ImageViewNode"
   "${PROJECT_NAME}::ImageSaverNode"
   "${PROJECT_NAME}::StereoViewNode"
@@ -74,16 +72,6 @@ add_dependencies(stereo_view
 )
 
 # Other Tools
-ament_auto_add_executable(extract_images
-  src/extract_images.cpp
-)
-target_link_libraries(extract_images
-  ${PROJECT_NAME}_nodes
-)
-add_dependencies(extract_images
-  ${PROJECT_NAME}_nodes
-)
-
 ament_auto_add_executable(image_saver
   src/image_saver.cpp
 )

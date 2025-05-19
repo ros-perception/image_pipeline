@@ -390,6 +390,7 @@ class Calibrator():
         self.pattern = pattern
         self.br = cv_bridge.CvBridge()
         self.camera_model = CAMERA_MODEL.PINHOLE
+        self.declare_parameter('vga_scale', 0)
         # self.db is list of (parameters, image) samples for use in calibration. parameters has form
         # (X, Y, size, skew) all normalized to [0,1], to keep track of what sort of samples we've taken
         # and ensure enough variety.

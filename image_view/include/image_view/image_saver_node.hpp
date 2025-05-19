@@ -68,6 +68,7 @@ public:
 
 private:
   std::string g_format;
+  int fps_;
   bool stamped_filename_;
   bool save_all_image_{false};
   bool save_image_service_{false};
@@ -76,6 +77,9 @@ private:
   bool is_first_image_{true};
   bool has_camera_info_{false};
   size_t count_{0u};
+  sensor_msgs::msg::Image::ConstSharedPtr latest_image_;
+  std::mutex image_save_mutex_;
+  rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Time start_time_;
   rclcpp::Time end_time_;
   image_transport::CameraSubscriber cam_sub_;
@@ -84,6 +88,7 @@ private:
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_srv_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr end_srv_;
 
+  void timerCallback();
   bool saveImage(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg, std::string & filename);
   bool service(
     const std::shared_ptr<rmw_request_id_t> request_header,
