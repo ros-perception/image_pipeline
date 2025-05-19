@@ -95,7 +95,7 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
   delta_d_ = this->declare_parameter<double>("delta_d", 0.125);
 
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
-  sync_ = std::make_shared<Sync>(sub_depth_image_, sub_info_, queue_size);
+  sync_ = std::make_shared<Sync>(queue_size, sub_depth_image_, sub_info_);
   sync_->registerCallback(
     std::bind(
       &DisparityNode::depthCb, this, std::placeholders::_1, std::placeholders::_2));
