@@ -2,6 +2,11 @@
 Changelog for package image_view
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.11 (2025-05-21)
+-------------------
+* fix colour channel order for "rgb8" in image_view (backport `#1093 <https://github.com/ros-perception/image_pipeline/issues/1093>`_) (`#1094 <https://github.com/ros-perception/image_pipeline/issues/1094>`_)
+* Contributors: mergify[bot]
+
 5.0.10 (2025-04-22)
 -------------------
 

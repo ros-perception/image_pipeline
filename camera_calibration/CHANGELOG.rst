@@ -2,6 +2,9 @@
 Changelog for package camera_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.11 (2025-05-21)
+-------------------
+
 5.0.10 (2025-04-22)
 -------------------
 * Replace OpenCV version string comparison with semver. (backport `#1087 <https://github.com/ros-perception/image_pipeline/issues/1087>`_) (`#1088 <https://github.com/ros-perception/image_pipeline/issues/1088>`_)
