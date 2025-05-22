@@ -2,6 +2,14 @@
 Changelog for package image_view
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+7.0.0 (2025-05-19)
+------------------
+* fix colour channel order for "rgb8" in image_view (`#1093 <https://github.com/ros-perception/image_pipeline/issues/1093>`_)
+  Previously, a `rgb8` encoding was just visualised in RGB colour channel
+  order via OpenCV, which expects colour channel order BGR. Fix this by
+  converting from RGB to BGR.
+* Contributors: Christian Rauch
+
 6.0.10 (2025-02-27)
 -------------------
 * image_view: sleep if no new image (`#1082 <https://github.com/ros-perception/image_pipeline/issues/1082>`_)
