@@ -77,14 +77,15 @@ PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
         std::string topic = node_base->resolve_topic_or_service_name("image_rect", false);
 
         // Get transport hints
-        image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
+        image_transport::TransportHints depth_hints(image_transport::RequiredInterfaces(*this),
+          "raw", "depth_image_transport");
 
         // Create subscriber with QoS matched to subscribed topic publisher
         auto qos_profile = image_proc::getTopicQosProfile(this, topic);
         qos_profile.depth = queue_size_;
 
         sub_depth_ = image_transport::create_camera_subscription(
-          this,
+          image_transport::RequiredInterfaces(*this),
           topic,
           std::bind(
             &PointCloudXyzNode::depthCb, this, std::placeholders::_1,

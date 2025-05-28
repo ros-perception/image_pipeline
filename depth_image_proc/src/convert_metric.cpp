@@ -83,11 +83,12 @@ ConvertMetricNode::ConvertMetricNode(const rclcpp::NodeOptions & options)
         auto node_base = this->get_node_base_interface();
         std::string topic = node_base->resolve_topic_or_service_name("image_raw", false);
         // Get transport hints
-        image_transport::TransportHints hints(this);
+        image_transport::TransportHints hints{image_transport::RequiredInterfaces(*this)};
         // Create subscriber with QoS matched to subscribed topic publisher
         auto qos_profile = image_proc::getTopicQosProfile(this, topic);
         sub_raw_ = image_transport::create_subscription(
-          this, topic,
+          image_transport::RequiredInterfaces(*this),
+          topic,
           std::bind(&ConvertMetricNode::depthCb, this, std::placeholders::_1),
           hints.getTransport(),
           qos_profile);
@@ -100,7 +101,8 @@ ConvertMetricNode::ConvertMetricNode(const rclcpp::NodeOptions & options)
 
   // Create publisher - allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-  pub_depth_ = image_transport::create_publisher(this, topic, rmw_qos_profile_default,
+  pub_depth_ = image_transport::create_publisher(image_transport::RequiredInterfaces(*this), topic,
+      rmw_qos_profile_default,
       pub_options);
 }
 

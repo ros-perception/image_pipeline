@@ -329,18 +329,20 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
         const auto sensor_data_qos = rclcpp::SensorDataQoS();
 
         // Support image transport for compression
-        image_transport::TransportHints hints(this);
+        image_transport::TransportHints hints{image_transport::RequiredInterfaces(*this)};
 
         // Allow overriding QoS settings (history, depth, reliability)
         auto sub_opts = rclcpp::SubscriptionOptions();
         sub_opts.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
 
         sub_l_image_.subscribe(
-          this, left_topic, hints.getTransport(), sensor_data_qos.get_rmw_qos_profile(), sub_opts);
+          image_transport::RequiredInterfaces(*this), left_topic, hints.getTransport(),
+          sensor_data_qos.get_rmw_qos_profile(), sub_opts);
         sub_l_info_.subscribe(this, left_info_topic,
           sensor_data_qos, sub_opts);
         sub_r_image_.subscribe(
-          this, right_topic, hints.getTransport(), sensor_data_qos.get_rmw_qos_profile(), sub_opts);
+          image_transport::RequiredInterfaces(*this), right_topic, hints.getTransport(),
+          sensor_data_qos.get_rmw_qos_profile(), sub_opts);
         sub_r_info_.subscribe(this, right_info_topic,
           sensor_data_qos, sub_opts);
       }

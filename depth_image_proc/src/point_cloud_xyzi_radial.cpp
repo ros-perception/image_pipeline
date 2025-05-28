@@ -98,16 +98,19 @@ PointCloudXyziRadialNode::PointCloudXyziRadialNode(const rclcpp::NodeOptions & o
           image_transport::getCameraInfoTopic(intensity_topic), false);
 
         // depth image can use different transport.(e.g. compressedDepth)
-        image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
+        image_transport::TransportHints depth_hints(image_transport::RequiredInterfaces(*this),
+          "raw", "depth_image_transport");
         // Create subscriber with QoS matched to subscribed topic publisher
         auto depth_qos_profile = image_proc::getTopicQosProfile(this, depth_topic);
-        sub_depth_.subscribe(this, depth_topic, depth_hints.getTransport(), depth_qos_profile);
+        sub_depth_.subscribe(image_transport::RequiredInterfaces(*this), depth_topic,
+          depth_hints.getTransport(), depth_qos_profile);
 
         // intensity uses normal ros transport hints.
-        image_transport::TransportHints hints(this);
+        image_transport::TransportHints hints{image_transport::RequiredInterfaces(*this)};
         // Create subscriber with QoS matched to subscribed topic publisher
         auto qos_profile = image_proc::getTopicQosProfile(this, intensity_topic);
-        sub_intensity_.subscribe(this, intensity_topic, hints.getTransport(), qos_profile);
+        sub_intensity_.subscribe(image_transport::RequiredInterfaces(*this), intensity_topic,
+          hints.getTransport(), qos_profile);
         sub_info_.subscribe(this, intensity_info_topic, rclcpp::QoS(10));
       }
     };

@@ -99,7 +99,7 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
 
   // TransportHints does not actually declare the parameter
   this->declare_parameter<std::string>("image_transport", std::string("raw"));
-  image_transport::TransportHints hints(this);
+  image_transport::TransportHints hints{image_transport::RequiredInterfaces(*this)};
 
   // Do GUI window setup
   int flags = autosize ? (cv::WINDOW_AUTOSIZE | cv::WINDOW_KEEPRATIO | cv::WINDOW_GUI_EXPANDED) : 0;
@@ -128,8 +128,9 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
     stereo_ns + "/disparity", this->get_name(), this->get_namespace());
 
   // Subscribe to three input topics.
-  left_sub_.subscribe(this, left_topic, hints.getTransport());
-  right_sub_.subscribe(this, right_topic, hints.getTransport());
+  left_sub_.subscribe(image_transport::RequiredInterfaces(*this), left_topic, hints.getTransport());
+  right_sub_.subscribe(image_transport::RequiredInterfaces(*this), right_topic,
+      hints.getTransport());
   disparity_sub_.subscribe(this, disparity_topic, rclcpp::QoS(10));
 
   RCLCPP_INFO(
