@@ -13,7 +13,7 @@
   <maintainer email="jacob@openrobotics.org">Jacob Perron</maintainer>
 
   <license>BSD</license>
-  <url type="website">https://index.ros.org/p/camera_calibration/github-ros-perception-image_pipeline/</url>
+  <url type="website">https://index.ros.org/p/camera_calibration/</url>
   <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>
   <url type="repository">https://github.com/ros-perception/image_pipeline</url>
   <author>James Bowman</author>

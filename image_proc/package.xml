@@ -10,7 +10,7 @@
   <maintainer email="jacob@openrobotics.org">Jacob Perron</maintainer>
 
   <license>BSD</license>
-  <url type="website">https://index.ros.org/p/image_proc/github-ros-perception-image_pipeline/</url>
+  <url type="website">https://index.ros.org/p/image_proc/</url>
   <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>
   <url type="repository">https://github.com/ros-perception/image_pipeline</url>
   <author>Patrick Mihelich</author>
