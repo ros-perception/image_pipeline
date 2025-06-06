@@ -30,7 +30,7 @@
   <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
 
   <license>BSD</license>
-  <url type="website">https://index.ros.org/p/image_rotate/github-ros-perception-image_pipeline/</url>
+  <url type="website">https://index.ros.org/p/image_rotate/</url>
   <url type="bugtracker">https://github.com/ros-perception/image_pipeline/issues</url>
   <url type="repository">https://github.com/ros-perception/image_pipeline</url>
   <author>Blaise Gassend</author>
