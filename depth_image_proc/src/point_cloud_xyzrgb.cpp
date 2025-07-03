@@ -111,7 +111,7 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
           image_transport::getCameraInfoTopic(rgb_topic), false);
 
         // parameter for depth_image_transport hint
-        image_transport::TransportHints depth_hints(image_transport::RequiredInterfaces(*this),
+        image_transport::TransportHints depth_hints(*this,
           "raw", "depth_image_transport");
 
         rclcpp::SubscriptionOptions sub_opts;
@@ -127,13 +127,13 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
 
         // depth image can use different transport.(e.g. compressedDepth)
         sub_depth_.subscribe(
-          image_transport::RequiredInterfaces(*this), depth_topic,
+          *this, depth_topic,
           depth_hints.getTransport(), rmw_qos_profile_default, sub_opts);
 
         // rgb uses normal ros transport hints.
-        image_transport::TransportHints hints{image_transport::RequiredInterfaces(*this)};
+        image_transport::TransportHints hints{*this};
         sub_rgb_.subscribe(
-          image_transport::RequiredInterfaces(*this),
+          *this,
           rgb_topic,
           hints.getTransport(),
           rmw_qos_profile_default, sub_opts);

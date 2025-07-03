@@ -68,7 +68,7 @@ VideoRecorderNode::VideoRecorderNode(const rclcpp::NodeOptions & options)
 
   // TransportHints does not actually declare the parameter
   this->declare_parameter<std::string>("image_transport", "raw");
-  image_transport::TransportHints hints{image_transport::RequiredInterfaces(*this)};
+  image_transport::TransportHints hints{*this};
 
   // For compressed topics to remap appropriately, we need to pass a
   // fully expanded and remapped topic name to image_transport
@@ -76,7 +76,7 @@ VideoRecorderNode::VideoRecorderNode(const rclcpp::NodeOptions & options)
   std::string topic = node_base->resolve_topic_or_service_name("image", false);
 
   sub_image = image_transport::create_subscription(
-    image_transport::RequiredInterfaces(*this), topic, std::bind(
+    *this, topic, std::bind(
       &VideoRecorderNode::callback, this,
       std::placeholders::_1), hints.getTransport());
 

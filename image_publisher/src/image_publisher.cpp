@@ -67,7 +67,7 @@ ImagePublisher::ImagePublisher(
   rclcpp::PublisherOptions pub_options;
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   pub_ = image_transport::create_camera_publisher(
-    image_transport::RequiredInterfaces(*this),
+    *this,
     topic_name,
     rmw_qos_profile_default,
     pub_options);
