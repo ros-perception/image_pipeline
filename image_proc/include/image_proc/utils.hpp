@@ -40,6 +40,7 @@
 namespace image_proc
 {
 
+[[deprecated("Use getQosProfile(...) instead")]]
 inline
 rmw_qos_profile_t getTopicQosProfile(rclcpp::Node * node, const std::string & topic)
 {
