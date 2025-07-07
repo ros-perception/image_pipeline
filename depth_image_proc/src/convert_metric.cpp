@@ -85,7 +85,7 @@ ConvertMetricNode::ConvertMetricNode(const rclcpp::NodeOptions & options)
         // Get transport hints
         image_transport::TransportHints hints(this);
         // Create subscriber with QoS matched to subscribed topic publisher
-        auto qos_profile = image_proc::getTopicQosProfile(this, topic);
+        rclcpp::QoS qos_profile = image_proc::getQosProfile(this, topic);
         sub_raw_ = image_transport::create_subscription(
           this, topic,
           std::bind(&ConvertMetricNode::depthCb, this, std::placeholders::_1),
@@ -100,7 +100,7 @@ ConvertMetricNode::ConvertMetricNode(const rclcpp::NodeOptions & options)
 
   // Create publisher - allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-  pub_depth_ = image_transport::create_publisher(this, topic, rmw_qos_profile_default,
+  pub_depth_ = image_transport::create_publisher(this, topic, rclcpp::SystemDefaultsQoS(),
       pub_options);
 }
 

@@ -78,7 +78,8 @@ VideoRecorderNode::VideoRecorderNode(const rclcpp::NodeOptions & options)
   sub_image = image_transport::create_subscription(
     this, topic, std::bind(
       &VideoRecorderNode::callback, this,
-      std::placeholders::_1), hints.getTransport());
+      std::placeholders::_1), hints.getTransport(),
+      rclcpp::SystemDefaultsQoS());
 
   RCLCPP_INFO(this->get_logger(), "Waiting for topic %s...", topic.c_str());
 }

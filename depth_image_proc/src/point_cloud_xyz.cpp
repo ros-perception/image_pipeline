@@ -80,8 +80,8 @@ PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
         image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
 
         // Create subscriber with QoS matched to subscribed topic publisher
-        auto qos_profile = image_proc::getTopicQosProfile(this, topic);
-        qos_profile.depth = queue_size_;
+        auto qos_profile = image_proc::getQosProfile(this, topic);
+        qos_profile.keep_last(queue_size_);
 
         sub_depth_ = image_transport::create_camera_subscription(
           this,

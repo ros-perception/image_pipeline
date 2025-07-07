@@ -128,8 +128,8 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
     stereo_ns + "/disparity", this->get_name(), this->get_namespace());
 
   // Subscribe to three input topics.
-  left_sub_.subscribe(this, left_topic, hints.getTransport());
-  right_sub_.subscribe(this, right_topic, hints.getTransport());
+  left_sub_.subscribe(this, left_topic, hints.getTransport(), rclcpp::SystemDefaultsQoS());
+  right_sub_.subscribe(this, right_topic, hints.getTransport(), rclcpp::SystemDefaultsQoS());
   disparity_sub_.subscribe(this, disparity_topic, rclcpp::QoS(10));
 
   RCLCPP_INFO(

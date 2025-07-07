@@ -196,7 +196,7 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
   RCLCPP_INFO(node->get_logger(), "In test. Subscribing.");
   image_transport::ImageTransport it(node);
   cam_sub_ = it.subscribe(
-    topic_rect_, rclcpp::SensorDataQoS().get_rmw_qos_profile(),
+    topic_rect_, rclcpp::SensorDataQoS(),
     &ImageProcRectifyTest::imageCallback,
     dynamic_cast<ImageProcRectifyTest *>(this));
 

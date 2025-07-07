@@ -127,14 +127,14 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
         // depth image can use different transport.(e.g. compressedDepth)
         sub_depth_.subscribe(
           this, depth_topic,
-          depth_hints.getTransport(), rmw_qos_profile_default, sub_opts);
+          depth_hints.getTransport(), rclcpp::SystemDefaultsQoS(), sub_opts);
 
         // rgb uses normal ros transport hints.
         image_transport::TransportHints hints(this);
         sub_rgb_.subscribe(
           this, rgb_topic,
           hints.getTransport(),
-          rmw_qos_profile_default, sub_opts);
+          rclcpp::SystemDefaultsQoS(), sub_opts);
         sub_info_.subscribe(this, rgb_info_topic, rclcpp::QoS(10));
       }
     };

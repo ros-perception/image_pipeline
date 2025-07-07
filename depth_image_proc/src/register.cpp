@@ -142,7 +142,7 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
         auto node_base = this->get_node_base_interface();
         std::string topic = node_base->resolve_topic_or_service_name("depth/image_rect", false);
         image_transport::TransportHints hints(this, "raw", "depth_image_transport");
-        sub_depth_image_.subscribe(this, topic, hints.getTransport(), rmw_qos_profile_default,
+        sub_depth_image_.subscribe(this, topic, hints.getTransport(), rclcpp::SystemDefaultsQoS(),
           sub_options);
         sub_depth_info_.subscribe(this, "depth/camera_info", rclcpp::QoS(10), sub_options);
         sub_rgb_info_.subscribe(this, "rgb/camera_info", rclcpp::QoS(10), sub_options);
@@ -159,7 +159,7 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
   pub_registered_ =
     image_transport::create_camera_publisher(
     this, topic,
-    rmw_qos_profile_default, pub_options);
+    rclcpp::SystemDefaultsQoS(), pub_options);
 }
 
 void RegisterNode::imageCb(

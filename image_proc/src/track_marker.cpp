@@ -86,7 +86,7 @@ TrackMarkerNode::TrackMarkerNode(const rclcpp::NodeOptions & options)
         sub_camera_.shutdown();
       } else if (!sub_camera_) {
         // Create subscriber with QoS matched to subscribed topic publisher
-        auto qos_profile = getTopicQosProfile(this, image_topic_);
+        auto qos_profile = getQosProfile(this, image_topic_);
         image_transport::TransportHints hints(this);
         sub_camera_ = image_transport::create_camera_subscription(
           this, image_topic_, std::bind(
