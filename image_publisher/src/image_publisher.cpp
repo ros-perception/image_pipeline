@@ -140,7 +140,10 @@ void ImagePublisher::reconfigureCallback()
     std::chrono::milliseconds(static_cast<int>(1000 / publish_rate_)),
     std::bind(&ImagePublisher::doWork, this));
 
-  camera_info_manager::CameraInfoManager c(this);
+  camera_info_manager::CameraInfoManager c(
+    this->get_node_base_interface(),
+    this->node_services_interface(),
+    this->get_logger_logging_interfac());
   if (!camera_info_url_.empty()) {
     RCLCPP_INFO(get_logger(), "camera_info_url: %s", camera_info_url_.c_str());
     try {
