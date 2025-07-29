@@ -113,7 +113,8 @@ PointCloudXyzrgbRadialNode::PointCloudXyzrgbRadialNode(const rclcpp::NodeOptions
 
         // depth image can use different transport.(e.g. compressedDepth)
         image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
-        sub_depth_.subscribe(this, depth_topic, depth_hints.getTransport(), rclcpp::SystemDefaultsQoS());
+        sub_depth_.subscribe(this, depth_topic, depth_hints.getTransport(),
+          rclcpp::SystemDefaultsQoS());
 
         // rgb uses normal ros transport hints.
         image_transport::TransportHints hints(this, "raw");

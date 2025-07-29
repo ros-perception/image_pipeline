@@ -82,7 +82,8 @@ CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions & options)
 
   // Create publisher - allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-  pub_ = image_transport::create_publisher(this, pub_topic, rclcpp::SystemDefaultsQoS(), pub_options);
+  pub_ = image_transport::create_publisher(this, pub_topic, rclcpp::SystemDefaultsQoS(),
+    pub_options);
 }
 
 void CropNonZeroNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)
