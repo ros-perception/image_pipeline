@@ -345,7 +345,8 @@ void ImageRotateNode::onInit()
 
   // Allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-  img_pub_ = image_transport::create_publisher(this, topic, rclcpp::SystemDefaultsQoS(), pub_options);
+  img_pub_ = image_transport::create_publisher(this, topic, rclcpp::SystemDefaultsQoS(),
+    pub_options);
 }
 
 }  // namespace image_rotate
