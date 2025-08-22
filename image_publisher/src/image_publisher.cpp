@@ -66,11 +66,8 @@ ImagePublisher::ImagePublisher(
   std::string topic_name = node_base->resolve_topic_or_service_name("image_raw", false);
   rclcpp::PublisherOptions pub_options;
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-  pub_ = image_transport::create_camera_publisher(
-    *this,
-    topic_name,
-    rmw_qos_profile_default,
-    pub_options);
+  pub_ = image_transport::create_camera_publisher(*this, topic_name, rclcpp::SystemDefaultsQoS(),
+      pub_options);
 
   field_of_view_ = this->declare_parameter("field_of_view", static_cast<double>(0));
   flip_horizontal_ = this->declare_parameter("flip_horizontal", false);
@@ -142,8 +139,12 @@ void ImagePublisher::reconfigureCallback()
 
   camera_info_manager::CameraInfoManager c(
     this->get_node_base_interface(),
-    this->node_services_interface(),
-    this->get_logger_logging_interfac());
+    this->get_node_services_interface(),
+    this->get_node_logging_interface(),
+    "camera",
+    "",
+    rclcpp::SystemDefaultsQoS(),
+    "");
   if (!camera_info_url_.empty()) {
     RCLCPP_INFO(get_logger(), "camera_info_url: %s", camera_info_url_.c_str());
     try {

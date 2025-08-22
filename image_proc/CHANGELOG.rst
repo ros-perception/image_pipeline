@@ -2,6 +2,13 @@
 Changelog for package image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+7.1.0 (2025-07-29)
+------------------
+* Replace rmq_qos_profile_t with rclcpp::QoS (`#1106 <https://github.com/ros-perception/image_pipeline/issues/1106>`_)
+* fix remapping bug in RectifyNode (`#1108 <https://github.com/ros-perception/image_pipeline/issues/1108>`_)
+* Update index.ros.org package website links (`#1101 <https://github.com/ros-perception/image_pipeline/issues/1101>`_)
+* Contributors: Alejandro Hernández Cordero, Charles Ellison, Christophe Bedard
+
 7.0.0 (2025-05-19)
 ------------------
 

@@ -50,9 +50,9 @@
 #include "cv_bridge/cv_bridge.hpp"
 #include "tf2/LinearMath/Vector3.hpp"
 #include "tf2/LinearMath/Quaternion.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_ros/transform_broadcaster.hpp"
 
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
@@ -316,8 +316,8 @@ void ImageRotateNode::onInit()
           "raw");
 
         if (config_.use_camera_info && config_.input_frame_id.empty()) {
-          auto custom_qos = rmw_qos_profile_system_default;
-          custom_qos.depth = 3;
+          auto custom_qos = rclcpp::SystemDefaultsQoS();
+          custom_qos.keep_last(3);
           cam_sub_ = image_transport::create_camera_subscription(
             *this,
             topic_name,
@@ -327,8 +327,8 @@ void ImageRotateNode::onInit()
             transport_hint.getTransport(),
             custom_qos);
         } else {
-          auto custom_qos = rmw_qos_profile_system_default;
-          custom_qos.depth = 3;
+          auto custom_qos = rclcpp::SystemDefaultsQoS();
+          custom_qos.keep_last(3);
           img_sub_ = image_transport::create_subscription(
             *this,
             topic_name,
@@ -346,8 +346,8 @@ void ImageRotateNode::onInit()
 
   // Allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-  img_pub_ = image_transport::create_publisher(*this, topic,
-      rmw_qos_profile_default, pub_options);
+  img_pub_ = image_transport::create_publisher(*this, topic, rclcpp::SystemDefaultsQoS(),
+    pub_options);
 }
 
 }  // namespace image_rotate

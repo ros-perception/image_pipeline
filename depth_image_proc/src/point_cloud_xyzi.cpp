@@ -102,15 +102,14 @@ PointCloudXyziNode::PointCloudXyziNode(const rclcpp::NodeOptions & options)
           image_transport::getCameraInfoTopic(intensity_topic), false);
 
         // depth image can use different transport.(e.g. compressedDepth)
-        image_transport::TransportHints depth_hints(*this,
-          "raw", "depth_image_transport");
-        sub_depth_.subscribe(*this, depth_topic,
-          depth_hints.getTransport());
+        image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
+        sub_depth_.subscribe(*this, depth_topic, depth_hints.getTransport(),
+          rclcpp::SystemDefaultsQoS());
 
         // intensity uses normal ros transport hints.
         image_transport::TransportHints hints(*this, "raw");
-        sub_intensity_.subscribe(*this, intensity_topic,
-          hints.getTransport());
+        sub_intensity_.subscribe(*this, intensity_topic, hints.getTransport(),
+          rclcpp::SystemDefaultsQoS());
         sub_info_.subscribe(this, intensity_info_topic, rclcpp::QoS(10));
       }
     };

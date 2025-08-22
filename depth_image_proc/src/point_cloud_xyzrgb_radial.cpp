@@ -112,15 +112,13 @@ PointCloudXyzrgbRadialNode::PointCloudXyzrgbRadialNode(const rclcpp::NodeOptions
           image_transport::getCameraInfoTopic(rgb_topic), false);
 
         // depth image can use different transport.(e.g. compressedDepth)
-        image_transport::TransportHints depth_hints(*this,
-          "raw", "depth_image_transport");
-        sub_depth_.subscribe(*this, depth_topic,
-          depth_hints.getTransport());
+        image_transport::TransportHints depth_hints(this, "raw", "depth_image_transport");
+        sub_depth_.subscribe(*this, depth_topic, depth_hints.getTransport(),
+          rclcpp::SystemDefaultsQoS());
 
         // rgb uses normal ros transport hints.
         image_transport::TransportHints hints(*this, "raw");
-        sub_rgb_.subscribe(*this, rgb_topic,
-          hints.getTransport());
+        sub_rgb_.subscribe(*this, rgb_topic, hints.getTransport(), rclcpp::SystemDefaultsQoS());
         sub_info_.subscribe(this, rgb_info_topic, rclcpp::QoS(10));
       }
     };

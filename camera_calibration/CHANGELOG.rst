@@ -2,6 +2,11 @@
 Changelog for package camera_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+7.1.0 (2025-07-29)
+------------------
+* Update index.ros.org package website links (`#1101 <https://github.com/ros-perception/image_pipeline/issues/1101>`_)
+* Contributors: Christophe Bedard
+
 7.0.0 (2025-05-19)
 ------------------
 * Replace OpenCV version string comparison with semver. (`#1087 <https://github.com/ros-perception/image_pipeline/issues/1087>`_)

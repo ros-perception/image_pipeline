@@ -114,9 +114,8 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
         // fully expanded and remapped topic name to image_transport
         auto node_base = this->get_node_base_interface();
         std::string topic = node_base->resolve_topic_or_service_name("left/image_rect", false);
-        image_transport::TransportHints hints{*this};
-        sub_depth_image_.subscribe(*this, topic,
-          hints.getTransport());
+        image_transport::TransportHints hints(*this);
+        sub_depth_image_.subscribe(*this, topic, hints.getTransport(), rclcpp::SystemDefaultsQoS());
         sub_info_.subscribe(this, "right/camera_info", rclcpp::QoS(10));
       }
     };

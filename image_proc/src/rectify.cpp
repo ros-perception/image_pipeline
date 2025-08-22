@@ -75,8 +75,8 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions & options)
         sub_camera_.shutdown();
       } else if (!sub_camera_) {
         // Create subscriber with QoS matched to subscribed topic publisher
-        auto qos_profile = getTopicQosProfile(this, image_topic_);
-        image_transport::TransportHints hints{*this};
+        auto qos_profile = getQosProfile(this, image_topic_);
+        image_transport::TransportHints hints(*this);
         sub_camera_ = image_transport::create_camera_subscription(
           *this, image_topic_, std::bind(
             &RectifyNode::imageCb,
@@ -86,7 +86,7 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions & options)
 
   // Create publisher - allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-  pub_rect_ = image_transport::create_publisher(this, rect_topic, rmw_qos_profile_default,
+  pub_rect_ = image_transport::create_publisher(*this, rect_topic, rclcpp::SystemDefaultsQoS(),
       pub_options);
 }
 
