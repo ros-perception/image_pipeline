@@ -74,7 +74,7 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
 {
   // TransportHints does not actually declare the parameter
   this->declare_parameter<std::string>("image_transport", "raw");
-  image_transport::TransportHints hints(this);
+  image_transport::TransportHints hints(*this);
 
   // For compressed topics to remap appropriately, we need to pass a
   // fully expanded and remapped topic name to image_transport
@@ -83,13 +83,13 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
 
   // Useful when CameraInfo is being published
   cam_sub_ = image_transport::create_camera_subscription(
-    this, topic, std::bind(
+    *this, topic, std::bind(
       &ImageSaverNode::callbackWithCameraInfo, this, std::placeholders::_1, std::placeholders::_2),
     hints.getTransport(), rclcpp::SensorDataQoS());
 
   // Useful when CameraInfo is not being published
   image_sub_ = image_transport::create_subscription(
-    this, topic, std::bind(
+    *this, topic, std::bind(
       &ImageSaverNode::callbackWithoutCameraInfo, this, std::placeholders::_1),
     hints.getTransport(), rclcpp::SystemDefaultsQoS());
 

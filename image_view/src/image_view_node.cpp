@@ -107,7 +107,7 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
 {
   // TransportHints does not actually declare the parameter
   this->declare_parameter<std::string>("image_transport", "raw");
-  image_transport::TransportHints hints(this);
+  image_transport::TransportHints hints(*this);
   RCLCPP_INFO(this->get_logger(), "Using transport \"%s\"", hints.getTransport().c_str());
 
   // For compressed topics to remap appropriately, we need to pass a
@@ -117,7 +117,7 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
 
   pub_ = this->create_publisher<sensor_msgs::msg::Image>("output", 1);
   sub_ = image_transport::create_subscription(
-    this, topic, std::bind(&ImageViewNode::imageCb, this, std::placeholders::_1),
+    *this, topic, std::bind(&ImageViewNode::imageCb, this, std::placeholders::_1),
     hints.getTransport(), rclcpp::SensorDataQoS());
 
   auto topics = this->get_topic_names_and_types();

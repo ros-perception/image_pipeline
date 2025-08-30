@@ -80,7 +80,7 @@ protected:
     }
 
     // Create raw camera publisher
-    image_transport::ImageTransport it(this->node);
+    image_transport::ImageTransport it(*(this->node));
     cam_pub = it.advertiseCamera(topic_raw, 1);
 
     while (true) {
@@ -128,9 +128,11 @@ TEST_F(ImageProcTest, monoSubscription)
   RCLCPP_INFO(node->get_logger(), "Publishing");
 
   RCLCPP_INFO(node->get_logger(), "Spinning");
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node);
   while (!has_new_image_) {
     publishRaw();
-    rclcpp::spin_some(node);
+    executor.spin_some();
   }
   rclcpp::shutdown();
   RCLCPP_INFO(node->get_logger(), "Done");

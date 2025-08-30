@@ -79,9 +79,9 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
       } else if (!sub_image_) {
         // Create subscriber with QoS matched to subscribed topic publisher
         auto qos_profile = getQosProfile(this, image_topic_);
-        image_transport::TransportHints hints(this);
+        image_transport::TransportHints hints(*this);
         sub_image_ = image_transport::create_camera_subscription(
-          this, image_topic_,
+          *this, image_topic_,
           std::bind(
             &ResizeNode::imageCb, this,
             std::placeholders::_1,
@@ -92,7 +92,7 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
   // Create publisher - allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   pub_image_ =
-    image_transport::create_camera_publisher(this, pub_topic, rclcpp::SystemDefaultsQoS(),
+    image_transport::create_camera_publisher(*this, pub_topic, rclcpp::SystemDefaultsQoS(),
       pub_options);
 }
 

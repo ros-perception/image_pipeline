@@ -75,9 +75,9 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
       } else if (!sub_raw_) {
         // Create subscriber with QoS matched to subscribed topic publisher
         auto qos_profile = getQosProfile(this, image_topic_);
-        image_transport::TransportHints hints(this);
+        image_transport::TransportHints hints(*this);
         sub_raw_ = image_transport::create_subscription(
-          this, image_topic_,
+          *this, image_topic_,
           std::bind(
             &DebayerNode::imageCb, this,
             std::placeholders::_1), hints.getTransport(), qos_profile);
@@ -86,9 +86,9 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
 
   // Create publisher - allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-  pub_mono_ = image_transport::create_publisher(this, mono_topic, rclcpp::SystemDefaultsQoS(),
+  pub_mono_ = image_transport::create_publisher(*this, mono_topic, rclcpp::SystemDefaultsQoS(),
       pub_options);
-  pub_color_ = image_transport::create_publisher(this, color_topic, rclcpp::SystemDefaultsQoS(),
+  pub_color_ = image_transport::create_publisher(*this, color_topic, rclcpp::SystemDefaultsQoS(),
       pub_options);
 }
 

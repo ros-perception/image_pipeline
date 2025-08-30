@@ -145,7 +145,7 @@ protected:
       });
 
     // Create raw camera subscriber and publisher
-    image_transport::ImageTransport it(node);
+    image_transport::ImageTransport it(*node);
     cam_pub_ = it.advertiseCamera(topic_raw_, 1);
   }
 
@@ -194,7 +194,7 @@ public:
 TEST_F(ImageProcRectifyTest, rectifyTest)
 {
   RCLCPP_INFO(node->get_logger(), "In test. Subscribing.");
-  image_transport::ImageTransport it(node);
+  image_transport::ImageTransport it(*node);
   cam_sub_ = it.subscribe(
     topic_rect_, rclcpp::SensorDataQoS(),
     &ImageProcRectifyTest::imageCallback,
@@ -228,8 +228,10 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
 
   // use original cam_info
   publishRaw();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node);
   while (!has_new_image_) {
-    rclcpp::spin_some(node);
+    executor.spin_some();
     loop_rate.sleep();
   }
 
@@ -247,7 +249,7 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
   publishRaw();
 
   while (!has_new_image_) {
-    rclcpp::spin_some(node);
+    executor.spin_some();
     loop_rate.sleep();
   }
 
@@ -259,7 +261,7 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
   publishRaw();
 
   while (!has_new_image_) {
-    rclcpp::spin_some(node);
+    executor.spin_some();
     loop_rate.sleep();
   }
 
@@ -271,7 +273,7 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
   publishRaw();
 
   while (!has_new_image_) {
-    rclcpp::spin_some(node);
+    executor.spin_some();
     loop_rate.sleep();
   }
 

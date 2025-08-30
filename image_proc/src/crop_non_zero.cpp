@@ -72,9 +72,9 @@ CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions & options)
       } else if (!sub_raw_) {
         // Create subscriber with QoS matched to subscribed topic publisher
         auto qos_profile = getQosProfile(this, image_topic_);
-        image_transport::TransportHints hints(this);
+        image_transport::TransportHints hints(*this);
         sub_raw_ = image_transport::create_subscription(
-          this, image_topic_, std::bind(
+          *this, image_topic_, std::bind(
             &CropNonZeroNode::imageCb, this,
             std::placeholders::_1), hints.getTransport(), qos_profile);
       }
@@ -82,7 +82,7 @@ CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions & options)
 
   // Create publisher - allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
-  pub_ = image_transport::create_publisher(this, pub_topic, rclcpp::SystemDefaultsQoS(),
+  pub_ = image_transport::create_publisher(*this, pub_topic, rclcpp::SystemDefaultsQoS(),
     pub_options);
 }
 
