@@ -8,7 +8,7 @@ Simplest example is:
 
 .. code-block:: bash
 
-   ros2 run image_publisher image_publisher /opt/ros/rolling/share/rviz/images/splash.png
+   ros2 run image_publisher image_publisher_node /opt/ros/rolling/share/rviz_common/images/splash.png
 
 .. toctree::
    :maxdepth: 2
