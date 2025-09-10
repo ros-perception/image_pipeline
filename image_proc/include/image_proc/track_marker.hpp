@@ -55,7 +55,6 @@ public:
 private:
   image_transport::CameraSubscriber sub_camera_;
 
-  int queue_size_;
   int marker_id_;
   double marker_size_;
   std::string image_topic_;
