@@ -228,8 +228,10 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
 
   // use original cam_info
   publishRaw();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node);
   while (!has_new_image_) {
-    rclcpp::spin_some(node);
+    executor.spin_some();
     loop_rate.sleep();
   }
 
@@ -247,7 +249,7 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
   publishRaw();
 
   while (!has_new_image_) {
-    rclcpp::spin_some(node);
+    executor.spin_some();
     loop_rate.sleep();
   }
 
@@ -259,7 +261,7 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
   publishRaw();
 
   while (!has_new_image_) {
-    rclcpp::spin_some(node);
+    executor.spin_some();
     loop_rate.sleep();
   }
 
@@ -271,7 +273,7 @@ TEST_F(ImageProcRectifyTest, rectifyTest)
   publishRaw();
 
   while (!has_new_image_) {
-    rclcpp::spin_some(node);
+    executor.spin_some();
     loop_rate.sleep();
   }
 
