@@ -70,7 +70,7 @@ rclcpp_components_register_node(${PROJECT_NAME}
   EXECUTABLE point_cloud_xyzi_radial_node
 )
 rclcpp_components_register_node(${PROJECT_NAME}
-  PLUGIN "depth_image_proc::PointCloudXyziRadialNode"
+  PLUGIN "depth_image_proc::PointCloudXyzrgbRadialNode"
   EXECUTABLE point_cloud_xyzrgb_radial_node
 )
 rclcpp_components_register_node(${PROJECT_NAME}
