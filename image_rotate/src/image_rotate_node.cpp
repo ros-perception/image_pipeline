@@ -127,6 +127,7 @@ ImageRotateNode::ImageRotateNode(const rclcpp::NodeOptions & options)
   config_.use_camera_info = this->declare_parameter("use_camera_info", true);
   config_.max_angular_rate = this->declare_parameter("max_angular_rate", 10.0);
   config_.output_image_size = this->declare_parameter("output_image_size", 2.0);
+  config_.custom_qos_type = this->declare_parameter("custom_qos_type", std::string("default"));
 
   // TransportHints does not actually declare the parameter
   this->declare_parameter<std::string>("image_transport", "raw");
@@ -315,9 +316,14 @@ void ImageRotateNode::onInit()
         image_transport::TransportHints transport_hint(*this,
           "raw");
 
+        rclcpp::QoS custom_qos = rclcpp::SystemDefaultsQoS();
+        if (config_.custom_qos_type == "sensor_data") {
+            custom_qos = rclcpp::SensorDataQoS();
+        } else if (config_.custom_qos_type == "default") {
+            custom_qos = rclcpp::SystemDefaultsQoS();
+        }
+        
         if (config_.use_camera_info && config_.input_frame_id.empty()) {
-          auto custom_qos = rclcpp::SystemDefaultsQoS();
-          custom_qos.keep_last(3);
           cam_sub_ = image_transport::create_camera_subscription(
             *this,
             topic_name,
@@ -327,8 +333,6 @@ void ImageRotateNode::onInit()
             transport_hint.getTransport(),
             custom_qos);
         } else {
-          auto custom_qos = rclcpp::SystemDefaultsQoS();
-          custom_qos.keep_last(3);
           img_sub_ = image_transport::create_subscription(
             *this,
             topic_name,
