@@ -2,6 +2,12 @@
 Changelog for package camera_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.9 (2025-12-09)
+------------------
+* [backport humble] fix threading shutdown (`#1122 <https://github.com/ros-perception/image_pipeline//issues/1122>`_)
+* Update index.ros.org package website links (backport `#1101 <https://github.com/ros-perception/image_pipeline//issues/1101>`_) (`#1105 <https://github.com/ros-perception/image_pipeline//issues/1105>`_)
+* Contributors: jangeliniara, mergify[bot]
+
 3.0.8 (2025-04-22)
 ------------------
 * Replace OpenCV version string comparison with semver. (backport `#1087 <https://github.com/ros-perception/image_pipeline/issues/1087>`_) (`#1089 <https://github.com/ros-perception/image_pipeline/issues/1089>`_)

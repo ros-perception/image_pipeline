@@ -2,6 +2,11 @@
 Changelog for package image_view
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.9 (2025-12-09)
+------------------
+* Update index.ros.org package website links (backport `#1101 <https://github.com/ros-perception/image_pipeline//issues/1101>`_) (`#1105 <https://github.com/ros-perception/image_pipeline//issues/1105>`_)
+* Contributors: mergify[bot]
+
 3.0.8 (2025-04-22)
 ------------------
 
