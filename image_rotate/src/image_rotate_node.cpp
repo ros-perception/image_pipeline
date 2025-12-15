@@ -316,13 +316,13 @@ void ImageRotateNode::onInit()
         image_transport::TransportHints transport_hint(*this,
           "raw");
 
-        rclcpp::QoS custom_qos = rclcpp::SystemDefaultsQoS();
+        auto custom_qos = rclcpp::SystemDefaultsQoS();
         if (config_.custom_qos_type == "sensor_data") {
-            custom_qos = rclcpp::SensorDataQoS();
-            custom_qos.keep_last(3);
+          custom_qos = rclcpp::SensorDataQoS();
+          custom_qos.keep_last(3);
         } else if (config_.custom_qos_type == "default") {
-            custom_qos = rclcpp::SystemDefaultsQoS();
-            custom_qos.keep_last(3);
+          custom_qos = rclcpp::SystemDefaultsQoS();
+          custom_qos.keep_last(3);
         }
 
         if (config_.use_camera_info && config_.input_frame_id.empty()) {
