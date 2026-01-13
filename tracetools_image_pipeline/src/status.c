@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include "tracetools_image_pipeline/tracetools.h"
 
-int main()
+int main(void)
 {
 #ifndef TRACETOOLS_DISABLED
   printf("Tracing ");
