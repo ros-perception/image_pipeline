@@ -31,44 +31,40 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import ComposableNodeContainer
+from launch_ros.descriptions import ComposableNode
 
-import launch_ros.actions
-import launch_ros.descriptions
 
-
+# This is basically the same as image_publsher_file.launch.py - but using the component
 def generate_launch_description():
-    default_rviz = os.path.join(get_package_share_directory('depth_image_proc'),
-                                'launch', 'rviz/point_cloud_xyzi.rviz')
+    filename = os.path.join(get_package_share_directory('image_publisher'), 'launch',
+                            'splash.png')
+    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     return LaunchDescription([
-        # install realsense from https://github.com/intel/ros2_intel_realsense
-        launch_ros.actions.Node(
-            package='realsense_ros2_camera', node_executable='realsense_ros2_camera',
-            output='screen'),
 
-        # TODO: Realsense camera do not support intensity message
-        # use color image instead of intensity only for interface test
-        launch_ros.actions.ComposableNodeContainer(
-            name='container',
+        DeclareLaunchArgument(
+            'use_sim_time',
+            default_value='false',
+            description='Use simulation clock if true'),
+
+        ComposableNodeContainer(
+            name='image_publisher_container',
             namespace='',
             package='rclcpp_components',
             executable='component_container',
             composable_node_descriptions=[
-                # Driver itself
-                launch_ros.descriptions.ComposableNode(
-                    package='depth_image_proc',
-                    plugin='depth_image_proc::PointCloudXyziNode',
-                    name='point_cloud_xyzi',
-                    remappings=[('depth/image_rect', '/camera/aligned_depth_to_color/image_raw'),
-                                ('intensity/image_rect', '/camera/color/image_raw'),
-                                ('intensity/camera_info', '/camera/color/camera_info'),
-                                ('points', '/camera/depth/points')]
-                ),
+                ComposableNode(
+                    package='image_publisher',
+                    plugin='image_publisher::ImagePublisher',
+                    name='image_publisher',
+                    parameters=[{'filename': filename,
+                                 'use_sim_time': use_sim_time}],
+                    remappings=[('image_raw', '/camera/image_raw'),
+                                ('camera_info', '/camera/camera_info')],
+                )
             ],
             output='screen',
         ),
-
-        # rviz
-        launch_ros.actions.Node(
-            package='rviz2', node_executable='rviz2', output='screen',
-            arguments=['--display-config', default_rviz]),
     ])

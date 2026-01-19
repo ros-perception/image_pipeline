@@ -1,4 +1,4 @@
-# Copyright (c) 2008, Willow Garage, Inc.
+# Copyright (c) 2022, CHRISLab, Christopher Newport University
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,15 +27,20 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+"""Demonstration of basic launch of the image_flip_node with remappings."""
+
 from launch import LaunchDescription
 import launch_ros.actions
 
 
 def generate_launch_description():
+    """Launch description for basic launch of the image_flip."""
     return LaunchDescription([
         launch_ros.actions.Node(
-            package='image_rotate', node_executable='image_rotate', output='screen',
-            remappings=[('image', '/camera/color/image_raw'),
-                        ('camera_info', '/camera/color/camera_info'),
-                        ('rotated/image', '/camera/color/image_raw_rotated')]),
-    ])
+            package='image_rotate', executable='image_flip',
+            output='screen', name='camera_flip',
+            remappings=[('image',                'camera/rgb/image_raw'),
+                        ('rotated/image',        'camera_rotated/image_rotated')],
+            parameters=[{'output_frame_id': 'camera_rotated',
+                         'rotation_steps': 2,
+                         'use_camera_info': True}])])

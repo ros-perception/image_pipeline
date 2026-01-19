@@ -1,3 +1,4 @@
+// Copyright (c) 2022, CHRISLab, Christopher Newport University
 // Copyright (c) 2008, Willow Garage, Inc.
 // All rights reserved.
 //
@@ -27,48 +28,39 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IMAGE_ROTATE__IMAGE_ROTATE_NODE_HPP_
-#define IMAGE_ROTATE__IMAGE_ROTATE_NODE_HPP_
+#ifndef IMAGE_ROTATE__IMAGE_FLIP_HPP_
+#define IMAGE_ROTATE__IMAGE_FLIP_HPP_
+
+#include <math.h>
 
 #include <memory>
 #include <string>
 
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/transform_broadcaster.h"
-
-#include <geometry_msgs/msg/vector3_stamped.hpp>
+#include <cv_bridge/cv_bridge.hpp>
 #include <image_transport/image_transport.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/camera_info.hpp>
-#include <sensor_msgs/msg/image.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
+#include <tf2_ros/buffer.hpp>
+#include <tf2_ros/transform_listener.hpp>
+#include <tf2_ros/static_transform_broadcaster.hpp>
 
 #include "image_rotate/visibility.h"
 
 namespace image_rotate
 {
 
-struct ImageRotateConfig
+struct ImageFlipConfig
 {
-  std::string target_frame_id;
-  double target_x;
-  double target_y;
-  double target_z;
-  std::string source_frame_id;
-  double source_x;
-  double source_y;
-  double source_z;
   std::string output_frame_id;
-  std::string input_frame_id;
+  int rotation_steps;
   bool use_camera_info;
-  double max_angular_rate;
-  double output_image_size;
 };
 
-class ImageRotateNode : public rclcpp::Node
+class ImageFlipNode : public rclcpp::Node
 {
 public:
-  IMAGE_ROTATE_PUBLIC ImageRotateNode(const rclcpp::NodeOptions & options);
+  IMAGE_ROTATE_PUBLIC ImageFlipNode(rclcpp::NodeOptions options);
 
 private:
   const std::string frameWithDefault(const std::string & frame, const std::string & image_frame);
@@ -78,32 +70,31 @@ private:
   void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
   void do_work(
     const sensor_msgs::msg::Image::ConstSharedPtr & msg,
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr & cam_info,
     const std::string input_frame_from_msg);
-  void subscribe();
-  void unsubscribe();
-  void connectCb();
-  void disconnectCb();
   void onInit();
 
   rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_sub_;
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_pub_;
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_pub_;
+  bool tf_unpublished_;
 
-  image_rotate::ImageRotateConfig config_;
+  ImageFlipConfig config_;
 
-  image_transport::Publisher img_pub_;
+  // Subscriber - only one is used at a time - depends on use_camera_info
   image_transport::Subscriber img_sub_;
   image_transport::CameraSubscriber cam_sub_;
 
-  geometry_msgs::msg::Vector3Stamped target_vector_;
-  geometry_msgs::msg::Vector3Stamped source_vector_;
+  // Publisher - only one is used at a time - depends on use_camera_info
+  image_transport::Publisher img_pub_;
+  image_transport::CameraPublisher cam_pub_;
 
-  int subscriber_count_;
   double angle_;
   tf2::TimePoint prev_stamp_;
+  geometry_msgs::msg::TransformStamped transform_;
 };
 }  // namespace image_rotate
 
-#endif  // IMAGE_ROTATE__IMAGE_ROTATE_NODE_HPP_
+#endif  // IMAGE_ROTATE__IMAGE_FLIP_HPP_
