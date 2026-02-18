@@ -420,3 +420,185 @@ class OpenCVCalibrationNode(CalibrationNode):
 
         self._last_display = display
         self.queue_display.put(display)
+        
+    def select_images_interactive(self):
+        """
+        Interactive GUI step during image selection showing live progress bars.
+        Displays accept/ignore buttons with real-time parameter visualization.
+        """
+        if not self.c or not self.c.good_corners:
+            print("No good corners detected. Run calibration collection first.")
+            return 0
+        
+        images = [i for (p, i) in self.c.db]
+        accepted_corners = []
+        accepted_images = []
+        accepted_db = []
+        
+        # State variables for GUI interaction
+        state = {'current_idx': 0, 'action': None}
+        button_height = 50
+        button_width = 120
+        button_y = 10
+        accept_x = 10
+        ignore_x = 140
+        finish_x = 270
+    
+        def mouse_callback(event, x, y, flags, param):
+            """Handle mouse clicks on buttons in image selection window"""
+            if event == cv2.EVENT_LBUTTONDOWN:
+                # Check ACCEPT button
+                if accept_x <= x <= accept_x + button_width and button_y <= y <= button_y + button_height:
+                    state['action'] = 'accept'
+                # Check IGNORE button
+                elif ignore_x <= x <= ignore_x + button_width and button_y <= y <= button_y + button_height:
+                    state['action'] = 'ignore'
+                # Check FINISH button
+                elif finish_x <= x <= finish_x + button_width and button_y <= y <= button_y + button_height:
+                    state['action'] = 'finish'
+    
+        window_name = "Image Selection - Review & Accept"
+        cv2.namedWindow(window_name)
+        cv2.setMouseCallback(window_name, mouse_callback)
+        
+        try:
+            while state['current_idx'] < len(self.c.good_corners):
+                corners, ids, board = self.c.good_corners[state['current_idx']]
+                
+                # Get the corresponding image and db entry
+                if state['current_idx'] < len(images):
+                    img = images[state['current_idx']]
+                    db_params, _ = self.c.db[state['current_idx']]
+                else:
+                    print(f"Warning: Image {state['current_idx']} not found in database")
+                    state['current_idx'] += 1
+                    continue
+                
+                # Create display image with corners drawn
+                if len(img.shape) == 2:
+                    display_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+                else:
+                    display_img = img.copy()
+                
+                h, w = display_img.shape[:2]
+                
+                # Add button area background
+                cv2.rectangle(display_img, (0, 0), (w, 70), (50, 50, 50), -1)
+                
+                # Draw buttons
+                # ACCEPT button (green)
+                cv2.rectangle(display_img, (accept_x, button_y), 
+                            (accept_x + button_width, button_y + button_height), (0, 200, 0), -1)
+                cv2.rectangle(display_img, (accept_x, button_y), 
+                            (accept_x + button_width, button_y + button_height), (0, 255, 0), 2)
+                cv2.putText(display_img, "ACCEPT", (accept_x + 15, button_y + 35), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                
+                # IGNORE button (red)
+                cv2.rectangle(display_img, (ignore_x, button_y), 
+                            (ignore_x + button_width, button_y + button_height), (0, 0, 200), -1)
+                cv2.rectangle(display_img, (ignore_x, button_y), 
+                            (ignore_x + button_width, button_y + button_height), (0, 0, 255), 2)
+                cv2.putText(display_img, "IGNORE", (ignore_x + 12, button_y + 35), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                
+                # FINISH button (blue)
+                cv2.rectangle(display_img, (finish_x, button_y), 
+                            (finish_x + button_width, button_y + button_height), (200, 0, 0), -1)
+                cv2.rectangle(display_img, (finish_x, button_y), 
+                            (finish_x + button_width, button_y + button_height), (255, 0, 0), 2)
+                cv2.putText(display_img, "FINISH", (finish_x + 15, button_y + 35), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                
+                # Draw corners on image (below button area)
+                display_with_corners = display_img.copy()
+                if board.pattern == "charuco" and ids is not None:
+                    cv2.aruco.drawDetectedCornersCharuco(display_with_corners, corners, ids)
+                else:
+                    cv2.drawChessboardCorners(display_with_corners, (board.n_cols, board.n_rows), 
+                                            corners, True)
+                
+                # Add image counter text
+                counter_text = f"Image {state['current_idx'] + 1}/{len(self.c.good_corners)} - Accepted: {len(accepted_corners)}"
+                cv2.putText(display_with_corners, counter_text, (10, h - 10), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                
+                cv2.imshow(window_name, display_with_corners)
+                
+                # Reset action and wait for user click
+                state['action'] = None
+                while state['action'] is None:
+                    key = cv2.waitKey(100) & 0xFF
+                    if key == 27:  # ESC key to cancel
+                        print("Selection cancelled by user")
+                        cv2.destroyAllWindows()
+                        return len(accepted_corners)
+                
+                # Process user action
+                if state['action'] == 'accept':
+                    accepted_corners.append((corners, ids, board))
+                    accepted_images.append(img)
+                    accepted_db.append(self.c.db[state['current_idx']])
+                    print(f"  Image {state['current_idx'] + 1}: ACCEPTED")
+                elif state['action'] == 'ignore':
+                    print(f"  Image {state['current_idx'] + 1}: IGNORED")
+                elif state['action'] == 'finish':
+                    print("Selection finished by user")
+                    break
+                
+                state['current_idx'] += 1
+        
+        finally:
+            cv2.destroyAllWindows()
+        
+        # Update good_corners and db with accepted images only
+        self.c.good_corners = accepted_corners
+        self.c.db = accepted_db
+        
+        total_images = state['current_idx']
+        print(f"\n*** Kept {len(accepted_corners)}/{total_images} images for calibration ***")
+        
+        # Recompute progress with the filtered dataset
+        self.c.compute_goodenough()
+        
+        return len(accepted_corners)
+    
+    def on_mouse_with_selection(self, event, x, y, flags, param):
+        """Enhanced mouse handler with image selection option"""
+        if event == cv2.EVENT_LBUTTONDOWN and self.displaywidth < x:
+            # Option to start image selection before calibration
+            if self.c.goodenough and 80 <= y < 180:
+                print("**** Starting Image Selection ****")
+                accepted = self.select_images_interactive()
+                if accepted > 0:
+                    # Recompute progress after filtering
+                    params = self.c.compute_goodenough()
+                    print(f"Progress after filtering: {params}")
+                    # Re-render with updated parameters
+                    self.buttons(self._last_display)
+                    self.queue_display.put(self._last_display)
+                return
+            
+            if self.c.goodenough:
+                if 180 <= y < 280:
+                    print("**** Calibrating ****")
+                    self.c.do_calibration()
+                    self.buttons(self._last_display)
+                    self.queue_display.put(self._last_display)
+            if self.c.calibrated:
+                if 280 <= y < 380:
+                    self.c.do_save()
+                elif 380 <= y < 480:
+                    # Only shut down if we set camera info correctly, #3993
+                    if self.do_upload():
+                        rclpy.shutdown()
+
+    def buttons_with_selection(self, display):
+        """Enhanced button panel with image selection option"""
+        x = self.displaywidth
+        if self.c.goodenough and not self.c.calibrated:
+            # Add SELECT button
+            self.button(display[80:180,x:x+100], "SELECT", self.c.goodenough)
+        self.button(display[180:280,x:x+100], "CALIBRATE", self.c.goodenough)
+        self.button(display[280:380,x:x+100], "SAVE", self.c.calibrated)
+        self.button(display[380:480,x:x+100], "COMMIT", self.c.calibrated)
