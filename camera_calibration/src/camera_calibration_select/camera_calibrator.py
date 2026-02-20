@@ -458,6 +458,37 @@ class OpenCVCalibrationNode(CalibrationNode):
         self._last_display = display
         self.queue_display.put(display)
 
+    _param_names = ["X", "Y", "Size", "Skew"]
+    _param_ranges = [0.7, 0.7, 0.4, 0.5]
+
+    def compute_goodenough(self, current_db):
+        def lmin(seq1, seq2):
+            """ Pairwise minimum of two sequences """
+            return [min(a, b) for (a, b) in zip(seq1, seq2)]
+
+        def lmax(seq1, seq2):
+            """ Pairwise maximum of two sequences """
+            return [max(a, b) for (a, b) in zip(seq1, seq2)]
+
+        if current_db is None or len(current_db) == 0:
+            raise ValueError("Cannot compute goodenough without any samples in the database")
+        
+        # Find range of checkerboard poses covered by samples in database
+        all_params = [sample[0] for sample in current_db]
+        min_params = all_params[0]
+        max_params = all_params[0]
+        for params in all_params[1:]:
+            min_params = lmin(min_params, params)
+            max_params = lmax(max_params, params)
+        # Don't reward small size or skew
+        min_params = [min_params[0], min_params[1], 0., 0.]
+
+        # For each parameter, judge how much progress has been made toward adequate variation
+        progress = [min((hi - lo) / r, 1.0) for (lo, hi, r)
+                    in zip(min_params, max_params, self._param_ranges)]
+
+        return list(zip(self._param_names, min_params, max_params, progress))
+
     def select_images_interactive(self):
         """
         Interactive GUI step during image selection showing live progress bars.
@@ -499,6 +530,7 @@ class OpenCVCalibrationNode(CalibrationNode):
         window_name = "Image Selection - Review & Accept"
         cv2.namedWindow(window_name)
         cv2.setMouseCallback(window_name, mouse_callback)
+        param_separation_y = 10
 
         try:
             while state['current_idx'] < len(self.c.good_corners):
@@ -552,7 +584,7 @@ class OpenCVCalibrationNode(CalibrationNode):
 
                 # parameter visualization
                 try:
-                    params = self.c.compute_goodenough()
+                    params = self.compute_goodenough(accepted_db)
                 except Exception as e:
                     print(f"Error computing parameters for visualization: {e}")
                     params = []
@@ -560,14 +592,14 @@ class OpenCVCalibrationNode(CalibrationNode):
                 for i, (label, lo, hi, progress) in enumerate(params):
                     (text_width, _) = self.getTextSize(label)
                     self.putText(display_img, label,
-                                 (finish_x + button_width + 50 + i * 100, button_y + button_height // 2 - 10))
+                                 (finish_x + button_width + param_separation_y * (i+1) + 100 * i + (100 - text_width) // 2, button_y + button_height // 2 - 10))
                     color = (0, 255, 0)
                     if progress < 1.0:
                         color = (0, int(progress*255.), 255)
                     cv2.line(display_img,
-                             (int(finish_x + button_width + i * 100 + lo * 100),
+                             (int(finish_x + button_width + (i+1) * param_separation_y + 100 * i + lo * 100),
                               button_y + button_height // 2 + 10),
-                             (int(finish_x + button_width + i * 100 + hi * 100),
+                             (int(finish_x + button_width + (i+1) * param_separation_y + 100 * i + hi * 100),
                               button_y + button_height // 2 + 10),
                              color, 4)
 

@@ -361,6 +361,8 @@ class Calibrator():
         self.good_corners = []
         # Set to true when we have sufficiently varied samples to calibrate
         self.goodenough = False
+        # when selection is activated, no more sample is added to the database
+        self.allow_append = True
         self.param_ranges = [0.7, 0.7, 0.4, 0.5]
         self.name = name
         self.last_frame_corners = None
@@ -748,7 +750,6 @@ class MonoCalibrator(Calibrator):
         if 'name' not in kwargs:
             kwargs['name'] = 'narrow_stereo/left'
         super(MonoCalibrator, self).__init__(*args, **kwargs)
-        self.allow_append = True
 
     def cal(self, images):
         """
@@ -998,7 +999,7 @@ class MonoCalibrator(Calibrator):
 
         else:
             scrib = cv2.cvtColor(scrib_mono, cv2.COLOR_GRAY2BGR)
-            if corners is not None:
+            if corners is not None and self.allow_append:
                 # Draw (potentially downsampled) corners onto display image
                 if board.pattern == "charuco":
                     cv2.aruco.drawDetectedCornersCharuco(scrib, downsampled_corners, ids)
