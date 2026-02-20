@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
 
-PACKAGE_NAME = "camera_calibration"
+PACKAGE_NAME = "camera_calibration_select"
 
 setup(
     name=PACKAGE_NAME,
-    version='3.0.9',
-    packages=["camera_calibration", "camera_calibration.nodes"],
+    version='1.0.0',
+    packages=["camera_calibration_select", "camera_calibration_select.nodes"],
     data_files=[
     ('share/ament_index/resource_index/packages',
       ['resource/' + PACKAGE_NAME]),
@@ -30,8 +30,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'cameracalibrator = camera_calibration.nodes.cameracalibrator:main',
-            'cameracheck = camera_calibration.nodes.cameracheck:main',
+            'cameracalibrator = camera_calibration_select.nodes.cameracalibrator:main',
+            'cameracheck = camera_calibration_select.nodes.cameracheck:main',
         ],
     },
 )

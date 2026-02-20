@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import rclpy
-from camera_calibration.camera_checker import CameraCheckerNode
+from camera_calibration_select.camera_checker import CameraCheckerNode
 
 
 def main():

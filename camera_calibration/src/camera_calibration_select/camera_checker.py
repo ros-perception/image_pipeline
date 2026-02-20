@@ -43,7 +43,7 @@ import sensor_msgs.msg
 import sensor_msgs.srv
 import threading
 
-from camera_calibration.calibrator import MonoCalibrator, StereoCalibrator, ChessboardInfo
+from camera_calibration_select.calibrator import MonoCalibrator, StereoCalibrator, ChessboardInfo
 from message_filters import ApproximateTimeSynchronizer
 
 try:
