@@ -1177,23 +1177,33 @@ class StereoCalibrator(Calibrator):
             if LooseVersion(cv2.__version__).version[0] == 2:
                 print("ERROR: You need OpenCV >3 to use fisheye camera model")
                 sys.exit()
-            else:
-                # WARNING: cv2.fisheye.stereoCalibrate wants float64 points
-                lipts64 = numpy.asarray(lipts, dtype=numpy.float64)
-                lipts = lipts64
-                ripts64 = numpy.asarray(ripts, dtype=numpy.float64)
-                ripts = ripts64
-                opts64 = numpy.asarray(opts, dtype=numpy.float64)
-                opts = opts64
 
-                cv2.fisheye.stereoCalibrate(opts, lipts, ripts,
-                                   self.l.intrinsics, self.l.distortion,
-                                   self.r.intrinsics, self.r.distortion,
-                                   self.size,
-                                   self.R,                            # R
-                                   self.T,                            # T
-                                   criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 1, 1e-5), # 30, 1e-6
-                                   flags = flags)
+            # Two-stage approach: undistort points using mono intrinsics first,
+            # then compute R/T with standard (pinhole) stereoCalibrate.
+            # cv2.fisheye.stereoCalibrate is known to be fragile and often fails
+            # with assertion errors (abs_max < threshold, ill-conditioned matrix).
+            lipts_undist = [cv2.fisheye.undistortPoints(
+                numpy.asarray(p, dtype=numpy.float64),
+                self.l.intrinsics, self.l.distortion
+                ).astype(numpy.float32) for p in lipts]
+            ripts_undist = [cv2.fisheye.undistortPoints(
+                numpy.asarray(p, dtype=numpy.float64),
+                self.r.intrinsics, self.r.distortion
+                ).astype(numpy.float32) for p in ripts]
+
+            K_identity = numpy.eye(3, dtype=numpy.float64)
+            D_zero = numpy.zeros((5, 1), dtype=numpy.float64)
+            opts = [numpy.asarray(o, dtype=numpy.float32) for o in opts]
+
+            cv2.stereoCalibrate(
+                opts, lipts_undist, ripts_undist,
+                K_identity, D_zero,
+                K_identity, D_zero,
+                self.size,
+                self.R,
+                self.T,
+                criteria=(cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 1e-5),
+                flags=cv2.CALIB_FIX_INTRINSIC)
 
         self.set_alpha(0.0)
 
@@ -1223,28 +1233,27 @@ class StereoCalibrator(Calibrator):
         elif self.camera_model == CAMERA_MODEL.FISHEYE:
             self.Q = numpy.zeros((4,4), dtype=numpy.float64)
 
-            flags = cv2.CALIB_ZERO_DISPARITY   # Operation flags that may be zero or CALIB_ZERO_DISPARITY .
-                            # If the flag is set, the function makes the principal points of each camera have the same pixel coordinates in the rectified views.
-                            # And if the flag is not set, the function may still shift the images in the horizontal or vertical direction
-                            # (depending on the orientation of epipolar lines) to maximize the useful image area.
+            # Use pinhole stereoRectify (with D=0) to compute rectification
+            # geometry. cv2.fisheye.stereoRectify produces degenerate focal
+            # lengths with wide-FOV lenses and non-trivial baseline angles.
+            # The actual fisheye undistortion is handled by
+            # cv2.fisheye.initUndistortRectifyMap below.
+            D_zero = numpy.zeros((5, 1), dtype=numpy.float64)
+            (self.l.R, self.r.R, self.l.P, self.r.P,
+             self.Q, _, _) = cv2.stereoRectify(
+                self.l.intrinsics, D_zero,
+                self.r.intrinsics, D_zero,
+                self.size,
+                self.R, self.T,
+                flags=cv2.CALIB_ZERO_DISPARITY,
+                alpha=a)
 
-            cv2.fisheye.stereoRectify(self.l.intrinsics, self.l.distortion,
-                             self.r.intrinsics, self.r.distortion,
-                             self.size,
-                             self.R, self.T,
-                             flags,
-                             self.l.R, self.r.R,
-                             self.l.P, self.r.P,
-                             self.Q,
-                             self.size,
-                             a,
-                             1.0 )
-            self.l.P[:3,:3] = numpy.dot(self.l.intrinsics,self.l.R)
-            self.r.P[:3,:3] = numpy.dot(self.r.intrinsics,self.r.R)
-            cv2.fisheye.initUndistortRectifyMap(self.l.intrinsics, self.l.distortion, self.l.R, self.l.intrinsics, self.size, cv2.CV_32FC1,
-                                       self.l.mapx, self.l.mapy)
-            cv2.fisheye.initUndistortRectifyMap(self.r.intrinsics, self.r.distortion, self.r.R, self.r.intrinsics, self.size, cv2.CV_32FC1,
-                                       self.r.mapx, self.r.mapy)
+            self.l.mapx, self.l.mapy = cv2.fisheye.initUndistortRectifyMap(
+                self.l.intrinsics, self.l.distortion, self.l.R, self.l.P,
+                self.size, cv2.CV_32FC1)
+            self.r.mapx, self.r.mapy = cv2.fisheye.initUndistortRectifyMap(
+                self.r.intrinsics, self.r.distortion, self.r.R, self.r.P,
+                self.size, cv2.CV_32FC1)
 
     def as_message(self):
         """
