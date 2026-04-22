@@ -149,6 +149,15 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
   } else if (sensor_msgs::image_encodings::isColor(raw_msg->encoding)) {
     pub_color_.publish(raw_msg);
   } else if (sensor_msgs::image_encodings::isBayer(raw_msg->encoding)) {
+    if (raw_msg->width == 0 || raw_msg->height == 0 || raw_msg->data.empty()) {
+      RCLCPP_WARN(
+        this->get_logger(),
+        "Received malformed Bayer image on topic '%s' (width=%u, height=%u, data size=%zu); "
+        "skipping.",
+        sub_raw_.getTopic().c_str(), raw_msg->width, raw_msg->height, raw_msg->data.size());
+      return;
+    }
+
     int type = bit_depth == 8 ? CV_8U : CV_16U;
     const cv::Mat bayer(
       raw_msg->height, raw_msg->width, CV_MAKETYPE(type, 1),
@@ -171,50 +180,56 @@ void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_ms
     // std::loc_guard<std::recursive_mutex> loc(config_mutex_)
     algorithm = debayer_;
 
-    if (algorithm == debayer_edgeaware_ ||
-      algorithm == debayer_edgeaware_weighted_)
-    {
-      // These algorithms are not in OpenCV yet
-      if (raw_msg->encoding != sensor_msgs::image_encodings::BAYER_GRBG8) {
-        RCLCPP_WARN(
-          this->get_logger(), "Edge aware algorithms currently only support GRBG8 Bayer. "
-          "Falling back to bilinear interpolation.");
-        algorithm = debayer_bilinear_;
-      } else {
-        if (algorithm == debayer_edgeaware_) {
-          debayerEdgeAware(bayer, color);
+    try {
+      if (algorithm == debayer_edgeaware_ ||
+        algorithm == debayer_edgeaware_weighted_)
+      {
+        // These algorithms are not in OpenCV yet
+        if (raw_msg->encoding != sensor_msgs::image_encodings::BAYER_GRBG8) {
+          RCLCPP_WARN(
+            this->get_logger(), "Edge aware algorithms currently only support GRBG8 Bayer. "
+            "Falling back to bilinear interpolation.");
+          algorithm = debayer_bilinear_;
         } else {
-          debayerEdgeAwareWeighted(bayer, color);
+          if (algorithm == debayer_edgeaware_) {
+            debayerEdgeAware(bayer, color);
+          } else {
+            debayerEdgeAwareWeighted(bayer, color);
+          }
         }
       }
-    }
 
-    if (algorithm == debayer_bilinear_ || algorithm == debayer_vng_) {
-      int code = -1;
+      if (algorithm == debayer_bilinear_ || algorithm == debayer_vng_) {
+        int code = -1;
 
-      if (raw_msg->encoding == sensor_msgs::image_encodings::BAYER_RGGB8 ||
-        raw_msg->encoding == sensor_msgs::image_encodings::BAYER_RGGB16)
-      {
-        code = cv::COLOR_BayerBG2BGR;
-      } else if (raw_msg->encoding == sensor_msgs::image_encodings::BAYER_BGGR8 ||  // NOLINT
-        raw_msg->encoding == sensor_msgs::image_encodings::BAYER_BGGR16)
-      {
-        code = cv::COLOR_BayerRG2BGR;
-      } else if (raw_msg->encoding == sensor_msgs::image_encodings::BAYER_GBRG8 ||  // NOLINT
-        raw_msg->encoding == sensor_msgs::image_encodings::BAYER_GBRG16)
-      {
-        code = cv::COLOR_BayerGR2BGR;
-      } else if (raw_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG8 ||  // NOLINT
-        raw_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG16)
-      {
-        code = cv::COLOR_BayerGB2BGR;
+        if (raw_msg->encoding == sensor_msgs::image_encodings::BAYER_RGGB8 ||
+          raw_msg->encoding == sensor_msgs::image_encodings::BAYER_RGGB16)
+        {
+          code = cv::COLOR_BayerBG2BGR;
+        } else if (raw_msg->encoding == sensor_msgs::image_encodings::BAYER_BGGR8 ||  // NOLINT
+          raw_msg->encoding == sensor_msgs::image_encodings::BAYER_BGGR16)
+        {
+          code = cv::COLOR_BayerRG2BGR;
+        } else if (raw_msg->encoding == sensor_msgs::image_encodings::BAYER_GBRG8 ||  // NOLINT
+          raw_msg->encoding == sensor_msgs::image_encodings::BAYER_GBRG16)
+        {
+          code = cv::COLOR_BayerGR2BGR;
+        } else if (raw_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG8 ||  // NOLINT
+          raw_msg->encoding == sensor_msgs::image_encodings::BAYER_GRBG16)
+        {
+          code = cv::COLOR_BayerGB2BGR;
+        }
+
+        if (algorithm == debayer_vng_) {
+          code += cv::COLOR_BayerBG2BGR_VNG - cv::COLOR_BayerBG2BGR;
+        }
+
+        cv::cvtColor(bayer, color, code);
       }
-
-      if (algorithm == debayer_vng_) {
-        code += cv::COLOR_BayerBG2BGR_VNG - cv::COLOR_BayerBG2BGR;
-      }
-
-      cv::cvtColor(bayer, color, code);
+    } catch (const cv::Exception & e) {
+      RCLCPP_WARN(
+        this->get_logger(), "OpenCV Bayer conversion error: '%s'", e.what());
+      return;
     }
 
     pub_color_.publish(std::move(color_msg));

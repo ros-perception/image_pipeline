@@ -113,6 +113,9 @@ if(BUILD_TESTING)
 
   find_package(ament_cmake_gtest)
   ament_auto_add_gtest(rostest test/rostest.cpp)
+
+  ament_auto_add_gtest(test_crop_non_zero test/test_crop_non_zero.cpp)
+  target_link_libraries(test_crop_non_zero crop_non_zero)
 endif()
 
 ament_auto_package(INSTALL_TO_SHARE launch)
