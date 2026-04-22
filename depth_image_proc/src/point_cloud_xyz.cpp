@@ -59,6 +59,11 @@ PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
   // values used for invalid points for pcd conversion
   invalid_depth_ = this->declare_parameter<double>("invalid_depth", 0.0);
 
+  // Upper bound on depth image pixel count; guards against oversized
+  // width/height that would overflow internal size computations.
+  // 100 MP is well above any realistic sensor.
+  max_pixels_ = this->declare_parameter<int64_t>("max_pixels", 100LL * 1000LL * 1000LL);
+
   // Create publisher with connect callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
@@ -101,6 +106,44 @@ void PointCloudXyzNode::depthCb(
   const Image::ConstSharedPtr & depth_msg,
   const CameraInfo::ConstSharedPtr & info_msg)
 {
+  // Reject unreasonable or inconsistent dimensions before allocating the
+  // output cloud. Without this guard, oversized width/height can overflow
+  // internal size computations and produce a PointCloud2 buffer that is
+  // smaller than the iterator loop in convertDepth() will write.
+  const uint64_t num_pixels =
+    static_cast<uint64_t>(depth_msg->height) * static_cast<uint64_t>(depth_msg->width);
+  if (num_pixels == 0 || num_pixels > static_cast<uint64_t>(max_pixels_)) {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Depth image dimensions are unreasonable (width=%u, height=%u); skipping.",
+      depth_msg->width, depth_msg->height);
+    return;
+  }
+
+  size_t bytes_per_pixel = 0;
+  if (depth_msg->encoding == enc::TYPE_16UC1 || depth_msg->encoding == enc::MONO16) {
+    bytes_per_pixel = sizeof(uint16_t);
+  } else if (depth_msg->encoding == enc::TYPE_32FC1) {
+    bytes_per_pixel = sizeof(float);
+  } else {
+    RCLCPP_ERROR(
+      get_logger(), "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
+    return;
+  }
+
+  const size_t expected_bytes = static_cast<size_t>(num_pixels) * bytes_per_pixel;
+  if (depth_msg->data.size() < expected_bytes ||
+    depth_msg->step < static_cast<uint32_t>(depth_msg->width * bytes_per_pixel))
+  {
+    RCLCPP_ERROR(
+      get_logger(),
+      "Depth image buffer is inconsistent with declared dimensions "
+      "(width=%u, height=%u, step=%u, data size=%zu, expected >=%zu); skipping.",
+      depth_msg->width, depth_msg->height, depth_msg->step,
+      depth_msg->data.size(), expected_bytes);
+    return;
+  }
+
   auto cloud_msg = std::make_unique<PointCloud2>();
   cloud_msg->header = depth_msg->header;
   cloud_msg->height = depth_msg->height;
@@ -111,6 +154,18 @@ void PointCloudXyzNode::depthCb(
   sensor_msgs::PointCloud2Modifier pcd_modifier(*cloud_msg);
   pcd_modifier.setPointCloud2FieldsByString(1, "xyz");
 
+  // Cross-check that the modifier actually allocated enough storage for
+  // height*width points. If not (e.g. arithmetic overflow), bail out.
+  const size_t expected_cloud_bytes =
+    static_cast<size_t>(num_pixels) * cloud_msg->point_step;
+  if (cloud_msg->data.size() < expected_cloud_bytes) {
+    RCLCPP_ERROR(
+      get_logger(),
+      "PointCloud2 storage (%zu bytes) is smaller than required (%zu); skipping.",
+      cloud_msg->data.size(), expected_cloud_bytes);
+    return;
+  }
+
   // Update camera model
   model_.fromCameraInfo(info_msg);
 
@@ -119,10 +174,6 @@ void PointCloudXyzNode::depthCb(
     convertDepth<uint16_t>(depth_msg, *cloud_msg, model_, invalid_depth_);
   } else if (depth_msg->encoding == enc::TYPE_32FC1) {
     convertDepth<float>(depth_msg, *cloud_msg, model_, invalid_depth_);
-  } else {
-    RCLCPP_ERROR(
-      get_logger(), "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
-    return;
   }
 
   pub_point_cloud_->publish(std::move(cloud_msg));
