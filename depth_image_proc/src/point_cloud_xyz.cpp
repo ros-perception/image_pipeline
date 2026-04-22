@@ -59,6 +59,11 @@ PointCloudXyzNode::PointCloudXyzNode(const rclcpp::NodeOptions & options)
   // values used for invalid points for pcd conversion
   invalid_depth_ = this->declare_parameter<double>("invalid_depth", 0.0);
 
+  // Upper bound on depth image pixel count; guards against oversized
+  // width/height that would overflow internal size computations.
+  // 100 MP is well above any realistic sensor.
+  max_pixels_ = this->declare_parameter<int64_t>("max_pixels", 100LL * 1000LL * 1000LL);
+
   // Create publisher with connect callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
@@ -106,11 +111,9 @@ void PointCloudXyzNode::depthCb(
   // output cloud. Without this guard, oversized width/height can overflow
   // internal size computations and produce a PointCloud2 buffer that is
   // smaller than the iterator loop in convertDepth() will write.
-  // 100 MP is well above any realistic sensor; tweak if needed.
-  constexpr uint64_t kMaxPixels = 100ULL * 1000ULL * 1000ULL;
   const uint64_t num_pixels =
     static_cast<uint64_t>(depth_msg->height) * static_cast<uint64_t>(depth_msg->width);
-  if (num_pixels == 0 || num_pixels > kMaxPixels) {
+  if (num_pixels == 0 || num_pixels > static_cast<uint64_t>(max_pixels_)) {
     RCLCPP_ERROR(
       get_logger(),
       "Depth image dimensions are unreasonable (width=%u, height=%u); skipping.",
