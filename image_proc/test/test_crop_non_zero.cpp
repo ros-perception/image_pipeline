@@ -35,7 +35,7 @@
 #include <string>
 #include <thread>
 
-#include <cv_bridge/cv_bridge.hpp>
+#include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
