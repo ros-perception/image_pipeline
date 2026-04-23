@@ -106,9 +106,6 @@ void PointCloudXyzNode::depthCb(
   const Image::ConstSharedPtr & depth_msg,
   const CameraInfo::ConstSharedPtr & info_msg)
 {
-<<<<<<< HEAD
-  const PointCloud2::SharedPtr cloud_msg = std::make_shared<PointCloud2>();
-=======
   // Reject unreasonable or inconsistent dimensions before allocating the
   // output cloud. Without this guard, oversized width/height can overflow
   // internal size computations and produce a PointCloud2 buffer that is
@@ -148,7 +145,6 @@ void PointCloudXyzNode::depthCb(
   }
 
   auto cloud_msg = std::make_unique<PointCloud2>();
->>>>>>> dae4a43 (heap-buffer-overflow write in PointCloudXyzNode / convertDepth<unsigned short>() with oversized depth Image dimensions (#1136))
   cloud_msg->header = depth_msg->header;
   cloud_msg->height = depth_msg->height;
   cloud_msg->width = depth_msg->width;
@@ -177,15 +173,7 @@ void PointCloudXyzNode::depthCb(
   if (depth_msg->encoding == enc::TYPE_16UC1 || depth_msg->encoding == enc::MONO16) {
     convertDepth<uint16_t>(depth_msg, cloud_msg, model_, invalid_depth_);
   } else if (depth_msg->encoding == enc::TYPE_32FC1) {
-<<<<<<< HEAD
-    convertDepth<float>(depth_msg, cloud_msg, model_, invalid_depth_);
-  } else {
-    RCLCPP_ERROR(
-      get_logger(), "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
-    return;
-=======
     convertDepth<float>(depth_msg, *cloud_msg, model_, invalid_depth_);
->>>>>>> dae4a43 (heap-buffer-overflow write in PointCloudXyzNode / convertDepth<unsigned short>() with oversized depth Image dimensions (#1136))
   }
 
   pub_point_cloud_->publish(*cloud_msg);
