@@ -92,4 +92,4 @@ if(BUILD_TESTING)
   target_link_libraries(test_point_cloud_xyz ${PROJECT_NAME})
 endif()
 
-ament_auto_package(INSTALL_TO_SHARE launch)
+ament_auto_package(INSTALL_TO_SHARE launch USE_SCOPED_HEADER_INSTALL_DIR)
