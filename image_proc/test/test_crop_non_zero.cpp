@@ -74,7 +74,7 @@ TEST(CropNonZeroNodeTest, AllBlackImageDoesNotCrash)
   helper_exec.add_node(helper_node);
 
   std::atomic<int> output_count{0};
-  image_transport::ImageTransport it_helper{*helper_node};
+  image_transport::ImageTransport it_helper(helper_node);
   auto out_sub = it_helper.subscribe(
     topic_out, 1,
     [&output_count](const sensor_msgs::msg::Image::ConstSharedPtr &) {
