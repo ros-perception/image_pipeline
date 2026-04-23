@@ -114,6 +114,13 @@ void CropNonZeroNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & ra
 
   cv::findContours(m, cnt, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 
+  if (cnt.empty()) {
+    RCLCPP_WARN(
+      this->get_logger(),
+      "No non-zero pixels found in image; skipping crop.");
+    return;
+  }
+
   // search the largest area
   std::vector<std::vector<cv::Point>>::iterator it =
     std::max_element(
