@@ -2,6 +2,13 @@
 Changelog for package image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.12 (2026-04-24)
+-------------------
+* Segmentation fault (Null Pointer Dereference) in CropNonZeroNode when processing all-black images (backport `#1134 <https://github.com/ros-perception/image_pipeline/issues/1134>`_) (`#1138 <https://github.com/ros-perception/image_pipeline/issues/1138>`_)
+* Cleanup bsd 3 clause license usage (backport `#1125 <https://github.com/ros-perception/image_pipeline/issues/1125>`_) (`#1141 <https://github.com/ros-perception/image_pipeline/issues/1141>`_)
+* Update index.ros.org package website links (backport `#1101 <https://github.com/ros-perception/image_pipeline/issues/1101>`_) (`#1104 <https://github.com/ros-perception/image_pipeline/issues/1104>`_)
+* Contributors: mergify[bot]
+
 5.0.11 (2025-05-21)
 -------------------
 

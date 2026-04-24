@@ -2,6 +2,14 @@
 Changelog for package depth_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.12 (2026-04-24)
+-------------------
+* heap-buffer-overflow write in PointCloudXyzNode / convertDepth<unsigned short>() with oversized depth Image dimensions (backport `#1136 <https://github.com/ros-perception/image_pipeline/issues/1136>`_) (`#1146 <https://github.com/ros-perception/image_pipeline/issues/1146>`_)
+* ConvertMetricNode crashes on malformed Image with empty data (backport `#1135 <https://github.com/ros-perception/image_pipeline/issues/1135>`_) (`#1144 <https://github.com/ros-perception/image_pipeline/issues/1144>`_)
+* Cleanup bsd 3 clause license usage (backport `#1125 <https://github.com/ros-perception/image_pipeline/issues/1125>`_) (`#1141 <https://github.com/ros-perception/image_pipeline/issues/1141>`_)
+* Update index.ros.org package website links (backport `#1101 <https://github.com/ros-perception/image_pipeline/issues/1101>`_) (`#1104 <https://github.com/ros-perception/image_pipeline/issues/1104>`_)
+* Contributors: mergify[bot]
+
 5.0.11 (2025-05-21)
 -------------------
 

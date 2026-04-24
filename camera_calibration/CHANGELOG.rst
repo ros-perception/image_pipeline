@@ -2,6 +2,11 @@
 Changelog for package camera_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.12 (2026-04-24)
+-------------------
+* Update index.ros.org package website links (backport `#1101 <https://github.com/ros-perception/image_pipeline/issues/1101>`_) (`#1104 <https://github.com/ros-perception/image_pipeline/issues/1104>`_)
+* Contributors: mergify[bot]
+
 5.0.11 (2025-05-21)
 -------------------
 
