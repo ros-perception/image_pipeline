@@ -144,6 +144,33 @@ void PointCloudXyzrgbRadialNode::imageCb(
   // Check if the input image has to be resized
   Image::ConstSharedPtr rgb_msg = rgb_msg_in;
   if (depth_msg->width != rgb_msg->width || depth_msg->height != rgb_msg->height) {
+    if (depth_msg->width == 0 || rgb_msg->width == 0 ||
+      depth_msg->height == 0 || rgb_msg->height == 0)
+    {
+      RCLCPP_ERROR(
+        get_logger(),
+        "Invalid image dimensions: depth (%ux%u), rgb (%ux%u)",
+        depth_msg->width, depth_msg->height, rgb_msg->width, rgb_msg->height);
+      return;
+    }
+
+    // Validate that a width-based scale also yields a valid in-bounds row crop
+    // on the RGB image. Otherwise rowRange(...) below would throw cv::Exception
+    // and abort the process. Use integer math equivalent of
+    // (depth_height / ratio) where ratio = depth_width / rgb_width.
+    const uint64_t crop_rows =
+      (static_cast<uint64_t>(depth_msg->height) *
+      static_cast<uint64_t>(rgb_msg->width)) /
+      static_cast<uint64_t>(depth_msg->width);
+    if (crop_rows == 0 || crop_rows > static_cast<uint64_t>(rgb_msg->height)) {
+      RCLCPP_ERROR(
+        get_logger(),
+        "Depth (%ux%u) and RGB (%ux%u) have incompatible aspect ratios; "
+        "cannot derive a valid resize crop. Skipping frame.",
+        depth_msg->width, depth_msg->height, rgb_msg->width, rgb_msg->height);
+      return;
+    }
+
     CameraInfo info_msg_tmp = *info_msg;
     info_msg_tmp.width = depth_msg->width;
     info_msg_tmp.height = depth_msg->height;
@@ -168,9 +195,14 @@ void PointCloudXyzrgbRadialNode::imageCb(
     cv_bridge::CvImage cv_rsz;
     cv_rsz.header = cv_ptr->header;
     cv_rsz.encoding = cv_ptr->encoding;
-    cv::resize(
-      cv_ptr->image.rowRange(0, depth_msg->height / ratio), cv_rsz.image,
-      cv::Size(depth_msg->width, depth_msg->height));
+    try {
+      cv::resize(
+        cv_ptr->image.rowRange(0, static_cast<int>(crop_rows)), cv_rsz.image,
+        cv::Size(depth_msg->width, depth_msg->height));
+    } catch (const cv::Exception & e) {
+      RCLCPP_ERROR(get_logger(), "OpenCV exception while resizing RGB: %s", e.what());
+      return;
+    }
     if ((rgb_msg->encoding == sensor_msgs::image_encodings::RGB8) ||
       (rgb_msg->encoding == sensor_msgs::image_encodings::BGR8) ||
       (rgb_msg->encoding == sensor_msgs::image_encodings::MONO8))
