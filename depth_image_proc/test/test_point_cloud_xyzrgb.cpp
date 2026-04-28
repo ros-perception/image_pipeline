@@ -147,7 +147,7 @@ TEST(PointCloudXyzrgbNodeTest, MismatchedAspectRatioDoesNotCrash)
       output_count.fetch_add(1);
     });
 
-  image_transport::ImageTransport it_helper{*helper_node};
+  image_transport::ImageTransport it_helper(helper_node);
   auto depth_pub = it_helper.advertise(topic_depth, 1);
   // advertiseCamera publishes both the rgb image and rgb/camera_info using
   // the same timestamp, matching what PointCloudXyzrgbNode subscribes to.
