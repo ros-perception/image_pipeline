@@ -54,6 +54,7 @@ class PointCloudXyzrgbNode : public rclcpp::Node
 {
 public:
   DEPTH_IMAGE_PROC_PUBLIC PointCloudXyzrgbNode(const rclcpp::NodeOptions & options);
+  DEPTH_IMAGE_PROC_PUBLIC ~PointCloudXyzrgbNode() override;
 
 private:
   using PointCloud2 = sensor_msgs::msg::PointCloud2;
@@ -77,6 +78,9 @@ private:
 
   // Publications
   std::mutex connect_mutex_;
+  // Serializes imageCb() with destruction so the node is not torn down
+  // while a callback is still using its publisher / synchronizer state.
+  std::mutex callback_mutex_;
   rclcpp::Publisher<PointCloud2>::SharedPtr pub_point_cloud_;
 
   image_geometry::PinholeCameraModel model_;
