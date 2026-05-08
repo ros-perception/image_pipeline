@@ -2,6 +2,11 @@
 Changelog for package depth_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* PointCloudXyzrgbNode throws if resoluitions differ (`#1148 <https://github.com/ros-perception/image_pipeline/issues/1148>`_)
+* Contributors: Alejandro Hernández Cordero
+
 7.1.5 (2026-04-24)
 ------------------
 * heap-buffer-overflow write in PointCloudXyzNode / convertDepth<unsigned short>() with oversized depth Image dimensions (`#1136 <https://github.com/ros-perception/image_pipeline/issues/1136>`_)
