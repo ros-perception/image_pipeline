@@ -2,8 +2,8 @@
 Changelog for package depth_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+8.0.0 (2026-05-08)
+------------------
 * PointCloudXyzrgbNode throws if resoluitions differ (`#1148 <https://github.com/ros-perception/image_pipeline/issues/1148>`_)
 * Contributors: Alejandro Hernández Cordero
 
