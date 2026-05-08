@@ -2,6 +2,9 @@
 Changelog for package image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 7.1.5 (2026-04-24)
 ------------------
 * Segmentation fault (Null Pointer Dereference) in CropNonZeroNode when processing all-black images (`#1134 <https://github.com/ros-perception/image_pipeline/issues/1134>`_)
