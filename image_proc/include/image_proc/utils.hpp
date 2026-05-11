@@ -37,32 +37,6 @@
 namespace image_proc
 {
 
-[[deprecated("Use getQosProfile(...) instead")]]
-inline
-rmw_qos_profile_t getTopicQosProfile(rclcpp::Node * node, const std::string & topic)
-{
-  /**
-   * Given a topic name, get the QoS profile with which it is being published.
-￼  * Replaces history and depth settings with default sensor values since they cannot be retrieved.
-   * @param node pointer to the ROS node
-   * @param topic name of the topic
-   * @returns QoS profile of the publisher to the topic. If there are several publishers, it returns
-   *     returns the profile of the first one on the list. If no publishers exist, it returns
-   *     the sensor data profile.
-   */
-  std::string topic_resolved = node->get_node_base_interface()->resolve_topic_or_service_name(
-    topic, false);
-  auto topics_info = node->get_publishers_info_by_topic(topic_resolved);
-  if (topics_info.size()) {
-    auto profile = topics_info[0].qos_profile().get_rmw_qos_profile();
-    profile.history = rmw_qos_profile_sensor_data.history;
-    profile.depth = rmw_qos_profile_sensor_data.depth;
-    return profile;
-  } else {
-    return rmw_qos_profile_sensor_data;
-  }
-}
-
 inline
 rclcpp::QoS getQosProfile(rclcpp::Node * node, const std::string & topic)
 {
