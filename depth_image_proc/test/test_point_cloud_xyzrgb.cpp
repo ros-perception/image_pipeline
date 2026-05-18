@@ -295,7 +295,7 @@ TEST_F(PointCloudXyzrgbNodeTest, OversizedDepthMetadataDoesNotCrash)
       output_count.fetch_add(1);
     });
 
-  image_transport::ImageTransport it_helper{*helper_node};
+  image_transport::ImageTransport it_helper(helper_node);
   auto depth_pub = it_helper.advertise(topic_depth, 1);
   auto rgb_cam_pub = it_helper.advertiseCamera(topic_rgb, 1);
 
