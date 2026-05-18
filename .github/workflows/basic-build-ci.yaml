@@ -2,12 +2,12 @@ name: Basic Build Workflow
 
 on:
   push:
-    branches: [rolling]
+    branches: [lyrical]
   pull_request:
     types: [opened, reopened, synchronize]
 
 jobs:
-  build-rolling:
+  build-lyrical:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -23,19 +23,19 @@ jobs:
         mv src_tmp/ src/
     - name: Install Prerequisites
       run: |
-        bash -c 'source /opt/ros/rolling/setup.bash; \
+        bash -c 'source /opt/ros/lyrical/setup.bash; \
         apt-get update && apt-get upgrade -y && rosdep update; \
-        rosdep install --from-paths src --ignore-src --rosdistro=rolling -y'
+        rosdep install --from-paths src --ignore-src --rosdistro=lyrical -y'
     - name: Build Workspace
       run: |
-        bash -c 'source /opt/ros/rolling/setup.bash; \
+        bash -c 'source /opt/ros/lyrical/setup.bash; \
         colcon build'
     - name: Run Tests
       run: |
-        bash -c 'source /opt/ros/rolling/setup.bash; \
+        bash -c 'source /opt/ros/lyrical/setup.bash; \
         colcon test; \
         colcon test-result --verbose'
-  build-rolling-testing:
+  build-lyrical-testing:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
