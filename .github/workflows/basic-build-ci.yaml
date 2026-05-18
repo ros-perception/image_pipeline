@@ -62,7 +62,7 @@ jobs:
     - name: Build Workspace
       run: |
         bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
-        apt-get update && apt-get install -y python3-colcon-common-extensions; \
+        apt-get update && apt-get install -y python3-colcon-common-extensions build-essential cmake; \
         colcon build'
     - name: Run Tests
       run: |
