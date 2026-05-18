@@ -141,11 +141,39 @@ PointCloudXyzrgbNode::PointCloudXyzrgbNode(const rclcpp::NodeOptions & options)
       pub_options);
 }
 
+PointCloudXyzrgbNode::~PointCloudXyzrgbNode()
+{
+  // Disconnect inputs so the synchronizer stops receiving new messages.
+  // This must happen before the implicit member teardown, otherwise a
+  // late imageCb() on another executor thread could touch members
+  // (e.g. pub_point_cloud_) that have already been destroyed.
+  {
+    std::lock_guard<std::mutex> lock(connect_mutex_);
+    sub_depth_.unsubscribe();
+    sub_rgb_.unsubscribe();
+    sub_info_.unsubscribe();
+  }
+  // Drop the synchronizers so any pending dispatch can no longer call
+  // back into this object.
+  sync_.reset();
+  exact_sync_.reset();
+  // Wait for any imageCb() that started before the unsubscribe above
+  // to finish before we let members be destroyed.
+  std::lock_guard<std::mutex> lock(callback_mutex_);
+}
+
 void PointCloudXyzrgbNode::imageCb(
   const Image::ConstSharedPtr & depth_msg,
   const Image::ConstSharedPtr & rgb_msg_in,
   const CameraInfo::ConstSharedPtr & info_msg)
 {
+  // Hold callback_mutex_ for the lifetime of this callback so the
+  // destructor can wait for an in-flight callback to complete before
+  // member teardown begins.
+  std::lock_guard<std::mutex> lock(callback_mutex_);
+  if (!pub_point_cloud_) {
+    return;
+  }
   // Check for bad inputs
   if (depth_msg->header.frame_id != rgb_msg_in->header.frame_id) {
     RCLCPP_WARN_THROTTLE(
