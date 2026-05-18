@@ -15,7 +15,7 @@ jobs:
       image: osrf/ros2:devel
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Create Workspace
       run: |
         mkdir src_tmp
@@ -43,7 +43,7 @@ jobs:
       image: osrf/ros2:testing
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Create Workspace
       run: |
         mkdir src_tmp
