@@ -124,7 +124,7 @@ TEST(PointCloudXyzNodeTest, OversizedDimensionsDoNotCrash)
       output_count.fetch_add(1);
     });
 
-  image_transport::ImageTransport it_helper{*helper_node};
+  image_transport::ImageTransport it_helper(helper_node);
   auto cam_pub = it_helper.advertiseCamera(topic_image, 1);
 
   // Wait for the lazy subscription on the node side to come up.
