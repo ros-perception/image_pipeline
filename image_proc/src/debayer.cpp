@@ -54,6 +54,7 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
   this->declare_parameter<std::string>("image_transport", "raw");
 
   debayer_ = this->declare_parameter("debayer", 3);
+  always_subscribe_ = this->declare_parameter("always_subscribe", false);
 
   // For compressed topics to remap appropriately, we need to pass a
   // fully expanded and remapped topic name to image_transport
@@ -67,6 +68,9 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
   pub_options.event_callbacks.matched_callback =
     [this](rclcpp::MatchedInfo &)
     {
+      if (always_subscribe_) {
+        return;
+      }
       if (pub_mono_.getNumSubscribers() == 0 && pub_color_.getNumSubscribers() == 0) {
         sub_raw_.shutdown();
       } else if (!sub_raw_) {
@@ -87,6 +91,17 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
       pub_options);
   pub_color_ = image_transport::create_publisher(this, color_topic, rmw_qos_profile_default,
       pub_options);
+
+  // If always subscribing, create the subscription immediately
+  if (always_subscribe_) {
+    auto qos_profile = getTopicQosProfile(this, image_topic_);
+    image_transport::TransportHints hints(this);
+    sub_raw_ = image_transport::create_subscription(
+      this, image_topic_,
+      std::bind(
+        &DebayerNode::imageCb, this,
+        std::placeholders::_1), hints.getTransport(), qos_profile);
+  }
 }
 
 void DebayerNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)

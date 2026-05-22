@@ -60,6 +60,7 @@ private:
 
   cv::Ptr<cv::aruco::DetectorParameters> detector_params_;
   cv::Ptr<cv::aruco::Dictionary> dictionary_;
+  bool always_subscribe_;
 
   void imageCb(
     const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
