@@ -154,9 +154,8 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
   bool approx = this->declare_parameter("approximate_sync", false);
 
   if (approx) {
-    approximate_sync_.reset(
-      new ApproximateSync(
-        ApproximatePolicy(queue_size_), left_sub_, right_sub_, disparity_sub_));
+    approximate_sync_ = std::make_shared<ApproximateSync>(
+      ApproximatePolicy(queue_size_), left_sub_, right_sub_, disparity_sub_);
     approximate_sync_->registerCallback(
       [this](
         const Image::ConstSharedPtr & left,
@@ -165,10 +164,9 @@ StereoViewNode::StereoViewNode(const rclcpp::NodeOptions & options)
         imageCb(left, right, disparity_msg);
       });
   } else {
-    exact_sync_.reset(
-      new ExactSync(
-        ExactPolicy(queue_size_),
-        left_sub_, right_sub_, disparity_sub_));
+    exact_sync_ = std::make_shared<ExactSync>(
+      ExactPolicy(queue_size_),
+      left_sub_, right_sub_, disparity_sub_);
     exact_sync_->registerCallback(
       [this](
         const Image::ConstSharedPtr & left,
