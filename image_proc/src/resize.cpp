@@ -79,10 +79,11 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
         image_transport::TransportHints hints(*this);
         sub_image_ = image_transport::create_camera_subscription(
           *this, image_topic_,
-          std::bind(
-            &ResizeNode::imageCb, this,
-            std::placeholders::_1,
-            std::placeholders::_2), hints.getTransport(), qos_profile);
+          [this](
+            const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
+            const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg) {
+            imageCb(image_msg, info_msg);
+          }, hints.getTransport(), qos_profile);
       }
     };
 

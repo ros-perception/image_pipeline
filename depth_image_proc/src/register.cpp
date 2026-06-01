@@ -115,9 +115,12 @@ RegisterNode::RegisterNode(const rclcpp::NodeOptions & options)
     sub_depth_info_,
     sub_rgb_info_);
   sync_->registerCallback(
-    std::bind(
-      &RegisterNode::imageCb, this, std::placeholders::_1,
-      std::placeholders::_2, std::placeholders::_3));
+    [this](
+      const Image::ConstSharedPtr & depth_image_msg,
+      const CameraInfo::ConstSharedPtr & depth_info_msg,
+      const CameraInfo::ConstSharedPtr & rgb_info_msg) {
+      imageCb(depth_image_msg, depth_info_msg, rgb_info_msg);
+    });
 
   // Create publisher with connect callback
   rclcpp::PublisherOptions pub_options;

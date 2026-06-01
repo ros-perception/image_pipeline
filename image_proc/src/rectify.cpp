@@ -75,9 +75,12 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions & options)
         auto qos_profile = getQosProfile(this, image_topic_);
         image_transport::TransportHints hints(*this);
         sub_camera_ = image_transport::create_camera_subscription(
-          *this, image_topic_, std::bind(
-            &RectifyNode::imageCb,
-            this, std::placeholders::_1, std::placeholders::_2), hints.getTransport(), qos_profile);
+          *this, image_topic_,
+          [this](
+            const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
+            const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg) {
+            imageCb(image_msg, info_msg);
+          }, hints.getTransport(), qos_profile);
       }
     };
 

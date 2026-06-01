@@ -132,7 +132,7 @@ void ImagePublisher::reconfigureCallback()
 {
   timer_ = this->create_wall_timer(
     std::chrono::milliseconds(static_cast<int>(1000 / publish_rate_)),
-    std::bind(&ImagePublisher::doWork, this));
+    [this]() {doWork();});
 
   camera_info_manager::CameraInfoManager c(
     this->get_node_base_interface(),
