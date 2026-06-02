@@ -32,13 +32,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import requests
-import unittest
-import tarfile
 import os
+import tarfile
+import unittest
 
-from camera_calibration.stereo_calibrator import StereoCalibrator
 from camera_calibration.calibrator import ChessboardInfo, image_from_archive
+from camera_calibration.stereo_calibrator import StereoCalibrator
+import requests
 
 # Large board used for PR2 calibration
 board = ChessboardInfo()
@@ -48,6 +48,7 @@ board.dim = 0.108
 
 
 class TestMultipleBoards(unittest.TestCase):
+
     def test_multiple_boards(self):
         small_board = ChessboardInfo()
         small_board.n_cols = 5
@@ -69,18 +70,20 @@ class TestMultipleBoards(unittest.TestCase):
 
         # Check error for big image
         archive = tarfile.open(my_archive_name)
-        l1_big = image_from_archive(archive, "left-0000.png")
-        r1_big = image_from_archive(archive, "right-0000.png")
+        l1_big = image_from_archive(archive, 'left-0000.png')
+        r1_big = image_from_archive(archive, 'right-0000.png')
         epi_big = stereo_cal.epipolar_error_from_images(l1_big, r1_big)
         self.assertTrue(
-            epi_big < 1.0, "Epipolar error for large checkerboard > 1.0. Error: %.2f" % epi_big)
+            epi_big < 1.0, 'Epipolar error for large checkerboard > 1.0. Error: %.2f' % epi_big
+        )
 
         # Small checkerboard has larger error threshold for now
-        l1_sm = image_from_archive(archive, "left-0012-sm.png")
-        r1_sm = image_from_archive(archive, "right-0012-sm.png")
+        l1_sm = image_from_archive(archive, 'left-0012-sm.png')
+        r1_sm = image_from_archive(archive, 'right-0012-sm.png')
         epi_sm = stereo_cal.epipolar_error_from_images(l1_sm, r1_sm)
         self.assertTrue(
-            epi_sm < 2.0, "Epipolar error for small checkerboard > 2.0. Error: %.2f" % epi_sm)
+            epi_sm < 2.0, 'Epipolar error for small checkerboard > 2.0. Error: %.2f' % epi_sm
+        )
 
 
 if __name__ == '__main__':
