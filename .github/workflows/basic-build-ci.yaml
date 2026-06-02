@@ -12,59 +12,45 @@ jobs:
     strategy:
       fail-fast: false
     container:
-      image: osrf/ros2:devel
+      image: ubuntu:26.04
+    env:
+      ROS_DISTRO: rolling
+      DEBIAN_FRONTEND: noninteractive
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Create Workspace
       run: |
         mkdir src_tmp
         mv `find -maxdepth 1 -not -name . -not -name src_tmp` src_tmp/
         mv src_tmp/ src/
-    - name: Install Prerequisites
+    - name: Setup ROS 2 apt repository
       run: |
-        bash -c 'source /opt/ros/rolling/setup.bash; \
-        apt-get update && apt-get upgrade -y && rosdep update; \
-        rosdep install --from-paths src --ignore-src --rosdistro=rolling -y'
-    - name: Build Workspace
-      run: |
-        bash -c 'source /opt/ros/rolling/setup.bash; \
-        colcon build'
-    - name: Run Tests
-      run: |
-        bash -c 'source /opt/ros/rolling/setup.bash; \
-        colcon test; \
-        colcon test-result --verbose'
-  build-rolling-testing:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    container:
-      image: osrf/ros2:testing
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
-    - name: Create Workspace
-      run: |
-        mkdir src_tmp
-        mv `find -maxdepth 1 -not -name . -not -name src_tmp` src_tmp/
-        mv src_tmp/ src/
-    - name: Install Prerequisites
-      run: |
-        apt update -qq
-        apt install -qq -y lsb-release wget curl gnupg2 git
-        curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros2-testing-archive-keyring.gpg
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros2-testing-archive-keyring.gpg] http://packages.ros.org/ros2-testing/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
+        apt-get update -qq
+        apt-get install -qq -y locales curl gnupg2 lsb-release software-properties-common
+        locale-gen en_US en_US.UTF-8
+        update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+        add-apt-repository universe -y
+        # Rolling binaries for Ubuntu 26.04 (resolute) are currently only published
+        # in the ros2-testing repository, so use the testing apt source.
+        export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F "tag_name" | awk -F\" '{print $4}')
+        export UBUNTU_CODENAME=$(. /etc/os-release && echo ${UBUNTU_CODENAME:-${VERSION_CODENAME}})
+        curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-testing-apt-source_${ROS_APT_SOURCE_VERSION}.${UBUNTU_CODENAME}_all.deb"
+        apt-get install -qq -y /tmp/ros2-apt-source.deb
         apt-get update && apt-get upgrade -q -y
-        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
-        apt-get update && apt-get upgrade -y && rosdep update; \
-        rosdep install --from-paths src --ignore-src -y'
+    - name: Install Prerequisites
+      run: |
+        apt-get install -qq -y ros-dev-tools ros-${ROS_DISTRO}-ros-base
+        rosdep init || true
+        bash -c 'source /opt/ros/${ROS_DISTRO}/setup.bash; \
+        rosdep update; \
+        rosdep install --from-paths src --ignore-src --rosdistro=${ROS_DISTRO} -y'
     - name: Build Workspace
       run: |
-        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        bash -c 'source /opt/ros/${ROS_DISTRO}/setup.bash; \
         colcon build'
     - name: Run Tests
       run: |
-        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        bash -c 'source /opt/ros/${ROS_DISTRO}/setup.bash; \
         colcon test; \
         colcon test-result --verbose'
