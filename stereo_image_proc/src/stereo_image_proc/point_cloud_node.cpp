@@ -101,7 +101,6 @@ private:
 PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("point_cloud_node", options)
 {
-
   // TransportHints does not actually declare the parameter
   this->declare_parameter<std::string>("image_transport", "raw");
 

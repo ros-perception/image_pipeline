@@ -158,7 +158,6 @@ static void add_param_to_map(
 DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("disparity_node", options)
 {
-
   // TransportHints does not actually declare the parameter
   this->declare_parameter<std::string>("image_transport", "raw");
 
