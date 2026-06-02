@@ -75,6 +75,7 @@ private:
 
   // parameters
   float invalid_depth_;
+  int64_t max_pixels_;
 
   // Publications
   std::mutex connect_mutex_;
