@@ -378,15 +378,11 @@ void PointCloudXyzrgbNode::imageCb(
   if (depth_msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
     convertDepth<uint16_t>(depth_msg, cloud_msg, model_, invalid_depth_);
   } else if (depth_msg->encoding == sensor_msgs::image_encodings::TYPE_32FC1) {
-<<<<<<< HEAD
     convertDepth<float>(depth_msg, cloud_msg, model_, invalid_depth_);
   } else {
     RCLCPP_ERROR(
       get_logger(), "Depth image has unsupported encoding [%s]", depth_msg->encoding.c_str());
     return;
-=======
-    convertDepth<float>(depth_msg, *cloud_msg, model_, invalid_depth_);
->>>>>>> e9aa40d (PointCloudXyzrgbNode can trigger a heap-buffer-overflow read in convertDepth() when image metadata and payload size diverge during a topology-transition mismatch (#1154))
   }
 
   // Convert RGB
