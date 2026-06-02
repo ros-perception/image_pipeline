@@ -113,13 +113,33 @@ sensor_msgs::msg::Image make_rgb8(uint32_t width, uint32_t height)
 
 }  // namespace
 
+// Per-test init/shutdown so each test owns the rclcpp global context. Without
+// this, the first test that calls rclcpp::shutdown() leaves any subsequent
+// test unable to create publishers/subscribers (guard-condition errors).
+class PointCloudXyzrgbNodeTest : public ::testing::Test
+{
+protected:
+  void SetUp() override
+  {
+    if (!rclcpp::ok()) {
+      rclcpp::init(0, nullptr);
+    }
+  }
+  void TearDown() override
+  {
+    if (rclcpp::ok()) {
+      rclcpp::shutdown();
+    }
+  }
+};
+
 // Regression test: when a synchronized depth/rgb/camera_info triplet has
 // incompatible aspect ratios, the resize path used to call
 //   cv::Mat::rowRange(0, depth_height / ratio)
 // with an end row past the RGB image's actual rows. OpenCV would throw
 // cv::Exception, which was not caught and aborted the component container.
 // The fix validates the derived crop range up-front and skips the frame.
-TEST(PointCloudXyzrgbNodeTest, MismatchedAspectRatioDoesNotCrash)
+TEST_F(PointCloudXyzrgbNodeTest, MismatchedAspectRatioDoesNotCrash)
 {
   const std::string ns = "/point_cloud_xyzrgb_test";
   const std::string topic_depth = ns + "/depth_registered/image_rect";
@@ -241,9 +261,139 @@ TEST(PointCloudXyzrgbNodeTest, MismatchedAspectRatioDoesNotCrash)
   node_spin_thread.join();
 }
 
+// Regression test for issue #1149: when a synchronized depth/rgb/camera_info
+// triplet has a depth message whose declared dimensions (width/height/step)
+// describe a larger image than the actual data payload, convertDepth<>()
+// used to iterate past the end of depth_msg->data and trigger a heap-buffer-
+// overflow read (caught by ASan in the original report). The fix validates
+// the depth buffer against its declared dimensions and skips the frame.
+TEST_F(PointCloudXyzrgbNodeTest, OversizedDepthMetadataDoesNotCrash)
+{
+  const std::string ns = "/point_cloud_xyzrgb_oversize_test";
+  const std::string topic_depth = ns + "/depth_registered/image_rect";
+  const std::string topic_rgb = ns + "/rgb/image_rect_color";
+  const std::string topic_out = ns + "/points";
+
+  rclcpp::NodeOptions options;
+  options.arguments(
+    {"--ros-args", "-r", std::string("__ns:=") + ns});
+  auto node = std::make_shared<depth_image_proc::PointCloudXyzrgbNode>(options);
+
+  std::thread node_spin_thread(
+    [node]() {
+      rclcpp::spin(node);
+    });
+
+  auto helper_node = rclcpp::Node::make_shared("point_cloud_xyzrgb_oversize_helper");
+  rclcpp::executors::SingleThreadedExecutor helper_exec;
+  helper_exec.add_node(helper_node);
+
+  std::atomic<int> output_count{0};
+  auto out_sub = helper_node->create_subscription<sensor_msgs::msg::PointCloud2>(
+    topic_out, rclcpp::SensorDataQoS(),
+    [&output_count](sensor_msgs::msg::PointCloud2::ConstSharedPtr) {
+      output_count.fetch_add(1);
+    });
+
+  image_transport::ImageTransport it_helper{*helper_node};
+  auto depth_pub = it_helper.advertise(topic_depth, 1);
+  auto rgb_cam_pub = it_helper.advertiseCamera(topic_rgb, 1);
+
+  auto deadline = std::chrono::steady_clock::now() + 5s;
+  while ((depth_pub.getNumSubscribers() == 0 ||
+    rgb_cam_pub.getNumSubscribers() == 0) &&
+    std::chrono::steady_clock::now() < deadline)
+  {
+    helper_exec.spin_some();
+    std::this_thread::sleep_for(50ms);
+  }
+  ASSERT_GT(depth_pub.getNumSubscribers(), 0u);
+  ASSERT_GT(rgb_cam_pub.getNumSubscribers(), 0u);
+
+  auto publish_triplet =
+    [&](const sensor_msgs::msg::Image & depth, const sensor_msgs::msg::Image & rgb,
+    const sensor_msgs::msg::CameraInfo & info)
+    {
+      const auto stamp = helper_node->now();
+      auto depth_with_stamp = depth;
+      depth_with_stamp.header.stamp = stamp;
+      auto rgb_with_stamp = rgb;
+      rgb_with_stamp.header.stamp = stamp;
+      auto info_with_stamp = info;
+      info_with_stamp.header.stamp = stamp;
+      info_with_stamp.header.frame_id = rgb_with_stamp.header.frame_id;
+      depth_pub.publish(depth_with_stamp);
+      rgb_cam_pub.publish(rgb_with_stamp, info_with_stamp);
+    };
+
+  // Depth: metadata claims 640x480 but the payload only contains 320x240
+  // worth of bytes -- the lagging-metadata window described in issue #1149.
+  // RGB matches the declared depth dimensions so the resize branch is not
+  // taken and the depth-side conversion is exercised directly.
+  {
+    const uint32_t declared_w = 640;
+    const uint32_t declared_h = 480;
+    const uint32_t declared_step = declared_w * sizeof(uint16_t);
+    const uint32_t actual_w = 320;
+    const uint32_t actual_h = 240;
+    std::vector<uint8_t> short_data(
+      static_cast<size_t>(actual_w) * actual_h * sizeof(uint16_t), 0);
+    auto depth = make_image(
+      sensor_msgs::image_encodings::TYPE_16UC1,
+      declared_w, declared_h, declared_step, std::move(short_data));
+    auto rgb = make_rgb8(declared_w, declared_h);
+    auto info = make_camera_info(declared_w, declared_h);
+    publish_triplet(depth, rgb, info);
+  }
+
+  // Also exercise the unreasonable-dimensions guard.
+  {
+    auto depth = make_image(
+      sensor_msgs::image_encodings::TYPE_16UC1, 0, 0, 0, {});
+    auto rgb = make_rgb8(8, 4);
+    auto info = make_camera_info(8, 4);
+    publish_triplet(depth, rgb, info);
+  }
+
+  auto spin_until = std::chrono::steady_clock::now() + 1500ms;
+  while (std::chrono::steady_clock::now() < spin_until) {
+    helper_exec.spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+  EXPECT_EQ(output_count.load(), 0)
+    << "Inconsistent depth metadata/payload must not produce a point cloud.";
+
+  // Final valid triplet to confirm the node is still alive after rejecting
+  // the malformed input.
+  {
+    const uint32_t w = 8;
+    const uint32_t h = 4;
+    auto depth = make_depth_16uc1(w, h, 1000);
+    auto rgb = make_rgb8(w, h);
+    auto info = make_camera_info(w, h);
+    for (int i = 0; i < 5; ++i) {
+      publish_triplet(depth, rgb, info);
+      std::this_thread::sleep_for(30ms);
+      helper_exec.spin_some();
+    }
+  }
+
+  spin_until = std::chrono::steady_clock::now() + 3s;
+  while (std::chrono::steady_clock::now() < spin_until &&
+    output_count.load() == 0)
+  {
+    helper_exec.spin_some();
+    std::this_thread::sleep_for(10ms);
+  }
+  EXPECT_GT(output_count.load(), 0)
+    << "PointCloudXyzrgbNode should still process valid inputs after malformed ones.";
+
+  rclcpp::shutdown();
+  node_spin_thread.join();
+}
+
 int main(int argc, char ** argv)
 {
-  rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
