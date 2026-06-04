@@ -158,6 +158,15 @@ This command plays the bag at one-tenth speed, giving you time to adjust paramet
 All running nodes are stateless with respect to time, so you can replay the bag as needed.
 You should now see disparity data in your stereo visualization and/or RViz. 
 
+Visualize the disparity and stereo images
+-----------------------------------------
+
+To view the disparity image, you can use ``stereo_view`` from the ``image_view`` package:
+
+.. code-block:: bash
+
+   ros2 run image_view stereo_view --ros-args -r stereo:=narrow_stereo_textured -r image:=image_rect_color
+
 What's this junk on the tabletop?
 ---------------------------------
 
