@@ -6,7 +6,6 @@
   <description>image_pipeline fills the gap between getting raw images from a camera driver and higher-level vision processing.</description>
 
   <maintainer email="vincent.rabaud@gmail.com">Vincent Rabaud</maintainer>
-  <maintainer email="whitleysoftwareservices@gmail.com">Joshua Whitley</maintainer>
   <maintainer email="jacob@openrobotics.org">Jacob Perron</maintainer>
   <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
 
