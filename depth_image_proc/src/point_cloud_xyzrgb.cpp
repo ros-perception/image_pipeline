@@ -123,14 +123,14 @@ void PointCloudXyzrgbNode::connectCb()
     // depth image can use different transport.(e.g. compressedDepth)
     sub_depth_.subscribe(
       this, "depth_registered/image_rect",
-      depth_hints.getTransport(), rmw_qos_profile_default, sub_opts);
+      depth_hints.getTransport(), rmw_qos_profile_sensor_data, sub_opts);
 
     // rgb uses normal ros transport hints.
     image_transport::TransportHints hints(this, "raw");
     sub_rgb_.subscribe(
       this, "rgb/image_rect_color",
-      hints.getTransport(), rmw_qos_profile_default, sub_opts);
-    sub_info_.subscribe(this, "rgb/camera_info");
+      hints.getTransport(), rmw_qos_profile_sensor_data, sub_opts);
+    sub_info_.subscribe(this, "rgb/camera_info", rmw_qos_profile_sensor_data);
   }
 }
 
