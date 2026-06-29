@@ -48,7 +48,7 @@
 
 #include <chrono>
 #include <memory>
-#include <sstream>
+#include <filesystem>
 #include <string>
 
 #include "cv_bridge/cv_bridge.hpp"
@@ -153,10 +153,7 @@ bool ImageSaverNode::saveImage(
 
     if (save_all_image_ || save_image_service_) {
       if (stamped_filename_) {
-        std::stringstream ss;
-        ss << this->now().nanoseconds();
-        std::string timestamp_str = ss.str();
-        filename.insert(0, timestamp_str);
+        filename.insert(0, std::to_string(this->now().nanoseconds()));
       }
 
       if (cv::imwrite(filename, image)) {
@@ -279,7 +276,7 @@ void ImageSaverNode::callbackWithCameraInfo(
 
   // save the CameraInfo
   if (info) {
-    filename = filename.replace(filename.rfind("."), filename.length(), ".ini");
+    filename = std::filesystem::path{filename}.replace_extension(".ini").string();
     camera_calibration_parsers::writeCalibration(filename, "camera", *info);
   }
 
