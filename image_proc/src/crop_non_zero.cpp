@@ -71,9 +71,9 @@ CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions & options)
         auto qos_profile = getQosProfile(this, image_topic_);
         image_transport::TransportHints hints(*this);
         sub_raw_ = image_transport::create_subscription(
-          *this, image_topic_, std::bind(
-            &CropNonZeroNode::imageCb, this,
-            std::placeholders::_1), hints.getTransport(), qos_profile);
+          *this, image_topic_,
+          [this](const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg) {imageCb(raw_msg);},
+          hints.getTransport(), qos_profile);
       }
     };
 

@@ -15,26 +15,23 @@
 #ifndef UTILS_HPP_
 #define UTILS_HPP_
 
-#include <memory>
+#include <format>
 #include <string>
-#include <stdexcept>
+#include <string_view>
 
 namespace image_view
 {
-// TODO(ahcorde): Use std::format when C++20 is available
+// Thin wrapper around std::vformat. The format string is a runtime ROS
+// parameter (the "filename_format" parameter), so std::format -- which
+// requires a compile-time-checked format string -- cannot be used directly;
+// std::vformat is the runtime-format-string entry point.
+//
+// NOTE: format strings now use std::format's "{}" replacement-field syntax,
+// not printf's "%" conversion specifiers. e.g. "left%04i.%s" -> "left{:04}.{}".
 template<typename ... Args>
-std::string string_format(const std::string & format, Args ... args)
+std::string string_format(std::string_view format, Args && ... args)
 {
-  // Extra space for '\0'
-  int size_s = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1;
-  if (size_s <= 0) {
-    throw std::runtime_error("Error during formatting.");
-  }
-  auto size = static_cast<size_t>(size_s);
-  std::unique_ptr<char[]> buf(new char[size]);
-  std::snprintf(buf.get(), size, format.c_str(), args ...);
-  // We don't want the '\0' inside
-  return std::string(buf.get(), buf.get() + size - 1);
+  return std::vformat(format, std::make_format_args(args ...));
 }
 }  // namespace image_view
 

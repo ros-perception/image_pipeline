@@ -77,9 +77,11 @@ PointCloudXyzRadialNode::PointCloudXyzRadialNode(const rclcpp::NodeOptions & opt
         sub_depth_ = image_transport::create_camera_subscription(
           *this,
           topic,
-          std::bind(
-            &PointCloudXyzRadialNode::depthCb, this, std::placeholders::_1,
-            std::placeholders::_2),
+          [this](
+            const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
+            const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg) {
+            depthCb(depth_msg, info_msg);
+          },
           depth_hints.getTransport(),
           qos_profile);
       }

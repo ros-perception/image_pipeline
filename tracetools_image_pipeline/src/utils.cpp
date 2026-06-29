@@ -26,7 +26,7 @@ const char * _demangle_symbol(const char * mangled)
 #ifdef TRACETOOLS_LTTNG_ENABLED
   char * demangled = nullptr;
   int status;
-  demangled = abi::__cxa_demangle(mangled, NULL, 0, &status);
+  demangled = abi::__cxa_demangle(mangled, nullptr, 0, &status);
   // Use demangled symbol if possible
   const char * demangled_val = (status == 0 ? demangled : mangled);
   return demangled_val != 0 ? demangled_val : "UNKNOWN_demangling_failed";

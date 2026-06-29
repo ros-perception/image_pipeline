@@ -71,7 +71,7 @@ ConvertMetricNode::ConvertMetricNode(const rclcpp::NodeOptions & options)
         sub_raw_ = image_transport::create_subscription(
           *this,
           topic,
-          std::bind(&ConvertMetricNode::depthCb, this, std::placeholders::_1),
+          [this](const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg) {depthCb(raw_msg);},
           hints.getTransport(),
           qos_profile);
       }

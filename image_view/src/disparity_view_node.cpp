@@ -85,7 +85,8 @@ DisparityViewNode::DisparityViewNode(const rclcpp::NodeOptions & options)
   autosize_ = this->declare_parameter("autosize", false);
 
   sub_ = this->create_subscription<stereo_msgs::msg::DisparityImage>(
-    topic, rclcpp::QoS(10), std::bind(&DisparityViewNode::imageCb, this, std::placeholders::_1));
+    topic, rclcpp::QoS(10),
+    [this](const stereo_msgs::msg::DisparityImage::SharedPtr msg) {imageCb(msg);});
 }
 
 DisparityViewNode::~DisparityViewNode()

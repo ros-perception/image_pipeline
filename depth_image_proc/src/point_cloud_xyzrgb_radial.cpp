@@ -67,22 +67,22 @@ PointCloudXyzrgbRadialNode::PointCloudXyzrgbRadialNode(const rclcpp::NodeOptions
       sub_rgb_,
       sub_info_);
     exact_sync_->registerCallback(
-      std::bind(
-        &PointCloudXyzrgbRadialNode::imageCb,
-        this,
-        std::placeholders::_1,
-        std::placeholders::_2,
-        std::placeholders::_3));
+      [this](
+        const Image::ConstSharedPtr & depth_msg,
+        const Image::ConstSharedPtr & rgb_msg,
+        const CameraInfo::ConstSharedPtr & info_msg) {
+        imageCb(depth_msg, rgb_msg, info_msg);
+      });
   } else {
     sync_ =
       std::make_unique<Synchronizer>(SyncPolicy(queue_size), sub_depth_, sub_rgb_, sub_info_);
     sync_->registerCallback(
-      std::bind(
-        &PointCloudXyzrgbRadialNode::imageCb,
-        this,
-        std::placeholders::_1,
-        std::placeholders::_2,
-        std::placeholders::_3));
+      [this](
+        const Image::ConstSharedPtr & depth_msg,
+        const Image::ConstSharedPtr & rgb_msg,
+        const CameraInfo::ConstSharedPtr & info_msg) {
+        imageCb(depth_msg, rgb_msg, info_msg);
+      });
   }
 
   // Create publisher with connect callback
