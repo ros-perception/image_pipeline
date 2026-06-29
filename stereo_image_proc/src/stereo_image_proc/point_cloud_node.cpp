@@ -121,11 +121,10 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
   // Synchronize callbacks
   if (approx) {
     if (0.0 == approx_sync_epsilon) {
-      approximate_sync_.reset(
-        new ApproximateSync(
-          ApproximatePolicy(queue_size),
-          sub_l_image_, sub_l_info_,
-          sub_r_info_, sub_disparity_));
+      approximate_sync_ = std::make_shared<ApproximateSync>(
+        ApproximatePolicy(queue_size),
+        sub_l_image_, sub_l_info_,
+        sub_r_info_, sub_disparity_);
       approximate_sync_->registerCallback(
         [this](
           const sensor_msgs::msg::Image::ConstSharedPtr & l_image_msg,
@@ -135,12 +134,11 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
           imageCb(l_image_msg, l_info_msg, r_info_msg, disp_msg);
         });
     } else {
-      approximate_epsilon_sync_.reset(
-        new ApproximateEpsilonSync(
-          ApproximateEpsilonPolicy(
-            queue_size, rclcpp::Duration::from_seconds(approx_sync_epsilon)),
-          sub_l_image_, sub_l_info_,
-          sub_r_info_, sub_disparity_));
+      approximate_epsilon_sync_ = std::make_shared<ApproximateEpsilonSync>(
+        ApproximateEpsilonPolicy(
+          queue_size, rclcpp::Duration::from_seconds(approx_sync_epsilon)),
+        sub_l_image_, sub_l_info_,
+        sub_r_info_, sub_disparity_);
       approximate_epsilon_sync_->registerCallback(
         [this](
           const sensor_msgs::msg::Image::ConstSharedPtr & l_image_msg,
@@ -151,11 +149,10 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
         });
     }
   } else {
-    exact_sync_.reset(
-      new ExactSync(
-        ExactPolicy(queue_size),
-        sub_l_image_, sub_l_info_,
-        sub_r_info_, sub_disparity_));
+    exact_sync_ = std::make_shared<ExactSync>(
+      ExactPolicy(queue_size),
+      sub_l_image_, sub_l_info_,
+      sub_r_info_, sub_disparity_);
     exact_sync_->registerCallback(
       [this](
         const sensor_msgs::msg::Image::ConstSharedPtr & l_image_msg,
