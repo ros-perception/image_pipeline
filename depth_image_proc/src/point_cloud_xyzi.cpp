@@ -68,12 +68,12 @@ PointCloudXyziNode::PointCloudXyziNode(const rclcpp::NodeOptions & options)
     sub_intensity_,
     sub_info_);
   sync_->registerCallback(
-    std::bind(
-      &PointCloudXyziNode::imageCb,
-      this,
-      std::placeholders::_1,
-      std::placeholders::_2,
-      std::placeholders::_3));
+    [this](
+      const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
+      const sensor_msgs::msg::Image::ConstSharedPtr & intensity_msg,
+      const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg) {
+      imageCb(depth_msg, intensity_msg, info_msg);
+    });
 
   // Create publisher with connect callback
   rclcpp::PublisherOptions pub_options;

@@ -80,8 +80,8 @@ ExtractImagesNode::ExtractImagesNode(const rclcpp::NodeOptions & options)
   std::string transport = this->get_parameter("transport").as_string();
 
   sub_ = image_transport::create_subscription(
-    *this, topic, std::bind(
-      &ExtractImagesNode::image_cb, this, std::placeholders::_1),
+    *this, topic,
+    [this](const sensor_msgs::msg::Image::ConstSharedPtr & msg) {image_cb(msg);},
     hints.getTransport(), rclcpp::SensorDataQoS());
 
   auto topics = this->get_topic_names_and_types();
@@ -93,7 +93,7 @@ ExtractImagesNode::ExtractImagesNode(const rclcpp::NodeOptions & options)
       "--ros-args -r image:=<image topic> -p transport:=<transport mode>");
   }
 
-  this->declare_parameter<std::string>("filename_format", std::string("frame%04i.jpg"));
+  this->declare_parameter<std::string>("filename_format", std::string("frame{:04}.jpg"));
   filename_format_ = this->get_parameter("filename_format").as_string();
 
   this->declare_parameter<double>("sec_per_frame", 0.1);

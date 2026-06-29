@@ -28,10 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// This define is added to support M_PI on Windows
-#ifndef _USE_MATH_DEFINES
-#define _USE_MATH_DEFINES
-#endif
+#include <numbers>
 #include <cmath>
 #include <chrono>
 #include <limits>
@@ -132,7 +129,7 @@ void ImagePublisher::reconfigureCallback()
 {
   timer_ = this->create_wall_timer(
     std::chrono::milliseconds(static_cast<int>(1000 / publish_rate_)),
-    std::bind(&ImagePublisher::doWork, this));
+    [this]() {doWork();});
 
   camera_info_manager::CameraInfoManager c(
     this->get_node_base_interface(),
@@ -253,7 +250,7 @@ void ImagePublisher::onInit()
   double f_approx = 1.0;  // FOV equal to 0 disables the approximation
   if (std::abs(field_of_view_) > std::numeric_limits<double>::epsilon()) {
     // Based on https://learnopencv.com/approximate-focal-length-for-webcams-and-cell-phone-cameras/
-    f_approx = (camera_info_.width / 2) / std::tan((field_of_view_ * M_PI / 180) / 2);
+    f_approx = (camera_info_.width / 2) / std::tan((field_of_view_ * std::numbers::pi / 180) / 2);
   }
   camera_info_.k = {f_approx, 0, static_cast<float>(camera_info_.width / 2), 0, f_approx,
     static_cast<float>(camera_info_.height / 2), 0, 0, 1};

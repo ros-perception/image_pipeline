@@ -75,9 +75,8 @@ DebayerNode::DebayerNode(const rclcpp::NodeOptions & options)
         image_transport::TransportHints hints(*this);
         sub_raw_ = image_transport::create_subscription(
           *this, image_topic_,
-          std::bind(
-            &DebayerNode::imageCb, this,
-            std::placeholders::_1), hints.getTransport(), qos_profile);
+          [this](const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg) {imageCb(raw_msg);},
+          hints.getTransport(), qos_profile);
       }
     };
 

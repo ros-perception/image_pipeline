@@ -42,8 +42,9 @@ Subscribed Topics
 
 Parameters
 ----------
- * **filename_format** (string, default: "frame%04i.jpg"): File name for
-   saved images, you must add use '%04i' for sequence number.
+ * **filename_format** (string, default: "frame{:04}.jpg"): File name for
+   saved images, you must add use '{:04}' for the sequence number
+   (std::format syntax).
  * **image_transport** (string, default: raw): Image transport to use.
  * **sec_per_frame** (double, default: 0.1): Seconds between saved frames.
 
@@ -60,7 +61,7 @@ Parameters
 ^^^^^^^^^^
  * **autosize** (bool, default: false): Whether the window should autosize
    itself to the image or be resizeable by the user.
- * **filename_format** (string, default: "frame%04i.jpg"): printf-style
+ * **filename_format** (string, default: "frame{:04}.jpg"): std::format-style
    format for saved image names. Use to control name, location and format
    of saved images.
  * **image_transport** (string, default: raw): Image transport to use.
@@ -93,9 +94,9 @@ Services
 Parameters
 ----------
  * **encoding** (string, default:"bgr8"): Encoding type of input image topic.
- * **filename_format** (string, default: "left%04i.jpg"): File name for
-   saved images, you can use '%04i' for sequence number, and '%s' for default
-   file format, you can use 'jpg' ,'png', 'pgm' as filename suffixes.
+ * **filename_format** (string, default: "left{:04}.{}"): File name for
+   saved images, you can use '{:04}' for the sequence number, and '{}' for the
+   file format (std::format syntax). Supported suffixes: 'jpg', 'png', 'pgm'.
  * **image_transport** (string, default: raw): Image transport to use.
  * **save_all_images** (bool, default: true): If set to false, images
    are only saved when 'save' service is called.
@@ -129,9 +130,10 @@ Parameters
    produce exactly synced timestamps.
  * **autosize** (bool, default: false): Whether the window should autosize
    itself to the image or be resizeable by the user.
- * **filename_format** (string, default: "%s%04i.jpg"): printf-style
+ * **filename_format** (string, default: "{}{:04}.jpg"): std::format-style
    format for saved image names. Use to control name, location and format
-   of saved images. The string argument is "left" or "right".
+   of saved images. The first ('{}') argument is "left", "right" or "disp",
+   the second ('{:04}') is the sequence number.
  * **image_transport** (string, default: raw): Image transport to use.
  * **queue_size** (int, default: 5): Size of message queue for each
    synchronized topic. You may need to raise this if disparity processing

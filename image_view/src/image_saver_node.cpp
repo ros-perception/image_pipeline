@@ -48,7 +48,7 @@
 
 #include <chrono>
 #include <memory>
-#include <sstream>
+#include <filesystem>
 #include <string>
 
 #include "cv_bridge/cv_bridge.hpp"
@@ -83,17 +83,23 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
 
   // Useful when CameraInfo is being published
   cam_sub_ = image_transport::create_camera_subscription(
-    *this, topic, std::bind(
-      &ImageSaverNode::callbackWithCameraInfo, this, std::placeholders::_1, std::placeholders::_2),
+    *this, topic,
+    [this](
+      const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,
+      const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info) {
+      callbackWithCameraInfo(image_msg, info);
+    },
     hints.getTransport(), rclcpp::SensorDataQoS());
 
   // Useful when CameraInfo is not being published
   image_sub_ = image_transport::create_subscription(
-    *this, topic, std::bind(
-      &ImageSaverNode::callbackWithoutCameraInfo, this, std::placeholders::_1),
+    *this, topic,
+    [this](const sensor_msgs::msg::Image::ConstSharedPtr & image_msg) {
+      callbackWithoutCameraInfo(image_msg);
+    },
     hints.getTransport(), rclcpp::SystemDefaultsQoS());
 
-  g_format = this->declare_parameter("filename_format", std::string("left%04i.%s"));
+  g_format = this->declare_parameter("filename_format", std::string("left{:04}.{}"));
   encoding_ = this->declare_parameter("encoding", std::string("bgr8"));
   save_all_image_ = this->declare_parameter("save_all_image", true);
   stamped_filename_ = this->declare_parameter("stamped_filename", false);
@@ -101,22 +107,31 @@ ImageSaverNode::ImageSaverNode(const rclcpp::NodeOptions & options)
 
   save_srv_ = this->create_service<std_srvs::srv::Empty>(
     "save",
-    std::bind(
-      &ImageSaverNode::service, this, std::placeholders::_1, std::placeholders::_2,
-      std::placeholders::_3));
+    [this](
+      const std::shared_ptr<rmw_request_id_t> request_header,
+      const std::shared_ptr<std_srvs::srv::Empty::Request> request,
+      std::shared_ptr<std_srvs::srv::Empty::Response> response) {
+      service(request_header, request, response);
+    });
 
   // Advertise start/end services if the feature is enabled
   if (request_start_end_) {
     start_srv_ = this->create_service<std_srvs::srv::Trigger>(
       "start",
-      std::bind(
-        &ImageSaverNode::callbackStartSave, this, std::placeholders::_1, std::placeholders::_2,
-        std::placeholders::_3));
+      [this](
+        const std::shared_ptr<rmw_request_id_t> request_header,
+        const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+        std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+        callbackStartSave(request_header, request, response);
+      });
     end_srv_ = this->create_service<std_srvs::srv::Trigger>(
       "end",
-      std::bind(
-        &ImageSaverNode::callbackEndSave, this, std::placeholders::_1, std::placeholders::_2,
-        std::placeholders::_3));
+      [this](
+        const std::shared_ptr<rmw_request_id_t> request_header,
+        const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
+        std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
+        callbackEndSave(request_header, request, response);
+      });
   }
 }
 
@@ -138,10 +153,7 @@ bool ImageSaverNode::saveImage(
 
     if (save_all_image_ || save_image_service_) {
       if (stamped_filename_) {
-        std::stringstream ss;
-        ss << this->now().nanoseconds();
-        std::string timestamp_str = ss.str();
-        filename.insert(0, timestamp_str);
+        filename.insert(0, std::to_string(this->now().nanoseconds()));
       }
 
       if (cv::imwrite(filename, image)) {
@@ -264,7 +276,7 @@ void ImageSaverNode::callbackWithCameraInfo(
 
   // save the CameraInfo
   if (info) {
-    filename = filename.replace(filename.rfind("."), filename.length(), ".ini");
+    filename = std::filesystem::path{filename}.replace_extension(".ini").string();
     camera_calibration_parsers::writeCalibration(filename, "camera", *info);
   }
 

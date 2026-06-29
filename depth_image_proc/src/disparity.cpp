@@ -94,8 +94,11 @@ DisparityNode::DisparityNode(const rclcpp::NodeOptions & options)
   // Synchronize inputs. Topic subscriptions happen on demand in the connection callback.
   sync_ = std::make_shared<Sync>(queue_size, sub_depth_image_, sub_info_);
   sync_->registerCallback(
-    std::bind(
-      &DisparityNode::depthCb, this, std::placeholders::_1, std::placeholders::_2));
+    [this](
+      const sensor_msgs::msg::Image::ConstSharedPtr & depth_msg,
+      const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg) {
+      depthCb(depth_msg, info_msg);
+    });
 
   // Create publisher with connect callback
   rclcpp::PublisherOptions pub_options;

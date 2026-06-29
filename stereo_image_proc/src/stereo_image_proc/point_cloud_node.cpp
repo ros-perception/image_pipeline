@@ -101,8 +101,6 @@ private:
 PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("point_cloud_node", options)
 {
-  using namespace std::placeholders;
-
   // TransportHints does not actually declare the parameter
   this->declare_parameter<std::string>("image_transport", "raw");
 
@@ -123,31 +121,46 @@ PointCloudNode::PointCloudNode(const rclcpp::NodeOptions & options)
   // Synchronize callbacks
   if (approx) {
     if (0.0 == approx_sync_epsilon) {
-      approximate_sync_.reset(
-        new ApproximateSync(
-          ApproximatePolicy(queue_size),
-          sub_l_image_, sub_l_info_,
-          sub_r_info_, sub_disparity_));
+      approximate_sync_ = std::make_shared<ApproximateSync>(
+        ApproximatePolicy(queue_size),
+        sub_l_image_, sub_l_info_,
+        sub_r_info_, sub_disparity_);
       approximate_sync_->registerCallback(
-        std::bind(&PointCloudNode::imageCb, this, _1, _2, _3, _4));
+        [this](
+          const sensor_msgs::msg::Image::ConstSharedPtr & l_image_msg,
+          const sensor_msgs::msg::CameraInfo::ConstSharedPtr & l_info_msg,
+          const sensor_msgs::msg::CameraInfo::ConstSharedPtr & r_info_msg,
+          const stereo_msgs::msg::DisparityImage::ConstSharedPtr & disp_msg) {
+          imageCb(l_image_msg, l_info_msg, r_info_msg, disp_msg);
+        });
     } else {
-      approximate_epsilon_sync_.reset(
-        new ApproximateEpsilonSync(
-          ApproximateEpsilonPolicy(
-            queue_size, rclcpp::Duration::from_seconds(approx_sync_epsilon)),
-          sub_l_image_, sub_l_info_,
-          sub_r_info_, sub_disparity_));
+      approximate_epsilon_sync_ = std::make_shared<ApproximateEpsilonSync>(
+        ApproximateEpsilonPolicy(
+          queue_size, rclcpp::Duration::from_seconds(approx_sync_epsilon)),
+        sub_l_image_, sub_l_info_,
+        sub_r_info_, sub_disparity_);
       approximate_epsilon_sync_->registerCallback(
-        std::bind(&PointCloudNode::imageCb, this, _1, _2, _3, _4));
+        [this](
+          const sensor_msgs::msg::Image::ConstSharedPtr & l_image_msg,
+          const sensor_msgs::msg::CameraInfo::ConstSharedPtr & l_info_msg,
+          const sensor_msgs::msg::CameraInfo::ConstSharedPtr & r_info_msg,
+          const stereo_msgs::msg::DisparityImage::ConstSharedPtr & disp_msg) {
+          imageCb(l_image_msg, l_info_msg, r_info_msg, disp_msg);
+        });
     }
   } else {
-    exact_sync_.reset(
-      new ExactSync(
-        ExactPolicy(queue_size),
-        sub_l_image_, sub_l_info_,
-        sub_r_info_, sub_disparity_));
+    exact_sync_ = std::make_shared<ExactSync>(
+      ExactPolicy(queue_size),
+      sub_l_image_, sub_l_info_,
+      sub_r_info_, sub_disparity_);
     exact_sync_->registerCallback(
-      std::bind(&PointCloudNode::imageCb, this, _1, _2, _3, _4));
+      [this](
+        const sensor_msgs::msg::Image::ConstSharedPtr & l_image_msg,
+        const sensor_msgs::msg::CameraInfo::ConstSharedPtr & l_info_msg,
+        const sensor_msgs::msg::CameraInfo::ConstSharedPtr & r_info_msg,
+        const stereo_msgs::msg::DisparityImage::ConstSharedPtr & disp_msg) {
+        imageCb(l_image_msg, l_info_msg, r_info_msg, disp_msg);
+      });
   }
 
   // Publisher options to allow reconfigurable qos settings and connect callback

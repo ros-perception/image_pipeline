@@ -40,7 +40,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <image_transport/image_transport.hpp>
 
-using std::placeholders::_1;
 
 class ImageProcTest
   : public testing::Test
@@ -120,7 +119,8 @@ TEST_F(ImageProcTest, monoSubscription)
 {
   RCLCPP_INFO(node->get_logger(), "In test. Subscribing.");
   auto mono_sub = node->create_subscription<sensor_msgs::msg::Image>(
-    topic_raw, 1, std::bind(&ImageProcTest::callback, this, _1));
+    topic_raw, 1,
+    [this](const sensor_msgs::msg::Image::ConstSharedPtr & msg) {callback(msg);});
 
   RCLCPP_INFO(node->get_logger(), "Publishing");
 
