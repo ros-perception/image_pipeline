@@ -268,7 +268,7 @@ public:
   }
 
   // Do all the work!
-  bool process(
+  [[nodiscard]] bool process(
     const sensor_msgs::msg::Image::ConstSharedPtr & left_raw,
     const sensor_msgs::msg::Image::ConstSharedPtr & right_raw,
     const image_geometry::StereoCameraModel & model,

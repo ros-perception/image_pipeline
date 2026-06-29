@@ -45,7 +45,7 @@ struct DepthTraits {};
 template<>
 struct DepthTraits<uint16_t>
 {
-  static constexpr bool valid(uint16_t depth) {return depth != 0;}
+  [[nodiscard]] static constexpr bool valid(uint16_t depth) {return depth != 0;}
   static constexpr float toMeters(uint16_t depth) {return depth * 0.001f;}   // originally mm
   static constexpr uint16_t fromMeters(float depth) {return (depth * 1000.0f) + 0.5f;}
   // Do nothing - already zero-filled
@@ -56,7 +56,7 @@ template<>
 struct DepthTraits<float>
 {
   // Not constexpr: std::isfinite only becomes constexpr in C++23 (P0533).
-  static inline bool valid(float depth) {return std::isfinite(depth);}
+  [[nodiscard]] static inline bool valid(float depth) {return std::isfinite(depth);}
   static constexpr float toMeters(float depth) {return depth;}
   static constexpr float fromMeters(float depth) {return depth;}
 

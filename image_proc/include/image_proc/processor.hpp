@@ -68,7 +68,7 @@ public:
     ALL = MONO | RECT | COLOR | RECT_COLOR
   };
 
-  bool process(
+  [[nodiscard]] bool process(
     const sensor_msgs::msg::Image::ConstSharedPtr & raw_image,
     const image_geometry::PinholeCameraModel & model,
     ImageSet & output, int flags = ALL) const;
