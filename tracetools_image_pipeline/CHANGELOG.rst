@@ -2,6 +2,13 @@
 Changelog for package tracetools_image_pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+8.0.1 (2026-07-10)
+------------------
+* Use lambdas, replace NULL with nullptr and std::format (`#1170 <https://github.com/ros-perception/image_pipeline/issues/1170>`_)
+* Updated CMake minimum version (`#1181 <https://github.com/ros-perception/image_pipeline/issues/1181>`_)
+* switch to C++20 (`#1165 <https://github.com/ros-perception/image_pipeline/issues/1165>`_)
+* Contributors: Alejandro Hernández Cordero, Christian Rauch
+
 8.0.0 (2026-05-08)
 ------------------
 
