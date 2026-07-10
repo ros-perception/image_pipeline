@@ -130,12 +130,16 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
   // default: CropDecimate_NN
   int interpolation = this->declare_parameter("interpolation", 0);
   interpolation_ = static_cast<CropDecimateModes>(interpolation);
+  always_subscribe_ = this->declare_parameter("always_subscribe", false);
 
   // Setup lazy subscriber using publisher connection callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
     [this](rclcpp::MatchedInfo &)
     {
+      if (always_subscribe_) {
+        return;
+      }
       if (pub_.getNumSubscribers() == 0) {
         sub_.shutdown();
       } else if (!sub_) {
@@ -153,6 +157,16 @@ CropDecimateNode::CropDecimateNode(const rclcpp::NodeOptions & options)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   pub_ = image_transport::create_camera_publisher(this, pub_topic, rmw_qos_profile_default,
       pub_options);
+
+  // If always subscribing, create the subscription immediately
+  if (always_subscribe_) {
+    auto qos_profile = getTopicQosProfile(this, image_topic_);
+    image_transport::TransportHints hints(this);
+    sub_ = image_transport::create_camera_subscription(
+      this, image_topic_, std::bind(
+        &CropDecimateNode::imageCb, this,
+        std::placeholders::_1, std::placeholders::_2), hints.getTransport(), qos_profile);
+  }
 }
 
 void CropDecimateNode::imageCb(

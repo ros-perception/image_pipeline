@@ -58,12 +58,16 @@ CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions & options)
   auto node_base = this->get_node_base_interface();
   image_topic_ = node_base->resolve_topic_or_service_name("image_raw", false);
   std::string pub_topic = node_base->resolve_topic_or_service_name("image", false);
+  always_subscribe_ = this->declare_parameter("always_subscribe", false);
 
   // Setup lazy subscriber using publisher connection callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
     [this](rclcpp::MatchedInfo &)
     {
+      if (always_subscribe_) {
+        return;
+      }
       if (pub_.getNumSubscribers() == 0) {
         sub_raw_.shutdown();
       } else if (!sub_raw_) {
@@ -80,6 +84,16 @@ CropNonZeroNode::CropNonZeroNode(const rclcpp::NodeOptions & options)
   // Create publisher - allow overriding QoS settings (history, depth, reliability)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   pub_ = image_transport::create_publisher(this, pub_topic, rmw_qos_profile_default, pub_options);
+
+  // If always subscribing, create the subscription immediately
+  if (always_subscribe_) {
+    auto qos_profile = getTopicQosProfile(this, image_topic_);
+    image_transport::TransportHints hints(this);
+    sub_raw_ = image_transport::create_subscription(
+      this, image_topic_, std::bind(
+        &CropNonZeroNode::imageCb, this,
+        std::placeholders::_1), hints.getTransport(), qos_profile);
+  }
 }
 
 void CropNonZeroNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg)

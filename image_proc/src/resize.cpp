@@ -65,12 +65,16 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
   scale_width_ = this->declare_parameter("scale_width", 1.0);
   height_ = this->declare_parameter("height", -1);
   width_ = this->declare_parameter("width", -1);
+  always_subscribe_ = this->declare_parameter("always_subscribe", false);
 
   // Setup lazy subscriber using publisher connection callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
     [this](rclcpp::MatchedInfo &)
     {
+      if (always_subscribe_) {
+        return;
+      }
       if (pub_image_.getNumSubscribers() == 0) {
         sub_image_.shutdown();
       } else if (!sub_image_) {
@@ -90,6 +94,18 @@ ResizeNode::ResizeNode(const rclcpp::NodeOptions & options)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   pub_image_ =
     image_transport::create_camera_publisher(this, pub_topic, rmw_qos_profile_default, pub_options);
+
+  // If always subscribing, create the subscription immediately
+  if (always_subscribe_) {
+    auto qos_profile = getTopicQosProfile(this, image_topic_);
+    image_transport::TransportHints hints(this);
+    sub_image_ = image_transport::create_camera_subscription(
+      this, image_topic_,
+      std::bind(
+        &ResizeNode::imageCb, this,
+        std::placeholders::_1,
+        std::placeholders::_2), hints.getTransport(), qos_profile);
+  }
 }
 
 void ResizeNode::imageCb(
