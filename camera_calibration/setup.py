@@ -24,10 +24,9 @@ setup(
     keywords=['ROS2'],
     description='Camera_calibration allows easy calibration of monocular or stereo cameras using a checkerboard calibration target .',
     license='BSD',
-    tests_require=[
-        'pytest',
-        'requests'
-    ],
+    extras_require={
+        'test': ['pytest', 'requests'],
+    },
     entry_points={
         'console_scripts': [
             'cameracalibrator = camera_calibration.nodes.cameracalibrator:main',
