@@ -33,24 +33,26 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from io import BytesIO
-import cv2
 import math
-import numpy.linalg
 import pickle
 import random
 import tarfile
 import time
+
 from camera_calibration.calibrator import (
-    Calibrator,
     CalibrationException,
+    Calibrator,
     CAMERA_MODEL,
-    Patterns,
+    image_from_archive,
     ImageDrawable,
-    image_from_archive
+    Patterns,
 )
+import cv2
+import numpy.linalg
 
 
 class MonoDrawable(ImageDrawable):
+
     def __init__(self):
         ImageDrawable.__init__(self)
         self.scrib = None
@@ -59,7 +61,9 @@ class MonoDrawable(ImageDrawable):
 
 class MonoCalibrator(Calibrator):
     """
-    Calibration class for monocular cameras::
+    Calibration class for monocular cameras.
+
+    Example::
 
         images = [cv2.imread("mono%d.png") for i in range(8)]
         mc = MonoCalibrator()
@@ -75,19 +79,17 @@ class MonoCalibrator(Calibrator):
         super(MonoCalibrator, self).__init__(*args, **kwargs)
 
     def cal(self, images):
-        """
-        Calibrate camera from given images
-        """
+        """Calibrate camera from given images."""
         goodcorners = self.collect_corners(images)
         self.cal_fromcorners(goodcorners)
         self.calibrated = True
 
     def collect_corners(self, images):
         """
+        Find chessboards in all images.
+
         :param images: source images containing chessboards
         :type images: list of :class:`cvMat`
-
-        Find chessboards in all images.
 
         Return [ (corners, ids, ChessboardInfo) ]
         """
@@ -96,15 +98,16 @@ class MonoCalibrator(Calibrator):
 
         goodcorners = [(co, ids, b) for (ok, co, ids, b) in corners if ok]
         if not goodcorners:
-            raise CalibrationException("No corners found in images!")
+            raise CalibrationException('No corners found in images!')
         return goodcorners
 
     def cal_fromcorners(self, good):
         """
+        Calibrate the camera from detected corner positions.
+
         :param good: Good corner positions and boards
         :type good: [(corners, ChessboardInfo)]
         """
-
         (ipts, ids, boards) = zip(*good)
         opts = self.mk_object_points(boards)
         # If FIX_ASPECT_RATIO flag set, enforce focal lengths have 1/1 ratio
@@ -112,21 +115,21 @@ class MonoCalibrator(Calibrator):
 
         if self.pattern == Patterns.ChArUco:
             if self.camera_model == CAMERA_MODEL.FISHEYE:
-                raise NotImplemented(
-                    "Can't perform fisheye calibration with ChArUco board")
+                raise NotImplementedError("Can't perform fisheye calibration with ChArUco board")
 
-            reproj_err, self.intrinsics, self.distortion, rvecs, tvecs = cv2.aruco.calibrateCameraCharuco(
-                ipts, ids, boards[0].charuco_board, self.size, intrinsics_in, None)
+            reproj_err, self.intrinsics, self.distortion, rvecs, tvecs = (
+                cv2.aruco.calibrateCameraCharuco(
+                    ipts, ids, boards[0].charuco_board, self.size, intrinsics_in, None
+                )
+            )
 
         elif self.camera_model == CAMERA_MODEL.PINHOLE:
-            print("mono pinhole calibration...")
+            print('mono pinhole calibration...')
             reproj_err, self.intrinsics, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(
-                opts, ipts,
-                self.size,
-                intrinsics_in,
-                None,
-                flags=self.calib_flags)
-            # OpenCV returns more than 8 coefficients (the additional ones all zeros) when CALIB_RATIONAL_MODEL is set.
+                opts, ipts, self.size, intrinsics_in, None, flags=self.calib_flags
+            )
+            # OpenCV returns more than 8 coefficients (the additional ones all zeros)
+            # when CALIB_RATIONAL_MODEL is set.
             # The extra ones include e.g. thin prism coefficients, which we are not interested in.
             if self.calib_flags & cv2.CALIB_RATIONAL_MODEL:
                 # rational polynomial
@@ -135,15 +138,15 @@ class MonoCalibrator(Calibrator):
                 # plumb bob
                 self.distortion = dist_coeffs.flat[:5].reshape(-1, 1)
         elif self.camera_model == CAMERA_MODEL.FISHEYE:
-            print("mono fisheye calibration...")
+            print('mono fisheye calibration...')
             # WARNING: cv2.fisheye.calibrate wants float64 points
             ipts64 = numpy.asarray(ipts, dtype=numpy.float64)
             ipts = ipts64
             opts64 = numpy.asarray(opts, dtype=numpy.float64)
             opts = opts64
             reproj_err, self.intrinsics, self.distortion, rvecs, tvecs = cv2.fisheye.calibrate(
-                opts, ipts, self.size,
-                intrinsics_in, None, flags=self.fisheye_calib_flags)
+                opts, ipts, self.size, intrinsics_in, None, flags=self.fisheye_calib_flags
+            )
 
         # R is identity matrix for monocular calibration
         self.R = numpy.eye(3, dtype=numpy.float64)
@@ -153,70 +156,72 @@ class MonoCalibrator(Calibrator):
 
     def set_alpha(self, a):
         """
-        Set the alpha value for the calibrated camera solution.  The alpha
-        value is a zoom, and ranges from 0 (zoomed in, all pixels in
+        Set the alpha value for the calibrated camera solution.
+
+        The alpha value is a zoom, and ranges from 0 (zoomed in, all pixels in
         calibrated image are valid) to 1 (zoomed out, all pixels in
         original image are in calibrated image).
         """
-
         if self.camera_model == CAMERA_MODEL.PINHOLE:
-            # NOTE: Prior to Electric, this code was broken such that we never actually saved the new
+            # NOTE: Prior to Electric, this code was broken such that we never
+            # actually saved the new
             # camera matrix. In effect, this enforced P = [K|0] for monocular cameras.
             # TODO: Verify that OpenCV #1199 gets applied (improved GetOptimalNewCameraMatrix)
-            ncm, _ = cv2.getOptimalNewCameraMatrix(
-                self.intrinsics, self.distortion, self.size, a)
+            ncm, _ = cv2.getOptimalNewCameraMatrix(self.intrinsics, self.distortion, self.size, a)
             for j in range(3):
                 for i in range(3):
                     self.P[j, i] = ncm[j, i]
             self.mapx, self.mapy = cv2.initUndistortRectifyMap(
-                self.intrinsics, self.distortion, self.R, ncm, self.size, cv2.CV_32FC1)
+                self.intrinsics, self.distortion, self.R, ncm, self.size, cv2.CV_32FC1
+            )
         elif self.camera_model == CAMERA_MODEL.FISHEYE:
-            # NOTE: cv2.fisheye.estimateNewCameraMatrixForUndistortRectify not producing proper results, using a naive approach instead:
+            # NOTE: cv2.fisheye.estimateNewCameraMatrixForUndistortRectify not producing
+            # proper results, using a naive approach instead:
             self.P[:3, :3] = self.intrinsics[:3, :3]
-            self.P[0, 0] /= (1. + a)
-            self.P[1, 1] /= (1. + a)
+            self.P[0, 0] /= 1.0 + a
+            self.P[1, 1] /= 1.0 + a
             self.mapx, self.mapy = cv2.fisheye.initUndistortRectifyMap(
-                self.intrinsics, self.distortion, self.R, self.P, self.size, cv2.CV_32FC1)
+                self.intrinsics, self.distortion, self.R, self.P, self.size, cv2.CV_32FC1
+            )
 
     def remap(self, src):
         """
+        Apply the post-calibration undistortion to the source image.
+
         :param src: source image
         :type src: :class:`cvMat`
-
-        Apply the post-calibration undistortion to the source image
         """
         return cv2.remap(src, self.mapx, self.mapy, cv2.INTER_LINEAR)
 
     def undistort_points(self, src):
         """
+        Apply the post-calibration undistortion to the source points.
+
         :param src: N source pixel points (u,v) as an Nx2 matrix
         :type src: :class:`cvMat`
-
-        Apply the post-calibration undistortion to the source points
         """
         if self.camera_model == CAMERA_MODEL.PINHOLE:
             return cv2.undistortPoints(src, self.intrinsics, self.distortion, R=self.R, P=self.P)
         elif self.camera_model == CAMERA_MODEL.FISHEYE:
             return cv2.fisheye.undistortPoints(
-                src, self.intrinsics, self.distortion, R=self.R, P=self.P)
+                src, self.intrinsics, self.distortion, R=self.R, P=self.P
+            )
 
     def as_message(self):
-        """ Return the camera calibration as a CameraInfo message """
+        """Return the camera calibration as a CameraInfo message."""
         return self.lrmsg(
-            self.distortion, self.intrinsics, self.R, self.P, self.size, self.camera_model)
+            self.distortion, self.intrinsics, self.R, self.P, self.size, self.camera_model
+        )
 
     def from_message(self, msg, alpha=0.0):
-        """ Initialize the camera calibration from a CameraInfo message """
-
+        """Initialize the camera calibration from a CameraInfo message."""
         self.size = (msg.width, msg.height)
-        self.intrinsics = numpy.array(
-            msg.k, dtype=numpy.float64, copy=True).reshape((3, 3))
-        self.distortion = numpy.array(
-            msg.d, dtype=numpy.float64, copy=True).reshape((len(msg.d), 1))
-        self.R = numpy.array(msg.r, dtype=numpy.float64,
-                             copy=True).reshape((3, 3))
-        self.P = numpy.array(msg.p, dtype=numpy.float64,
-                             copy=True).reshape((3, 4))
+        self.intrinsics = numpy.array(msg.k, dtype=numpy.float64, copy=True).reshape((3, 3))
+        self.distortion = numpy.array(msg.d, dtype=numpy.float64, copy=True).reshape(
+            (len(msg.d), 1)
+        )
+        self.R = numpy.array(msg.r, dtype=numpy.float64, copy=True).reshape((3, 3))
+        self.P = numpy.array(msg.p, dtype=numpy.float64, copy=True).reshape((3, 4))
 
         self.set_alpha(0.0)
 
@@ -227,12 +232,20 @@ class MonoCalibrator(Calibrator):
         return self.lrost(self.name, self.distortion, self.intrinsics, self.R, self.P, self.size)
 
     def yaml(self):
-        return self.lryaml(self.name, self.distortion, self.intrinsics, self.R, self.P, self.size,
-                           self.camera_model)
+        return self.lryaml(
+            self.name,
+            self.distortion,
+            self.intrinsics,
+            self.R,
+            self.P,
+            self.size,
+            self.camera_model,
+        )
 
     def linear_error_from_image(self, image):
         """
         Detect the checkerboard and compute the linear error.
+
         Mainly for use in tests.
         """
         _, corners, _, ids, board, _ = self.downsample_and_detect(image)
@@ -244,19 +257,17 @@ class MonoCalibrator(Calibrator):
 
     @staticmethod
     def linear_error(corners, ids, b):
-        """
-        Returns the linear error for a set of corners detected in the unrectified image.
-        """
-
+        """Return the linear error for a set of corners detected in the unrectified image."""
         if corners is None:
             return None
 
         corners = numpy.squeeze(corners)
 
         def pt2line(x0, y0, x1, y1, x2, y2):
-            """ point is (x0, y0), line is (x1, y1, x2, y2) """
-            return abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) / math.sqrt((x2 - x1) ** 2 +
-                                                                                  (y2 - y1) ** 2)
+            """Point is (x0, y0), line is (x1, y1, x2, y2)."""
+            return abs((x2 - x1) * (y1 - y0) - (x1 - x0) * (y2 - y1)) / math.sqrt(
+                (x2 - x1) ** 2 + (y2 - y1) ** 2
+            )
 
         n_cols = b.n_cols
         n_rows = b.n_rows
@@ -268,12 +279,12 @@ class MonoCalibrator(Calibrator):
         if ids is None:
             ids = numpy.arange(n_pts).reshape((n_pts, 1))
 
-        ids_to_idx = dict((ids[i, 0], i) for i in range(len(ids)))
+        ids_to_idx = {ids[i, 0]: i for i in range(len(ids))}
 
         errors = []
         for row in range(n_rows):
             row_min = row * n_cols
-            row_max = (row+1) * n_cols
+            row_max = (row + 1) * n_cols
             pts_in_row = [x for x in ids if row_min <= x < row_max]
 
             # not enough points to calculate error
@@ -301,17 +312,18 @@ class MonoCalibrator(Calibrator):
 
     def handle_msg(self, msg):
         """
-        Detects the calibration target and, if found and provides enough new information,
-        adds it to the sample database.
+        Detect the calibration target and add it to the sample database.
 
+        The sample is added if the target is found and provides enough new information.
         Returns a MonoDrawable message with the display image and progress info.
         """
         gray = self.mkgray(msg)
         linear_error = -1
 
         # Get display-image-to-be (scrib) and detection of the calibration target
-        scrib_mono, corners, downsampled_corners, ids, board, (
-            x_scale, y_scale) = self.downsample_and_detect(gray)
+        scrib_mono, corners, downsampled_corners, ids, board, (x_scale, y_scale) = (
+            self.downsample_and_detect(gray)
+        )
 
         if self.calibrated:
             # Show rectified image
@@ -319,8 +331,7 @@ class MonoCalibrator(Calibrator):
             gray_remap = self.remap(gray)
             gray_rect = gray_remap
             if x_scale != 1.0 or y_scale != 1.0:
-                gray_rect = cv2.resize(
-                    gray_remap, (scrib_mono.shape[1], scrib_mono.shape[0]))
+                gray_rect = cv2.resize(gray_remap, (scrib_mono.shape[1], scrib_mono.shape[0]))
 
             scrib = cv2.cvtColor(gray_rect, cv2.COLOR_GRAY2BGR)
 
@@ -333,32 +344,37 @@ class MonoCalibrator(Calibrator):
                 scrib_src = undistorted.copy()
                 scrib_src[:, :, 0] /= x_scale
                 scrib_src[:, :, 1] /= y_scale
-                cv2.drawChessboardCorners(
-                    scrib, (board.n_cols, board.n_rows), scrib_src, True)
+                cv2.drawChessboardCorners(scrib, (board.n_cols, board.n_rows), scrib_src, True)
 
         else:
             scrib = cv2.cvtColor(scrib_mono, cv2.COLOR_GRAY2BGR)
             if corners is not None:
                 # Draw (potentially downsampled) corners onto display image
-                if board.pattern == "charuco":
-                    cv2.aruco.drawDetectedCornersCharuco(
-                        scrib, downsampled_corners, ids)
+                if board.pattern == 'charuco':
+                    cv2.aruco.drawDetectedCornersCharuco(scrib, downsampled_corners, ids)
                 else:
                     cv2.drawChessboardCorners(
-                        scrib, (board.n_cols, board.n_rows), downsampled_corners, True)
+                        scrib, (board.n_cols, board.n_rows), downsampled_corners, True
+                    )
 
-                # Add sample to database only if it's sufficiently different from any previous sample.
-                params = self.get_parameters(
-                    corners, ids, board, (gray.shape[1], gray.shape[0]))
+                # Add sample to database only if it's sufficiently different from any
+                # previous sample.
+                params = self.get_parameters(corners, ids, board, (gray.shape[1], gray.shape[0]))
                 if self.is_good_sample(
-                        params, corners, ids, self.last_frame_corners, self.last_frame_ids):
+                    params, corners, ids, self.last_frame_corners, self.last_frame_ids
+                ):
                     self.db.append((params, gray))
                     if self.pattern == Patterns.ChArUco:
                         self.good_corners.append((corners, ids, board))
                     else:
                         self.good_corners.append((corners, None, board))
-                    print(("*** Added sample %d, p_x = %.3f, p_y = %.3f, p_size = %.3f, skew = %.3f" %
-                          tuple([len(self.db)] + params)))
+                    print(
+                        (
+                            '*** Added sample %d, p_x = %.3f, p_y = %.3f, '
+                            'p_size = %.3f, skew = %.3f'
+                            % tuple([len(self.db)] + params)
+                        )
+                    )
 
         self.last_frame_corners = corners
         self.last_frame_ids = ids
@@ -370,15 +386,17 @@ class MonoCalibrator(Calibrator):
 
     def do_calibration(self, dump=False):
         if not self.good_corners:
-            print("**** Collecting corners for all images! ****")  # DEBUG
+            print('**** Collecting corners for all images! ****')  # DEBUG
             images = [i for (p, i) in self.db]
             self.good_corners = self.collect_corners(images)
         # TODO Needs to be set externally
         self.size = (self.db[0][1].shape[1], self.db[0][1].shape[0])
         # Dump should only occur if user wants it
         if dump:
-            pickle.dump((self.is_mono, self.size, self.good_corners),
-                        open("/tmp/camera_calibration_%08x.pickle" % random.getrandbits(32), "w"))
+            pickle.dump(
+                (self.is_mono, self.size, self.good_corners),
+                open('/tmp/camera_calibration_%08x.pickle' % random.getrandbits(32), 'w'),
+            )
         self.cal_fromcorners(self.good_corners)
         self.calibrated = True
         # DEBUG
@@ -386,7 +404,7 @@ class MonoCalibrator(Calibrator):
         print((self.ost()))
 
     def do_tarfile_save(self, tf):
-        """ Write images and calibration solution to a tarfile object """
+        """Write images and calibration solution to a tarfile object."""
 
         def taradd(name, buf):
             if isinstance(buf, str):
@@ -399,16 +417,19 @@ class MonoCalibrator(Calibrator):
             ti.mtime = int(time.time())
             tf.addfile(tarinfo=ti, fileobj=s)
 
-        ims = [("left-%04d.png" % i, im) for i, (_, im) in enumerate(self.db)]
-        for (name, im) in ims:
-            taradd(name, cv2.imencode(".png", im)[1].tostring())
+        ims = [('left-%04d.png' % i, im) for i, (_, im) in enumerate(self.db)]
+        for name, im in ims:
+            taradd(name, cv2.imencode('.png', im)[1].tostring())
         taradd('ost.yaml', self.yaml())
         taradd('ost.txt', self.ost())
 
     def do_tarfile_calibration(self, filename):
         archive = tarfile.open(filename, 'r')
 
-        limages = [image_from_archive(archive, f) for f in archive.getnames() if (
-            f.startswith('left') and (f.endswith('.pgm') or f.endswith('png')))]
+        limages = [
+            image_from_archive(archive, f)
+            for f in archive.getnames()
+            if (f.startswith('left') and (f.endswith('.pgm') or f.endswith('png')))
+        ]
 
         self.cal(limages)

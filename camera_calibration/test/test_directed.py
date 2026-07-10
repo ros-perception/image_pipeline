@@ -32,18 +32,23 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import cv2
 import collections
 import copy
-import numpy
 import os
-import requests
 import tarfile
 import unittest
 
+from camera_calibration.calibrator import (
+    CalibrationException,
+    ChessboardInfo,
+    image_from_archive,
+    Patterns,
+)
 from camera_calibration.mono_calibrator import MonoCalibrator
 from camera_calibration.stereo_calibrator import StereoCalibrator
-from camera_calibration.calibrator import Patterns, CalibrationException, ChessboardInfo, image_from_archive
+import cv2
+import numpy
+import requests
 
 board = ChessboardInfo()
 board.n_cols = 8
@@ -52,6 +57,7 @@ board.dim = 0.108
 
 
 class TestDirected(unittest.TestCase):
+
     def setUp(self):
         if not os.path.isfile('/tmp/camera_calibration.tar.gz'):
             url = 'http://download.ros.org/data/camera_calibration/camera_calibration.tar.gz'
@@ -61,11 +67,13 @@ class TestDirected(unittest.TestCase):
 
         tar_path = '/tmp/camera_calibration.tar.gz'
         self.tar = tarfile.open(tar_path, 'r')
-        self.limages = [image_from_archive(
-            self.tar, "wide/left%04d.pgm" % i) for i in range(3, 15)]
-        self.rimages = [image_from_archive(
-            self.tar, "wide/right%04d.pgm" % i) for i in range(3, 15)]
-        self.l = {}
+        self.limages = [
+            image_from_archive(self.tar, 'wide/left%04d.pgm' % i) for i in range(3, 15)
+        ]
+        self.rimages = [
+            image_from_archive(self.tar, 'wide/right%04d.pgm' % i) for i in range(3, 15)
+        ]
+        self.l = {}  # noqa: E741
         self.r = {}
         self.sizes = [(320, 240), (640, 480), (800, 600), (1024, 768)]
         for dim in self.sizes:
@@ -112,7 +120,7 @@ class TestDirected(unittest.TestCase):
     def test_stereo(self):
         epierrors = [0.1, 0.2, 0.45, 1.0]
         for i, dim in enumerate(self.sizes):
-            print("Dim =", dim)
+            print('Dim =', dim)
             sc = StereoCalibrator([board], cv2.CALIB_FIX_K3)
             sc.cal(self.l[dim], self.r[dim])
 
@@ -129,11 +137,14 @@ class TestDirected(unittest.TestCase):
                     epierror += epierror_local
                     n += 1
             epierror /= n
-            self.assertTrue(epierror < epierrors[i],
-                            'Epipolar error is %f for resolution i = %d' % (epierror, i))
+            self.assertTrue(
+                epierror < epierrors[i],
+                'Epipolar error is %f for resolution i = %d' % (epierror, i),
+            )
 
-            self.assertAlmostEqual(sc.chessboard_size_from_images(
-                self.l[dim][0], self.r[dim][0]), .108, 2)
+            self.assertAlmostEqual(
+                sc.chessboard_size_from_images(self.l[dim][0], self.r[dim][0]), 0.108, 2
+            )
 
             # print sc.as_message()
 
@@ -157,21 +168,18 @@ class TestDirected(unittest.TestCase):
         new_board.n_rows = 7
 
         sc = StereoCalibrator([new_board])
-        self.assertRaises(CalibrationException,
-                          lambda: sc.cal(self.limages, self.rimages))
+        self.assertRaises(CalibrationException, lambda: sc.cal(self.limages, self.rimages))
         mc = MonoCalibrator([new_board])
         self.assertRaises(CalibrationException, lambda: mc.cal(self.limages))
 
 
 class TestArtificial(unittest.TestCase):
-    Setup = collections.namedtuple(
-        'Setup', ['pattern', 'cols', 'rows', 'lin_err', 'K_err'])
+    Setup = collections.namedtuple('Setup', ['pattern', 'cols', 'rows', 'lin_err', 'K_err'])
 
     def setUp(self):
         # Define some image transforms that will simulate a camera position
         M = []
-        self.k = numpy.array(
-            [[500, 0, 250], [0, 500, 250], [0, 0, 1]], numpy.float32)
+        self.k = numpy.array([[500, 0, 250], [0, 500, 250], [0, 0, 1]], numpy.float32)
         self.d = numpy.array([])
         # physical size of the board
         self.board_width_dim = 1
@@ -180,11 +188,10 @@ class TestArtificial(unittest.TestCase):
         # grid that are recognized (n row, n col)
         # Patterns.Circles, Patterns.ACircles
         self.setups = [
-            self.Setup(
-                pattern=Patterns.Chessboard, cols=7, rows=8, lin_err=0.2, K_err=8.2),
+            self.Setup(pattern=Patterns.Chessboard, cols=7, rows=8, lin_err=0.2, K_err=8.2),
             self.Setup(pattern=Patterns.Circles, cols=7, rows=8, lin_err=0.1, K_err=4),
-            self.Setup(
-                pattern=Patterns.ACircles, cols=3, rows=5, lin_err=0.1, K_err=8)]
+            self.Setup(pattern=Patterns.ACircles, cols=3, rows=5, lin_err=0.1, K_err=8),
+        ]
         self.limages = []
         self.rimages = []
         for setup in self.setups:
@@ -194,53 +201,77 @@ class TestArtificial(unittest.TestCase):
             # Create the pattern
             if setup.pattern == Patterns.Chessboard:
                 pattern = numpy.zeros(
-                    (50*(setup.rows+3), 50*(setup.cols+3), 1), numpy.uint8)
+                    (50 * (setup.rows + 3), 50 * (setup.cols + 3), 1), numpy.uint8
+                )
                 pattern.fill(255)
-                for j in range(1, setup.rows+2):
-                    for i in range(1+(j % 2), setup.cols+2, 2):
-                        pattern[50*j:50*(j+1), 50*i:50*(i+1)].fill(0)
+                for j in range(1, setup.rows + 2):
+                    for i in range(1 + (j % 2), setup.cols + 2, 2):
+                        pattern[50 * j: 50 * (j + 1), 50 * i: 50 * (i + 1)].fill(0)
             elif setup.pattern == Patterns.Circles:
                 pattern = numpy.zeros(
-                    (50*(setup.rows+2), 50*(setup.cols+2), 1), numpy.uint8)
+                    (50 * (setup.rows + 2), 50 * (setup.cols + 2), 1), numpy.uint8
+                )
                 pattern.fill(255)
-                for j in range(1, setup.rows+1):
-                    for i in range(1, setup.cols+1):
-                        cv2.circle(pattern, (int(50*i + 25),
-                                   int(50*j + 25)), 15, (0, 0, 0), -1)
+                for j in range(1, setup.rows + 1):
+                    for i in range(1, setup.cols + 1):
+                        cv2.circle(
+                            pattern, (int(50 * i + 25), int(50 * j + 25)), 15, (0, 0, 0), -1
+                        )
             elif setup.pattern == Patterns.ACircles:
                 x = 60
-                pattern = numpy.zeros(
-                    (x*(setup.rows+2), x*(setup.cols+5), 1), numpy.uint8)
+                pattern = numpy.zeros((x * (setup.rows + 2), x * (setup.cols + 5), 1), numpy.uint8)
                 pattern.fill(255)
-                for j in range(1, setup.rows+1):
+                for j in range(1, setup.rows + 1):
                     for i in range(0, setup.cols):
-                        cv2.circle(pattern, (int(x*(1 + 2*i + (j % 2)) + x/2),
-                                   int(x*j + x/2)), int(x/3), (0, 0, 0), -1)
+                        cv2.circle(
+                            pattern,
+                            (int(x * (1 + 2 * i + (j % 2)) + x / 2), int(x * j + x / 2)),
+                            int(x / 3),
+                            (0, 0, 0),
+                            -1,
+                        )
 
             rows, cols, _ = pattern.shape
             object_points_2d = numpy.array(
-                [[0, 0], [0, cols-1], [rows-1, cols-1], [rows-1, 0]], numpy.float32)
+                [[0, 0], [0, cols - 1], [rows - 1, cols - 1], [rows - 1, 0]], numpy.float32
+            )
             object_points_3d = numpy.array(
-                [[0, 0, 0], [0, cols-1, 0], [rows-1, cols-1, 0], [rows-1, 0, 0]], numpy.float32)
-            object_points_3d *= self.board_width_dim/float(cols)
+                [[0, 0, 0], [0, cols - 1, 0], [rows - 1, cols - 1, 0], [rows - 1, 0, 0]],
+                numpy.float32,
+            )
+            object_points_3d *= self.board_width_dim / float(cols)
 
             # create the artificial view points
-            rvec = [[0, 0, 0], [0, 0, 0.4], [0, 0.4, 0], [0.4, 0, 0], [
-                0.4, 0.4, 0], [0.4, 0, 0.4], [0, 0.4, 0.4], [0.4, 0.4, 0.4]]
-            tvec = [[-0.5, -0.5, 3], [-0.5, -0.5, 3], [-0.5, -0.1, 3], [-0.1, -0.5, 3],
-                    [-0.1, -0.1, 3], [-0.1, -0.5, 3], [-0.5, -0.1, 3], [-0.1, 0.1, 3]]
+            rvec = [
+                [0, 0, 0],
+                [0, 0, 0.4],
+                [0, 0.4, 0],
+                [0.4, 0, 0],
+                [0.4, 0.4, 0],
+                [0.4, 0, 0.4],
+                [0, 0.4, 0.4],
+                [0.4, 0.4, 0.4],
+            ]
+            tvec = [
+                [-0.5, -0.5, 3],
+                [-0.5, -0.5, 3],
+                [-0.5, -0.1, 3],
+                [-0.1, -0.5, 3],
+                [-0.1, -0.1, 3],
+                [-0.1, -0.5, 3],
+                [-0.5, -0.1, 3],
+                [-0.1, 0.1, 3],
+            ]
 
             dsize = (480, 640)
             for i in range(len(rvec)):
                 R = numpy.array(rvec[i], numpy.float32)
                 T = numpy.array(tvec[i], numpy.float32)
 
-                image_points, _ = cv2.projectPoints(
-                    object_points_3d, R, T, self.k, self.d)
+                image_points, _ = cv2.projectPoints(object_points_3d, R, T, self.k, self.d)
 
                 # deduce the perspective transform
-                M.append(cv2.getPerspectiveTransform(
-                    object_points_2d, image_points))
+                M.append(cv2.getPerspectiveTransform(object_points_2d, image_points))
 
                 # project the pattern according to the different cameras
                 pattern_warped = cv2.warpPerspective(pattern, M[i], dsize)
@@ -258,7 +289,7 @@ class TestArtificial(unittest.TestCase):
                 n += 1
         if n > 0:
             lin_err /= n
-        print("linear error is %f" % lin_err)
+        print('linear error is %f' % lin_err)
         self.assertTrue(0.0 < lin_err, 'lin_err is %f' % lin_err)
         self.assertTrue(lin_err < max_err, 'lin_err is %f' % lin_err)
 
@@ -273,44 +304,47 @@ class TestArtificial(unittest.TestCase):
             board.n_rows = setup.rows
             board.dim = self.board_width_dim
 
-            mc = MonoCalibrator(
-                [board], flags=cv2.CALIB_FIX_K3, pattern=setup.pattern)
+            mc = MonoCalibrator([board], flags=cv2.CALIB_FIX_K3, pattern=setup.pattern)
 
             if 0:
                 # display the patterns viewed by the camera
                 for pattern_warped in self.limages[i]:
-                    cv2.imshow("toto", pattern_warped)
+                    cv2.imshow('toto', pattern_warped)
                     cv2.waitKey(0)
 
             mc.cal(self.limages[i])
             self.assert_good_mono(mc, self.limages[i], setup.lin_err)
 
             # Make sure the intrinsics are similar
-            err_intrinsics = numpy.linalg.norm(
-                mc.intrinsics - self.k, ord=numpy.inf)
-            self.assertTrue(err_intrinsics < setup.K_err,
-                            'intrinsics error is %f for resolution i = %d' % (err_intrinsics, i))
-            print('intrinsics error is %f' % numpy.linalg.norm(
-                mc.intrinsics - self.k, ord=numpy.inf))
+            err_intrinsics = numpy.linalg.norm(mc.intrinsics - self.k, ord=numpy.inf)
+            self.assertTrue(
+                err_intrinsics < setup.K_err,
+                'intrinsics error is %f for resolution i = %d' % (err_intrinsics, i),
+            )
+            print(
+                'intrinsics error is %f' % numpy.linalg.norm(mc.intrinsics - self.k, ord=numpy.inf)
+            )
 
     def test_rational_polynomial_model(self):
-        """Test that the distortion coefficients returned for a rational_polynomial model are not empty."""
+        """Test distortion coefficients for a rational_polynomial model are not empty."""
         for i, setup in enumerate(self.setups):
             board = ChessboardInfo()
             board.n_cols = setup.cols
             board.n_rows = setup.rows
             board.dim = self.board_width_dim
 
-            mc = MonoCalibrator(
-                [board], flags=cv2.CALIB_RATIONAL_MODEL, pattern=setup.pattern)
+            mc = MonoCalibrator([board], flags=cv2.CALIB_RATIONAL_MODEL, pattern=setup.pattern)
             mc.cal(self.limages[i])
-            self.assertEqual(len(mc.distortion.flat), 8,
-                             'length of distortion coefficients is %d' % len(mc.distortion.flat))
-            self.assertTrue(all(mc.distortion.flat != 0),
-                            'some distortion coefficients are zero: %s' %
-                            str(mc.distortion.flatten()))
-            self.assertEqual(mc.as_message().distortion_model,
-                             'rational_polynomial')
+            self.assertEqual(
+                len(mc.distortion.flat),
+                8,
+                'length of distortion coefficients is %d' % len(mc.distortion.flat),
+            )
+            self.assertTrue(
+                all(mc.distortion.flat != 0),
+                'some distortion coefficients are zero: %s' % str(mc.distortion.flatten()),
+            )
+            self.assertEqual(mc.as_message().distortion_model, 'rational_polynomial')
             self.assert_good_mono(mc, self.limages[i], setup.lin_err)
 
             yaml = mc.yaml()
