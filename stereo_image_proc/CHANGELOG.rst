@@ -2,6 +2,11 @@
 Changelog for package stereo_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.13 (2026-07-10)
+-------------------
+* Remove Inactive Maintainer
+* Contributors: Josh Whitley
+
 5.0.12 (2026-04-24)
 -------------------
 * Cleanup bsd 3 clause license usage (backport `#1125 <https://github.com/ros-perception/image_pipeline/issues/1125>`_) (`#1141 <https://github.com/ros-perception/image_pipeline/issues/1141>`_)

@@ -2,6 +2,11 @@
 Changelog for package image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.13 (2026-07-10)
+-------------------
+* Remove Inactive Maintainer
+* Contributors: Josh Whitley
+
 5.0.12 (2026-04-24)
 -------------------
 * Segmentation fault (Null Pointer Dereference) in CropNonZeroNode when processing all-black images (backport `#1134 <https://github.com/ros-perception/image_pipeline/issues/1134>`_) (`#1138 <https://github.com/ros-perception/image_pipeline/issues/1138>`_)
