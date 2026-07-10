@@ -2,6 +2,13 @@
 Changelog for package image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+7.1.7 (2026-07-10)
+------------------
+* Updated CMake minimum version (backport `#1181 <https://github.com/ros-perception/image_pipeline/issues/1181>`_) (`#1190 <https://github.com/ros-perception/image_pipeline/issues/1190>`_)
+* Remove Inactive Maintainer
+* switch to C++20 (backport `#1165 <https://github.com/ros-perception/image_pipeline/issues/1165>`_) (`#1169 <https://github.com/ros-perception/image_pipeline/issues/1169>`_)
+* Contributors: Josh Whitley, mergify[bot]
+
 7.1.6 (2026-05-08)
 ------------------
 

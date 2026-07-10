@@ -2,6 +2,11 @@
 Changelog for package camera_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+7.1.7 (2026-07-10)
+------------------
+* Remove Inactive Maintainer
+* Contributors: Josh Whitley
+
 7.1.6 (2026-05-08)
 ------------------
 

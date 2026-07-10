@@ -2,6 +2,15 @@
 Changelog for package depth_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+7.1.7 (2026-07-10)
+------------------
+* Updated CMake minimum version (backport `#1181 <https://github.com/ros-perception/image_pipeline/issues/1181>`_) (`#1190 <https://github.com/ros-perception/image_pipeline/issues/1190>`_)
+* Remove Inactive Maintainer
+* Fix issue 1149 (backport `#1152 <https://github.com/ros-perception/image_pipeline/issues/1152>`_) (`#1163 <https://github.com/ros-perception/image_pipeline/issues/1163>`_)
+* PointCloudXyzrgbNode can trigger a heap-buffer-overflow read in convertDepth() when image metadata and payload size diverge during a topology-transition mismatch (backport `#1154 <https://github.com/ros-perception/image_pipeline/issues/1154>`_) (`#1162 <https://github.com/ros-perception/image_pipeline/issues/1162>`_)
+* switch to C++20 (backport `#1165 <https://github.com/ros-perception/image_pipeline/issues/1165>`_) (`#1169 <https://github.com/ros-perception/image_pipeline/issues/1169>`_)
+* Contributors: Josh Whitley, mergify[bot]
+
 7.1.6 (2026-05-08)
 ------------------
 * PointCloudXyzrgbNode throws if resoluitions differ (`#1148 <https://github.com/ros-perception/image_pipeline/issues/1148>`_)
