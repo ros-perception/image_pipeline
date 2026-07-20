@@ -13,12 +13,7 @@ endif()
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
-find_package(Eigen3 QUIET)
-if(NOT EIGEN3_FOUND)
-  find_package(Eigen REQUIRED)
-  set(EIGEN3_INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS})
-  include_directories(include ${EIGEN3_INCLUDE_DIRS})
-endif()
+find_package(Eigen3 REQUIRED)
 
 find_package(OpenCV REQUIRED)
 
