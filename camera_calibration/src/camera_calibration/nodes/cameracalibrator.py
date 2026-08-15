@@ -321,7 +321,8 @@ def main():
         queue_size=options.queue_size,
     )
     node.spin()
-    rclpy.shutdown()
+    if rclpy.ok():
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
