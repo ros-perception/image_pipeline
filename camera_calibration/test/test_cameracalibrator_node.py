@@ -42,6 +42,7 @@ def shutdown_rclpy_context():
 
 def _run_main(monkeypatch, shutdown_during_spin):
     class FakeCalibrationNode:
+
         def __init__(self, *args, **kwargs):
             pass
 
