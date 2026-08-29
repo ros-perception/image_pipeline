@@ -82,10 +82,3 @@ as well as a color-mapped disparity image:
     $ ros2 run image_view stereo_view stereo:=/stereo image:=image_rect_color
 
 To view point clouds, you can use ``rviz2``.
-
-Choosing Good Stereo Parameters
--------------------------------
-
-There is an extensive tutorial on the
-`ROS 1 wiki <http://wiki.ros.org/stereo_image_proc/Tutorials/ChoosingGoodStereoParameters>`,
-however not all components exist in ROS 2 yet.
