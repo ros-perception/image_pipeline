@@ -68,6 +68,7 @@ private:
   int decimation_x_, decimation_y_, offset_x_, offset_y_, width_, height_;
   std::string image_topic_;
   CropDecimateModes interpolation_;
+  bool always_subscribe_;
 
   void imageCb(
     const sensor_msgs::msg::Image::ConstSharedPtr image_msg,

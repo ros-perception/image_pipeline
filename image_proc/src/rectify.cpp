@@ -62,12 +62,16 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions & options)
 
   queue_size_ = this->declare_parameter("queue_size", 5);
   interpolation_ = this->declare_parameter("interpolation", 1);
+  always_subscribe_ = this->declare_parameter("always_subscribe", false);
 
   // Setup lazy subscriber using publisher connection callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
     [this](rclcpp::MatchedInfo &)
     {
+      if (always_subscribe_) {
+        return;
+      }
       if (pub_rect_.getNumSubscribers() == 0) {
         sub_camera_.shutdown();
       } else if (!sub_camera_) {
@@ -88,6 +92,16 @@ RectifyNode::RectifyNode(const rclcpp::NodeOptions & options)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   pub_rect_ = image_transport::create_publisher(*this, rect_topic, rclcpp::SystemDefaultsQoS(),
       pub_options);
+
+  // If always subscribing, create the subscription immediately
+  if (always_subscribe_) {
+    auto qos_profile = getQosProfile(this, image_topic_);
+    image_transport::TransportHints hints(*this);
+    sub_camera_ = image_transport::create_camera_subscription(
+      *this, image_topic_, std::bind(
+        &RectifyNode::imageCb,
+        this, std::placeholders::_1, std::placeholders::_2), hints.getTransport(), qos_profile);
+  }
 }
 
 void RectifyNode::imageCb(
