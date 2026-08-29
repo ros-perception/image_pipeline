@@ -76,6 +76,7 @@ private:
   int count_;
   rclcpp::Time _time;
   double sec_per_frame_;
+  double downsample_rate_;
 
   void image_cb(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 };
