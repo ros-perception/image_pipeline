@@ -70,38 +70,6 @@
 namespace image_view
 {
 
-void ThreadSafeImage::set(cv_bridge::CvImageConstPtr image)
-{
-  std::lock_guard<std::mutex> lock(mutex_);
-  image_ = image;
-  condition_.notify_one();
-}
-
-cv_bridge::CvImageConstPtr ThreadSafeImage::get()
-{
-  std::lock_guard<std::mutex> lock(mutex_);
-  return image_;
-}
-
-cv_bridge::CvImageConstPtr ThreadSafeImage::pop()
-{
-  cv_bridge::CvImageConstPtr image;
-
-  {
-    std::unique_lock<std::mutex> lock(mutex_);
-
-    condition_.wait_for(
-      lock, std::chrono::milliseconds(100),
-      [this] {
-        return !image_;
-      });
-
-    image = std::move(image_);
-  }
-
-  return image;
-}
-
 ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
 : rclcpp::Node("image_view_node", options)
 {
@@ -180,6 +148,9 @@ ImageViewNode::ImageViewNode(const rclcpp::NodeOptions & options)
 
 ImageViewNode::~ImageViewNode()
 {
+  image_mutex_.unlock();
+  new_data_available_.release();
+
   if (window_thread_.joinable()) {
     window_thread_.join();
   }
@@ -234,9 +205,10 @@ void ImageViewNode::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
       encoding = "bgr8";
     }
 
-    queued_image_.set(
-      cv_bridge::cvtColorForDisplay(
-        cv_bridge::toCvShare(msg), encoding, options));
+    image_mutex_.lock();
+    queued_image_ = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(msg), encoding, options);
+    image_mutex_.unlock();
+    new_data_available_.release();
   } catch (cv_bridge::Exception & e) {
     RCLCPP_ERROR_EXPRESSION(
       this->get_logger(), (static_cast<int>(this->now().seconds()) % 30 == 0),
@@ -264,16 +236,23 @@ void ImageViewNode::mouseCb(int event, int /* x */, int /* y */, int /* flags */
     return;
   }
 
-  cv_bridge::CvImageConstPtr image(this_->shown_image_.get());
+  const std::string filename = string_format(this_->filename_format_, this_->count_);
 
-  if (!image) {
+  this_->image_mutex_.lock();
+
+  if (!this_->shown_image_) {
+    this_->image_mutex_.unlock();
     RCLCPP_WARN(this_->get_logger(), "Couldn't save image, no data!");
     return;
   }
 
-  std::string filename = string_format(this_->filename_format_, this_->count_);
+  const cv::Mat image = this_->shown_image_->image;
 
-  if (cv::imwrite(filename, image->image)) {
+  this_->image_mutex_.unlock();
+
+  const bool suc = cv::imwrite(filename, image);
+
+  if (suc) {
     RCLCPP_INFO(this_->get_logger(), "Saved image %s", filename.c_str());
     this_->count_++;
   } else {
@@ -294,19 +273,20 @@ void ImageViewNode::windowThread()
   }
 
   while (rclcpp::ok()) {
-    cv_bridge::CvImageConstPtr image(queued_image_.pop());
-
     if (cv::getWindowProperty(window_name_, 1) < 0) {
       break;
     }
 
-    if (image) {
-      cv::imshow(window_name_, image->image);
-      shown_image_.set(image);
-      cv::waitKey(1);
-    } else {
-      rclcpp::sleep_for(std::chrono::milliseconds(20));
+    // wait for new image data;
+    new_data_available_.acquire();
+
+    image_mutex_.lock();
+    if (queued_image_) {
+      cv::imshow(window_name_, queued_image_->image);
+      shown_image_ = queued_image_;
     }
+    image_mutex_.unlock();
+    cv::waitKey(1);
   }
 
   cv::destroyAllWindows();
