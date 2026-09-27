@@ -15,33 +15,19 @@
 #ifndef IMAGE_VIEW__IMAGE_VIEW_NODE_HPP_
 #define IMAGE_VIEW__IMAGE_VIEW_NODE_HPP_
 
-#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
 
-#include "cv_bridge/cv_bridge.hpp"
-
+#include <cv_bridge/cv_bridge.hpp>
+#include <image_transport/image_transport.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
-#include <image_transport/image_transport.hpp>
 
 namespace image_view
 {
-
-class ThreadSafeImage
-{
-  std::mutex mutex_;
-  std::condition_variable condition_;
-  cv_bridge::CvImageConstPtr image_;
-
-public:
-  void set(cv_bridge::CvImageConstPtr image);
-  cv_bridge::CvImageConstPtr get();
-  cv_bridge::CvImageConstPtr pop();
-};
 
 class ImageViewNode
   : public rclcpp::Node
@@ -55,7 +41,7 @@ public:
   ~ImageViewNode();
 
 private:
-  ThreadSafeImage queued_image_, shown_image_;
+  cv_bridge::CvImageConstPtr queued_image_, shown_image_;
   bool autosize_;
   int window_height_, window_width_;
   bool g_gui;
@@ -75,6 +61,8 @@ private:
   void windowThread();
   rcl_interfaces::msg::SetParametersResult paramCallback(const std::vector<rclcpp::Parameter> &);
   std::mutex param_mutex_;
+  std::mutex image_mutex_;
+  std::binary_semaphore new_data_available_{0};
 };
 
 }  // namespace image_view
