@@ -2,6 +2,11 @@
 Changelog for package image_view
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+8.0.2 (2026-10-16)
+------------------
+* Export image_view symbols on Windows (`#1194 <https://github.com/ros-perception/image_pipeline/issues/1194>`_)
+* Contributors: Daisuke Nishimatsu, Tobias Fischer
+
 8.0.1 (2026-07-10)
 ------------------
 * Use std::filesystem (`#1174 <https://github.com/ros-perception/image_pipeline/issues/1174>`_)

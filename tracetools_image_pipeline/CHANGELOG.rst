@@ -2,6 +2,9 @@
 Changelog for package tracetools_image_pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+8.0.2 (2026-10-16)
+------------------
+
 8.0.1 (2026-07-10)
 ------------------
 * Use lambdas, replace NULL with nullptr and std::format (`#1170 <https://github.com/ros-perception/image_pipeline/issues/1170>`_)

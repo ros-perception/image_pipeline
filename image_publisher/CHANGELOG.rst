@@ -2,6 +2,11 @@
 Changelog for package image_publisher
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+8.0.2 (2026-10-16)
+------------------
+* Export image_publisher symbols on Windows (`#1196 <https://github.com/ros-perception/image_pipeline/issues/1196>`_)
+* Contributors: Daisuke Nishimatsu, Tobias Fischer
+
 8.0.1 (2026-07-10)
 ------------------
 * Use std::numbers (`#1171 <https://github.com/ros-perception/image_pipeline/issues/1171>`_)
