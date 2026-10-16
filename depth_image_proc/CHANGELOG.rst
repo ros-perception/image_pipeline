@@ -2,6 +2,11 @@
 Changelog for package depth_image_proc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+8.0.2 (2026-10-16)
+------------------
+* Require Eigen3 in depth_image_proc (`#1195 <https://github.com/ros-perception/image_pipeline/issues/1195>`_)
+* Contributors: Daisuke Nishimatsu, Tobias Fischer
+
 8.0.1 (2026-07-10)
 ------------------
 * Use no discard (`#1176 <https://github.com/ros-perception/image_pipeline/issues/1176>`_)

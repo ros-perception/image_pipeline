@@ -2,6 +2,9 @@
 Changelog for package image_pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+8.0.2 (2026-10-16)
+------------------
+
 8.0.1 (2026-07-10)
 ------------------
 * Updated CMake minimum version (`#1181 <https://github.com/ros-perception/image_pipeline/issues/1181>`_)
