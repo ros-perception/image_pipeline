@@ -586,7 +586,7 @@ class StereoCalibrator(Calibrator):
             tf.addfile(tarinfo=ti, fileobj=s)
 
         for name, im in ims:
-            taradd(name, cv2.imencode('.png', im)[1].tostring())
+            taradd(name, cv2.imencode('.png', im)[1].tobytes())
         taradd('left.yaml', self.yaml('/left', self.l))
         taradd('right.yaml', self.yaml('/right', self.r))
         taradd('ost.txt', self.ost())

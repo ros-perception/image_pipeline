@@ -419,7 +419,7 @@ class MonoCalibrator(Calibrator):
 
         ims = [('left-%04d.png' % i, im) for i, (_, im) in enumerate(self.db)]
         for name, im in ims:
-            taradd(name, cv2.imencode('.png', im)[1].tostring())
+            taradd(name, cv2.imencode('.png', im)[1].tobytes())
         taradd('ost.yaml', self.yaml())
         taradd('ost.txt', self.ost())
 
