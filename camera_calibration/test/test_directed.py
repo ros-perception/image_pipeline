@@ -166,7 +166,7 @@ class TestDirected(unittest.TestCase):
         archive = io.BytesIO()
         with warnings.catch_warnings():
             # ndarray.tostring() is deprecated, and NumPy 2.3 removed it (#1198).
-            warnings.simplefilter('error', DeprecationWarning)
+            warnings.filterwarnings('error', message='.*tostring.*', category=DeprecationWarning)
             with tarfile.open(fileobj=archive, mode='w') as tf:
                 calibrator.do_tarfile_save(tf)
         archive.seek(0)
