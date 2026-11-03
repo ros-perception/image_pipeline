@@ -399,15 +399,9 @@ class MonoCalibrator(Calibrator):
             ti.mtime = int(time.time())
             tf.addfile(tarinfo=ti, fileobj=s)
 
-<<<<<<< HEAD
         ims = [("left-%04d.png" % i, im) for i, (_, im) in enumerate(self.db)]
         for (name, im) in ims:
-            taradd(name, cv2.imencode(".png", im)[1].tostring())
-=======
-        ims = [('left-%04d.png' % i, im) for i, (_, im) in enumerate(self.db)]
-        for name, im in ims:
-            taradd(name, cv2.imencode('.png', im)[1].tobytes())
->>>>>>> adfa609 (camera_calibration: fix saving on NumPy 2.3 and the QoS fallback warning (#1201))
+            taradd(name, cv2.imencode(".png", im)[1].tobytes())
         taradd('ost.yaml', self.yaml())
         taradd('ost.txt', self.ost())
 
