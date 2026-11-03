@@ -56,8 +56,13 @@ class ExtractImagesSync(object):
             '~do_dynamic_scaling', False)
         img_topics = rospy.get_param('~inputs', None)
         if img_topics is None:
+<<<<<<< HEAD
             rospy.logwarn("""\
 extract_images_sync: rosparam '~inputs' has not been specified! \
+=======
+            self.get_logger().warning("""\
+extract_images_sync: Parameter 'inputs' has not been specified! \
+>>>>>>> adfa609 (camera_calibration: fix saving on NumPy 2.3 and the QoS fallback warning (#1201))
 Typical command-line usage:
 \t$ rosrun image_view extract_images_sync _inputs:=<image_topic>
 \t$ rosrun image_view extract_images_sync \
