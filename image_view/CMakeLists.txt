@@ -111,6 +111,10 @@ add_dependencies(video_recorder
 if(BUILD_TESTING)
   find_package(ament_lint_auto)
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_auto_add_gtest(test_image_view_node test/test_image_view_node.cpp)
+  target_link_libraries(test_image_view_node ${PROJECT_NAME}_nodes)
 endif()
 
 install(

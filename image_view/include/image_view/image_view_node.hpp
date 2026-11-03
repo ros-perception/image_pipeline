@@ -15,6 +15,8 @@
 #ifndef IMAGE_VIEW__IMAGE_VIEW_NODE_HPP_
 #define IMAGE_VIEW__IMAGE_VIEW_NODE_HPP_
 
+#include <atomic>
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -47,7 +49,7 @@ private:
   bool g_gui;
   std::string filename_format_;
   image_transport::Subscriber sub_;
-  int count_;
+  int count_{0};
   double min_image_value_, max_image_value_;
   int colormap_;
   rclcpp::TimerBase::SharedPtr gui_timer_;
@@ -61,8 +63,10 @@ private:
   void windowThread();
   rcl_interfaces::msg::SetParametersResult paramCallback(const std::vector<rclcpp::Parameter> &);
   std::mutex param_mutex_;
+  // Protects queued_image_ and shown_image_
   std::mutex image_mutex_;
-  std::binary_semaphore new_data_available_{0};
+  std::condition_variable new_data_available_;
+  std::atomic<bool> stop_window_thread_{false};
 };
 
 }  // namespace image_view
