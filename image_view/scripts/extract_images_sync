@@ -68,7 +68,7 @@ class ExtractImagesSync(Node):
         img_topics = self.declare_parameter('inputs', None).value
 
         if img_topics is None:
-            self.get_logger().warn("""\
+            self.get_logger().warning("""\
 extract_images_sync: Parameter 'inputs' has not been specified! \
 Typical command-line usage:
 \t$ ros2 run image_view extract_images_sync --ros-args -p inputs:=<image_topic>
