@@ -240,7 +240,14 @@ class CalibrationNode(Node):
             qos_profile.depth = qos_profile_system_default.depth
             return qos_profile
         else:
+<<<<<<< HEAD
             self.get_logger().warn(f"No publishers available for topic {topic_name}. Using system default QoS for subscriber.")
+=======
+            self.get_logger().warning(
+                f'No publishers available for topic {topic_name}. '
+                'Using system default QoS for subscriber.'
+            )
+>>>>>>> adfa609 (camera_calibration: fix saving on NumPy 2.3 and the QoS fallback warning (#1201))
             return qos_profile_system_default
 
 
