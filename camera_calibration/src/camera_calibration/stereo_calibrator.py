@@ -477,17 +477,10 @@ class StereoCalibrator(Calibrator):
             ti.mtime = int(time.time())
             tf.addfile(tarinfo=ti, fileobj=s)
 
-<<<<<<< HEAD
         for (name, im) in ims:
-            taradd(name, cv2.imencode(".png", im)[1].tostring())
+            taradd(name, cv2.imencode(".png", im)[1].tobytes())
         taradd('left.yaml', self.yaml("/left", self.l))
         taradd('right.yaml', self.yaml("/right", self.r))
-=======
-        for name, im in ims:
-            taradd(name, cv2.imencode('.png', im)[1].tobytes())
-        taradd('left.yaml', self.yaml('/left', self.l))
-        taradd('right.yaml', self.yaml('/right', self.r))
->>>>>>> adfa609 (camera_calibration: fix saving on NumPy 2.3 and the QoS fallback warning (#1201))
         taradd('ost.txt', self.ost())
 
     def do_tarfile_calibration(self, filename):

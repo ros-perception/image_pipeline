@@ -35,11 +35,8 @@
 import cv2
 import collections
 import copy
-<<<<<<< HEAD
-import numpy
-=======
 import io
->>>>>>> adfa609 (camera_calibration: fix saving on NumPy 2.3 and the QoS fallback warning (#1201))
+import numpy
 import os
 import requests
 import tarfile
