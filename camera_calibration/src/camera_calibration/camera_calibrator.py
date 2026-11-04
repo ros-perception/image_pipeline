@@ -258,7 +258,7 @@ class CalibrationNode(Node):
             qos_profile.depth = qos_profile_system_default.depth
             return qos_profile
         else:
-            self.get_logger().warn(
+            self.get_logger().warning(
                 f"No publishers available for topic {topic_name}. Using system default QoS for subscriber.")
             return qos_profile_system_default
 

@@ -35,11 +35,13 @@
 import cv2
 import collections
 import copy
+import io
 import numpy
 import os
 import requests
 import tarfile
 import unittest
+import warnings
 
 from camera_calibration.mono_calibrator import MonoCalibrator
 from camera_calibration.stereo_calibrator import StereoCalibrator
@@ -148,6 +150,37 @@ class TestDirected(unittest.TestCase):
             # sc2.set_alpha(1.0)
             # sc2.report()
             self.assertTrue(len(sc2.ost()) > 0)
+
+    def assert_tarfile_save(self, calibrator, images, other_names):
+        archive = io.BytesIO()
+        with warnings.catch_warnings():
+            # ndarray.tostring() is deprecated, and NumPy 2.3 removed it (#1198).
+            warnings.filterwarnings('error', message='.*tostring.*', category=DeprecationWarning)
+            with tarfile.open(fileobj=archive, mode='w') as tf:
+                calibrator.do_tarfile_save(tf)
+        archive.seek(0)
+        with tarfile.open(fileobj=archive, mode='r') as tf:
+            self.assertEqual(sorted(tf.getnames()), sorted(list(images) + other_names))
+            for name, img in images.items():
+                self.assertTrue(numpy.array_equal(image_from_archive(tf, name), img), name)
+
+    def test_tarfile_save(self):
+        dim = self.sizes[0]
+        mc = MonoCalibrator([board], cv2.CALIB_FIX_K3)
+        mc.cal(self.l[dim])
+        mc.db = [(None, img) for img in self.l[dim]]
+        self.assert_tarfile_save(
+            mc,
+            {'left-%04d.png' % i: img for i, img in enumerate(self.l[dim])},
+            ['ost.yaml', 'ost.txt'],
+        )
+
+        sc = StereoCalibrator([board], cv2.CALIB_FIX_K3)
+        sc.cal(self.l[dim], self.r[dim])
+        sc.db = [(None, l_img, r_img) for l_img, r_img in zip(self.l[dim], self.r[dim])]
+        images = {'left-%04d.png' % i: img for i, img in enumerate(self.l[dim])}
+        images.update({'right-%04d.png' % i: img for i, img in enumerate(self.r[dim])})
+        self.assert_tarfile_save(sc, images, ['left.yaml', 'right.yaml', 'ost.txt'])
 
     def test_nochecker(self):
         # Run with same images, but looking for an incorrect chessboard size (8, 7).
