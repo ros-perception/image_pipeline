@@ -59,6 +59,7 @@ private:
 
   // Processing state (note: only safe because we're using single-threaded NodeHandle!)
   image_geometry::PinholeCameraModel model_;
+  bool always_subscribe_;
 
   void imageCb(
     const sensor_msgs::msg::Image::ConstSharedPtr & image_msg,

@@ -55,6 +55,7 @@ private:
   std::mutex connect_mutex_;
 
   image_transport::Publisher pub_;
+  bool always_subscribe_;
 
   void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg);
 };

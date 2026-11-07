@@ -74,11 +74,16 @@ TrackMarkerNode::TrackMarkerNode(const rclcpp::NodeOptions & options)
   dictionary_ = cv::aruco::getPredefinedDictionary(dict_id);
   #endif
 
+  always_subscribe_ = this->declare_parameter("always_subscribe", false);
+
   // Setup lazy subscriber using publisher connection callback
   rclcpp::PublisherOptions pub_options;
   pub_options.event_callbacks.matched_callback =
     [this](rclcpp::MatchedInfo &)
     {
+      if (always_subscribe_) {
+        return;
+      }
       if (pub_->get_subscription_count() == 0) {
         sub_camera_.shutdown();
       } else if (!sub_camera_) {
@@ -100,6 +105,17 @@ TrackMarkerNode::TrackMarkerNode(const rclcpp::NodeOptions & options)
   pub_options.qos_overriding_options = rclcpp::QosOverridingOptions::with_default_policies();
   pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(
     "tracked_pose", 10, pub_options);
+
+  // If always subscribing, create the subscription immediately
+  if (always_subscribe_) {
+    auto qos_profile = getQosProfile(this, image_topic_);
+    image_transport::TransportHints hints(*this);
+    sub_camera_ = image_transport::create_camera_subscription(
+      *this, image_topic_, std::bind(
+        &TrackMarkerNode::imageCb,
+        this, std::placeholders::_1, std::placeholders::_2),
+      hints.getTransport(), qos_profile);
+  }
 }
 
 void TrackMarkerNode::imageCb(

@@ -62,6 +62,7 @@ protected:
   cv_bridge::CvImage scaled_cv_;
 
   std::mutex connect_mutex_;
+  bool always_subscribe_;
 
   void connectCb();
 

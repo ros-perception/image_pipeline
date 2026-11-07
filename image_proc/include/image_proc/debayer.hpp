@@ -57,6 +57,7 @@ private:
 
   image_transport::Publisher pub_mono_;
   image_transport::Publisher pub_color_;
+  bool always_subscribe_;
 
   void connectCb();
   void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr & raw_msg);
