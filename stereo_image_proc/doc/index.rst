@@ -48,7 +48,7 @@ viewed with ``stereo_view`` from the ``image_view`` package.
    components
    configuration
    tutorials
-   stereo_image_proc <generated/index>
+   choosing_good_stereo_params
 
 Indices and tables
 ==================
