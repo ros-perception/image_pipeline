@@ -560,7 +560,7 @@ class Calibrator:
 
     def mk_object_points(self, boards, use_board_size=False):
         if self.pattern == Patterns.ChArUco:
-            opts = [board.charuco_board.chessboardCorners for board in boards]
+            opts = [board.charuco_board.getChessboardCorners() for board in boards]
             return opts
         opts = []
         for b in boards:

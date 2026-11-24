@@ -536,7 +536,7 @@ class StereoCalibrator(Calibrator):
             if lcorners is not None and rcorners is not None and len(lcorners) == len(rcorners):
                 # Add samples only with entire board in view if charuco
                 if self.pattern == Patterns.ChArUco:
-                    if len(lcorners) == lboard.charuco_board.chessboardCorners.shape[0]:
+                    if len(lcorners) == lboard.charuco_board.getChessboardCorners().shape[0]:
                         self.update_db(lgray, rgray, lcorners, rcorners, lids, rids, lboard)
                 else:
                     self.update_db(lgray, rgray, lcorners, rcorners, lids, rids, lboard)
