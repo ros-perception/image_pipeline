@@ -106,6 +106,12 @@ class ChessboardInfo:
                     self.n_cols, self.n_rows, self.dim, self.marker_size, self.aruco_dict
                 )
 
+    def charuco_chessboard_corners(self):
+        # OpenCV 4.7 replaced the chessboardCorners attribute with getChessboardCorners()
+        if hasattr(self.charuco_board, 'getChessboardCorners'):
+            return self.charuco_board.getChessboardCorners()
+        return self.charuco_board.chessboardCorners
+
 
 # Make all private!!!!!
 def lmin(seq1, seq2):
@@ -560,7 +566,7 @@ class Calibrator:
 
     def mk_object_points(self, boards, use_board_size=False):
         if self.pattern == Patterns.ChArUco:
-            opts = [board.charuco_board.getChessboardCorners() for board in boards]
+            opts = [board.charuco_chessboard_corners() for board in boards]
             return opts
         opts = []
         for b in boards:
