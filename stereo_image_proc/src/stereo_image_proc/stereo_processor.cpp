@@ -27,9 +27,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <cassert>
 #include <cmath>
 #include <limits>
 #include <string>
+
+#include <opencv2/calib3d.hpp>
 
 #include "rcutils/logging_macros.h"
 
@@ -47,6 +50,18 @@
 
 namespace stereo_image_proc
 {
+
+void projectAdjustedDisparityImageTo3d(
+  const image_geometry::StereoCameraModel & model,
+  const cv::Mat & disparity,
+  cv::Mat & point_cloud)
+{
+  assert(model.initialized());
+  // The disparity is already adjusted for cx_l - cx_r, so drop that term from Q.
+  cv::Matx44d Q = model.reprojectionMatrix();
+  Q(3, 3) = 0.0;
+  cv::reprojectImageTo3D(disparity, point_cloud, Q, true);
+}
 
 bool StereoProcessor::process(
   const sensor_msgs::msg::Image::ConstSharedPtr & left_raw,
@@ -160,7 +175,7 @@ void StereoProcessor::processPoints(
   // This is "safe" since our cv::Mat is const.
   float * data = reinterpret_cast<float *>(const_cast<uint8_t *>(&dimage.data[0]));
   const cv::Mat_<float> dmat(dimage.height, dimage.width, data, dimage.step);
-  model.projectDisparityImageTo3d(dmat, dense_points_, true);
+  projectAdjustedDisparityImageTo3d(model, dmat, dense_points_);
 
   // Fill in sparse point cloud message
   points.points.resize(0);
@@ -262,7 +277,7 @@ void StereoProcessor::processPoints2(
   // This is "safe" since our cv::Mat is const.
   float * data = reinterpret_cast<float *>(const_cast<uint8_t *>(&dimage.data[0]));
   const cv::Mat_<float> dmat(dimage.height, dimage.width, data, dimage.step);
-  model.projectDisparityImageTo3d(dmat, dense_points_, true);
+  projectAdjustedDisparityImageTo3d(model, dmat, dense_points_);
 
   // Fill in sparse point cloud message
   points.height = dense_points_.rows;

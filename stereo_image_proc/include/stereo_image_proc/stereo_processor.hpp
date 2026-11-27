@@ -42,6 +42,22 @@
 namespace stereo_image_proc
 {
 
+/**
+ * \brief Project a stereo_msgs/DisparityImage disparity image to 3d points.
+ *
+ * DisparityImage disparities are already adjusted for the x-offset between the principal
+ * points: d = x_l - x_r - (cx_l - cx_r). The model's reprojection matrix expects the raw
+ * x_l - x_r and subtracts (cx_l - cx_r) itself (in Q(3,3)), so it is applied here without
+ * that term, giving Z = fT/d as DisparityImage specifies.
+ *
+ * Pixels with the image's minimal disparity get Z = image_geometry::StereoCameraModel::MISSING_Z,
+ * as with image_geometry::StereoCameraModel::projectDisparityImageTo3d(..., true).
+ */
+void projectAdjustedDisparityImageTo3d(
+  const image_geometry::StereoCameraModel & model,
+  const cv::Mat & disparity,
+  cv::Mat & point_cloud);
+
 struct StereoImageSet
 {
   image_proc::ImageSet left;
