@@ -38,6 +38,7 @@
 #include "message_filters/sync_policies/approximate_epsilon_time.hpp"
 #include "message_filters/sync_policies/exact_time.hpp"
 #include "rcutils/logging_macros.h"
+#include "stereo_image_proc/stereo_processor.hpp"
 
 #include <image_transport/camera_common.hpp>
 #include <image_transport/image_transport.hpp>
@@ -241,7 +242,7 @@ void PointCloudNode::imageCb(
   float * data = reinterpret_cast<float *>(const_cast<uint8_t *>(&dimage.data[0]));
 
   const cv::Mat_<float> dmat(dimage.height, dimage.width, data, dimage.step);
-  model_.projectDisparityImageTo3d(dmat, points_mat_, true);
+  projectAdjustedDisparityImageTo3d(model_, dmat, points_mat_);
   cv::Mat_<cv::Vec3f> mat = points_mat_;
 
   // Fill in new PointCloud2 message (2D image-like layout)

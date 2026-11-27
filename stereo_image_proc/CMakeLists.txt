@@ -40,6 +40,10 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_auto_add_gtest(test_stereo_processor test/test_stereo_processor.cpp)
+  target_link_libraries(test_stereo_processor ${PROJECT_NAME})
+
   set(_PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}")
   if(WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE_DEBUG}")
