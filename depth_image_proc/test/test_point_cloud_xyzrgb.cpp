@@ -31,6 +31,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -40,11 +41,13 @@
 #include <image_transport/image_transport.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
 #include "depth_image_proc/point_cloud_xyzrgb.hpp"
+#include "depth_image_proc/point_cloud_xyzrgb_radial.hpp"
 
 using namespace std::chrono_literals;
 
@@ -109,6 +112,129 @@ sensor_msgs::msg::Image make_rgb8(uint32_t width, uint32_t height)
   std::vector<uint8_t> data(static_cast<size_t>(step) * height, 128);
   return make_image(
     sensor_msgs::image_encodings::RGB8, width, height, step, std::move(data));
+}
+
+// Spins a node on its own thread and stops it on destruction.
+class SpinThread
+{
+public:
+  explicit SpinThread(rclcpp::Node::SharedPtr node)
+  : thread_([node]() {rclcpp::spin(node);})
+  {
+  }
+
+  ~SpinThread()
+  {
+    rclcpp::shutdown();
+    thread_.join();
+  }
+
+private:
+  std::thread thread_;
+};
+
+// Sends `node` a depth image of depth_w x depth_h at 1 m and an RGB8 image of
+// rgb_w x rgb_h in the single color (10, 20, 30), with camera info for the RGB
+// image, until it publishes a point cloud on ns + "/points". Returns that
+// cloud, or nullptr if none arrives. Shuts rclcpp down before returning.
+sensor_msgs::msg::PointCloud2::ConstSharedPtr publish_until_cloud(
+  rclcpp::Node::SharedPtr node, const std::string & ns,
+  const std::string & depth_topic, const std::string & rgb_topic,
+  uint32_t depth_w, uint32_t depth_h, uint32_t rgb_w, uint32_t rgb_h)
+{
+  SpinThread spin_thread(node);
+
+  auto helper_node = rclcpp::Node::make_shared(node->get_name() + std::string("_helper"));
+  rclcpp::executors::SingleThreadedExecutor helper_exec;
+  helper_exec.add_node(helper_node);
+
+  sensor_msgs::msg::PointCloud2::ConstSharedPtr cloud;
+  auto out_sub = helper_node->create_subscription<sensor_msgs::msg::PointCloud2>(
+    ns + "/points", rclcpp::SensorDataQoS(),
+    [&cloud](sensor_msgs::msg::PointCloud2::ConstSharedPtr msg) {
+      cloud = msg;
+    });
+
+  image_transport::ImageTransport it_helper{*helper_node};
+  auto depth_pub = it_helper.advertise(ns + depth_topic, 1);
+  auto rgb_cam_pub = it_helper.advertiseCamera(ns + rgb_topic, 1);
+
+  auto deadline = std::chrono::steady_clock::now() + 5s;
+  while ((depth_pub.getNumSubscribers() == 0 ||
+    rgb_cam_pub.getNumSubscribers() == 0) &&
+    std::chrono::steady_clock::now() < deadline)
+  {
+    helper_exec.spin_some();
+    std::this_thread::sleep_for(50ms);
+  }
+  if (depth_pub.getNumSubscribers() == 0 || rgb_cam_pub.getNumSubscribers() == 0) {
+    ADD_FAILURE() << "The node did not subscribe to the depth and RGB topics in time.";
+    return nullptr;
+  }
+
+  auto depth = make_depth_16uc1(depth_w, depth_h, 1000);
+  auto rgb = make_rgb8(rgb_w, rgb_h);
+  for (size_t i = 0; i < rgb.data.size(); i += 3) {
+    rgb.data[i] = 10;
+    rgb.data[i + 1] = 20;
+    rgb.data[i + 2] = 30;
+  }
+  auto info = make_camera_info(rgb_w, rgb_h);
+
+  deadline = std::chrono::steady_clock::now() + 3s;
+  while (!cloud && std::chrono::steady_clock::now() < deadline) {
+    const auto stamp = helper_node->now();
+    depth.header.stamp = stamp;
+    rgb.header.stamp = stamp;
+    info.header.stamp = stamp;
+    depth_pub.publish(depth);
+    rgb_cam_pub.publish(rgb, info);
+    for (int i = 0; i < 10 && !cloud; ++i) {
+      helper_exec.spin_some();
+      std::this_thread::sleep_for(10ms);
+    }
+  }
+  return cloud;
+}
+
+// Checks a cloud from publish_until_cloud() against the camera info of the
+// rgb_w x rgb_h image scaled by depth_w / rgb_w, the depth resolution.
+// `radial` selects the radial node's output, where the depth is the distance
+// along the unit ray through the pixel.
+void expect_scaled_cloud(
+  const sensor_msgs::msg::PointCloud2 & cloud, uint32_t depth_w, uint32_t depth_h,
+  uint32_t rgb_w, uint32_t rgb_h, bool radial)
+{
+  ASSERT_EQ(cloud.width, depth_w);
+  ASSERT_EQ(cloud.height, depth_h);
+
+  // make_camera_info(): fx = fy = 100, cx = width / 2, cy = height / 2.
+  const double ratio = static_cast<double>(depth_w) / rgb_w;
+  const double f = 100.0 * ratio;
+  const double cx = rgb_w / 2.0 * ratio;
+  const double cy = rgb_h / 2.0 * ratio;
+
+  sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
+  sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
+  sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_r(cloud, "r");
+  sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_g(cloud, "g");
+  sensor_msgs::PointCloud2ConstIterator<uint8_t> iter_b(cloud, "b");
+  for (uint32_t v = 0; v < depth_h; ++v) {
+    for (uint32_t u = 0; u < depth_w;
+      ++u, ++iter_x, ++iter_y, ++iter_z, ++iter_r, ++iter_g, ++iter_b)
+    {
+      const double ray_x = (u - cx) / f;
+      const double ray_y = (v - cy) / f;
+      const double scale = radial ? 1.0 / std::sqrt(ray_x * ray_x + ray_y * ray_y + 1.0) : 1.0;
+      EXPECT_NEAR(*iter_x, ray_x * scale, 1e-6) << "u=" << u << " v=" << v;
+      EXPECT_NEAR(*iter_y, ray_y * scale, 1e-6) << "u=" << u << " v=" << v;
+      EXPECT_NEAR(*iter_z, scale, 1e-6) << "u=" << u << " v=" << v;
+      EXPECT_EQ(*iter_r, 10) << "u=" << u << " v=" << v;
+      EXPECT_EQ(*iter_g, 20) << "u=" << u << " v=" << v;
+      EXPECT_EQ(*iter_b, 30) << "u=" << u << " v=" << v;
+    }
+  }
 }
 
 }  // namespace
@@ -390,6 +516,55 @@ TEST_F(PointCloudXyzrgbNodeTest, OversizedDepthMetadataDoesNotCrash)
 
   rclcpp::shutdown();
   node_spin_thread.join();
+}
+
+// When the depth and RGB images have different sizes, the nodes scale the
+// camera intrinsics and resize the RGB image to the depth resolution. The
+// resized image used to be thrown away: the nodes logged "Depth resolution
+// (WxH) does not match RGB resolution (WxH)" with the already-resized size
+// and returned without publishing.
+TEST_F(PointCloudXyzrgbNodeTest, LargerRgbIsResizedToDepthResolution)
+{
+  const std::string ns = "/point_cloud_xyzrgb_resize_test";
+  rclcpp::NodeOptions options;
+  options.arguments({"--ros-args", "-r", std::string("__ns:=") + ns});
+  auto node = std::make_shared<depth_image_proc::PointCloudXyzrgbNode>(options);
+
+  auto cloud = publish_until_cloud(
+    node, ns, "/depth_registered/image_rect", "/rgb/image_rect_color", 4, 2, 8, 4);
+  ASSERT_NE(cloud, nullptr) << "No point cloud was published.";
+  expect_scaled_cloud(*cloud, 4, 2, 8, 4, false);
+}
+
+// The radial node also has to build its table of rays from the intrinsics
+// scaled to the depth resolution, and at that size: it looks the rays up by
+// depth pixel.
+TEST_F(PointCloudXyzrgbNodeTest, RadialLargerRgbIsResizedToDepthResolution)
+{
+  const std::string ns = "/point_cloud_xyzrgb_radial_resize_test";
+  rclcpp::NodeOptions options;
+  options.arguments({"--ros-args", "-r", std::string("__ns:=") + ns});
+  auto node = std::make_shared<depth_image_proc::PointCloudXyzrgbRadialNode>(options);
+
+  auto cloud = publish_until_cloud(
+    node, ns, "/depth/image_raw", "/rgb/image_raw", 4, 2, 8, 4);
+  ASSERT_NE(cloud, nullptr) << "No point cloud was published.";
+  expect_scaled_cloud(*cloud, 4, 2, 8, 4, true);
+}
+
+// With an RGB image smaller than the depth image, a ray table built at the
+// RGB resolution would be read past its end.
+TEST_F(PointCloudXyzrgbNodeTest, RadialSmallerRgbIsResizedToDepthResolution)
+{
+  const std::string ns = "/point_cloud_xyzrgb_radial_upsample_test";
+  rclcpp::NodeOptions options;
+  options.arguments({"--ros-args", "-r", std::string("__ns:=") + ns});
+  auto node = std::make_shared<depth_image_proc::PointCloudXyzrgbRadialNode>(options);
+
+  auto cloud = publish_until_cloud(
+    node, ns, "/depth/image_raw", "/rgb/image_raw", 8, 4, 4, 2);
+  ASSERT_NE(cloud, nullptr) << "No point cloud was published.";
+  expect_scaled_cloud(*cloud, 8, 4, 4, 2, true);
 }
 
 int main(int argc, char ** argv)

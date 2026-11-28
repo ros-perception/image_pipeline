@@ -304,11 +304,6 @@ void PointCloudXyzrgbNode::imageCb(
       rgb_msg =
         cv_bridge::toCvCopy(cv_rsz.toImageMsg(), sensor_msgs::image_encodings::RGB8)->toImageMsg();
     }
-
-    RCLCPP_ERROR(
-      get_logger(), "Depth resolution (%ux%u) does not match RGB resolution (%ux%u)",
-      depth_msg->width, depth_msg->height, rgb_msg->width, rgb_msg->height);
-    return;
   } else {
     rgb_msg = rgb_msg_in;
   }

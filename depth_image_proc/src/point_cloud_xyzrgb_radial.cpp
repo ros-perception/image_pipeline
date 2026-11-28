@@ -141,6 +141,10 @@ void PointCloudXyzrgbRadialNode::imageCb(
   // Update camera model
   model_.fromCameraInfo(info_msg);
 
+  // Camera info at the depth resolution, which the cloud is built at
+  CameraInfo info_msg_tmp;
+  const CameraInfo * depth_res_info = info_msg.get();
+
   // Check if the input image has to be resized
   Image::ConstSharedPtr rgb_msg = rgb_msg_in;
   if (depth_msg->width != rgb_msg->width || depth_msg->height != rgb_msg->height) {
@@ -171,7 +175,7 @@ void PointCloudXyzrgbRadialNode::imageCb(
       return;
     }
 
-    CameraInfo info_msg_tmp = *info_msg;
+    info_msg_tmp = *info_msg;
     info_msg_tmp.width = depth_msg->width;
     info_msg_tmp.height = depth_msg->height;
     float ratio = static_cast<float>(depth_msg->width) / static_cast<float>(rgb_msg->width);
@@ -184,6 +188,7 @@ void PointCloudXyzrgbRadialNode::imageCb(
     info_msg_tmp.p[5] *= ratio;
     info_msg_tmp.p[6] *= ratio;
     model_.fromCameraInfo(info_msg_tmp);
+    depth_res_info = &info_msg_tmp;
 
     cv_bridge::CvImageConstPtr cv_ptr;
     try {
@@ -212,22 +217,18 @@ void PointCloudXyzrgbRadialNode::imageCb(
       rgb_msg =
         cv_bridge::toCvCopy(cv_rsz.toImageMsg(), sensor_msgs::image_encodings::RGB8)->toImageMsg();
     }
-
-    RCLCPP_ERROR(
-      get_logger(), "Depth resolution (%ux%u) does not match RGB resolution (%ux%u)",
-      depth_msg->width, depth_msg->height, rgb_msg->width, rgb_msg->height);
-    return;
   } else {
     rgb_msg = rgb_msg_in;
   }
 
-  if (info_msg->d != D_ || info_msg->k != K_ || width_ != info_msg->width ||
-    height_ != info_msg->height)
+  // The rays are indexed by depth pixel, so build them at the depth resolution
+  if (depth_res_info->d != D_ || depth_res_info->k != K_ || width_ != depth_res_info->width ||
+    height_ != depth_res_info->height)
   {
-    D_ = info_msg->d;
-    K_ = info_msg->k;
-    width_ = info_msg->width;
-    height_ = info_msg->height;
+    D_ = depth_res_info->d;
+    K_ = depth_res_info->k;
+    width_ = depth_res_info->width;
+    height_ = depth_res_info->height;
     transform_ = initMatrix(cv::Mat_<double>(3, 3, &K_[0]), cv::Mat(D_), width_, height_, true);
   }
 
